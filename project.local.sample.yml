@@ -1,0 +1,5 @@
+targetTemplates:
+  CommonSettings:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: <# Your Team ID>
