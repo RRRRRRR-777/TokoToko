@@ -1,0 +1,83 @@
+name: TokoToko
+options:
+  bundleIdPrefix: RRRRRRR777
+  deploymentTarget:
+    iOS: 18.1
+  xcodeVersion: "16.1"
+  createIntermediateGroups: true
+  usesTabs: false
+  indentWidth: 2
+  tabWidth: 2
+  useCocoaPods: true
+
+include:
+  - path: project.local.yml
+    relativePaths: true
+    optional: true
+
+targets:
+  TokoToko:
+    type: application
+    platform: iOS
+    deploymentTarget:
+      iOS: 18.1
+    sources:
+      - path: TokoToko
+        excludes:
+          - "Preview Content"
+    resources:
+      - path: TokoToko/Preview Content
+      - path: TokoToko/Assets.xcassets
+    templates: [CommonSettings]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: RRRRRRR777.TokoToko
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        MARKETING_VERSION: 1.0
+        CURRENT_PROJECT_VERSION: 1
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1,2"
+    scheme:
+      testTargets:
+        - TokoTokoTests
+        - TokoTokoUITests
+
+  TokoTokoTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget:
+      iOS: 18.1
+    sources:
+      - path: TokoTokoTests
+    templates: [CommonSettings]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: RRRRRRR777.TokoTokoTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - target: TokoToko
+
+  TokoTokoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget:
+      iOS: 18.1
+    sources:
+      - path: TokoTokoUITests
+    templates: [CommonSettings]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: RRRRRRR777.TokoTokoUITests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - target: TokoToko
