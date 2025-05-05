@@ -1,0 +1,6 @@
+framework module Pods_TokoToko {
+  umbrella header "Pods-TokoToko-umbrella.h"
+
+  export *
+  module * { export * }
+}

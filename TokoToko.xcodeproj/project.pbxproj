@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		52AC19631FF8A0F2B2593D1E /* Pods_TokoTokoTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 146D0CC40DF33E78BA6FD787 /* Pods_TokoTokoTests.framework */; };
+		74C7C1525378A0F998194F4D /* Pods_TokoToko_TokoTokoUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8684F0DA36B24414F687489 /* Pods_TokoToko_TokoTokoUITests.framework */; };
+		8F907B43C4839424917F1487 /* Pods_TokoToko.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FF033AEF6510C7DC2F83875 /* Pods_TokoToko.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		6334E0E32DC79C8900E50A8F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,24 +30,39 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0EE0E9A67C5C638B2E1B298A /* Pods-TokoToko-TokoTokoUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokoToko-TokoTokoUITests.release.xcconfig"; path = "Target Support Files/Pods-TokoToko-TokoTokoUITests/Pods-TokoToko-TokoTokoUITests.release.xcconfig"; sourceTree = "<group>"; };
+		146D0CC40DF33E78BA6FD787 /* Pods_TokoTokoTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TokoTokoTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		350342933B2F937113261D93 /* Pods-TokoTokoTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokoTokoTests.release.xcconfig"; path = "Target Support Files/Pods-TokoTokoTests/Pods-TokoTokoTests.release.xcconfig"; sourceTree = "<group>"; };
+		3E0A81BFA3CF054FF90E986D /* Pods-TokoTokoTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokoTokoTests.debug.xcconfig"; path = "Target Support Files/Pods-TokoTokoTests/Pods-TokoTokoTests.debug.xcconfig"; sourceTree = "<group>"; };
+		5FF033AEF6510C7DC2F83875 /* Pods_TokoToko.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TokoToko.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6334E0D22DC79C8900E50A8F /* TokoToko.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TokoToko.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6334E0E22DC79C8900E50A8F /* TokoTokoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TokoTokoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6334E0EC2DC79C8900E50A8F /* TokoTokoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TokoTokoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF478337437C5487A0534F8D /* Pods-TokoToko-TokoTokoUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokoToko-TokoTokoUITests.debug.xcconfig"; path = "Target Support Files/Pods-TokoToko-TokoTokoUITests/Pods-TokoToko-TokoTokoUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		D0B3E21DBB22369D5268C0F0 /* Pods-TokoToko.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokoToko.debug.xcconfig"; path = "Target Support Files/Pods-TokoToko/Pods-TokoToko.debug.xcconfig"; sourceTree = "<group>"; };
+		D8684F0DA36B24414F687489 /* Pods_TokoToko_TokoTokoUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TokoToko_TokoTokoUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EC1A96518F4EF5AD1F8BF89E /* Pods-TokoToko.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TokoToko.release.xcconfig"; path = "Target Support Files/Pods-TokoToko/Pods-TokoToko.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6334E0D42DC79C8900E50A8F /* TokoToko */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = TokoToko;
 			sourceTree = "<group>";
 		};
 		6334E0E52DC79C8900E50A8F /* TokoTokoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = TokoTokoTests;
 			sourceTree = "<group>";
 		};
 		6334E0EF2DC79C8900E50A8F /* TokoTokoUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = TokoTokoUITests;
 			sourceTree = "<group>";
 		};
@@ -52,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8F907B43C4839424917F1487 /* Pods_TokoToko.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +81,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52AC19631FF8A0F2B2593D1E /* Pods_TokoTokoTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,12 +89,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				74C7C1525378A0F998194F4D /* Pods_TokoToko_TokoTokoUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		469F5E960819BCFAFB88C2FE /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				D0B3E21DBB22369D5268C0F0 /* Pods-TokoToko.debug.xcconfig */,
+				EC1A96518F4EF5AD1F8BF89E /* Pods-TokoToko.release.xcconfig */,
+				AF478337437C5487A0534F8D /* Pods-TokoToko-TokoTokoUITests.debug.xcconfig */,
+				0EE0E9A67C5C638B2E1B298A /* Pods-TokoToko-TokoTokoUITests.release.xcconfig */,
+				3E0A81BFA3CF054FF90E986D /* Pods-TokoTokoTests.debug.xcconfig */,
+				350342933B2F937113261D93 /* Pods-TokoTokoTests.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		6334E0C92DC79C8900E50A8F = {
 			isa = PBXGroup;
 			children = (
@@ -79,6 +117,8 @@
 				6334E0E52DC79C8900E50A8F /* TokoTokoTests */,
 				6334E0EF2DC79C8900E50A8F /* TokoTokoUITests */,
 				6334E0D32DC79C8900E50A8F /* Products */,
+				469F5E960819BCFAFB88C2FE /* Pods */,
+				72BBF892EFA6E399FD227675 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,6 +132,16 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		72BBF892EFA6E399FD227675 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5FF033AEF6510C7DC2F83875 /* Pods_TokoToko.framework */,
+				D8684F0DA36B24414F687489 /* Pods_TokoToko_TokoTokoUITests.framework */,
+				146D0CC40DF33E78BA6FD787 /* Pods_TokoTokoTests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -99,6 +149,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6334E0F62DC79C8900E50A8F /* Build configuration list for PBXNativeTarget "TokoToko" */;
 			buildPhases = (
+				C34EA514EE732B2B20F7FCF3 /* [CP] Check Pods Manifest.lock */,
 				6334E0CE2DC79C8900E50A8F /* Sources */,
 				6334E0CF2DC79C8900E50A8F /* Frameworks */,
 				6334E0D02DC79C8900E50A8F /* Resources */,
@@ -111,8 +162,6 @@
 				6334E0D42DC79C8900E50A8F /* TokoToko */,
 			);
 			name = TokoToko;
-			packageProductDependencies = (
-			);
 			productName = TokoToko;
 			productReference = 6334E0D22DC79C8900E50A8F /* TokoToko.app */;
 			productType = "com.apple.product-type.application";
@@ -121,6 +170,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6334E0F92DC79C8900E50A8F /* Build configuration list for PBXNativeTarget "TokoTokoTests" */;
 			buildPhases = (
+				5D8245FE68F00B8B8CB9D5E2 /* [CP] Check Pods Manifest.lock */,
 				6334E0DE2DC79C8900E50A8F /* Sources */,
 				6334E0DF2DC79C8900E50A8F /* Frameworks */,
 				6334E0E02DC79C8900E50A8F /* Resources */,
@@ -134,8 +184,6 @@
 				6334E0E52DC79C8900E50A8F /* TokoTokoTests */,
 			);
 			name = TokoTokoTests;
-			packageProductDependencies = (
-			);
 			productName = TokoTokoTests;
 			productReference = 6334E0E22DC79C8900E50A8F /* TokoTokoTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -144,6 +192,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6334E0FC2DC79C8900E50A8F /* Build configuration list for PBXNativeTarget "TokoTokoUITests" */;
 			buildPhases = (
+				B6C9A38472F2FFECDAA9C007 /* [CP] Check Pods Manifest.lock */,
 				6334E0E82DC79C8900E50A8F /* Sources */,
 				6334E0E92DC79C8900E50A8F /* Frameworks */,
 				6334E0EA2DC79C8900E50A8F /* Resources */,
@@ -157,8 +206,6 @@
 				6334E0EF2DC79C8900E50A8F /* TokoTokoUITests */,
 			);
 			name = TokoTokoUITests;
-			packageProductDependencies = (
-			);
 			productName = TokoTokoUITests;
 			productReference = 6334E0EC2DC79C8900E50A8F /* TokoTokoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -230,6 +277,75 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5D8245FE68F00B8B8CB9D5E2 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-TokoTokoTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B6C9A38472F2FFECDAA9C007 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-TokoToko-TokoTokoUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		C34EA514EE732B2B20F7FCF3 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-TokoToko-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6334E0CE2DC79C8900E50A8F /* Sources */ = {
@@ -390,6 +506,7 @@
 		};
 		6334E0F72DC79C8900E50A8F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D0B3E21DBB22369D5268C0F0 /* Pods-TokoToko.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -419,6 +536,7 @@
 		};
 		6334E0F82DC79C8900E50A8F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC1A96518F4EF5AD1F8BF89E /* Pods-TokoToko.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -448,6 +566,7 @@
 		};
 		6334E0FA2DC79C8900E50A8F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3E0A81BFA3CF054FF90E986D /* Pods-TokoTokoTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -467,6 +586,7 @@
 		};
 		6334E0FB2DC79C8900E50A8F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 350342933B2F937113261D93 /* Pods-TokoTokoTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -486,6 +606,7 @@
 		};
 		6334E0FD2DC79C8900E50A8F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AF478337437C5487A0534F8D /* Pods-TokoToko-TokoTokoUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -503,6 +624,7 @@
 		};
 		6334E0FE2DC79C8900E50A8F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0EE0E9A67C5C638B2E1B298A /* Pods-TokoToko-TokoTokoUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
