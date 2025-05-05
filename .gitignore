@@ -92,3 +92,4 @@ iOSInjectionProject/
 *.xcworkspace
 
 project.local.yml
+Pods/*
