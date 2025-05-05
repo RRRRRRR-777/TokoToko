@@ -1,6 +1,6 @@
 name: TokoToko
 options:
-  bundleIdPrefix: RRRRRRR777
+  bundleIdPrefix: com.RRRRRRR777
   deploymentTarget:
     iOS: 18.1
   xcodeVersion: "16.1"
@@ -31,7 +31,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: RRRRRRR777.TokoToko
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoToko
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
@@ -58,7 +58,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: RRRRRRR777.TokoTokoTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoTests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -75,7 +75,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: RRRRRRR777.TokoTokoUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1,2"
