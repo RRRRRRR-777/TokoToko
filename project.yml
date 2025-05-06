@@ -11,9 +11,15 @@ options:
   useCocoaPods: true
 
 include:
-  - path: project.local.yml
+  - path: .env
     relativePaths: true
     optional: true
+
+targetTemplates:
+  CommonSettings:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
 
 targets:
   TokoToko:
