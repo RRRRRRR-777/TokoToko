@@ -17,8 +17,6 @@ open:
 
 .PHONY: xcode-run
 xcode-run:
-	mint run xcodegen xcodegen generate
-	pod install
 	xcodebuild \
 		-workspace TokoToko.xcworkspace \
 		-scheme $(PRODUCT_NAME) \
