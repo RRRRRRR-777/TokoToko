@@ -14,7 +14,7 @@ target 'TokoToko' do
 
   # Add the pods for any other Firebase products you want to use in your app
   # For example, to use Firebase Authentication and Cloud Firestore
-  # pod 'FirebaseCore'
+  pod 'FirebaseCore'
   pod 'FirebaseAuth'
   pod 'FirebaseFirestore'
 

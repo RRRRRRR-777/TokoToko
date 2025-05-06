@@ -1410,6 +1410,7 @@ PODS:
 DEPENDENCIES:
   - FirebaseAnalytics
   - FirebaseAuth
+  - FirebaseCore
   - FirebaseFirestore
   - ViewInspector
 
@@ -1464,6 +1465,6 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   ViewInspector: 3649135739ba786b0889fb0e093b911008c8e5d0
 
-PODFILE CHECKSUM: 01d9653c9e83f65a24d6a8cc2467ab62ba14f95a
+PODFILE CHECKSUM: 2881dc977ffc5671afefe436f423c3df039dc9b3
 
 COCOAPODS: 1.16.2
