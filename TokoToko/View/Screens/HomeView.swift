@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 struct HomeView: View {
     @EnvironmentObject var coordinator: AppCoordinator
@@ -46,6 +47,8 @@ struct HomeView: View {
                             .accessibilityIdentifier("タイトル")
                         TextField("説明", text: $newItemDescription)
                             .accessibilityIdentifier("説明")
+                        Toggle("現在位置を使用", isOn: $useCurrentLocation)
+                            .accessibilityIdentifier("現在位置を使用")
                     }
 
                     HStack {
@@ -60,15 +63,22 @@ struct HomeView: View {
 
                         Button("保存") {
                             if !newItemTitle.isEmpty {
+                                // 現在位置を使用する場合は、coordinatorから位置情報を取得
+                                var location: CLLocationCoordinate2D? = nil
+                                if useCurrentLocation, let currentLocation = coordinator.currentLocation {
+                                    location = currentLocation.coordinate
+                                }
 
                                 controller.addNewItem(
                                     title: newItemTitle,
-                                    description: newItemDescription
+                                    description: newItemDescription,
+                                    location: location
                                 )
 
                                 // フォームをリセット
                                 newItemTitle = ""
                                 newItemDescription = ""
+                                useCurrentLocation = false
                                 showingAddItemView = false
                             }
                         }

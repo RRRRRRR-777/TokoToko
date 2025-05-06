@@ -19,8 +19,8 @@ class ItemService {
         return repository.fetchItems()
     }
 
-    func createItem(title: String, description: String) {
-        let newItem = Item(title: title, description: description)
+    func createItem(title: String, description: String, location: CLLocationCoordinate2D? = nil) {
+        let newItem = Item(title: title, description: description, location: location)
         repository.addItem(newItem)
     }
 }

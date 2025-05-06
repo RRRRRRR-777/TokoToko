@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-
+import MapKit
 
 struct DetailView: View {
     @EnvironmentObject var coordinator: AppCoordinator
@@ -27,6 +27,34 @@ struct DetailView: View {
                 Text(controller.item.description)
                     .font(.body)
                     .accessibilityIdentifier(controller.item.description)
+
+                // 位置情報がある場合はマップを表示
+                if controller.item.hasLocation, let location = controller.item.location {
+                    VStack(alignment: .leading) {
+                        Text("位置情報")
+                            .font(.headline)
+
+                        Text(controller.item.locationString)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        // マップ表示
+                        Map(coordinateRegion: .constant(MKCoordinateRegion(
+                            center: location,
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        )), annotationItems: [
+                            MapItem(coordinate: location, title: controller.item.title)
+                        ]) { item in
+                            MapAnnotation(coordinate: item.coordinate) {
+                                Image(systemName: item.imageName)
+                                    .foregroundColor(.red)
+                                    .font(.title)
+                            }
+                        }
+                        .frame(height: 200)
+                        .cornerRadius(10)
+                    }
+                }
 
                 // 作成日時
                 Text("作成日時: \(controller.item.createdAt.formatted())")

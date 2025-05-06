@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 class HomeController: ObservableObject {
     private let itemService: ItemService
@@ -20,8 +21,8 @@ class HomeController: ObservableObject {
         items = itemService.getAllItems()
     }
 
-    func addNewItem(title: String, description: String) {
-        itemService.createItem(title: title, description: description)
+    func addNewItem(title: String, description: String, location: CLLocationCoordinate2D? = nil) {
+        itemService.createItem(title: title, description: description, location: location)
         fetchItems() // リストを更新
     }
 }
