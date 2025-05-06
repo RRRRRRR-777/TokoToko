@@ -10,6 +10,7 @@ target 'TokoToko' do
   target 'TokoTokoTests' do
     inherit! :search_paths
     # Pods for testing
+    pod 'ViewInspector'
   end
 
   target 'TokoTokoUITests' do
