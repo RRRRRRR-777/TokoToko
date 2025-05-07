@@ -93,3 +93,6 @@ iOSInjectionProject/
 
 project.local.yml
 Pods/*
+GoogleService-Info.plist
+.env
+tmp/*

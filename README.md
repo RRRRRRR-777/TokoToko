@@ -1,6 +1,45 @@
 # TokoToko
-「とことこ - おさんぽSNS」のリポジトリ
-# # ERD
+* 「とことこ - おさんぽSNS」のリポジトリ
+* このアプリは、「日常の散歩体験を、友人や家族と手軽に共有する」ことを目的としたSNS的な機能を持つサービスです。
+* ただ歩くだけの時間を“楽しい体験”に変え、その記録を共有することで、新たな発見や会話が生まれることを目指します。
+
+# 実行方法
+## xcodeproj生成方法
+* `make generate-xcodeproj`
+    * xcodegen生成
+    * podのインストール
+    * xcodeprojを開く
+```makefile
+// Makefile
+generate-xcodeproj:
+    mint run xcodegen xcodegen generate
+    pod install
+    make open
+open:
+    open ./${PRODUCT_NAME}.xcworkspace
+```
+## シミュレータ起動方法
+* `make xcode-run`
+    * xcodegen生成
+    * ビルド
+    * シミュレータの起動
+* `build`のあとに`test`を加えると全体のテストも実行されます
+```makefile
+// Makefile
+xcode-run:
+	mint run xcodegen xcodegen generate
+	xcodebuild \
+		-scheme $(PRODUCT_NAME) \
+		-destination "platform=iOS Simulator,name=$(DEVICE_NAME),OS=$(OS_VERSION)" \
+		-configuration Debug \
+		build
+
+	APP_PATH=$$HOME/Library/Developer/Xcode/DerivedData/$(PRODUCT_NAME)-*/Build/Products/Debug-iphonesimulator/$(PRODUCT_NAME).app && \
+	xcrun simctl boot "$(DEVICE_NAME)" || true && \
+	xcrun simctl install booted $$APP_PATH && \
+	xcrun simctl launch booted $(BUNDLE_ID)
+```
+# ERD
 
 ```mermaid
 
@@ -91,7 +130,7 @@ erDiagram
         - walk_id (FK): 共有される散歩のID（外部キー）
         - url_token: 共有リンクを一意に識別するためのトークン
 
-# # FlowChart
+# FlowChart
 
 ```mermaid
 flowchart TD
@@ -119,12 +158,12 @@ flowchart TD
     D --> E[散歩開始・位置情報記録]
     E --> F[散歩中画面表示]
     F --> F1[現在地・歩数・時間表示]
-    F --> F2[写真選択（最大10枚）]  
+    F --> F2[写真選択（最大10枚）]
     F --> G{「散歩終了」ボタン押下}
-    
+
     G --> H[散歩終了]
     H --> H1[散歩ルート表示・情報確認]
-    H1 --> H2{写真を選択する？}  
+    H1 --> H2{写真を選択する？}
     H2 -- はい --> H3[写真選択（最大10枚）]
     H2 -- いいえ --> H4[スキップ]
 
@@ -136,9 +175,9 @@ flowchart TD
 
 ```
 
-# # Sequence Diagrams
+# Sequence Diagrams
 
-## ## 散歩の開始〜終了〜保存〜共有までのフロー
+## 散歩の開始〜終了〜保存〜共有までのフロー
 
 ```mermaid
 sequenceDiagram
@@ -175,7 +214,7 @@ sequenceDiagram
 
 ```
 
-## ## ログインまたはアカウント作成のシーケンス図（Firebase Auth）
+## ログインまたはアカウント作成のシーケンス図（Firebase Auth）
 
 ```mermaid
 sequenceDiagram
@@ -219,7 +258,7 @@ sequenceDiagram
 
 ```
 
-## ##  写真の選択と保存処理の連携（最大10枚）
+##  写真の選択と保存処理の連携（最大10枚）
 
 ```mermaid
 sequenceDiagram
@@ -246,7 +285,7 @@ sequenceDiagram
 
 ```
 
-## ## 履歴の散歩詳細表示〜共有リンクの再取得
+## 履歴の散歩詳細表示〜共有リンクの再取得
 
 ```mermaid
 sequenceDiagram
