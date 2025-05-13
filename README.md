@@ -18,27 +18,20 @@ generate-xcodeproj:
 open:
     open ./${PRODUCT_NAME}.xcworkspace
 ```
-## シミュレータ起動方法
-* `make xcode-run`
-    * xcodegen生成
-    * ビルド
-    * シミュレータの起動
-* `build`のあとに`test`を加えると全体のテストも実行されます
-```makefile
-// Makefile
-xcode-run:
-	mint run xcodegen xcodegen generate
-	xcodebuild \
-		-scheme $(PRODUCT_NAME) \
-		-destination "platform=iOS Simulator,name=$(DEVICE_NAME),OS=$(OS_VERSION)" \
-		-configuration Debug \
-		build
+## 実行にSweetPadを使用する
+### SweetPadのセットアップ
+* [SweetPad](https://marketplace.visualstudio.com/items?itemName=sweetpad.sweetpad)拡張機能をインストールする。
+* アクティビティバーでSweetPadを選択から｢TOOLS｣を選択し、必要なツールをインストールする
+    * Homebrew
+    * swift-format
+    * Xcodegen
+    * SwiftLint
+    * xcbeautify
+    * xcode-build-server
+### 実行する
+* VSCodeの｢実行とデバッグ｣から実行するとシミュレーターが起動する
+    * `launch.json`に設定が記載されている
 
-	APP_PATH=$$HOME/Library/Developer/Xcode/DerivedData/$(PRODUCT_NAME)-*/Build/Products/Debug-iphonesimulator/$(PRODUCT_NAME).app && \
-	xcrun simctl boot "$(DEVICE_NAME)" || true && \
-	xcrun simctl install booted $$APP_PATH && \
-	xcrun simctl launch booted $(BUNDLE_ID)
-```
 # ERD
 
 ```mermaid
