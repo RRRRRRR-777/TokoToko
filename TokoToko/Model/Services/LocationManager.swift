@@ -42,6 +42,17 @@ class LocationManager: NSObject, ObservableObject {
         locationManager.distanceFilter = 10 // 10メートル移動したら更新
         locationManager.pausesLocationUpdatesAutomatically = false // 自動停止を無効化
         // バックグラウンド更新の設定は権限取得後に行う
+
+        // アプリ起動時にバックグラウンド更新の設定を初期化
+        if Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") != nil {
+            let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+            if backgroundModes.contains("location") {
+                // Info.plistにlocationが含まれている場合のみ設定
+                if authorizationStatus == .authorizedAlways {
+                    locationManager.allowsBackgroundLocationUpdates = true
+                }
+            }
+        }
     }
 
     // 位置情報の使用許可をリクエスト（アプリ使用中のみ）
@@ -105,9 +116,19 @@ extension LocationManager: CLLocationManagerDelegate {
             // バックグラウンド更新は無効
             locationManager.allowsBackgroundLocationUpdates = false
         case .authorizedAlways:
-            // 常に許可された場合は位置情報の更新を開始し、バックグラウンド更新を有効化
+            // 常に許可された場合は位置情報の更新を開始
             startUpdatingLocation()
-            locationManager.allowsBackgroundLocationUpdates = true
+
+            // バックグラウンド更新の設定を確認してから有効化
+            if Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") != nil {
+                let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+                if backgroundModes.contains("location") {
+                    // Info.plistにlocationが含まれている場合のみ設定
+                    locationManager.allowsBackgroundLocationUpdates = true
+                    // シミュレーター環境ではこの設定も必要
+                    locationManager.showsBackgroundLocationIndicator = true
+                }
+            }
         case .denied, .restricted:
             // 拒否された場合はエラーメッセージを表示
             print("位置情報の使用が拒否されました。設定アプリから許可してください。")
