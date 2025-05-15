@@ -75,6 +75,11 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleURLTypes:
+            - INFOPLIST_KEY_CFBundleTypeRole:
+              INFOPLIST_KEY_CFBundleURLName:
+              INFOPLIST_KEY_CFBundleURLSchemes:
+                - "${GOOGLE_SIGN_IN_REVERSED_CLIENT_ID}"
     scheme:
       testTargets:
         - TokoTokoTests
