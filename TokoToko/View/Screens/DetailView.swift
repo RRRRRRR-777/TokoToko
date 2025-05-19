@@ -2,77 +2,107 @@
 //  DetailView.swift
 //  TokoToko
 //
-//  Created by bokuyamada on 2025/05/06.
+//  Created by bokuyamada on 2025/05/16.
 //
 
-import SwiftUI
 import MapKit
+import SwiftUI
 
 struct DetailView: View {
-    @EnvironmentObject var coordinator: AppCoordinator
-    @StateObject private var controller: DetailController
+  @State private var walk: Walk
+  @State private var isLoading = false
 
-    init(item: Item) {
-        _controller = StateObject(wrappedValue: DetailController(item: item))
-    }
+  // リポジトリ
+  private let walkRepository = WalkRepository.shared
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(controller.item.title)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .accessibilityIdentifier(controller.item.title)
+  init(walk: Walk) {
+    _walk = State(initialValue: walk)
+  }
 
-                Text(controller.item.description)
-                    .font(.body)
-                    .accessibilityIdentifier(controller.item.description)
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 20) {
+        Text(walk.title)
+          .font(.largeTitle)
+          .fontWeight(.bold)
+          .accessibilityIdentifier(walk.title)
 
-                // 位置情報がある場合はマップを表示
-                if controller.item.hasLocation, let location = controller.item.location {
-                    VStack(alignment: .leading) {
-                        Text("位置情報")
-                            .font(.headline)
+        Text(walk.description)
+          .font(.body)
+          .accessibilityIdentifier(walk.description)
 
-                        Text(controller.item.locationString)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+        // 位置情報がある場合はマップを表示
+        if walk.hasLocation, let location = walk.location {
+          VStack(alignment: .leading) {
+            Text("位置情報")
+              .font(.headline)
 
-                        // マップ表示
-                        Map(coordinateRegion: .constant(MKCoordinateRegion(
-                            center: location,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        )), annotationItems: [
-                            MapItem(coordinate: location, title: controller.item.title)
-                        ]) { item in
-                            MapAnnotation(coordinate: item.coordinate) {
-                                Image(systemName: item.imageName)
-                                    .foregroundColor(.red)
-                                    .font(.title)
-                            }
-                        }
-                        .frame(height: 200)
-                        .cornerRadius(10)
-                    }
-                }
+            Text(walk.locationString)
+              .font(.caption)
+              .foregroundColor(.secondary)
 
-                // 作成日時
-                Text("作成日時: \(controller.item.createdAt.formatted())")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Spacer(minLength: 50)
+            // マップ表示
+            Map(
+              coordinateRegion: .constant(
+                MKCoordinateRegion(
+                  center: location,
+                  span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )),
+              annotationItems: [
+                MapItem(coordinate: location, title: walk.title)
+              ]
+            ) { item in
+              MapAnnotation(coordinate: item.coordinate) {
+                Image(systemName: "mappin.circle.fill")
+                  .foregroundColor(.red)
+                  .font(.title)
+              }
             }
-            .padding()
+            .frame(height: 200)
+            .cornerRadius(10)
+          }
         }
-        .navigationTitle("詳細")
-        .navigationBarTitleDisplayMode(.inline)
+
+        // 作成日時
+        Text("作成日時: \(walk.createdAt.formatted())")
+          .font(.caption)
+          .foregroundColor(.secondary)
+
+        Spacer(minLength: 50)
+      }
+      .padding()
     }
+    .navigationTitle("詳細")
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      Button(action: { refreshWalkDetails() }) {
+        Image(systemName: "arrow.clockwise")
+      }
+    }
+    .loadingOverlay(isLoading: isLoading)
+    .onAppear {
+      refreshWalkDetails()
+    }
+  }
+
+  // 記録の詳細を更新
+  private func refreshWalkDetails() {
+    isLoading = true
+    walkRepository.fetchWalk(withID: walk.id) { result in
+      isLoading = false
+      switch result {
+      case .success(let updatedWalk):
+        self.walk = updatedWalk
+      case .failure(let error):
+        print("Error refreshing walk details: \(error)")
+      // エラー処理をここに追加
+      }
+    }
+  }
 }
 
 #Preview {
-    NavigationView {
-        DetailView(item: Item(title: "サンプルアイテム", description: "これはサンプルの詳細説明です。長めのテキストを表示することもできます。"))
-            .environmentObject(AppCoordinator())
-    }
+  NavigationView {
+    DetailView(walk: Walk(title: "サンプル記録", description: "これはサンプルの詳細説明です。長めのテキストを表示することもできます。"))
+  }
 }
