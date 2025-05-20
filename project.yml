@@ -24,6 +24,9 @@ packages:
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk.git
     from: 11.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
   ViewInspector:
     url: https://github.com/nalexn/ViewInspector.git
     from: 0.10.0
@@ -50,6 +53,10 @@ targets:
         product: FirebaseAuth
       - package: Firebase
         product: FirebaseFirestore
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: GoogleSignIn
+        product: GoogleSignInSwift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoToko
@@ -68,6 +75,13 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - com.googleusercontent.apps.730739320416-rjs5ngp3np3b4d8hd4fmn4c6o05ppoek
     scheme:
       testTargets:
         - TokoTokoTests
