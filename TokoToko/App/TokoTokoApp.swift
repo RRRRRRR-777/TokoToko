@@ -6,7 +6,29 @@
 //
 
 import FirebaseCore
+import FirebaseAuth
+import GoogleSignIn
 import SwiftUI
+
+// Firebase認証状態を管理するクラス
+class AuthManager: ObservableObject {
+  @Published var isLoggedIn = false
+  private var authStateHandler: AuthStateDidChangeListenerHandle?
+
+  init() {
+    // Firebase認証状態の変更を監視
+    authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+      self?.isLoggedIn = user != nil
+    }
+  }
+
+  deinit {
+    // リスナーを削除
+    if let handler = authStateHandler {
+      Auth.auth().removeStateDidChangeListener(handler)
+    }
+  }
+}
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(
@@ -16,21 +38,39 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     FirebaseApp.configure()
     return true
   }
+
+  func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    return GIDSignIn.sharedInstance.handle(url)
+  }
 }
 
 @main
 struct TokoTokoApp: App {
   @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+  @StateObject private var authManager = AuthManager()
 
   var body: some Scene {
     WindowGroup {
-      MainTabView()
+      NavigationView {
+        if authManager.isLoggedIn {
+          MainTabView()
+            .environmentObject(authManager)
+        } else {
+          LoginView()
+            .environmentObject(authManager)
+        }
+      }
     }
   }
 }
 
 // メインのタブビュー
 struct MainTabView: View {
+  @EnvironmentObject var authManager: AuthManager
   @State private var selectedTab: Tab = .home
 
   enum Tab {
@@ -59,35 +99,12 @@ struct MainTabView: View {
 
       NavigationView {
         SettingsView()
+          .environmentObject(authManager)
       }
       .tabItem {
         Label("設定", systemImage: "gear")
       }
       .tag(Tab.settings)
     }
-  }
-}
-
-// 設定画面（シンプルな実装）
-struct SettingsView: View {
-  var body: some View {
-    List {
-      Section(header: Text("アプリ設定")) {
-        Text("アカウント")
-        Text("通知")
-        Text("プライバシー")
-      }
-
-      Section(header: Text("位置情報")) {
-        Text("位置情報の精度")
-        Text("バックグラウンド更新")
-      }
-
-      Section(header: Text("その他")) {
-        Text("このアプリについて")
-        Text("ヘルプ")
-      }
-    }
-    .navigationTitle("設定")
   }
 }
