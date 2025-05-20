@@ -99,35 +99,12 @@ struct MainTabView: View {
 
       NavigationView {
         SettingsView()
+          .environmentObject(authManager)
       }
       .tabItem {
         Label("設定", systemImage: "gear")
       }
       .tag(Tab.settings)
     }
-  }
-}
-
-// 設定画面（シンプルな実装）
-struct SettingsView: View {
-  var body: some View {
-    List {
-      Section(header: Text("アプリ設定")) {
-        Text("アカウント")
-        Text("通知")
-        Text("プライバシー")
-      }
-
-      Section(header: Text("位置情報")) {
-        Text("位置情報の精度")
-        Text("バックグラウンド更新")
-      }
-
-      Section(header: Text("その他")) {
-        Text("このアプリについて")
-        Text("ヘルプ")
-      }
-    }
-    .navigationTitle("設定")
   }
 }
