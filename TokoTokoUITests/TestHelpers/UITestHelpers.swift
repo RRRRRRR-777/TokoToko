@@ -62,13 +62,70 @@ extension XCUIApplication {
 
     /// ログイン状態でアプリを起動する
     func launchAsLoggedIn() {
-        launchArguments = ["--uitesting", "--logged-in"]
-        launch()
+        UITestingExtensions.launchAppLoggedIn(self)
     }
 
     /// テストモードでアプリを起動する
     func launchInTestMode() {
-        launchArguments = ["--uitesting"]
+        UITestingExtensions.launchApp(self, options: UITestingExtensions.LaunchOptions(isUITesting: true, isLoggedIn: false))
+    }
+
+    /// ディープリンクでアプリを起動する
+    func launchWithDeepLink(to destination: String) {
+        UITestingExtensions.launchAppWithDeepLink(self, destination: destination)
+    }
+
+    /// エラー状態を強制してアプリを起動する
+    func launchWithForcedError(errorType: String) {
+        let options = UITestingExtensions.LaunchOptions(isUITesting: true)
+        UITestingExtensions.launchApp(self, options: options)
+        // 追加の引数を設定
+        launchArguments.append("--force-error")
+        launchArguments.append("--error-type")
+        launchArguments.append(errorType)
         launch()
+    }
+
+    /// ローディング状態を強制してアプリを起動する
+    func launchWithForcedLoadingState() {
+        let options = UITestingExtensions.LaunchOptions(isUITesting: true)
+        UITestingExtensions.launchApp(self, options: options)
+        // 追加の引数を設定
+        launchArguments.append("--force-loading-state")
+        launch()
+    }
+
+    /// ユーザー情報を設定してアプリを起動する
+    func launchWithUserInfo(email: String = "test@example.com") {
+        let options = UITestingExtensions.LaunchOptions(isUITesting: true, isLoggedIn: true)
+        UITestingExtensions.launchApp(self, options: options)
+        // 追加の引数を設定
+        launchArguments.append("--with-user-info")
+        launchArguments.append("--email")
+        launchArguments.append(email)
+        launch()
+    }
+}
+
+/// UIテスト用のアサーションヘルパー
+extension XCTestCase {
+
+    /// 要素が表示されることを確認する
+    func assertElementExists(_ element: XCUIElement, timeout: TimeInterval = 5, message: String) {
+        XCTAssertTrue(element.waitForExistence(timeout: timeout), message)
+    }
+
+    /// 要素が表示されないことを確認する
+    func assertElementDoesNotExist(_ element: XCUIElement, timeout: TimeInterval = 2, message: String) {
+        // 少し待機してから確認
+        sleep(UInt32(timeout))
+        XCTAssertFalse(element.exists, message)
+    }
+
+    /// タブが選択されていることを確認する
+    func assertTabIsSelected(_ app: XCUIApplication, tabName: String, message: String) {
+        let tabButton = app.tabBars.buttons[tabName]
+        XCTAssertTrue(tabButton.waitForExistence(timeout: 2), "\(tabName)タブが表示されていません")
+        XCTAssertTrue(tabButton.isSelected, message)
     }
 }
