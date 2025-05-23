@@ -13,10 +13,60 @@ import SwiftUI
 
 struct LoginView: View {
   @EnvironmentObject private var authManager: AuthManager
-  @State private var isLoading = false
+  @State private var isLoading: Bool
   @State private var errorMessage: String?
 
   private let authService = GoogleAuthService()
+
+  // UIテスト用のフラグ
+  private var isUITesting: Bool {
+    ProcessInfo.processInfo.arguments.contains("--uitesting")
+  }
+
+  // UIテスト用のエラー強制表示フラグ
+  private var shouldForceError: Bool {
+    ProcessInfo.processInfo.arguments.contains("--force-error")
+  }
+
+  // UIテスト用のエラータイプ
+  private var forcedErrorType: String? {
+    let args = ProcessInfo.processInfo.arguments
+    if let index = args.firstIndex(of: "--error-type"), index + 1 < args.count {
+      return args[index + 1]
+    }
+    return nil
+  }
+
+  // UIテスト用のローディング状態強制表示フラグ
+  private var shouldForceLoading: Bool {
+    ProcessInfo.processInfo.arguments.contains("--force-loading-state")
+  }
+
+  init() {
+    // UIテストモードの場合
+    if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+      // ローディング状態を強制する場合
+      if ProcessInfo.processInfo.arguments.contains("--force-loading-state") {
+        _isLoading = State(initialValue: true)
+      } else {
+        _isLoading = State(initialValue: false)
+      }
+
+      // エラー状態を強制する場合
+      if ProcessInfo.processInfo.arguments.contains("--force-error") {
+        let errorType =
+          ProcessInfo.processInfo.arguments.firstIndex(of: "--error-type").flatMap { index in
+            index + 1 < ProcessInfo.processInfo.arguments.count
+              ? ProcessInfo.processInfo.arguments[index + 1] : nil
+          } ?? "テストエラー"
+
+        _errorMessage = State(initialValue: errorType)
+      }
+    } else {
+      // 通常の動作
+      _isLoading = State(initialValue: false)
+    }
+  }
 
   var body: some View {
     VStack(spacing: 20) {

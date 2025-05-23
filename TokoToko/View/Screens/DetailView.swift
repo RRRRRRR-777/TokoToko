@@ -43,16 +43,13 @@ struct DetailView: View {
 
             // マップ表示
             Map(
-              coordinateRegion: .constant(
+              initialPosition: .region(
                 MKCoordinateRegion(
                   center: location,
                   span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                )),
-              annotationItems: [
-                MapItem(coordinate: location, title: walk.title)
-              ]
-            ) { item in
-              MapAnnotation(coordinate: item.coordinate) {
+                ))
+            ) {
+              Annotation(walk.title, coordinate: location) {
                 Image(systemName: "mappin.circle.fill")
                   .foregroundColor(.red)
                   .font(.title)

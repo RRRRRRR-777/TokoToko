@@ -5,8 +5,8 @@
 //  Created by bokuyamada on 2025/05/16.
 //
 
-import FirebaseCore
 import FirebaseAuth
+import FirebaseCore
 import GoogleSignIn
 import SwiftUI
 
@@ -15,10 +15,32 @@ class AuthManager: ObservableObject {
   @Published var isLoggedIn = false
   private var authStateHandler: AuthStateDidChangeListenerHandle?
 
+  // UIテストヘルパーへの参照
+  private let testingHelper = UITestingHelper.shared
+
   init() {
-    // Firebase認証状態の変更を監視
-    authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-      self?.isLoggedIn = user != nil
+    // UIテストモードの場合
+    if testingHelper.isUITesting {
+      // モックログイン状態を設定
+      isLoggedIn = testingHelper.isMockLoggedIn
+    } else {
+      // 通常の動作: Firebase認証状態の変更を監視
+      authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        self?.isLoggedIn = user != nil
+      }
+    }
+  }
+
+  // ログアウト処理
+  func logout() {
+    // UIテストモードの場合
+    if testingHelper.isUITesting {
+      // モックログイン状態を更新
+      isLoggedIn = false
+    } else {
+      // 通常の動作: Firebase認証でログアウト
+      try? Auth.auth().signOut()
+      // 注: 実際のログアウト状態の更新はauthStateHandlerで行われる
     }
   }
 
@@ -71,12 +93,39 @@ struct TokoTokoApp: App {
 // メインのタブビュー
 struct MainTabView: View {
   @EnvironmentObject var authManager: AuthManager
-  @State private var selectedTab: Tab = .home
+  @State private var selectedTab: Tab
+
+  // UIテストヘルパーへの参照
+  private let testingHelper = UITestingHelper.shared
 
   enum Tab {
     case home
     case map
     case settings
+  }
+
+  init() {
+    // UIテストモードの場合
+    if testingHelper.isUITesting {
+      // ディープリンクがある場合
+      if testingHelper.hasDeepLink {
+        // ディープリンク先に基づいてタブを設定
+        switch testingHelper.deepLinkDestination {
+        case "map":
+          _selectedTab = State(initialValue: .map)
+        case "settings":
+          _selectedTab = State(initialValue: .settings)
+        default:
+          _selectedTab = State(initialValue: .home)
+        }
+      } else {
+        // デフォルトはホームタブ
+        _selectedTab = State(initialValue: .home)
+      }
+    } else {
+      // 通常の動作
+      _selectedTab = State(initialValue: .home)
+    }
   }
 
   var body: some View {
