@@ -33,10 +33,19 @@ jobs:
           unzip swiftlint_linux.zip
           sudo mv swiftlint /usr/local/bin
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Get changed Swift files
         id: changed-files
         run: |
-          BASE_BRANCH="${{ github.event.pull_request.base.ref || 'main' }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          else
+            BASE_BRANCH="main"
+          fi
           git fetch origin $BASE_BRANCH
           FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift')
           echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
