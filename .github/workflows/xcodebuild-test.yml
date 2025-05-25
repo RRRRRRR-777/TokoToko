@@ -39,16 +39,12 @@ jobs:
           xcodebuild -resolvePackageDependencies \
             -project TokoToko.xcodeproj
 
-      # ✅ 利用可能なシミュレータを確認 (デバッグ用)
-      - name: Show available destinations
-        run: xcodebuild -showdestinations -project TokoToko.xcodeproj -scheme TokoToko
-
       - name: Build & Run Tests
         run: |
           xcodebuild test \
             -project TokoToko.xcodeproj \
             -scheme TokoToko \
-            -destination 'platform=iOS Simulator,name=iPhone 14,OS=16.4' \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.1' \
             -resultBundlePath TestResults
 
       - name: Upload Test Results (optional)
