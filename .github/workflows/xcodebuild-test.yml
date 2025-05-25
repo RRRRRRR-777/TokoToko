@@ -13,6 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create .env file
+        run: |
+          echo "DEVELOPMENT_TEAM=${{ secrets.DEVELOPMENT_TEAM }}" >> .env
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
