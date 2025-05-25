@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  format-lint:
+  swift-format-lint:
     runs-on: ubuntu-22.04
 
     steps:
@@ -20,14 +20,30 @@ jobs:
         with:
           swift-version: '5.9'
 
+      - name: Cache SwiftFormat build
+        id: cache-swiftformat
+        uses: actions/cache@v3
+        with:
+          path: SwiftFormat/.build/release/swiftformat
+          key: swiftformat-build-${{ runner.os }}-${{ hashFiles('**/Package.resolved') }}
+
       - name: Install SwiftFormat
+        if: steps.cache-swiftformat.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/nicklockwood/SwiftFormat.git
           cd SwiftFormat
           swift build -c release
           cp .build/release/swiftformat /usr/local/bin/
 
+      - name: Cache SwiftLint binary
+        id: cache-swiftlint
+        uses: actions/cache@v3
+        with:
+          path: swiftlint
+          key: swiftlint-${{ runner.os }}-0.54.0
+
       - name: Install SwiftLint
+        if: steps.cache-swiftlint.outputs.cache-hit != 'true'
         run: |
           curl -L -O https://github.com/realm/SwiftLint/releases/download/0.54.0/swiftlint_linux.zip
           unzip swiftlint_linux.zip
