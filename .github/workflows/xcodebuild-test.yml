@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  test:
+  xcodebuild-test:
     runs-on: macos-latest
 
     steps:
@@ -38,6 +38,10 @@ jobs:
         run: |
           xcodebuild -resolvePackageDependencies \
             -project TokoToko.xcodeproj
+
+      # ✅ 利用可能なシミュレータを確認 (デバッグ用)
+      - name: Show available destinations
+        run: xcodebuild -showdestinations -project TokoToko.xcodeproj -scheme TokoToko
 
       - name: Build & Run Tests
         run: |
