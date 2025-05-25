@@ -37,7 +37,7 @@ jobs:
           xcodebuild test \
             -project TokoToko.xcodeproj \
             -scheme TokoToko \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.1' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=17.5' \
             -resultBundlePath TestResults
 
       - name: Upload Test Results (optional)
