@@ -13,16 +13,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen
+
       - name: Resolve Swift Packages
         run: |
           xcodebuild -resolvePackageDependencies \
-            -workspace TokoToko.xcodeproj \
+            -project TokoToko.xcodeproj \
             -scheme TokoToko
 
       - name: Build & Run Tests
         run: |
           xcodebuild test \
-            -workspace TokoToko.xcodeproj \
+            -project TokoToko.xcodeproj \
             -scheme TokoToko \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.1' \
             -resultBundlePath TestResults
