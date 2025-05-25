@@ -1,0 +1,37 @@
+name: Xcode Build & Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_16.0.app
+
+      - name: Resolve Swift Packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -workspace TokoToko.xcodeproj \
+            -scheme TokoToko
+
+      - name: Build & Run Tests
+        run: |
+          xcodebuild test \
+            -workspace TokoToko.xcodeproj \
+            -scheme TokoToko \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.1' \
+            -resultBundlePath TestResults
+
+      - name: Upload Test Results (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-test-results
+          path: TestResults
