@@ -29,6 +29,9 @@ jobs:
             -project TokoToko.xcodeproj \
             -scheme TokoToko
 
+      - name: Clean DerivedData
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData/*
+
       - name: Build & Run Tests
         run: |
           xcodebuild test \
