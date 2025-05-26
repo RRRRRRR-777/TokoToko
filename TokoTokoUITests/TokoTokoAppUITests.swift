@@ -36,6 +36,8 @@ final class TokoTokoAppUITests: XCTestCase {
 
     // 未ログイン時にログイン画面が表示されるかテスト
     func testLoginScreenAppearsWhenNotLoggedIn() {
+        // UIテストモードで未ログイン状態を明示的に設定
+        app.launchArguments = ["--uitesting"]
         app.launch()
 
         // ログイン画面の要素が表示されていることを確認
@@ -73,6 +75,8 @@ final class TokoTokoAppUITests: XCTestCase {
 
     // アプリの状態保持テスト（バックグラウンド→フォアグラウンド）- 未ログイン状態
     func testAppStatePreservationWhenNotLoggedIn() {
+        // UIテストモードで未ログイン状態を明示的に設定
+        app.launchArguments = ["--uitesting"]
         app.launch()
 
         // ログイン画面が表示されることを確認
@@ -143,6 +147,8 @@ final class TokoTokoAppUITests: XCTestCase {
 
     // アプリの初期状態テスト - 未ログイン
     func testInitialStateWhenNotLoggedIn() {
+        // UIテストモードで未ログイン状態を明示的に設定
+        app.launchArguments = ["--uitesting"]
         app.launch()
 
         // ログイン画面が表示されることを確認
