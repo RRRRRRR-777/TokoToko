@@ -7,27 +7,22 @@
 * TokoTokoプロジェクトの設計・仕様・議事録などの技術ドキュメントを管理するためリポジトリ
 
 ## 実行方法
-### xcodeproj生成方法
-* `make generate-xcodeproj`
-    * xcodegen生成
-    * podのインストール
-    * xcodeprojを開く
-```makefile
-// Makefile
-generate-xcodeproj:
-    mint run xcodegen xcodegen generate
-    pod install
-    make open
-open:
-    open ./${PRODUCT_NAME}.xcworkspace
+### `brew`コマンドをインストールする
+> https://brew.sh/ja/
+### `xcodegen`コマンドのインストール
+```sh
+brew install xcodegen
 ```
+
+### `xcodeproj`ファイルを生成する
+```sh
+xcodegen generate
+```
+
 ### 実行にSweetPadを使用する
 #### SweetPadのセットアップ
 * [SweetPad](https://marketplace.visualstudio.com/items?itemName=sweetpad.sweetpad)拡張機能をインストールする。
 * アクティビティバーでSweetPadを選択から｢TOOLS｣を選択し、必要なツールをインストールする
-    * Homebrew
-    * swift-format
-    * Xcodegen
     * SwiftLint
     * xcbeautify
     * xcode-build-server
