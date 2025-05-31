@@ -24,6 +24,8 @@ jobs:
         run: |
           sudo apt remove gpg
           sudo apt install gnupg1
+          curl -O -fsSL https://download.docker.com/linux/debian/gpg
+          sudo apt-key add gpg
           swift --version
 
       - name: Cache SwiftFormat build
