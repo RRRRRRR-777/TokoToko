@@ -18,9 +18,36 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Swift
-        uses: swift-actions/setup-swift@v1
-        with:
-          swift-version: '5.9'
+        run: |
+          # Install dependencies
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils \
+            git \
+            gnupg2 \
+            libc6-dev \
+            libcurl4 \
+            libedit2 \
+            libgcc-9-dev \
+            libpython2.7 \
+            libsqlite3-0 \
+            libstdc++-9-dev \
+            libxml2 \
+            libz3-dev \
+            pkg-config \
+            tzdata \
+            zlib1g-dev
+
+          # Download and install Swift
+          SWIFT_VERSION=5.9.2
+          SWIFT_PLATFORM=ubuntu2204
+          SWIFT_BRANCH=swift-${SWIFT_VERSION}-release
+          SWIFT_URL=https://download.swift.org/${SWIFT_BRANCH}/${SWIFT_PLATFORM}/swift-${SWIFT_VERSION}-${SWIFT_BRANCH}/${SWIFT_PLATFORM}.tar.gz
+
+          curl -fsSL ${SWIFT_URL} -o swift.tar.gz
+          mkdir -p ~/swift
+          tar -xzf swift.tar.gz -C ~/swift --strip-components=1
+          echo "~/swift/usr/bin" >> $GITHUB_PATH
 
       - name: Cache SwiftFormat build
         id: cache-swiftformat
@@ -34,8 +61,8 @@ jobs:
         run: |
           git clone https://github.com/nicklockwood/SwiftFormat.git
           cd SwiftFormat
-          swift build -c release
-          cp .build/release/swiftformat /usr/local/bin/
+          ~/swift/usr/bin/swift build -c release
+          sudo cp .build/release/swiftformat /usr/local/bin/
 
       - name: Cache SwiftLint binary
         id: cache-swiftlint
@@ -66,7 +93,7 @@ jobs:
       - name: Run SwiftFormat (Lint Mode)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
-            echo "$CHANGED_FILES" | xargs swiftformat --lint
+            echo "$CHANGED_FILES" | xargs /usr/local/bin/swiftformat --lint
           else
             echo "No Swift files changed."
           fi
@@ -75,7 +102,7 @@ jobs:
         run: |
           if [ -n "$CHANGED_FILES" ]; then
             for file in $CHANGED_FILES; do
-              swiftlint lint --path "$file"
+              /usr/local/bin/swiftlint lint --path "$file"
             done
           else
             echo "No Swift files changed."
