@@ -17,15 +17,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: swift-actions/setup-swift@v2
-        with:
-          swift-version: "5.9"
-      - name: Get swift version
+      - name: Install gpg
         run: |
           sudo apt remove gpg
           sudo apt install gnupg1
           curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-          swift --version
+
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+      - name: Get swift version
+        run: swift --version
 
       - name: Cache SwiftFormat build
         id: cache-swiftformat
