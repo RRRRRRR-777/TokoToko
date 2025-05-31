@@ -19,9 +19,8 @@ jobs:
 
       - name: Install gpg
         run: |
-          sudo apt remove gpg
-          sudo apt install gnupg1
-          curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+          sudo apt update
+          sudo apt install -y gnupg
 
       - uses: swift-actions/setup-swift@v2
         with:
