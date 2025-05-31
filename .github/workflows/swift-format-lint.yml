@@ -86,13 +86,14 @@ jobs:
             BASE_BRANCH="main"
           fi
           git fetch origin $BASE_BRANCH
-          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift')
+          # 変更されたファイルをカンマ区切りで1行に設定
+          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift' | tr '\n' ',' | sed 's/,$//')
           echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
 
       - name: Run SwiftFormat (Lint Mode)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
-            echo "$CHANGED_FILES" | xargs /usr/local/bin/swiftformat --lint
+            echo "$CHANGED_FILES" | tr ',' '\n' | xargs -I{} /usr/local/bin/swiftformat --lint "{}"
           else
             echo "No Swift files changed."
           fi
@@ -100,8 +101,10 @@ jobs:
       - name: Run SwiftLint (only on changed files)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
-            for file in $CHANGED_FILES; do
-              /usr/local/bin/swiftlint lint --path "$file"
+            echo "$CHANGED_FILES" | tr ',' '\n' | while read -r file; do
+              if [ -n "$file" ]; then
+                /usr/local/bin/swiftlint lint --path "$file"
+              fi
             done
           else
             echo "No Swift files changed."
