@@ -17,6 +17,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Clear GPG directory
+        run: rm -rf ~/.gnupg
+
       - name: Setup Swift
         uses: fwal/setup-swift@v1
 
