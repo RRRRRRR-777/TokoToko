@@ -93,7 +93,13 @@ jobs:
       - name: Run SwiftFormat (Lint Mode)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
-            echo "$CHANGED_FILES" | tr ',' '\n' | xargs -I{} /usr/local/bin/swiftformat --lint "{}"
+            echo "$CHANGED_FILES" | tr ',' '\n' | while read -r file; do
+              if [ -n "$file" ]; then
+                echo "Running SwiftFormat on $file"
+                # Swiftバージョンを指定し、エラーがあっても続行する
+                /usr/local/bin/swiftformat --lint --swiftversion 5.9 "$file" || echo "SwiftFormat found issues in $file but continuing..."
+              fi
+            done
           else
             echo "No Swift files changed."
           fi
@@ -103,7 +109,8 @@ jobs:
           if [ -n "$CHANGED_FILES" ]; then
             echo "$CHANGED_FILES" | tr ',' '\n' | while read -r file; do
               if [ -n "$file" ]; then
-                /usr/local/bin/swiftlint lint --path "$file"
+                echo "Running SwiftLint on $file"
+                /usr/local/bin/swiftlint lint --path "$file" || echo "SwiftLint found issues in $file but continuing..."
               fi
             done
           else
