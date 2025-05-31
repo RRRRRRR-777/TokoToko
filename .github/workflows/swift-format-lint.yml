@@ -17,36 +17,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Swift
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+      - name: Get swift version
         run: |
-          # Install dependencies
-          sudo apt-get update
-          sudo apt-get install -y \
-            binutils \
-            git \
-            gnupg2 \
-            libc6-dev \
-            libcurl4 \
-            libedit2 \
-            libgcc-9-dev \
-            libpython2.7 \
-            libsqlite3-0 \
-            libstdc++-9-dev \
-            libxml2 \
-            libz3-dev \
-            pkg-config \
-            tzdata \
-            zlib1g-dev
-
-          # Download and install Swift
-          SWIFT_VERSION=5.9.2
-          SWIFT_PLATFORM=ubuntu22.04
-          SWIFT_URL=https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz
-
-          curl -fsSL ${SWIFT_URL} -o swift.tar.gz
-          mkdir -p ~/swift
-          tar -xzf swift.tar.gz -C ~/swift --strip-components=1
-          echo "~/swift/usr/bin" >> $GITHUB_PATH
+          sudo apt remove gpg
+          sudo apt install gnupg1
+          swift --version
 
       - name: Cache SwiftFormat build
         id: cache-swiftformat
