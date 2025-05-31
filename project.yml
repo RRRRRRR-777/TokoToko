@@ -2,7 +2,7 @@ name: TokoToko
 options:
   bundleIdPrefix: com.RRRRRRR777
   deploymentTarget:
-    iOS: 18.1
+    iOS: 15.0
   xcodeVersion: "16.1"
   createIntermediateGroups: true
   usesTabs: false
@@ -35,7 +35,7 @@ targets:
     type: application
     platform: iOS
     deploymentTarget:
-      iOS: 18.1
+      iOS: 15.0
     sources:
       - path: TokoToko
         excludes:
@@ -91,7 +91,7 @@ targets:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget:
-      iOS: 18.1
+      iOS: 15.0
     sources:
       - path: TokoTokoTests
     templates: [CommonSettings]
@@ -108,7 +108,7 @@ targets:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget:
-      iOS: 18.1
+      iOS: 15.0
     sources:
       - path: TokoTokoUITests
     templates: [CommonSettings]

@@ -16,13 +16,6 @@ struct MapView: View {
   @State private var showingLocationPermissionAlert = false
   @State private var showingBackgroundPermissionAlert = false
   @State private var region: MKCoordinateRegion
-  @State private var cameraPosition: MapCameraPosition = .userLocation(
-    followsHeading: true,
-    fallback: .region(
-      MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
-        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-      )))
 
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
@@ -55,33 +48,13 @@ struct MapView: View {
 
       case .authorizedWhenInUse, .authorizedAlways:
         // 許可されている場合
-        Map(position: $cameraPosition) {
-          ForEach(createAnnotationsFromWalks()) { item in
-            Annotation(item.title, coordinate: item.coordinate) {
-              VStack {
-                Image(systemName: item.imageName)
-                  .foregroundColor(.red)
-                  .font(.title)
-
-                Text(item.title)
-                  .font(.caption)
-                  .foregroundColor(.black)
-                  .background(Color.white.opacity(0.7))
-                  .cornerRadius(5)
-              }
-              .onTapGesture {
-                // タップされたときの処理（詳細表示など）
-                if let walk = walks.first(where: { $0.id == item.id }) {
-                  // 詳細画面への遷移などを実装
-                }
-              }
-            }
-          }
+        if #available(iOS 17.0, *) {
+          iOS17MapView(region: $region, walks: walks, locationManager: locationManager)
+            .edgesIgnoringSafeArea(.all)
+        } else {
+          iOS15MapView(region: $region, walks: walks, locationManager: locationManager)
+            .edgesIgnoringSafeArea(.all)
         }
-        .mapControls {
-          MapUserLocationButton()
-        }
-        .edgesIgnoringSafeArea(.all)
 
       @unknown default:
         Text("位置情報の許可状態が不明です")
@@ -142,7 +115,6 @@ struct MapView: View {
       // 現在位置が取得できている場合は、その位置にマップを移動
       if let location = locationManager.currentLocation {
         region = locationManager.region(for: location)
-        cameraPosition = .userLocation(followsHeading: true, fallback: .region(region))
       }
     }
   }
@@ -210,6 +182,135 @@ struct MapView: View {
       .cornerRadius(10)
     }
     .padding()
+  }
+}
+
+// iOS 17以上用のマップビュー
+@available(iOS 17.0, *)
+private struct iOS17MapView: View {
+  @Binding var region: MKCoordinateRegion
+  var walks: [Walk]
+  var locationManager: LocationManager
+  @State private var cameraPosition: MapCameraPosition
+
+  init(region: Binding<MKCoordinateRegion>, walks: [Walk], locationManager: LocationManager) {
+    self._region = region
+    self.walks = walks
+    self.locationManager = locationManager
+    self._cameraPosition = State(
+      initialValue: .userLocation(followsHeading: true, fallback: .region(region.wrappedValue)))
+  }
+
+  var body: some View {
+    Map(position: $cameraPosition) {
+      ForEach(createAnnotationsFromWalks()) { item in
+        Annotation(item.title, coordinate: item.coordinate) {
+          VStack {
+            Image(systemName: item.imageName)
+              .foregroundColor(.red)
+              .font(.title)
+
+            Text(item.title)
+              .font(.caption)
+              .foregroundColor(.black)
+              .background(Color.white.opacity(0.7))
+              .cornerRadius(5)
+          }
+          .onTapGesture {
+            // タップされたときの処理（詳細表示など）
+            if let walk = walks.first(where: { $0.id == item.id }) {
+              // 詳細画面への遷移などを実装
+            }
+          }
+        }
+      }
+    }
+    .mapControls {
+      MapUserLocationButton()
+    }
+    .onAppear {
+      // 現在位置が取得できている場合は、その位置にマップを移動
+      if let location = locationManager.currentLocation {
+        region = locationManager.region(for: location)
+        cameraPosition = .userLocation(followsHeading: true, fallback: .region(region))
+      }
+    }
+    .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+      // 位置情報が更新されたらマップを移動
+      if let location = newLocation {
+        region = locationManager.region(for: location)
+        cameraPosition = .userLocation(followsHeading: true, fallback: .region(region))
+      }
+    }
+  }
+
+  // 記録からマップアノテーションを作成
+  private func createAnnotationsFromWalks() -> [MapItem] {
+    return walks.compactMap { walk in
+      guard let location = walk.location else { return nil }
+      return MapItem(
+        id: walk.id,
+        coordinate: location,
+        title: walk.title,
+        imageName: "mappin.circle.fill"
+      )
+    }
+  }
+}
+
+// iOS 15-16用のマップビュー
+private struct iOS15MapView: View {
+  @Binding var region: MKCoordinateRegion
+  var walks: [Walk]
+  var locationManager: LocationManager
+
+  var body: some View {
+    Map(coordinateRegion: $region, showsUserLocation: true, annotationItems: createAnnotationsFromWalks()) { item in
+      MapAnnotation(coordinate: item.coordinate) {
+        VStack {
+          Image(systemName: item.imageName)
+            .foregroundColor(.red)
+            .font(.title)
+
+          Text(item.title)
+            .font(.caption)
+            .foregroundColor(.black)
+            .background(Color.white.opacity(0.7))
+            .cornerRadius(5)
+        }
+        .onTapGesture {
+          // タップされたときの処理（詳細表示など）
+          if let walk = walks.first(where: { $0.id == item.id }) {
+            // 詳細画面への遷移などを実装
+          }
+        }
+      }
+    }
+    .onAppear {
+      // 現在位置が取得できている場合は、その位置にマップを移動
+      if let location = locationManager.currentLocation {
+        region = locationManager.region(for: location)
+      }
+    }
+    .onChange(of: locationManager.currentLocation) { newLocation in
+      // 位置情報が更新されたらマップを移動
+      if let location = newLocation {
+        region = locationManager.region(for: location)
+      }
+    }
+  }
+
+  // 記録からマップアノテーションを作成
+  private func createAnnotationsFromWalks() -> [MapItem] {
+    return walks.compactMap { walk in
+      guard let location = walk.location else { return nil }
+      return MapItem(
+        id: walk.id,
+        coordinate: location,
+        title: walk.title,
+        imageName: "mappin.circle.fill"
+      )
+    }
   }
 }
 
