@@ -17,11 +17,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Clear GPG directory
-        run: rm -rf ~/.gnupg
-
       - name: Setup Swift
-        uses: fwal/setup-swift@v1
+        uses: swiftwasm/setup-swift@v1
+        with:
+          swift-version: '5.9'
 
       - name: Get Swift Version
         id: get-swift-version
