@@ -17,10 +17,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Manually import Swift signing key
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          curl -fsSL https://swift.org/keys/all-keys.asc | gpg --import
+
       - name: Setup Swift
-        uses: swiftwasm/setup-swift@v1
-        with:
-          swift-version: '5.9'
+        uses: fwal/setup-swift@v1
 
       - name: Get Swift Version
         id: get-swift-version
