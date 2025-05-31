@@ -17,16 +17,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install gpg
-        run: |
-          sudo apt update
-          sudo apt install -y gnupg
-
-      - uses: swift-actions/setup-swift@v2
+      - uses: SwiftyLab/setup-swift@v1
         with:
-          swift-version: "5.9"
-      - name: Get swift version
-        run: swift --version
+          swift-version: '5.0'
 
       - name: Cache SwiftFormat build
         id: cache-swiftformat
