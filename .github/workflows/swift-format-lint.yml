@@ -17,9 +17,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: SwiftyLab/setup-swift@v1
-        with:
-          swift-version: '5.0'
+      - name: Setup Swift
+        uses: fwal/setup-swift@v1
+
+      - name: Get Swift Version
+        id: get-swift-version
+        run: |
+          echo "::set-output name=swift-version::$(swift --version | head -1 | sed 's/^.*Swift version \([0-9]\.[0-9]\.[0-9]\) (.*)$/\1/')"
+        shell: bash
+
+      - name: Get Swift Version
+        run: swift --version
 
       - name: Cache SwiftFormat build
         id: cache-swiftformat
