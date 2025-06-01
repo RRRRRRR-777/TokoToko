@@ -9,7 +9,7 @@ on:
 
 jobs:
   swift-format-lint:
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -19,32 +19,9 @@ jobs:
 
       - name: Set up Swift
         run: |
-          # Install dependencies
-          sudo apt-get update
-          sudo apt-get install -y \
-            binutils \
-            git \
-            gnupg2 \
-            libc6-dev \
-            libcurl4 \
-            libedit2 \
-            libgcc-9-dev \
-            libpython2.7 \
-            libsqlite3-0 \
-            libstdc++-9-dev \
-            libxml2 \
-            libz3-dev \
-            pkg-config \
-            tzdata \
-            zlib1g-dev
-          # Download and install Swift
-          SWIFT_VERSION=5.9.2
-          SWIFT_PLATFORM=ubuntu22.04
-          SWIFT_URL=https://download.swift.org/swift-5.9.2-release/ubuntu2204/swift-5.9.2-RELEASE/swift-5.9.2-RELEASE-ubuntu22.04.tar.gz
-          curl -fsSL ${SWIFT_URL} -o swift.tar.gz
-          mkdir -p ~/swift
-          tar -xzf swift.tar.gz -C ~/swift --strip-components=1
-          echo "~/swift/usr/bin" >> $GITHUB_PATH
+          # Swift is pre-installed on macOS runners
+          swift --version
+          which swift
 
       - name: Cache Swift Format build
         id: cache-swift-format
@@ -58,22 +35,13 @@ jobs:
         run: |
           git clone https://github.com/apple/swift-format.git
           cd swift-format
-          ~/swift/usr/bin/swift build -c release
+          swift build -c release
           sudo cp .build/release/swift-format /usr/local/bin/
 
-      - name: Cache SwiftLint binary
-        id: cache-swiftlint
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/bin/swiftlint
-          key: swiftlint-${{ runner.os }}-0.54.0
-
       - name: Install SwiftLint
-        if: steps.cache-swiftlint.outputs.cache-hit != 'true'
         run: |
-          curl -L -O https://github.com/realm/SwiftLint/releases/download/0.54.0/swiftlint_linux.zip
-          unzip swiftlint_linux.zip
-          sudo mv swiftlint /usr/local/bin
+          # Install SwiftLint using Homebrew
+          brew install swiftlint
 
       - name: Get changed Swift files
         id: changed-files
@@ -112,7 +80,7 @@ jobs:
             for file in $CHANGED_FILES; do
               if [ -n "$file" ]; then
                 echo "Running SwiftLint on $file"
-                /usr/local/bin/swiftlint lint "$file"
+                swiftlint lint "$file"
               fi
             done
             echo "✅ SwiftLint check passed"
