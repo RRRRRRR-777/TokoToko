@@ -66,14 +66,22 @@ jobs:
         run: |
           if [ -n "$CHANGED_FILES" ]; then
             echo "Changed files: $CHANGED_FILES"
-            set -e  # エラーが発生したら即座に終了
+            SWIFTLINT_FAILED=false
             for file in $CHANGED_FILES; do
               if [ -n "$file" ]; then
                 echo "Running SwiftLint on $file"
-                swiftlint lint "$file"
+                if ! swiftlint lint "$file" --strict; then
+                  echo "❌ SwiftLint found errors in $file"
+                  SWIFTLINT_FAILED=true
+                fi
               fi
             done
-            echo "✅ SwiftLint check passed"
+            if [ "$SWIFTLINT_FAILED" = true ]; then
+              echo "❌ SwiftLint check failed due to errors"
+              exit 1
+            else
+              echo "✅ SwiftLint check passed"
+            fi
           else
             echo "No Swift files changed."
           fi
