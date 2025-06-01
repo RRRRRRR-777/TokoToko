@@ -82,7 +82,6 @@ disabled_rules:
 
 # デフォルト無効で有効にするルール
 opt_in_rules:
-  - anyobject_protocol
   - array_init
   - attributes
   - closure_body_length
@@ -163,14 +162,16 @@ opt_in_rules:
   - unavailable_function
   - unneeded_parentheses_in_closure_argument
   - untyped_error_in_catch
-  - unused_import
-  - unused_private_declaration
   - vertical_parameter_alignment_on_call
   #- vertical_whitespace_between_cases # Switch文のケース間に空白行を設けたくないこともあるため
   #- vertical_whitespace_closing_braces # 中括弧を閉じる前に空白行を設けたいことがあるため
   #- vertical_whitespace_opening_braces # 中括弧を開く前に空白行を設けたいことがあるため
   - xct_specific_matcher
   - yoda_condition
+
+# アナライザールール（swiftlint analyzeで実行されるルール）
+analyzer_rules:
+  - unused_import
 
 # 対象のファイル・フォルダ
 # デフォルトからフォルダ名を変更していない場合、プロジェクト名と同名のフォルダを指定すればいい
