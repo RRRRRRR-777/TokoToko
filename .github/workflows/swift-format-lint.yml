@@ -45,12 +45,13 @@ jobs:
           mkdir -p ~/swift
           tar -xzf swift.tar.gz -C ~/swift --strip-components=1
           echo "~/swift/usr/bin" >> $GITHUB_PATH
+
       - name: Cache SwiftFormat build
         id: cache-swiftformat
         uses: actions/cache@v3
         with:
-          path: SwiftFormat/.build/release/swiftformat
-          key: swiftformat-build-${{ runner.os }}-${{ hashFiles('**/Package.resolved') }}
+          path: /usr/local/bin/swiftformat
+          key: swiftformat-build-${{ runner.os }}-5.9.2
 
       - name: Install SwiftFormat
         if: steps.cache-swiftformat.outputs.cache-hit != 'true'
@@ -64,7 +65,7 @@ jobs:
         id: cache-swiftlint
         uses: actions/cache@v3
         with:
-          path: swiftlint
+          path: /usr/local/bin/swiftlint
           key: swiftlint-${{ runner.os }}-0.54.0
 
       - name: Install SwiftLint
@@ -83,20 +84,22 @@ jobs:
             BASE_BRANCH="main"
           fi
           git fetch origin $BASE_BRANCH
-          # 変更されたファイルをカンマ区切りで1行に設定
-          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift' | tr '\n' ',' | sed 's/,$//')
+          # 変更されたファイルをスペース区切りで設定
+          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift' | tr '\n' ' ')
           echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
 
       - name: Run SwiftFormat (Lint Mode)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
-            echo "$CHANGED_FILES" | tr ',' '\n' | while read -r file; do
+            echo "Changed files: $CHANGED_FILES"
+            set -e  # エラーが発生したら即座に終了
+            for file in $CHANGED_FILES; do
               if [ -n "$file" ]; then
                 echo "Running SwiftFormat on $file"
-                # Swiftバージョンを指定し、エラーがあっても続行する
-                /usr/local/bin/swiftformat --lint --swiftversion 5.9 "$file" || echo "SwiftFormat found issues in $file but continuing..."
+                /usr/local/bin/swiftformat --lint --swiftversion 5.9 "$file"
               fi
             done
+            echo "✅ SwiftFormat check passed"
           else
             echo "No Swift files changed."
           fi
@@ -104,12 +107,15 @@ jobs:
       - name: Run SwiftLint (only on changed files)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
-            echo "$CHANGED_FILES" | tr ',' '\n' | while read -r file; do
+            echo "Changed files: $CHANGED_FILES"
+            set -e  # エラーが発生したら即座に終了
+            for file in $CHANGED_FILES; do
               if [ -n "$file" ]; then
                 echo "Running SwiftLint on $file"
-                /usr/local/bin/swiftlint lint --path "$file" || echo "SwiftLint found issues in $file but continuing..."
+                /usr/local/bin/swiftlint lint "$file"
               fi
             done
+            echo "✅ SwiftLint check passed"
           else
             echo "No Swift files changed."
           fi
