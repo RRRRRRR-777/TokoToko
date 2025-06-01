@@ -23,17 +23,10 @@ jobs:
           swift --version
           which swift
 
-      - name: Cache Swift Format build
-        id: cache-swift-format
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/bin/swift-format
-          key: swift-format-build-${{ runner.os }}-5.9.2
-
       - name: Install Swift Format
-        if: steps.cache-swift-format.outputs.cache-hit != 'true'
         run: |
           brew install swift-format
+          echo "SWIFT_FORMAT_PATH=$(which swift-format)" >> $GITHUB_ENV
 
       - name: Install SwiftLint
         run: |
@@ -61,7 +54,7 @@ jobs:
             for file in $CHANGED_FILES; do
               if [ -n "$file" ]; then
                 echo "Running Swift Format on $file"
-                /usr/local/bin/swift-format lint --configuration .swift-format "$file"
+                $SWIFT_FORMAT_PATH lint --configuration .swift-format "$file"
               fi
             done
             echo "✅ Swift Format check passed"
