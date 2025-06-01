@@ -46,20 +46,20 @@ jobs:
           tar -xzf swift.tar.gz -C ~/swift --strip-components=1
           echo "~/swift/usr/bin" >> $GITHUB_PATH
 
-      - name: Cache SwiftFormat build
-        id: cache-swiftformat
+      - name: Cache Swift Format build
+        id: cache-swift-format
         uses: actions/cache@v3
         with:
-          path: /usr/local/bin/swiftformat
-          key: swiftformat-build-${{ runner.os }}-5.9.2
+          path: /usr/local/bin/swift-format
+          key: swift-format-build-${{ runner.os }}-5.9.2
 
-      - name: Install SwiftFormat
-        if: steps.cache-swiftformat.outputs.cache-hit != 'true'
+      - name: Install Swift Format
+        if: steps.cache-swift-format.outputs.cache-hit != 'true'
         run: |
-          git clone https://github.com/nicklockwood/SwiftFormat.git
-          cd SwiftFormat
+          git clone https://github.com/apple/swift-format.git
+          cd swift-format
           ~/swift/usr/bin/swift build -c release
-          sudo cp .build/release/swiftformat /usr/local/bin/
+          sudo cp .build/release/swift-format /usr/local/bin/
 
       - name: Cache SwiftLint binary
         id: cache-swiftlint
@@ -88,18 +88,18 @@ jobs:
           FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift' | tr '\n' ' ')
           echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
 
-      - name: Run SwiftFormat (Lint Mode)
+      - name: Run Swift Format (Lint Mode)
         run: |
           if [ -n "$CHANGED_FILES" ]; then
             echo "Changed files: $CHANGED_FILES"
             set -e  # エラーが発生したら即座に終了
             for file in $CHANGED_FILES; do
               if [ -n "$file" ]; then
-                echo "Running SwiftFormat on $file"
-                /usr/local/bin/swiftformat --lint --swiftversion 5.9 "$file"
+                echo "Running Swift Format on $file"
+                /usr/local/bin/swift-format lint "$file"
               fi
             done
-            echo "✅ SwiftFormat check passed"
+            echo "✅ Swift Format check passed"
           else
             echo "No Swift files changed."
           fi
