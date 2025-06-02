@@ -77,24 +77,16 @@ jobs:
         run: |
           if [ -n "$CHANGED_FILES" ]; then
             echo "Changed files: $CHANGED_FILES"
-            # SwiftLintの結果を一時ファイルに保存
-            TEMP_OUTPUT=$(mktemp)
-
-            # 変更されたファイルのリストを作成
-            echo "$CHANGED_FILES" | tr ' ' '\n' | grep -v '^$' > /tmp/changed_files.txt
-
-            if [ -s /tmp/changed_files.txt ]; then
-              echo "Running SwiftLint on changed files"
-              # SwiftLintを実行してcheckstyle形式で出力
-              swiftlint lint --config .swiftlint.yml --reporter checkstyle --path-list /tmp/changed_files.txt > "$TEMP_OUTPUT" 2>&1 || true
-
-              # reviewdogに結果を渡す
-              if [ -s "$TEMP_OUTPUT" ]; then
-                cat "$TEMP_OUTPUT" | reviewdog -f=checkstyle -name="swiftlint" -reporter=github-pr-check -filter-mode=added || true
+            # 各ファイルに対してSwiftLintを実行
+            for file in $CHANGED_FILES; do
+              if [ -n "$file" ] && [ -f "$file" ]; then
+                echo "Running SwiftLint on $file"
+                # SwiftLintの結果を直接reviewdogに渡す（JSON形式）
+                swiftlint lint "$file" --config .swiftlint.yml --reporter json 2>/dev/null | \
+                  jq -r '.[] | "\(.file):\(.line):\(.column): \(.severity): \(.reason) (\(.rule_id))"' 2>/dev/null | \
+                  reviewdog -f=diff -name="swiftlint-$file" -reporter=github-pr-check -filter-mode=added || true
               fi
-            fi
-
-            rm -f "$TEMP_OUTPUT" /tmp/changed_files.txt
+            done
             echo "✅ SwiftLint check completed"
           else
             echo "No Swift files changed."
