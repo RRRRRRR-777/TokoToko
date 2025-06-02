@@ -77,15 +77,15 @@ jobs:
         run: |
           if [ -n "$CHANGED_FILES" ]; then
             echo "Changed files: $CHANGED_FILES"
-            # SwiftLintの結果をreviewdogに渡す
+            # SwiftLintの結果をreviewdogに渡す（checkstyle形式で出力）
             (
               for file in $CHANGED_FILES; do
                 if [ -n "$file" ]; then
                   echo "Running SwiftLint on $file"
-                  swiftlint lint "$file" --reporter json 2>&1 || true
+                  swiftlint lint "$file" --reporter checkstyle 2>&1 || true
                 fi
               done
-            ) | reviewdog -f=swiftlint -name="swiftlint" -reporter=github-pr-check -filter-mode=added
+            ) | reviewdog -f=checkstyle -name="swiftlint" -reporter=github-pr-check -filter-mode=added
             echo "✅ SwiftLint check completed"
           else
             echo "No Swift files changed."
