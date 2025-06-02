@@ -49,10 +49,10 @@ struct MapView: View {
       case .authorizedWhenInUse, .authorizedAlways:
         // 許可されている場合
         if #available(iOS 17.0, *) {
-          iOS17MapView(region: $region, walks: walks, locationManager: locationManager)
+          IOS17MapView(region: $region, walks: walks, locationManager: locationManager)
             .edgesIgnoringSafeArea(.all)
         } else {
-          iOS15MapView(region: $region, walks: walks, locationManager: locationManager)
+          IOS15MapView(region: $region, walks: walks, locationManager: locationManager)
             .edgesIgnoringSafeArea(.all)
         }
 
@@ -108,8 +108,7 @@ struct MapView: View {
 
     // 許可されている場合は位置情報の更新を開始
     if locationAuthorizationStatus == .authorizedWhenInUse
-      || locationAuthorizationStatus == .authorizedAlways
-    {
+      || locationAuthorizationStatus == .authorizedAlways {
       locationManager.startUpdatingLocation()
 
       // 現在位置が取得できている場合は、その位置にマップを移動
@@ -121,8 +120,10 @@ struct MapView: View {
 
   // 記録からマップアノテーションを作成
   private func createAnnotationsFromWalks() -> [MapItem] {
-    return walks.compactMap { walk in
-      guard let location = walk.location else { return nil }
+    walks.compactMap { walk in
+      guard let location = walk.location else {
+        return nil
+      }
       return MapItem(
         id: walk.id,
         coordinate: location,
@@ -187,7 +188,7 @@ struct MapView: View {
 
 // iOS 17以上用のマップビュー
 @available(iOS 17.0, *)
-private struct iOS17MapView: View {
+private struct IOS17MapView: View {
   @Binding var region: MKCoordinateRegion
   var walks: [Walk]
   var locationManager: LocationManager
@@ -235,7 +236,7 @@ private struct iOS17MapView: View {
         cameraPosition = .userLocation(followsHeading: true, fallback: .region(region))
       }
     }
-    .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+    .onChange(of: locationManager.currentLocation) { _, newLocation in
       // 位置情報が更新されたらマップを移動
       if let location = newLocation {
         region = locationManager.region(for: location)
@@ -246,8 +247,10 @@ private struct iOS17MapView: View {
 
   // 記録からマップアノテーションを作成
   private func createAnnotationsFromWalks() -> [MapItem] {
-    return walks.compactMap { walk in
-      guard let location = walk.location else { return nil }
+    walks.compactMap { walk in
+      guard let location = walk.location else {
+        return nil
+      }
       return MapItem(
         id: walk.id,
         coordinate: location,
@@ -259,7 +262,7 @@ private struct iOS17MapView: View {
 }
 
 // iOS 15-16用のマップビュー
-private struct iOS15MapView: View {
+private struct IOS15MapView: View {
   @Binding var region: MKCoordinateRegion
   var walks: [Walk]
   var locationManager: LocationManager
@@ -302,8 +305,10 @@ private struct iOS15MapView: View {
 
   // 記録からマップアノテーションを作成
   private func createAnnotationsFromWalks() -> [MapItem] {
-    return walks.compactMap { walk in
-      guard let location = walk.location else { return nil }
+    walks.compactMap { walk in
+      guard let location = walk.location else {
+        return nil
+      }
       return MapItem(
         id: walk.id,
         coordinate: location,
@@ -322,8 +327,10 @@ struct MapItem: Identifiable {
   let imageName: String
 
   init(
-    id: UUID = UUID(), coordinate: CLLocationCoordinate2D, title: String,
-    imageName: String = "mappin.circle.fill"
+    coordinate: CLLocationCoordinate2D,
+    title: String,
+    imageName: String = "mappin.circle.fill",
+    id: UUID = UUID()
   ) {
     self.id = id
     self.coordinate = coordinate
