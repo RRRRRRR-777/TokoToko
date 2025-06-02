@@ -120,15 +120,15 @@ struct MapView: View {
 
   // 記録からマップアノテーションを作成
   private func createAnnotationsFromWalks() -> [MapItem] {
-    walks.compactMap { walk in
+    walks.compactMap { walk -> MapItem? in
       guard let location = walk.location else {
         return nil
       }
       return MapItem(
-        id: walk.id,
         coordinate: location,
         title: walk.title,
-        imageName: "mappin.circle.fill"
+        imageName: "mappin.circle.fill",
+        id: walk.id
       )
     }
   }
@@ -247,15 +247,15 @@ private struct IOS17MapView: View {
 
   // 記録からマップアノテーションを作成
   private func createAnnotationsFromWalks() -> [MapItem] {
-    walks.compactMap { walk in
+    walks.compactMap { walk -> MapItem? in
       guard let location = walk.location else {
         return nil
       }
       return MapItem(
-        id: walk.id,
         coordinate: location,
         title: walk.title,
-        imageName: "mappin.circle.fill"
+        imageName: "mappin.circle.fill",
+        id: walk.id
       )
     }
   }
@@ -305,15 +305,15 @@ private struct IOS15MapView: View {
 
   // 記録からマップアノテーションを作成
   private func createAnnotationsFromWalks() -> [MapItem] {
-    walks.compactMap { walk in
+    walks.compactMap { walk -> MapItem? in
       guard let location = walk.location else {
         return nil
       }
       return MapItem(
-        id: walk.id,
         coordinate: location,
         title: walk.title,
-        imageName: "mappin.circle.fill"
+        imageName: "mappin.circle.fill",
+        id: walk.id
       )
     }
   }
