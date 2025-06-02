@@ -41,22 +41,42 @@ struct DetailView: View {
               .font(.caption)
               .foregroundColor(.secondary)
 
-            // マップ表示
-            Map(
-              initialPosition: .region(
-                MKCoordinateRegion(
-                  center: location,
-                  span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                ))
-            ) {
-              Annotation(walk.title, coordinate: location) {
-                Image(systemName: "mappin.circle.fill")
-                  .foregroundColor(.red)
-                  .font(.title)
+            // iOS 17以上と未満で分岐
+            if #available(iOS 17.0, *) {
+              // iOS 17以上用のマップ表示
+              Map(
+                initialPosition: .region(
+                  MKCoordinateRegion(
+                    center: location,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                  ))
+              ) {
+                Annotation(walk.title, coordinate: location) {
+                  Image(systemName: "mappin.circle.fill")
+                    .foregroundColor(.red)
+                    .font(.title)
+                }
               }
+              .frame(height: 200)
+              .cornerRadius(10)
+            } else {
+              // iOS 15-16用のマップ表示
+              let region = MKCoordinateRegion(
+                center: location,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+              )
+              Map(coordinateRegion: .constant(region), annotationItems: [
+                MapItem(coordinate: location, title: walk.title)
+              ]) { item in
+                MapAnnotation(coordinate: item.coordinate) {
+                  Image(systemName: "mappin.circle.fill")
+                    .foregroundColor(.red)
+                    .font(.title)
+                }
+              }
+              .frame(height: 200)
+              .cornerRadius(10)
             }
-            .frame(height: 200)
-            .cornerRadius(10)
           }
         }
 

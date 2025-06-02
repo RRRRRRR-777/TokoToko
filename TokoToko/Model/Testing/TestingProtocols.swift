@@ -36,7 +36,10 @@ public class ProductionUITestingProvider: UITestingProvider {
 public class UITestUITestingProvider: UITestingProvider {
   public var isUITesting: Bool { true }
   public var isMockLoggedIn: Bool { ProcessInfo.processInfo.arguments.contains("--logged-in") }
-  public var hasDeepLink: Bool { ProcessInfo.processInfo.arguments.contains("--deep-link") }
+  public var hasDeepLink: Bool {
+    let args = ProcessInfo.processInfo.arguments
+    return args.contains("--deep-link") || args.contains("--destination")
+  }
 
   public var deepLinkDestination: String? {
     let args = ProcessInfo.processInfo.arguments
