@@ -207,6 +207,13 @@ class WalkManager: NSObject, ObservableObject {
     }
   }
 
+  // 歩数の取得
+  var totalSteps: Int {
+
+    // 仮の実装。実際には歩数計APIやセンサーから取得する必要があります。
+    return Int(elapsedTime / 2) // 1秒あたり0.5歩と仮定
+  }
+
   // 距離を文字列で取得
   var distanceString: String {
     if distance >= 1000 {

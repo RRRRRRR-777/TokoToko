@@ -19,6 +19,7 @@ struct WalkControlPanel: View {
       if walkManager.isWalking {
         WalkInfoDisplay(
           elapsedTime: walkManager.elapsedTimeString,
+          totalSteps: walkManager.totalSteps,
           distance: walkManager.distanceString
         )
         .padding()
@@ -38,7 +39,8 @@ struct WalkControlPanel: View {
             }
           }) {
             HStack {
-              Image(systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
+              Image(
+                systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
               Text(walkManager.currentWalk?.status == .paused ? "再開" : "一時停止")
             }
             .frame(maxWidth: .infinity)
@@ -119,6 +121,7 @@ struct WalkControlPanel: View {
 
 struct WalkInfoDisplay: View {
   let elapsedTime: String
+  let totalSteps: Int
   let distance: String
 
   var body: some View {
@@ -128,6 +131,18 @@ struct WalkInfoDisplay: View {
           .font(.caption)
           .foregroundColor(.secondary)
         Text(elapsedTime)
+          .font(.title2)
+          .fontWeight(.bold)
+          .foregroundColor(.primary)
+      }
+
+      Spacer()
+
+      VStack(alignment: .center, spacing: 4) {
+        Text("歩数")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        Text(String(totalSteps) + "歩")
           .font(.title2)
           .fontWeight(.bold)
           .foregroundColor(.primary)
@@ -155,7 +170,7 @@ struct WalkInfoDisplay: View {
 
     Divider()
 
-    WalkInfoDisplay(elapsedTime: "12:34", distance: "1.2 km")
+    WalkInfoDisplay(elapsedTime: "12:34", totalSteps: 1234, distance: "1.2 km")
       .padding()
       .background(Color(.systemGray6))
       .cornerRadius(12)

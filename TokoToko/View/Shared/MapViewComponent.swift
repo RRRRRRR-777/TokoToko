@@ -44,7 +44,9 @@ private struct iOS17MapView: View {
   var locationManager: LocationManager
   @State private var cameraPosition: MapCameraPosition
 
-  init(region: Binding<MKCoordinateRegion>, annotations: [MapItem], locationManager: LocationManager) {
+  init(
+    region: Binding<MKCoordinateRegion>, annotations: [MapItem], locationManager: LocationManager
+  ) {
     self._region = region
     self.annotations = annotations
     self.locationManager = locationManager
