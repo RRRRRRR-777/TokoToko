@@ -82,7 +82,7 @@ struct SettingsView: View {
   }
 
   // UIテスト用のモックユーザー
-  private var mockUser: User? {
+  private var mockUser: FirebaseAuth.User? {
     if isUITesting && hasUserInfo {
       // 実際の環境では、FirebaseAuthのテスト用ユーティリティを使用してモックユーザーを作成します
       // このサンプルでは簡易的な実装のみを示しています

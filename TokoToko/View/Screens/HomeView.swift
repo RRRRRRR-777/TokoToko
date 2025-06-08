@@ -6,79 +6,233 @@
 //
 
 import CoreLocation
+import MapKit
 import SwiftUI
 
 struct HomeView: View {
+  @StateObject private var walkManager = WalkManager.shared
   @State private var walks: [Walk] = []
   @State private var isLoading = false
-  @State private var showingAddWalkView = false
-  @State private var newWalkTitle = ""
-  @State private var newWalkDescription = ""
-  @State private var useCurrentLocation = false
+  @State private var region: MKCoordinateRegion
 
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
   @State private var currentLocation: CLLocation?
+  @State private var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
 
   // リポジトリ
   private let walkRepository = WalkRepository.shared
 
+  init() {
+    // 東京駅をデフォルト位置に
+    _region = State(
+      initialValue: MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+      ))
+  }
+
   var body: some View {
-    List {
-      ForEach(walks) { walk in
-        NavigationLink(destination: DetailView(walk: walk)) {
-          WalkRow(walk: walk)
-        }
+    VStack(spacing: 0) {
+      // マップ表示エリア
+      mapSection
+        .frame(height: 300)
+
+      // 散歩コントロールパネル
+      VStack(spacing: 16) {
+        WalkControlPanel(walkManager: walkManager)
+          .padding(.horizontal)
+
+        Divider()
+
+        // 散歩履歴リスト
+        walkHistorySection
       }
     }
     .navigationTitle("TokoToko")
-    .toolbar {
-      Button(action: { showingAddWalkView = true }) {
-        Label("記録追加", systemImage: "plus")
-      }
-      .accessibilityIdentifier("記録追加")
-    }
-    .sheet(isPresented: $showingAddWalkView) {
-      // 新規記録追加フォーム
-      VStack {
-        Text("新規記録")
-          .font(.headline)
-          .padding()
-
-        Form {
-          TextField("タイトル", text: $newWalkTitle)
-            .accessibilityIdentifier("タイトル")
-          TextField("説明", text: $newWalkDescription)
-            .accessibilityIdentifier("説明")
-          Toggle("現在位置を使用", isOn: $useCurrentLocation)
-            .accessibilityIdentifier("現在位置を使用")
-        }
-
-        HStack {
-          Button("キャンセル") {
-            resetForm()
-            showingAddWalkView = false
-          }
-          .accessibilityIdentifier("キャンセル")
-
-          Spacer()
-
-          Button("保存") {
-            if !newWalkTitle.isEmpty {
-              saveNewWalk()
-            }
-          }
-          .accessibilityIdentifier("保存")
-          .disabled(newWalkTitle.isEmpty)
-        }
-        .padding()
-      }
-    }
+    .navigationBarTitleDisplayMode(.large)
     .onAppear {
       loadWalks()
       setupLocationManager()
     }
     .loadingOverlay(isLoading: isLoading)
+  }
+
+  // マップセクション
+  private var mapSection: some View {
+    ZStack {
+      // 位置情報の許可状態に応じて表示を切り替え
+      switch locationAuthorizationStatus {
+      case .notDetermined:
+        requestPermissionView
+
+      case .restricted, .denied:
+        permissionDeniedView
+
+      case .authorizedWhenInUse, .authorizedAlways:
+        MapViewComponent(
+          region: region,
+          annotations: createMapAnnotations()
+        )
+        .onTapGesture {
+          // マップタップで現在位置に移動
+          if let location = currentLocation {
+            withAnimation(.easeInOut(duration: 0.5)) {
+              region = locationManager.region(for: location)
+            }
+          }
+        }
+
+      @unknown default:
+        Text("位置情報の許可状態が不明です")
+          .foregroundColor(.secondary)
+      }
+
+      // 散歩中のオーバーレイ
+      if walkManager.isWalking {
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            walkingIndicator
+              .padding()
+          }
+        }
+      }
+    }
+    .background(Color(.systemGray6))
+    .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
+  }
+
+  // 散歩中インジケーター
+  private var walkingIndicator: some View {
+    HStack(spacing: 8) {
+      Circle()
+        .fill(Color.red)
+        .frame(width: 8, height: 8)
+        .scaleEffect(walkManager.isWalking ? 1.0 : 0.5)
+        .animation(.easeInOut(duration: 1.0).repeatForever(), value: walkManager.isWalking)
+
+      Text("記録中")
+        .font(.caption)
+        .fontWeight(.medium)
+    }
+    .padding(.horizontal, 12)
+    .padding(.vertical, 6)
+    .background(Color.white.opacity(0.9))
+    .cornerRadius(16)
+    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+  }
+
+  // 散歩履歴セクション
+  private var walkHistorySection: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Text("散歩履歴")
+          .font(.headline)
+          .padding(.horizontal)
+
+        Spacer()
+
+        if !walks.isEmpty {
+          NavigationLink("すべて見る", destination: WalkHistoryView())
+            .font(.caption)
+            .padding(.horizontal)
+        }
+      }
+
+      if walks.isEmpty {
+        VStack(spacing: 12) {
+          Image(systemName: "figure.walk.circle")
+            .font(.system(size: 40))
+            .foregroundColor(.secondary)
+
+          Text("まだ散歩記録がありません")
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+
+          Text("「新しい散歩を開始」ボタンで最初の散歩を記録しましょう！")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+      } else {
+        ScrollView {
+          LazyVStack(spacing: 8) {
+            ForEach(walks.prefix(5)) { walk in
+              NavigationLink(destination: DetailView(walk: walk)) {
+                WalkRow(walk: walk)
+                  .padding(.horizontal)
+              }
+              .buttonStyle(PlainButtonStyle())
+            }
+          }
+        }
+        .frame(maxHeight: 200)
+      }
+    }
+  }
+
+  // 位置情報の許可を求めるビュー
+  private var requestPermissionView: some View {
+    VStack(spacing: 16) {
+      Image(systemName: "location.circle")
+        .font(.system(size: 60))
+        .foregroundColor(.blue)
+
+      VStack(spacing: 8) {
+        Text("位置情報の使用許可が必要です")
+          .font(.headline)
+
+        Text("現在地を表示し、散歩ルートを記録するために位置情報を使用します。")
+          .font(.caption)
+          .multilineTextAlignment(.center)
+          .foregroundColor(.secondary)
+      }
+
+      Button("位置情報を許可する") {
+        locationManager.requestWhenInUseAuthorization()
+      }
+      .padding(.horizontal, 20)
+      .padding(.vertical, 8)
+      .background(Color.blue)
+      .foregroundColor(.white)
+      .cornerRadius(8)
+    }
+    .padding()
+  }
+
+  // 位置情報の許可が拒否された場合のビュー
+  private var permissionDeniedView: some View {
+    VStack(spacing: 16) {
+      Image(systemName: "location.slash")
+        .font(.system(size: 60))
+        .foregroundColor(.red)
+
+      VStack(spacing: 8) {
+        Text("位置情報へのアクセスが拒否されています")
+          .font(.headline)
+
+        Text("設定アプリから位置情報へのアクセスを許可してください。")
+          .font(.caption)
+          .multilineTextAlignment(.center)
+          .foregroundColor(.secondary)
+      }
+
+      Button("設定を開く") {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+          UIApplication.shared.open(url)
+        }
+      }
+      .padding(.horizontal, 20)
+      .padding(.vertical, 8)
+      .background(Color.blue)
+      .foregroundColor(.white)
+      .cornerRadius(8)
+    }
+    .padding()
   }
 
   // 記録の読み込み
@@ -88,64 +242,90 @@ struct HomeView: View {
       isLoading = false
       switch result {
       case .success(let fetchedWalks):
-        self.walks = fetchedWalks
+        self.walks = fetchedWalks.sorted { $0.createdAt > $1.createdAt }
       case .failure(let error):
         print("Error loading walks: \(error)")
-      // エラー処理をここに追加
       }
     }
-  }
-
-  // 新規記録の保存
-  private func saveNewWalk() {
-    isLoading = true
-
-    // 現在位置を使用する場合は、locationManagerから位置情報を取得
-    var location: CLLocationCoordinate2D? = nil
-    if useCurrentLocation, let currentLocation = currentLocation {
-      location = currentLocation.coordinate
-    }
-
-    walkRepository.createWalk(
-      title: newWalkTitle,
-      description: newWalkDescription,
-      location: location
-    ) { result in
-      isLoading = false
-      switch result {
-      case .success(_):
-        // フォームをリセットして閉じる
-        resetForm()
-        showingAddWalkView = false
-        // 記録リストを更新
-        loadWalks()
-      case .failure(let error):
-        print("Error saving walk: \(error)")
-      // エラー処理をここに追加
-      }
-    }
-  }
-
-  // フォームのリセット
-  private func resetForm() {
-    newWalkTitle = ""
-    newWalkDescription = ""
-    useCurrentLocation = false
   }
 
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
-    // 位置情報の許可状態を確認
-    let status = locationManager.checkAuthorizationStatus()
+    locationAuthorizationStatus = locationManager.checkAuthorizationStatus()
+    currentLocation = locationManager.currentLocation
 
-    // 許可されている場合は位置情報の更新を開始
-    if status == .authorizedWhenInUse || status == .authorizedAlways {
+    if locationAuthorizationStatus == .authorizedWhenInUse
+      || locationAuthorizationStatus == .authorizedAlways {
       locationManager.startUpdatingLocation()
-      currentLocation = locationManager.currentLocation
-    } else if status == .notDetermined {
-      // まだ決定されていない場合は許可を求める
-      locationManager.requestWhenInUseAuthorization()
+
+      if let location = locationManager.currentLocation {
+        region = locationManager.region(for: location)
+      }
     }
+  }
+
+  // マップアノテーションを作成
+  private func createMapAnnotations() -> [MapItem] {
+    var annotations: [MapItem] = []
+
+    // 完了した散歩の開始地点を表示
+    for walk in walks.prefix(10) {
+      if let location = walk.location {
+        annotations.append(MapItem(
+          coordinate: location,
+          title: walk.title,
+          imageName: "mappin.circle.fill",
+          id: walk.id
+        ))
+      }
+    }
+
+    // 現在の散歩の軌跡を表示
+    if let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty {
+      for (index, location) in currentWalk.locations.enumerated() {
+        let isStart = index == 0
+        let isEnd = index == currentWalk.locations.count - 1
+
+        annotations.append(MapItem(
+          coordinate: location.coordinate,
+          title: isStart ? "開始地点" : (isEnd ? "現在地" : ""),
+          imageName: isStart ? "play.circle.fill" : (isEnd ? "location.fill" : "circle.fill"),
+          id: UUID()
+        ))
+      }
+    }
+
+    return annotations
+  }
+}
+
+// 角の丸めを指定するための拡張
+extension View {
+  func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+    clipShape(RoundedCorner(radius: radius, corners: corners))
+  }
+}
+
+struct RoundedCorner: Shape {
+  var radius: CGFloat = .infinity
+  var corners: UIRectCorner = .allCorners
+
+  func path(in rect: CGRect) -> Path {
+    let path = UIBezierPath(
+      roundedRect: rect,
+      byRoundingCorners: corners,
+      cornerRadii: CGSize(width: radius, height: radius)
+    )
+    return Path(path.cgPath)
+  }
+}
+
+// 散歩履歴の詳細画面（プレースホルダー）
+struct WalkHistoryView: View {
+  var body: some View {
+    Text("散歩履歴の詳細画面")
+      .navigationTitle("散歩履歴")
+      .navigationBarTitleDisplayMode(.large)
   }
 }
 
