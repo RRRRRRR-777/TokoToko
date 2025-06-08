@@ -33,26 +33,45 @@ struct HomeView: View {
   }
 
   var body: some View {
-    VStack(spacing: 0) {
-      // マップ表示エリア
+    ZStack {
       mapSection
-        .frame(height: 300)
+        .ignoresSafeArea(.all, edges: .all)
 
-      // 散歩コントロールパネル
-      VStack(spacing: 16) {
-        WalkControlPanel(walkManager: walkManager)
-          .padding(.horizontal)
+      VStack {
+        Spacer()
+        VStack(spacing: 0) {
+          // 散歩中の情報表示（散歩中のみ）
+          if walkManager.isWalking {
+            WalkInfoDisplay(
+              elapsedTime: walkManager.elapsedTimeString,
+              totalSteps: walkManager.totalSteps,
+              distance: walkManager.distanceString
+            )
+            .padding()
+            .background(Color.white.opacity(0.95))
+            .cornerRadius(16, corners: [.topLeft, .topRight])
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
+          }
 
-        Divider()
-
-        // 散歩履歴リスト
-        walkHistorySection
+          // 散歩開始ボタンエリア
+          if walkManager.isWalking {
+            WalkControlPanel(walkManager: walkManager)
+              .padding(.horizontal, 20)
+              .padding(.vertical, 16)
+              .background(Color.white.opacity(0.95))
+              .cornerRadius(0, corners: [.bottomLeft, .bottomRight])
+              .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
+          } else {
+            WalkControlPanel(walkManager: walkManager)
+              .padding(.bottom, 20)
+          }
+        }
+        .padding(.bottom, getSafeAreaInsets().bottom)
       }
     }
-    .navigationTitle("TokoToko")
-    .navigationBarTitleDisplayMode(.large)
+    .navigationBarHidden(true)
+    .ignoresSafeArea(.all, edges: .top)
     .onAppear {
-      loadWalks()
       setupLocationManager()
     }
     .loadingOverlay(isLoading: isLoading)
@@ -101,7 +120,6 @@ struct HomeView: View {
       }
     }
     .background(Color(.systemGray6))
-    .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
   }
 
   // 散歩中インジケーター
@@ -255,13 +273,24 @@ struct HomeView: View {
     currentLocation = locationManager.currentLocation
 
     if locationAuthorizationStatus == .authorizedWhenInUse
-      || locationAuthorizationStatus == .authorizedAlways {
+      || locationAuthorizationStatus == .authorizedAlways
+    {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
         region = locationManager.region(for: location)
       }
     }
+  }
+
+  // セーフエリアのインセットを取得
+  private func getSafeAreaInsets() -> UIEdgeInsets {
+    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+      let window = windowScene.windows.first
+    else {
+      return UIEdgeInsets()
+    }
+    return window.safeAreaInsets
   }
 
   // マップアノテーションを作成
@@ -271,12 +300,13 @@ struct HomeView: View {
     // 完了した散歩の開始地点を表示
     for walk in walks.prefix(10) {
       if let location = walk.location {
-        annotations.append(MapItem(
-          coordinate: location,
-          title: walk.title,
-          imageName: "mappin.circle.fill",
-          id: walk.id
-        ))
+        annotations.append(
+          MapItem(
+            coordinate: location,
+            title: walk.title,
+            imageName: "mappin.circle.fill",
+            id: walk.id
+          ))
       }
     }
 
@@ -286,12 +316,13 @@ struct HomeView: View {
         let isStart = index == 0
         let isEnd = index == currentWalk.locations.count - 1
 
-        annotations.append(MapItem(
-          coordinate: location.coordinate,
-          title: isStart ? "開始地点" : (isEnd ? "現在地" : ""),
-          imageName: isStart ? "play.circle.fill" : (isEnd ? "location.fill" : "circle.fill"),
-          id: UUID()
-        ))
+        annotations.append(
+          MapItem(
+            coordinate: location.coordinate,
+            title: isStart ? "開始地点" : (isEnd ? "現在地" : ""),
+            imageName: isStart ? "play.circle.fill" : (isEnd ? "location.fill" : "circle.fill"),
+            id: UUID()
+          ))
       }
     }
 
