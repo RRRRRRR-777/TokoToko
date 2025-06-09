@@ -90,10 +90,55 @@ TokoToko/
 - ViewInspector（テスト用）
 
 ## テスト
-- 単体テスト: `TokoTokoTests/`
-- UIテスト: `TokoTokoUITests/`
-- SwiftUIテストにViewInspectorを使用
-- UITestingHelperがUIテスト用のモック状態を提供
+
+### TDD（テスト駆動開発）原則
+このプロジェクトではTDD（Test-Driven Development）を採用しています。
+
+#### TDDサイクル（Red-Green-Refactor）
+1. **Red**: まず失敗するテストを書く
+2. **Green**: テストが通る最小限のコードを書く  
+3. **Refactor**: コードをクリーンアップし、重複を除去する
+
+#### TDD実施ガイドライン
+- 新機能追加前に必ずテストを先に書く
+- テストケースは具体的で理解しやすい名前を付ける
+- 1つのテストは1つの機能・動作のみを検証する
+- モックやスタブを活用して外部依存を排除する
+- テストは実装詳細ではなく、公開インターフェースをテストする
+
+#### テスト種類と配置
+- **単体テスト**: `TokoTokoTests/` - ビジネスロジック、データモデル、サービス層
+- **UIテスト**: `TokoTokoUITests/` - 画面遷移、ユーザーインタラクション
+- **統合テスト**: Firebase連携、位置情報サービス等の外部システム連携
+
+#### テストツール
+- **XCTest**: iOS標準テストフレームワーク
+- **ViewInspector**: SwiftUIコンポーネントのテスト
+- **UITestingHelper**: UIテスト用のモック状態管理
+
+#### テスト実行コマンド
+```bash
+# 全体テスト実行
+xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15'
+
+# 変更したファイルに関連する単体テストのみ実行（推奨）
+# 例: WalkManagerを変更した場合
+xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/WalkManagerTests
+
+# 特定のテストクラスのみ実行
+xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/GoogleAuthServiceTests
+
+# 特定のテストメソッドのみ実行
+xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/WalkManagerTests/testStartWalk
+
+# UIテスト実行  
+xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoUITests
+```
+
+#### TDD実践での効率的なテスト実行
+- 開発中は変更したファイルに対応するテストクラスのみを実行
+- コミット前に関連する全テストを実行して確認
+- CI/CDパイプラインでは全テストを実行
 
 ## リンティングとフォーマッティング
 ```bash
