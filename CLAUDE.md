@@ -230,7 +230,8 @@ swift-format lint --configuration .swift-format [file]
 
 **例**:
 ```
-feat: 散歩ルート表示機能の実装
+feat: 散歩ルート表示機能の実装 (#4)
+- ブランチに付与されている番号を参照する
 
 MapViewにポリライン表示を追加し、散歩の軌跡を
 視覚的に確認できるようにした。
@@ -243,11 +244,24 @@ Closes #123
 ```
 
 #### TDD実践時のコミット順序
-1. `test: [機能名] のテストケース追加` (Red)
-2. `feat: [機能名] の実装` (Green)
-3. `refactor: [機能名] のコード整理` (Refactor)
+1. `test: [機能名] のテストケース追加 (#[チケット番号])` (Red)
+2. `feat: [機能名] の実装 (#[チケット番号])` (Green)
+3. `refactor: [機能名] のコード整理 (#[チケット番号])` (Refactor)
 
 この順序により、TDDサイクルがコミット履歴で追跡可能になります。
+
+#### コミット署名とメタデータ規則
+**重要**: 以下の記述は不要
+
+- `🤖 Generated with [Claude Code](https://claude.ai/code)`
+- `Co-Authored-By: Claude <noreply@anthropic.com>`
+
+これらは自動生成感が強く、コミット履歴をシンプルに保つため省略します。
+
+#### チケット番号の記載規則
+- **ticket/[番号]**ブランチで開発中は、コミットタイトルの末尾に`(#[番号])`を付ける
+- 例: `feat: 新機能の実装 (#4)`
+- mainブランチや他のブランチでは、必要に応じてIssue番号を記載
 
 #### Push規則
 **重要**: Claude Codeは自動でPushしない
