@@ -2,6 +2,16 @@
 必ず日本語で回答してください。
 このファイルは、このリポジトリでコード作業を行う際のClaude Code (claude.ai/code) へのガイダンスを提供します。
 
+## 最重要ルール - 新しいルールの追加プロセス
+
+ユーザーから今回限りではなく常に対応が必要だと思われる指示を受けた場合：
+
+1. 「これを標準のルールにしますか？」と質問する
+2. YESの回答を得た場合、CLAUDE.mdに追加ルールとして記載する
+3. 以降は標準ルールとして常に適用する
+
+このプロセスにより、プロジェクトのルールを継続的に改善していきます。
+
 ## プロジェクト概要
 
 TokoTokoは、ユーザーが散歩を記録し、友人や家族と散歩体験を共有できるiOS散歩・SNSアプリ（「とことこ - おさんぽSNS」）です。「散歩」×「記録」×「共有」を組み合わせ、日常の中で見つけた小さな発見を散歩を通じて共有することをコンセプトとしています。
@@ -96,7 +106,7 @@ TokoToko/
 
 #### TDDサイクル（Red-Green-Refactor）
 1. **Red**: まず失敗するテストを書く
-2. **Green**: テストが通る最小限のコードを書く  
+2. **Green**: テストが通る最小限のコードを書く
 3. **Refactor**: コードをクリーンアップし、重複を除去する
 
 #### TDD実施ガイドライン
@@ -131,7 +141,7 @@ xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhon
 # 特定のテストメソッドのみ実行
 xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/WalkManagerTests/testStartWalk
 
-# UIテスト実行  
+# UIテスト実行
 xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoUITests
 ```
 
@@ -139,6 +149,21 @@ xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhon
 - 開発中は変更したファイルに対応するテストクラスのみを実行
 - コミット前に関連する全テストを実行して確認
 - CI/CDパイプラインでは全テストを実行
+
+#### 実装変更時の単体テスト修正ルール
+**必須**: 実装でメソッドシグネチャやクラス構造を変更した場合は、必ず対応する単体テストも修正する必要があるかを確認し、必要に応じて修正して実行する
+
+1. **変更の影響確認**: 実装変更が既存のテストに影響するかを確認
+2. **テスト修正**: 必要に応じてテストコードを修正（期待値の変更、メソッド名の変更など）
+3. **テスト実行**: 修正したテストが正常に動作することを確認
+4. **テスト結果の検証**: 全てのテストがパスすることを確認
+
+##### 修正が必要な典型的なケース
+- メソッド名の変更
+- メソッドの引数・戻り値の変更
+- クラス名やプロパティ名の変更
+- 公開インターフェースの変更
+- エラーハンドリングの変更
 
 ## リンティングとフォーマッティング
 ```bash
@@ -153,6 +178,76 @@ swift-format lint --configuration .swift-format [file]
 - `main`: 本番ブランチ
 - `dev-*`: 開発ブランチ（例: dev-1.0.0）
 - `ticket/*`: 機能ブランチ（例: ticket/1）
+
+### コミット粒度とメッセージガイドライン
+
+#### コミット粒度の原則
+- **1つの論理的変更 = 1つのコミット**: 関連する変更はまとめ、無関係な変更は分ける
+- **原子性を保つ**: そのコミットだけで完結する変更にする（壊れた状態でコミットしない）
+- **レビューしやすいサイズ**: 1コミットあたり100-300行程度を目安とする
+
+#### 適切なコミット粒度の例
+✅ **Good**: 単一機能の追加
+- `feat: 散歩記録開始/停止ボタンの実装`
+- ファイル: `HomeView.swift`, `WalkManager.swift`
+
+✅ **Good**: バグ修正
+- `fix: 位置追跡が停止しない問題を修正`
+- ファイル: `LocationManager.swift`
+
+✅ **Good**: リファクタリング
+- `refactor: WalkManager の状態管理ロジックを簡素化`
+- ファイル: `WalkManager.swift`, `WalkManagerTests.swift`
+
+#### 避けるべきコミット粒度
+❌ **Bad**: 複数の無関係な変更
+- `feat: ホーム画面とマップ画面とプロフィール機能の追加`
+
+❌ **Bad**: 不完全な変更
+- `WIP: 散歩機能作成中`（テストなしで実装途中）
+
+❌ **Bad**: 過度に細かい分割
+- `add import statement`
+- `fix typo in comment`
+
+#### コミットメッセージ規約
+```
+<type>: <description>
+
+[optional body]
+
+[optional footer]
+```
+
+**Type**:
+- `feat`: 新機能
+- `fix`: バグ修正
+- `refactor`: リファクタリング
+- `test`: テスト追加・修正
+- `docs`: ドキュメント更新
+- `style`: コードスタイルの修正
+- `chore`: その他の雑務
+
+**例**:
+```
+feat: 散歩ルート表示機能の実装
+
+MapViewにポリライン表示を追加し、散歩の軌跡を
+視覚的に確認できるようにした。
+
+- MapViewComponent にポリライン描画ロジック追加
+- Walk モデルに coordinatesArray プロパティ追加
+- 関連する単体テストを追加
+
+Closes #123
+```
+
+#### TDD実践時のコミット順序
+1. `test: [機能名] のテストケース追加` (Red)
+2. `feat: [機能名] の実装` (Green)
+3. `refactor: [機能名] のコード整理` (Refactor)
+
+この順序により、TDDサイクルがコミット履歴で追跡可能になります。
 
 ## 開発ガイドライン
 
