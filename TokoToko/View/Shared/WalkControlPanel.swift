@@ -12,73 +12,133 @@ struct WalkControlPanel: View {
   @State private var showingStartAlert = false
   @State private var showingStopAlert = false
   @State private var walkTitle = ""
+  
+  // 右下固定配置かどうか
+  let isFloating: Bool
+  
+  init(walkManager: WalkManager, isFloating: Bool = false) {
+    self.walkManager = walkManager
+    self.isFloating = isFloating
+  }
 
   var body: some View {
-    // コントロールボタン
-    HStack(spacing: 16) {
-      if walkManager.isWalking {
-        // 散歩中のボタン
-        Button(action: {
-          if walkManager.currentWalk?.status == .paused {
-            walkManager.resumeWalk()
-          } else {
-            walkManager.pauseWalk()
+    Group {
+      if isFloating {
+        // 右下固定配置用のボタン（円形）
+        if walkManager.isWalking {
+          // 散歩中：一時停止/再開ボタン
+          Button(action: {
+            if walkManager.currentWalk?.status == .paused {
+              walkManager.resumeWalk()
+            } else {
+              walkManager.pauseWalk()
+            }
+          }) {
+            Image(systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
+              .font(.title)
+              .frame(width: 60, height: 60)
+              .background(Color.orange)
+              .foregroundColor(.white)
+              .clipShape(Circle())
+              .shadow(color: Color.orange.opacity(0.4), radius: 8, x: 0, y: 4)
           }
-        }) {
-          HStack {
-            Image(
-              systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
-            Text(walkManager.currentWalk?.status == .paused ? "再開" : "一時停止")
-          }
-          .frame(maxWidth: .infinity)
-          .padding()
-          .background(Color.orange)
-          .foregroundColor(.white)
-          .cornerRadius(12)
-        }
-        .accessibilityIdentifier(walkManager.currentWalk?.status == .paused ? "散歩再開" : "散歩一時停止")
-
-        Button(action: {
-          showingStopAlert = true
-        }) {
-          HStack {
-            Image(systemName: "stop.fill")
-            Text("終了")
-          }
-          .frame(maxWidth: .infinity)
-          .padding()
-          .background(Color.red)
-          .foregroundColor(.white)
-          .cornerRadius(12)
-        }
-        .accessibilityIdentifier("散歩終了")
-      } else {
-        // 散歩開始ボタン - アイコンのみ
-        Button(action: {
-          showingStartAlert = true
-        }) {
-          Image(systemName: "figure.walk")
-            .font(.title)
-            .frame(width: 60, height: 60)
-            .background(
-              LinearGradient(
-                gradient: Gradient(colors: [
-                  Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-                  Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
-                ]),
-                startPoint: .leading,
-                endPoint: .trailing
+          .accessibilityIdentifier(walkManager.currentWalk?.status == .paused ? "散歩再開" : "散歩一時停止")
+        } else {
+          // 散歩開始ボタン
+          Button(action: {
+            showingStartAlert = true
+          }) {
+            Image(systemName: "figure.walk")
+              .font(.title)
+              .frame(width: 60, height: 60)
+              .background(
+                LinearGradient(
+                  gradient: Gradient(colors: [
+                    Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
+                    Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
+                  ]),
+                  startPoint: .leading,
+                  endPoint: .trailing
+                )
               )
-            )
-            .foregroundColor(.white)
-            .clipShape(Circle())
-            .shadow(
-              color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), radius: 8,
-              x: 0, y: 4)
+              .foregroundColor(.white)
+              .clipShape(Circle())
+              .shadow(
+                color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), radius: 8,
+                x: 0, y: 4)
+          }
+          .accessibilityIdentifier("新しい散歩を開始")
+          .scaleEffect(walkManager.isWalking ? 0.95 : 1.0)
+          .animation(.easeInOut(duration: 0.1), value: walkManager.isWalking)
         }
-        .accessibilityIdentifier("新しい散歩を開始")
-        .scaleEffect(walkManager.isWalking ? 0.95 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: walkManager.isWalking)
+      } else {
+        // 通常配置用のボタン（横並び）
+        HStack(spacing: 16) {
+          if walkManager.isWalking {
+            // 散歩中のボタン
+            Button(action: {
+              if walkManager.currentWalk?.status == .paused {
+                walkManager.resumeWalk()
+              } else {
+                walkManager.pauseWalk()
+              }
+            }) {
+              HStack {
+                Image(
+                  systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
+                Text(walkManager.currentWalk?.status == .paused ? "再開" : "一時停止")
+              }
+              .frame(maxWidth: .infinity)
+              .padding()
+              .background(Color.orange)
+              .foregroundColor(.white)
+              .cornerRadius(12)
+            }
+            .accessibilityIdentifier(walkManager.currentWalk?.status == .paused ? "散歩再開" : "散歩一時停止")
+
+            Button(action: {
+              showingStopAlert = true
+            }) {
+              HStack {
+                Image(systemName: "stop.fill")
+                Text("終了")
+              }
+              .frame(maxWidth: .infinity)
+              .padding()
+              .background(Color.red)
+              .foregroundColor(.white)
+              .cornerRadius(12)
+            }
+            .accessibilityIdentifier("散歩終了")
+          } else {
+            // 散歩開始ボタン - アイコンのみ
+            Button(action: {
+              showingStartAlert = true
+            }) {
+              Image(systemName: "figure.walk")
+                .font(.title)
+                .frame(width: 60, height: 60)
+                .background(
+                  LinearGradient(
+                    gradient: Gradient(colors: [
+                      Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
+                      Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                  )
+                )
+                .foregroundColor(.white)
+                .clipShape(Circle())
+                .shadow(
+                  color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), radius: 8,
+                  x: 0, y: 4)
+            }
+            .accessibilityIdentifier("新しい散歩を開始")
+            .scaleEffect(walkManager.isWalking ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: walkManager.isWalking)
+          }
+        }
       }
     }
     .alert("散歩を開始", isPresented: $showingStartAlert) {
