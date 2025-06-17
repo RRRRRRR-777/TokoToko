@@ -42,7 +42,7 @@ struct HomeView: View {
         VStack {
           Spacer()
           VStack(spacing: 0) {
-            // 散歩中の情報表示のみ
+            // 散歩中の情報表示
             WalkInfoDisplay(
               elapsedTime: walkManager.elapsedTimeString,
               totalSteps: walkManager.totalSteps,
@@ -52,6 +52,39 @@ struct HomeView: View {
             .background(Color.white.opacity(0.95))
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
+            
+            // 一時停止中の再開ボタン
+            if walkManager.currentWalk?.status == .paused {
+              Button(action: {
+                walkManager.resumeWalk()
+              }) {
+                HStack {
+                  Image(systemName: "play.fill")
+                    .font(.body)
+                  Text("再開")
+                    .font(.body)
+                    .fontWeight(.medium)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                  LinearGradient(
+                    gradient: Gradient(colors: [
+                      Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                  )
+                )
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .shadow(color: Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255).opacity(0.3), radius: 4, x: 0, y: 2)
+              }
+              .padding(.top, 8)
+              .padding(.horizontal)
+              .accessibilityIdentifier("散歩再開ボタン")
+            }
           }
           .padding(.bottom, getSafeAreaInsets().bottom + 30)
           .padding(.horizontal, 10)

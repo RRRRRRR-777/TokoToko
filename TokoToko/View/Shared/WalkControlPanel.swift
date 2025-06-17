@@ -26,23 +26,39 @@ struct WalkControlPanel: View {
       if isFloating {
         // 右下固定配置用のボタン（円形）
         if walkManager.isWalking {
-          // 散歩中：一時停止/再開ボタン
-          Button(action: {
-            if walkManager.currentWalk?.status == .paused {
-              walkManager.resumeWalk()
-            } else {
-              walkManager.pauseWalk()
+          // 散歩中の状態に応じてボタンを切り替え
+          if walkManager.currentWalk?.status == .paused {
+            // 一時停止中：停止ボタン
+            Button(action: {
+              showingStopAlert = true
+            }) {
+              Image(systemName: "stop.fill")
+                .font(.title)
+                .frame(width: 60, height: 60)
+                .background(Color.red)
+                .foregroundColor(.white)
+                .clipShape(Circle())
+                .shadow(color: Color.red.opacity(0.4), radius: 8, x: 0, y: 4)
             }
-          }) {
-            Image(systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
-              .font(.title)
-              .frame(width: 60, height: 60)
-              .background(Color.orange)
-              .foregroundColor(.white)
-              .clipShape(Circle())
-              .shadow(color: Color.orange.opacity(0.4), radius: 8, x: 0, y: 4)
+            .accessibilityIdentifier("散歩停止")
+          } else {
+            // 散歩中：一時停止ボタン（長押しで停止）
+            Button(action: {
+              walkManager.pauseWalk()
+            }) {
+              Image(systemName: "pause.fill")
+                .font(.title)
+                .frame(width: 60, height: 60)
+                .background(Color.orange)
+                .foregroundColor(.white)
+                .clipShape(Circle())
+                .shadow(color: Color.orange.opacity(0.4), radius: 8, x: 0, y: 4)
+            }
+            .onLongPressGesture {
+              showingStopAlert = true
+            }
+            .accessibilityIdentifier("散歩一時停止")
           }
-          .accessibilityIdentifier(walkManager.currentWalk?.status == .paused ? "散歩再開" : "散歩一時停止")
         } else {
           // 散歩開始ボタン
           Button(action: {
