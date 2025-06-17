@@ -15,10 +15,20 @@ class WalkManager: NSObject, ObservableObject {
 
   // 現在の散歩
   @Published var currentWalk: Walk?
-  @Published var isWalking: Bool = false
+  @Published private var _isWalking: Bool = false
   @Published var elapsedTime: TimeInterval = 0
   @Published var distance: Double = 0
   @Published var currentLocation: CLLocation?
+  
+  // 散歩中かどうか（一時停止中も含む）
+  var isWalking: Bool {
+    return currentWalk?.status == .inProgress || currentWalk?.status == .paused
+  }
+  
+  // 実際に記録中かどうか（一時停止中は含まない）
+  var isRecording: Bool {
+    return currentWalk?.status == .inProgress
+  }
 
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
@@ -41,7 +51,7 @@ class WalkManager: NSObject, ObservableObject {
     locationManager.$currentLocation
       .sink { [weak self] location in
         self?.currentLocation = location
-        if let location = location, self?.isWalking == true {
+        if let location = location, self?.isRecording == true {
           self?.addLocationToCurrentWalk(location)
         }
       }
@@ -66,7 +76,7 @@ class WalkManager: NSObject, ObservableObject {
     }
 
     currentWalk = newWalk
-    isWalking = true
+    _isWalking = true
     elapsedTime = 0
     distance = 0
 
@@ -81,11 +91,10 @@ class WalkManager: NSObject, ObservableObject {
 
   // 散歩を一時停止
   func pauseWalk() {
-    guard isWalking, var walk = currentWalk else { return }
+    guard isRecording, var walk = currentWalk else { return }
 
     walk.pause()
     currentWalk = walk
-    isWalking = false
 
     // タイマーを停止
     stopTimer()
@@ -98,11 +107,10 @@ class WalkManager: NSObject, ObservableObject {
 
   // 散歩を再開
   func resumeWalk() {
-    guard !isWalking, var walk = currentWalk, walk.status == .paused else { return }
+    guard !isRecording, var walk = currentWalk, walk.status == .paused else { return }
 
     walk.resume()
     currentWalk = walk
-    isWalking = true
 
     // 位置情報の更新を再開
     locationManager.startUpdatingLocation()
@@ -119,7 +127,7 @@ class WalkManager: NSObject, ObservableObject {
 
     walk.complete()
     currentWalk = walk
-    isWalking = false
+    _isWalking = false
 
     // タイマーを停止
     stopTimer()
@@ -136,7 +144,7 @@ class WalkManager: NSObject, ObservableObject {
   // 散歩をキャンセル
   func cancelWalk() {
     currentWalk = nil
-    isWalking = false
+    _isWalking = false
     elapsedTime = 0
     distance = 0
 
@@ -151,7 +159,7 @@ class WalkManager: NSObject, ObservableObject {
 
   // 現在の散歩に位置情報を追加
   private func addLocationToCurrentWalk(_ location: CLLocation) {
-    guard var walk = currentWalk, isWalking else { return }
+    guard var walk = currentWalk, isRecording else { return }
 
     walk.addLocation(location)
     currentWalk = walk
@@ -190,8 +198,8 @@ class WalkManager: NSObject, ObservableObject {
 
   // 経過時間を更新
   private func updateElapsedTime() {
-    guard let walk = currentWalk, let startTime = walk.startTime else { return }
-    elapsedTime = Date().timeIntervalSince(startTime)
+    guard let walk = currentWalk else { return }
+    elapsedTime = walk.duration
   }
 
   // 経過時間を文字列で取得

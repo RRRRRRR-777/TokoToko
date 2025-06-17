@@ -31,28 +31,25 @@ enum WalkStatus: String, CaseIterable {
 
 struct Walk: Identifiable {
   let id: UUID
-  var userId: String?  // ユーザーID（ER図に合わせて追加）
+  var userId: String?
   var title: String
   var description: String
-
-  // ER図に合わせた散歩記録の詳細情報
   var startTime: Date?
   var endTime: Date?
   var totalDistance: Double = 0.0  // メートル単位
   var totalSteps: Int = 0
   var polylineData: String?  // 散歩ルートのポリライン文字列
-
   // 散歩の状態管理
   var status: WalkStatus = .notStarted
-
+  // 一時停止時間の記録
+  var pausedAt: Date?  // 一時停止された時刻
+  var totalPausedDuration: TimeInterval = 0.0  // 累積一時停止時間
   // 位置情報の配列（散歩中に記録される位置情報）
   var locations: [CLLocation] = []
-
   // 従来の互換性のための位置情報（開始地点として使用）
   var location: CLLocationCoordinate2D? {
     return locations.first?.coordinate
   }
-
   var createdAt: Date
   var updatedAt: Date
 
@@ -67,6 +64,8 @@ struct Walk: Identifiable {
     totalSteps: Int = 0,
     polylineData: String? = nil,
     status: WalkStatus = .notStarted,
+    pausedAt: Date? = nil,
+    totalPausedDuration: TimeInterval = 0.0,
     locations: [CLLocation] = [],
     createdAt: Date = Date(),
     updatedAt: Date = Date()
@@ -81,6 +80,8 @@ struct Walk: Identifiable {
     self.totalSteps = totalSteps
     self.polylineData = polylineData
     self.status = status
+    self.pausedAt = pausedAt
+    self.totalPausedDuration = totalPausedDuration
     self.locations = locations
     self.createdAt = createdAt
     self.updatedAt = updatedAt
@@ -97,11 +98,20 @@ struct Walk: Identifiable {
     return "緯度: \(location.latitude), 経度: \(location.longitude)"
   }
 
-  // 散歩の経過時間を計算
+  // 散歩の経過時間を計算（一時停止時間を除く）
   var duration: TimeInterval {
     guard let startTime = startTime else { return 0 }
     let endTime = self.endTime ?? Date()
-    return endTime.timeIntervalSince(startTime)
+    let totalTime = endTime.timeIntervalSince(startTime)
+    
+    // 現在一時停止中の場合、pausedAtからの時間も除外する
+    var currentPauseDuration: TimeInterval = 0
+    if status == .paused, let pausedAt = pausedAt {
+      currentPauseDuration = Date().timeIntervalSince(pausedAt)
+    }
+    
+    // 総時間から累積一時停止時間と現在の一時停止時間を引く
+    return totalTime - totalPausedDuration - currentPauseDuration
   }
 
   // 散歩の経過時間を文字列で表示
@@ -167,18 +177,35 @@ struct Walk: Identifiable {
 
   // 散歩を一時停止
   mutating func pause() {
+    guard status == .inProgress else { return }
     status = .paused
+    pausedAt = Date()
     updatedAt = Date()
   }
 
   // 散歩を再開
   mutating func resume() {
+    guard status == .paused, let pausedAt = pausedAt else { return }
     status = .inProgress
+    
+    // 一時停止していた時間を累積に追加
+    let pauseDuration = Date().timeIntervalSince(pausedAt)
+    totalPausedDuration += pauseDuration
+    
+    // 一時停止時刻をクリア
+    self.pausedAt = nil
     updatedAt = Date()
   }
 
   // 散歩を完了
   mutating func complete() {
+    // 一時停止中に完了した場合、最後の一時停止時間も累積に追加
+    if status == .paused, let pausedAt = pausedAt {
+      let pauseDuration = Date().timeIntervalSince(pausedAt)
+      totalPausedDuration += pauseDuration
+      self.pausedAt = nil
+    }
+    
     endTime = Date()
     status = .completed
     updatedAt = Date()
