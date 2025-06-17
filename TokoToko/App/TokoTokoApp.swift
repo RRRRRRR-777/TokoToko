@@ -100,7 +100,7 @@ struct MainTabView: View {
 
   enum Tab {
     case home
-    case map
+    case friend
     case settings
   }
 
@@ -111,8 +111,8 @@ struct MainTabView: View {
       if testingHelper.hasDeepLink {
         // ディープリンク先に基づいてタブを設定
         switch testingHelper.deepLinkDestination {
-        case "map":
-          _selectedTab = State(initialValue: .map)
+        case "friend":
+          _selectedTab = State(initialValue: .friend)
         case "settings":
           _selectedTab = State(initialValue: .settings)
         default:
@@ -129,31 +129,107 @@ struct MainTabView: View {
   }
 
   var body: some View {
-    TabView(selection: $selectedTab) {
-      NavigationView {
-        HomeView()
+    ZStack {
+      // メインコンテンツ
+      VStack(spacing: 0) {
+        // 選択されたタブのビューを表示
+        Group {
+          switch selectedTab {
+          case .home:
+            NavigationView {
+              HomeView()
+            }
+          case .friend:
+            NavigationView {
+              //              FriendView()
+            }
+          case .settings:
+            NavigationView {
+              SettingsView()
+                .environmentObject(authManager)
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Spacer()
       }
-      .tabItem {
-        Label("ホーム", systemImage: "house")
-      }
-      .tag(Tab.home)
 
-      NavigationView {
-        MapView()
+      // カスタムタブバー
+      VStack {
+        Spacer()
+        CustomTabBar(selectedTab: $selectedTab)
+          .padding(.horizontal, 20)
+          .padding(.bottom, 20)
       }
-      .tabItem {
-        Label("マップ", systemImage: "map")
-      }
-      .tag(Tab.map)
-
-      NavigationView {
-        SettingsView()
-          .environmentObject(authManager)
-      }
-      .tabItem {
-        Label("設定", systemImage: "gear")
-      }
-      .tag(Tab.settings)
     }
+    .ignoresSafeArea(.all, edges: .bottom)
+  }
+}
+
+// カスタムタブバー
+struct CustomTabBar: View {
+  @Binding var selectedTab: MainTabView.Tab
+
+  var body: some View {
+    HStack(spacing: 0) {
+      TabBarItem(
+        tab: .home,
+        icon: "house.fill",
+        title: "ホーム",
+        selectedTab: $selectedTab
+      )
+
+      TabBarItem(
+        tab: .friend,
+        icon: "person.2.fill",
+        title: "フレンド",
+        selectedTab: $selectedTab
+      )
+
+      TabBarItem(
+        tab: .settings,
+        icon: "gearshape.fill",
+        title: "設定",
+        selectedTab: $selectedTab
+      )
+    }
+    .frame(width: 280, height: 70)
+    .background(
+      RoundedRectangle(cornerRadius: 35)
+        .fill(Color.white)
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+    )
+    .padding(.trailing, 80)
+  }
+}
+
+// 個別のタブバーアイテム
+struct TabBarItem: View {
+  let tab: MainTabView.Tab
+  let icon: String
+  let title: String
+  @Binding var selectedTab: MainTabView.Tab
+
+  var isSelected: Bool {
+    selectedTab == tab
+  }
+
+  var body: some View {
+    Button(action: {
+      selectedTab = tab
+    }) {
+      VStack(spacing: 4) {
+        Image(systemName: icon)
+          .font(.system(size: 20, weight: .medium))
+          .foregroundColor(isSelected ? .red : .gray)
+
+        Text(title)
+          .font(.system(size: 12, weight: .medium))
+          .foregroundColor(isSelected ? .red : .gray)
+      }
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, 8)
+    }
+    .buttonStyle(PlainButtonStyle())
   }
 }
