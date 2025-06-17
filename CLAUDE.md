@@ -129,20 +129,20 @@ TokoToko/
 #### テスト実行コマンド
 ```bash
 # 全体テスト実行
-xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16'
 
 # 変更したファイルに関連する単体テストのみ実行（推奨）
 # 例: WalkManagerを変更した場合
-xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/WalkManagerTests
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/WalkManagerTests
 
 # 特定のテストクラスのみ実行
-xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/GoogleAuthServiceTests
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/GoogleAuthServiceTests
 
 # 特定のテストメソッドのみ実行
-xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoTests/WalkManagerTests/testStartWalk
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/WalkManagerTests/testStartWalk
 
 # UIテスト実行
-xcodebuild test -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:TokoTokoUITests
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoUITests
 ```
 
 #### TDD実践での効率的なテスト実行
