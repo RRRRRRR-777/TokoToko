@@ -37,11 +37,12 @@ struct HomeView: View {
       mapSection
         .ignoresSafeArea(.all, edges: .all)
 
-      VStack {
-        Spacer()
-        VStack(spacing: 0) {
-          // 散歩中の情報表示（散歩中のみ）
-          if walkManager.isWalking {
+      // 散歩中の情報表示パネル
+      if walkManager.isWalking {
+        VStack {
+          Spacer()
+          VStack(spacing: 0) {
+            // 散歩中の情報表示のみ
             WalkInfoDisplay(
               elapsedTime: walkManager.elapsedTimeString,
               totalSteps: walkManager.totalSteps,
@@ -49,24 +50,22 @@ struct HomeView: View {
             )
             .padding()
             .background(Color.white.opacity(0.95))
-            .cornerRadius(16, corners: [.topLeft, .topRight])
+            .cornerRadius(16)
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
           }
-
-          // 散歩開始ボタンエリア
-          if walkManager.isWalking {
-            WalkControlPanel(walkManager: walkManager)
-              .padding(.horizontal, 20)
-              .padding(.vertical, 16)
-              .background(Color.white.opacity(0.95))
-              .cornerRadius(0, corners: [.bottomLeft, .bottomRight])
-              .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
-          } else {
-            WalkControlPanel(walkManager: walkManager)
-              .padding(.bottom, 20)
-          }
+          .padding(.bottom, getSafeAreaInsets().bottom + 30)
+          .padding(.horizontal, 10)
         }
-        .padding(.bottom, getSafeAreaInsets().bottom)
+      }
+
+      // 右下固定のコントロールボタン（常に表示）
+      VStack {
+        Spacer()
+        HStack {
+          Spacer()
+          WalkControlPanel(walkManager: walkManager, isFloating: true)
+            .padding(.trailing, 20)
+        }
       }
     }
     .navigationBarHidden(true)
@@ -126,12 +125,15 @@ struct HomeView: View {
   private var walkingIndicator: some View {
     HStack(spacing: 8) {
       Circle()
-        .fill(Color.red)
+        .fill(walkManager.currentWalk?.status == .paused ? Color.orange : Color.red)
         .frame(width: 8, height: 8)
-        .scaleEffect(walkManager.isWalking ? 1.0 : 0.5)
-        .animation(.easeInOut(duration: 1.0).repeatForever(), value: walkManager.isWalking)
+        .scaleEffect(walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5))
+        .animation(
+          walkManager.currentWalk?.status == .paused ? .none : .easeInOut(duration: 1.0).repeatForever(),
+          value: walkManager.isWalking
+        )
 
-      Text("記録中")
+      Text(walkManager.currentWalk?.status == .paused ? "一時停止中" : "記録中")
         .font(.caption)
         .fontWeight(.medium)
     }
@@ -361,7 +363,6 @@ struct WalkHistoryView: View {
 }
 
 #Preview {
-  NavigationView {
-    HomeView()
-  }
+  MainTabView()
+    .environmentObject(AuthManager())
 }

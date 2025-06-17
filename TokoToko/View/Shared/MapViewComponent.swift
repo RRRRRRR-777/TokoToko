@@ -7,6 +7,7 @@
 
 import MapKit
 import SwiftUI
+import CoreLocation
 
 struct MapViewComponent: View {
   // 位置情報マネージャー
@@ -148,6 +149,7 @@ private struct iOS15MapView: View {
     }
   }
 }
+
 
 #Preview {
   MapViewComponent()
