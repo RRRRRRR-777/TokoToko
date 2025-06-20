@@ -1,4 +1,4 @@
-  # CLAUDE.md
+# CLAUDE.md
 必ず日本語で回答してください。
 このファイルは、このリポジトリでコード作業を行う際のClaude Code (claude.ai/code) へのガイダンスを提供します。
 
@@ -99,71 +99,54 @@ TokoToko/
 - GoogleSignIn
 - ViewInspector（テスト用）
 
-## テスト
+## テスト・TDD
 
-### TDD（テスト駆動開発）原則
-このプロジェクトではTDD（Test-Driven Development）を採用しています。
+### 実装修正時のTDD必須ルール
+**重要**: 実装の修正を伝えた場合の必須プロセス
 
-#### TDDサイクル（Red-Green-Refactor）
+1. **TDDアプローチの徹底**: 実装修正時は必ずTDD（Test-Driven Development）で進める
+   - まず単体テスト・UIテストの実装から開始
+   - テストが失敗することを確認（Red）
+   - 最小限の実装でテストを通す（Green）
+   - コードをリファクタリング（Refactor）
+
+2. **テスト不要判断**: 単体テスト・UIテストが不要な場合は、理由を明確に説明する
+   - 設定ファイルの変更のみ
+   - ドキュメントの更新のみ
+   - リソースファイル（画像、文字列）の変更のみ
+   - など、ロジックに影響しない変更の場合
+
+3. **完了前の必須確認**: 実装・テスト変更後は必ず以下を確認してから処理終了
+   - ビルドが成功すること
+   - 全テストがグリーン（成功）であること
+   - 関連するリンティングチェックが通ること
+
+### TDDサイクル（Red-Green-Refactor）
 1. **Red**: まず失敗するテストを書く
 2. **Green**: テストが通る最小限のコードを書く
 3. **Refactor**: コードをクリーンアップし、重複を除去する
 
-#### TDD実施ガイドライン
-- 新機能追加前に必ずテストを先に書く
-- テストケースは具体的で理解しやすい名前を付ける
-- 1つのテストは1つの機能・動作のみを検証する
-- モックやスタブを活用して外部依存を排除する
-- テストは実装詳細ではなく、公開インターフェースをテストする
-
-#### テスト種類と配置
+### テスト種類と配置
 - **単体テスト**: `TokoTokoTests/` - ビジネスロジック、データモデル、サービス層
 - **UIテスト**: `TokoTokoUITests/` - 画面遷移、ユーザーインタラクション
 - **統合テスト**: Firebase連携、位置情報サービス等の外部システム連携
 
-#### テストツール
+### テストツール
 - **XCTest**: iOS標準テストフレームワーク
 - **ViewInspector**: SwiftUIコンポーネントのテスト
 - **UITestingHelper**: UIテスト用のモック状態管理
 
-#### テスト実行コマンド
+### テスト実行コマンド
 ```bash
 # 全体テスト実行
 xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16'
 
 # 変更したファイルに関連する単体テストのみ実行（推奨）
-# 例: WalkManagerを変更した場合
 xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/WalkManagerTests
-
-# 特定のテストクラスのみ実行
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/GoogleAuthServiceTests
-
-# 特定のテストメソッドのみ実行
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/WalkManagerTests/testStartWalk
 
 # UIテスト実行
 xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoUITests
 ```
-
-#### TDD実践での効率的なテスト実行
-- 開発中は変更したファイルに対応するテストクラスのみを実行
-- コミット前に関連する全テストを実行して確認
-- CI/CDパイプラインでは全テストを実行
-
-#### 実装変更時の単体テスト修正ルール
-**必須**: 実装でメソッドシグネチャやクラス構造を変更した場合は、必ず対応する単体テストも修正する必要があるかを確認し、必要に応じて修正して実行する
-
-1. **変更の影響確認**: 実装変更が既存のテストに影響するかを確認
-2. **テスト修正**: 必要に応じてテストコードを修正（期待値の変更、メソッド名の変更など）
-3. **テスト実行**: 修正したテストが正常に動作することを確認
-4. **テスト結果の検証**: 全てのテストがパスすることを確認
-
-##### 修正が必要な典型的なケース
-- メソッド名の変更
-- メソッドの引数・戻り値の変更
-- クラス名やプロパティ名の変更
-- 公開インターフェースの変更
-- エラーハンドリングの変更
 
 ## リンティングとフォーマッティング
 ```bash
@@ -179,36 +162,11 @@ swift-format lint --configuration .swift-format [file]
 - `dev-*`: 開発ブランチ（例: dev-1.0.0）
 - `ticket/*`: 機能ブランチ（例: ticket/1）
 
-### コミット粒度とメッセージガイドライン
-
+### コミット規約
 #### コミット粒度の原則
 - **1つの論理的変更 = 1つのコミット**: 関連する変更はまとめ、無関係な変更は分ける
 - **原子性を保つ**: そのコミットだけで完結する変更にする（壊れた状態でコミットしない）
 - **レビューしやすいサイズ**: 1コミットあたり100-300行程度を目安とする
-
-#### 適切なコミット粒度の例
-✅ **Good**: 単一機能の追加
-- `feat: 散歩記録開始/停止ボタンの実装`
-- ファイル: `HomeView.swift`, `WalkManager.swift`
-
-✅ **Good**: バグ修正
-- `fix: 位置追跡が停止しない問題を修正`
-- ファイル: `LocationManager.swift`
-
-✅ **Good**: リファクタリング
-- `refactor: WalkManager の状態管理ロジックを簡素化`
-- ファイル: `WalkManager.swift`, `WalkManagerTests.swift`
-
-#### 避けるべきコミット粒度
-❌ **Bad**: 複数の無関係な変更
-- `feat: ホーム画面とマップ画面とプロフィール機能の追加`
-
-❌ **Bad**: 不完全な変更
-- `WIP: 散歩機能作成中`（テストなしで実装途中）
-
-❌ **Bad**: 過度に細かい分割
-- `add import statement`
-- `fix typo in comment`
 
 #### コミットメッセージ規約
 ```
@@ -228,56 +186,19 @@ swift-format lint --configuration .swift-format [file]
 - `style`: コードスタイルの修正
 - `chore`: その他の雑務
 
-**例**:
-```
-feat: 散歩ルート表示機能の実装 (#4)
-- ブランチに付与されている番号を参照する
-
-MapViewにポリライン表示を追加し、散歩の軌跡を
-視覚的に確認できるようにした。
-
-- MapViewComponent にポリライン描画ロジック追加
-- Walk モデルに coordinatesArray プロパティ追加
-- 関連する単体テストを追加
-
-Closes #123
-```
-
 #### TDD実践時のコミット順序
 1. `test: [機能名] のテストケース追加 (#[チケット番号])` (Red)
 2. `feat: [機能名] の実装 (#[チケット番号])` (Green)
 3. `refactor: [機能名] のコード整理 (#[チケット番号])` (Refactor)
 
-この順序により、TDDサイクルがコミット履歴で追跡可能になります。
-
-#### コミット署名とメタデータ規則
-**重要**: 以下の記述は不要
-
-- `🤖 Generated with [Claude Code](https://claude.ai/code)`
-- `Co-Authored-By: Claude <noreply@anthropic.com>`
-
-これらは自動生成感が強く、コミット履歴をシンプルに保つため省略します。
-
-#### チケット番号の記載規則
-- **ticket/[番号]**ブランチで開発中は、コミットタイトルの末尾に`(#[番号])`を付ける
-- 例: `feat: 新機能の実装 (#4)`
-- mainブランチや他のブランチでは、必要に応じてIssue番号を記載
-
-#### コミット実行規則
-**重要**: コミット前の確認プロセス
-
+#### コミット実行・Push規則
+**重要**: 
+- **コミット粒度の徹底**: 論理的に分割可能な変更は、できるだけ細かく分けてコミットする
+- **事前差分確認**: コミット実行前に必ず`git diff`でステージングされた差分を確認する
 - コミット実行前に必ずユーザーに「コミットしますか？」と確認する
 - ユーザーから明示的な承認を得てからコミットを実行する
-- 勝手にコミットすることは絶対に行わない
-
-#### Push規則
-**重要**: Claude Codeは自動でPushしない
-
 - ローカルコミットのみ実行し、リモートへのPushは行わない
 - ユーザーが明示的にPushを要求した場合のみ`git push`を実行
-- Pull Request作成時もローカルでの作成まで行い、Pushは別途確認する
-
-この規則により、ユーザーがコミット内容を確認してからリモートに反映できます。
 
 ## 開発ガイドライン
 
