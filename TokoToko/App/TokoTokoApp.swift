@@ -99,8 +99,8 @@ struct MainTabView: View {
   private let testingHelper = UITestingHelper.shared
 
   enum Tab {
-    case home
-    case friend
+    case outing
+    case walk
     case settings
   }
 
@@ -111,20 +111,20 @@ struct MainTabView: View {
       if testingHelper.hasDeepLink {
         // ディープリンク先に基づいてタブを設定
         switch testingHelper.deepLinkDestination {
-        case "friend":
-          _selectedTab = State(initialValue: .friend)
+        case "walk":
+          _selectedTab = State(initialValue: .walk)
         case "settings":
           _selectedTab = State(initialValue: .settings)
         default:
-          _selectedTab = State(initialValue: .home)
+          _selectedTab = State(initialValue: .outing)
         }
       } else {
-        // デフォルトはホームタブ
-        _selectedTab = State(initialValue: .home)
+        // デフォルトはおでかけタブ
+        _selectedTab = State(initialValue: .outing)
       }
     } else {
       // 通常の動作
-      _selectedTab = State(initialValue: .home)
+      _selectedTab = State(initialValue: .outing)
     }
   }
 
@@ -135,13 +135,13 @@ struct MainTabView: View {
         // 選択されたタブのビューを表示
         Group {
           switch selectedTab {
-          case .home:
+          case .outing:
             NavigationView {
               HomeView()
             }
-          case .friend:
+          case .walk:
             NavigationView {
-              //              FriendView()
+              FriendView()
             }
           case .settings:
             NavigationView {
@@ -173,16 +173,16 @@ struct CustomTabBar: View {
   var body: some View {
     HStack(spacing: 0) {
       TabBarItem(
-        tab: .home,
-        icon: "house.fill",
-        title: "ホーム",
+        tab: .outing,
+        icon: "location.fill",
+        title: "おでかけ",
         selectedTab: $selectedTab
       )
 
       TabBarItem(
-        tab: .friend,
-        icon: "person.2.fill",
-        title: "フレンド",
+        tab: .walk,
+        icon: "figure.walk",
+        title: "おさんぽ",
         selectedTab: $selectedTab
       )
 
@@ -231,5 +231,7 @@ struct TabBarItem: View {
       .padding(.vertical, 8)
     }
     .buttonStyle(PlainButtonStyle())
+    .accessibilityIdentifier(title)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 }

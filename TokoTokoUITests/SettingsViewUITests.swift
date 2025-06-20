@@ -35,7 +35,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launch()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
@@ -56,7 +56,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launch()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
@@ -81,7 +81,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launchWithUserInfo()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
@@ -126,7 +126,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launchWithUserInfo()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
@@ -167,7 +167,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launch()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
@@ -196,7 +196,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launch()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
@@ -222,7 +222,7 @@ final class SettingsViewUITests: XCTestCase {
         app.launch()
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
+        let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
 
