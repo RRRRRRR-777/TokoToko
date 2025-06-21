@@ -386,14 +386,6 @@ struct RoundedCorner: Shape {
   }
 }
 
-// 散歩履歴の詳細画面（プレースホルダー）
-struct WalkHistoryView: View {
-  var body: some View {
-    Text("散歩履歴の詳細画面")
-      .navigationTitle("散歩履歴")
-      .navigationBarTitleDisplayMode(.large)
-  }
-}
 
 #Preview {
   MainTabView()
