@@ -125,14 +125,6 @@ struct HomeView: View {
           region: region,
           annotations: createMapAnnotations()
         )
-        .onTapGesture {
-          // マップタップで現在位置に移動
-          if let location = currentLocation {
-            withAnimation(.easeInOut(duration: 0.5)) {
-              region = locationManager.region(for: location)
-            }
-          }
-        }
 
       @unknown default:
         Text("位置情報の許可状態が不明です")

@@ -73,9 +73,6 @@ private struct iOS17MapView: View {
         }
       }
     }
-    .mapControls {
-      MapUserLocationButton()
-    }
     .onAppear {
       // 現在位置が取得できている場合は、その位置にマップを移動
       if let location = locationManager.currentLocation {
