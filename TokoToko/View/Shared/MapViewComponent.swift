@@ -7,6 +7,7 @@
 
 import MapKit
 import SwiftUI
+import CoreLocation
 
 struct MapViewComponent: View {
   // 位置情報マネージャー
@@ -44,7 +45,9 @@ private struct iOS17MapView: View {
   var locationManager: LocationManager
   @State private var cameraPosition: MapCameraPosition
 
-  init(region: Binding<MKCoordinateRegion>, annotations: [MapItem], locationManager: LocationManager) {
+  init(
+    region: Binding<MKCoordinateRegion>, annotations: [MapItem], locationManager: LocationManager
+  ) {
     self._region = region
     self.annotations = annotations
     self.locationManager = locationManager
@@ -70,9 +73,6 @@ private struct iOS17MapView: View {
         }
       }
     }
-    .mapControls {
-      MapUserLocationButton()
-    }
     .onAppear {
       // 現在位置が取得できている場合は、その位置にマップを移動
       if let location = locationManager.currentLocation {
@@ -90,7 +90,7 @@ private struct iOS17MapView: View {
       // 画面を離れる時に位置情報の更新を停止（必要に応じて）
       // locationManager.stopUpdatingLocation()
     }
-    .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+    .onChange(of: locationManager.currentLocation) { _, newLocation in
       // 位置情報が更新されたらマップを移動
       if let location = newLocation {
         region = locationManager.region(for: location)

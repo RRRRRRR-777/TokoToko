@@ -57,7 +57,7 @@ class GoogleAuthService {
                                                            accessToken: user.accessToken.tokenString)
 
             // Firebaseで認証
-            Auth.auth().signIn(with: credential) { authResult, error in
+            Auth.auth().signIn(with: credential) { _, error in
                 if let error = error {
                     completion(.failure("Firebase認証エラー: \(error.localizedDescription)"))
                     return

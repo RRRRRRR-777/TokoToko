@@ -60,6 +60,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoToko
+        INFOPLIST_KEY_CFBundleDisplayName: "とことこ"
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
@@ -103,6 +104,8 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
     dependencies:
       - target: TokoToko
+      - package: ViewInspector
+        product: ViewInspector
 
   TokoTokoUITests:
     type: bundle.ui-testing

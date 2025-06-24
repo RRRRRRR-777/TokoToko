@@ -39,8 +39,7 @@ class WalkRepository {
   }
 
   // IDでWalkを取得
-  func fetchWalk(withID id: UUID, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void)
-  {
+  func fetchWalk(withID id: UUID, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
     if let walk = walks.first(where: { walk in walk.id == id }) {
       completion(.success(walk))
     } else {
@@ -53,9 +52,29 @@ class WalkRepository {
     title: String, description: String, location: CLLocationCoordinate2D? = nil,
     completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
   ) {
-    let newWalk = Walk(title: title, description: description, location: location)
+    var newWalk = Walk(title: title, description: description)
+
+    // 位置情報がある場合は開始地点として追加
+    if let location = location {
+      let clLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+      newWalk.addLocation(clLocation)
+    }
+
     walks.append(newWalk)
     completion(.success(newWalk))
+  }
+
+  // 完全なWalkオブジェクトを追加（WalkManagerから使用）
+  func saveWalk(
+    _ walk: Walk,
+    completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
+  ) {
+    if let index = walks.firstIndex(where: { $0.id == walk.id }) {
+      walks[index] = walk
+    } else {
+      walks.append(walk)
+    }
+    completion(.success(walk))
   }
 
   // Walkを更新
@@ -82,6 +101,6 @@ class WalkRepository {
 
   // 同期バージョンのメソッド（内部使用またはプレビュー用）
   func getAllWalks() -> [Walk] {
-    return walks
+    walks
   }
 }
