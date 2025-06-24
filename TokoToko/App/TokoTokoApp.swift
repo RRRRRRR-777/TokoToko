@@ -13,6 +13,7 @@ import SwiftUI
 // Firebase認証状態を管理するクラス
 class AuthManager: ObservableObject {
   @Published var isLoggedIn = false
+  @Published var isInitializing = true
   private var authStateHandler: AuthStateDidChangeListenerHandle?
 
   // UIテストヘルパーへの参照
@@ -23,10 +24,14 @@ class AuthManager: ObservableObject {
     if testingHelper.isUITesting {
       // モックログイン状態を設定
       isLoggedIn = testingHelper.isMockLoggedIn
+      isInitializing = false
     } else {
       // 通常の動作: Firebase認証状態の変更を監視
       authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-        self?.isLoggedIn = user != nil
+        DispatchQueue.main.async {
+          self?.isLoggedIn = user != nil
+          self?.isInitializing = false
+        }
       }
     }
   }
@@ -78,7 +83,9 @@ struct TokoTokoApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        if authManager.isLoggedIn {
+        if authManager.isInitializing {
+          SplashView()
+        } else if authManager.isLoggedIn {
           MainTabView()
             .environmentObject(authManager)
         } else {
