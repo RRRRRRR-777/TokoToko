@@ -39,8 +39,7 @@ class WalkRepository {
   }
 
   // IDでWalkを取得
-  func fetchWalk(withID id: UUID, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void)
-  {
+  func fetchWalk(withID id: UUID, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
     if let walk = walks.first(where: { walk in walk.id == id }) {
       completion(.success(walk))
     } else {
@@ -102,6 +101,6 @@ class WalkRepository {
 
   // 同期バージョンのメソッド（内部使用またはプレビュー用）
   func getAllWalks() -> [Walk] {
-    return walks
+    walks
   }
 }

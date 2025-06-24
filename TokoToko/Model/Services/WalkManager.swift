@@ -18,15 +18,15 @@ class WalkManager: NSObject, ObservableObject {
   @Published var elapsedTime: TimeInterval = 0
   @Published var distance: Double = 0
   @Published var currentLocation: CLLocation?
-  
+
   // 散歩中かどうか（一時停止中も含む）
   var isWalking: Bool {
-    return currentWalk?.status == .inProgress || currentWalk?.status == .paused
+    currentWalk?.status == .inProgress || currentWalk?.status == .paused
   }
-  
+
   // 実際に記録中かどうか（一時停止中は含まない）
   var isRecording: Bool {
-    return currentWalk?.status == .inProgress
+    currentWalk?.status == .inProgress
   }
 
   // 位置情報マネージャー
@@ -37,11 +37,11 @@ class WalkManager: NSObject, ObservableObject {
   private var timer: Timer?
   private var cancellables = Set<AnyCancellable>()
 
-  private override init() {
+  override private init() {
     super.init()
     setupLocationManager()
   }
-  
+
   deinit {
     cancellables.removeAll()
     timer?.invalidate()
@@ -220,7 +220,7 @@ class WalkManager: NSObject, ObservableObject {
   var totalSteps: Int {
 
     // 仮の実装。実際には歩数計APIやセンサーから取得する必要があります。
-    return Int(elapsedTime / 2)  // 1秒あたり0.5歩と仮定
+    Int(elapsedTime / 2)  // 1秒あたり0.5歩と仮定
   }
 
   // 距離を文字列で取得

@@ -30,7 +30,7 @@ class LocationManager: NSObject, ObservableObject {
   weak var delegate: LocationUpdateDelegate?
 
   // 初期化
-  private override init() {
+  override private init() {
     super.init()
     setupLocationManager()
   }
@@ -78,7 +78,7 @@ class LocationManager: NSObject, ObservableObject {
 
   // 位置情報の許可状態を確認
   func checkAuthorizationStatus() -> CLAuthorizationStatus {
-    return locationManager.authorizationStatus
+    locationManager.authorizationStatus
   }
 
   // 指定された座標を中心とするマップ領域を作成
@@ -86,7 +86,7 @@ class LocationManager: NSObject, ObservableObject {
     for location: CLLocation, latitudinalMeters: CLLocationDistance = 1000,
     longitudinalMeters: CLLocationDistance = 1000
   ) -> MKCoordinateRegion {
-    return MKCoordinateRegion(
+    MKCoordinateRegion(
       center: location.coordinate,
       latitudinalMeters: latitudinalMeters,
       longitudinalMeters: longitudinalMeters

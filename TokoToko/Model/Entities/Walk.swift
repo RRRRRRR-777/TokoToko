@@ -48,7 +48,7 @@ struct Walk: Identifiable {
   var locations: [CLLocation] = []
   // 従来の互換性のための位置情報（開始地点として使用）
   var location: CLLocationCoordinate2D? {
-    return locations.first?.coordinate
+    locations.first?.coordinate
   }
   var createdAt: Date
   var updatedAt: Date
@@ -89,7 +89,7 @@ struct Walk: Identifiable {
 
   // 位置情報を持っているかどうか
   var hasLocation: Bool {
-    return !locations.isEmpty
+    !locations.isEmpty
   }
 
   // 位置情報を文字列で表示
@@ -103,13 +103,13 @@ struct Walk: Identifiable {
     guard let startTime = startTime else { return 0 }
     let endTime = self.endTime ?? Date()
     let totalTime = endTime.timeIntervalSince(startTime)
-    
+
     // 現在一時停止中の場合、pausedAtからの時間も除外する
     var currentPauseDuration: TimeInterval = 0
     if status == .paused, let pausedAt = pausedAt {
       currentPauseDuration = Date().timeIntervalSince(pausedAt)
     }
-    
+
     // 総時間から累積一時停止時間と現在の一時停止時間を引く
     return totalTime - totalPausedDuration - currentPauseDuration
   }
@@ -139,12 +139,12 @@ struct Walk: Identifiable {
 
   // 散歩が進行中かどうか
   var isInProgress: Bool {
-    return status == .inProgress
+    status == .inProgress
   }
 
   // 散歩が完了しているかどうか
   var isCompleted: Bool {
-    return status == .completed
+    status == .completed
   }
 
   // 位置情報を追加
@@ -187,11 +187,11 @@ struct Walk: Identifiable {
   mutating func resume() {
     guard status == .paused, let pausedAt = pausedAt else { return }
     status = .inProgress
-    
+
     // 一時停止していた時間を累積に追加
     let pauseDuration = Date().timeIntervalSince(pausedAt)
     totalPausedDuration += pauseDuration
-    
+
     // 一時停止時刻をクリア
     self.pausedAt = nil
     updatedAt = Date()
@@ -205,7 +205,7 @@ struct Walk: Identifiable {
       totalPausedDuration += pauseDuration
       self.pausedAt = nil
     }
-    
+
     endTime = Date()
     status = .completed
     updatedAt = Date()

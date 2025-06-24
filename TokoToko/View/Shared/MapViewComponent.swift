@@ -90,7 +90,7 @@ private struct iOS17MapView: View {
       // 画面を離れる時に位置情報の更新を停止（必要に応じて）
       // locationManager.stopUpdatingLocation()
     }
-    .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+    .onChange(of: locationManager.currentLocation) { _, newLocation in
       // 位置情報が更新されたらマップを移動
       if let location = newLocation {
         region = locationManager.region(for: location)
@@ -146,7 +146,6 @@ private struct iOS15MapView: View {
     }
   }
 }
-
 
 #Preview {
   MapViewComponent()

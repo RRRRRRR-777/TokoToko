@@ -12,10 +12,10 @@ struct WalkControlPanel: View {
   @State private var showingStartAlert = false
   @State private var showingStopAlert = false
   @State private var walkTitle = ""
-  
+
   // 右下固定配置かどうか
   let isFloating: Bool
-  
+
   init(walkManager: WalkManager, isFloating: Bool = false) {
     self.walkManager = walkManager
     self.isFloating = isFloating
@@ -102,7 +102,7 @@ struct WalkControlPanel: View {
             }
             .accessibilityIdentifier("散歩終了")
           } else {
-            startWalkButton(isCircular: true)
+            startWalkButton(isCircular: false)
           }
         }
       }
@@ -129,7 +129,7 @@ struct WalkControlPanel: View {
       Text("散歩を終了しますか？記録が保存されます。")
     }
   }
-  
+
   // 散歩開始ボタンの共通コンポーネント
   private func startWalkButton(isCircular: Bool) -> some View {
     Button(action: {
@@ -142,7 +142,7 @@ struct WalkControlPanel: View {
           LinearGradient(
             gradient: Gradient(colors: [
               Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
+              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
             ]),
             startPoint: .leading,
             endPoint: .trailing
@@ -151,7 +151,7 @@ struct WalkControlPanel: View {
         .foregroundColor(.white)
         .clipShape(Circle())
         .shadow(
-          color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), 
+          color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4),
           radius: 8, x: 0, y: 4
         )
     }

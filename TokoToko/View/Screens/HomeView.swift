@@ -19,7 +19,6 @@ struct HomeView: View {
   @State private var currentLocation: CLLocation?
   @State private var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
 
-
   init() {
     // 東京駅をデフォルト位置に
     _region = State(
@@ -49,7 +48,7 @@ struct HomeView: View {
             .background(Color.white.opacity(0.95))
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
-            
+
             // 一時停止中の再開ボタン
             if walkManager.currentWalk?.status == .paused {
               Button(action: {
@@ -68,7 +67,7 @@ struct HomeView: View {
                   LinearGradient(
                     gradient: Gradient(colors: [
                       Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
-                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing
@@ -166,7 +165,6 @@ struct HomeView: View {
     .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
   }
 
-
   // 位置情報の許可を求めるビュー
   private var requestPermissionView: some View {
     VStack(spacing: 16) {
@@ -227,15 +225,13 @@ struct HomeView: View {
     .padding()
   }
 
-
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
     locationAuthorizationStatus = locationManager.checkAuthorizationStatus()
     currentLocation = locationManager.currentLocation
 
     if locationAuthorizationStatus == .authorizedWhenInUse
-      || locationAuthorizationStatus == .authorizedAlways
-    {
+      || locationAuthorizationStatus == .authorizedAlways {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
@@ -257,7 +253,6 @@ struct HomeView: View {
   // マップアノテーションを作成
   private func createMapAnnotations() -> [MapItem] {
     var annotations: [MapItem] = []
-
 
     // 現在の散歩の軌跡を表示
     if let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty {
@@ -299,7 +294,6 @@ struct RoundedCorner: Shape {
     return Path(path.cgPath)
   }
 }
-
 
 #Preview {
   MainTabView()
