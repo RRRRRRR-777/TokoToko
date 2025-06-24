@@ -108,7 +108,7 @@ struct DetailView: View {
       LazyVGrid(
         columns: [
           GridItem(.flexible()),
-          GridItem(.flexible()),
+          GridItem(.flexible())
         ], spacing: 16
       ) {
         StatisticCard(
@@ -241,12 +241,17 @@ struct DetailView: View {
   private func refreshWalkDetails() {
     isLoading = true
     walkRepository.fetchWalk(withID: walk.id) { result in
-      isLoading = false
-      switch result {
-      case .success(let updatedWalk):
-        self.walk = updatedWalk
-      case .failure(let error):
-        print("Error refreshing walk details: \(error)")
+      DispatchQueue.main.async {
+        self.isLoading = false
+        switch result {
+        case .success(let updatedWalk):
+          self.walk = updatedWalk
+        case .failure(let error):
+          // エラーログは適切なロギングシステムに記録
+          #if DEBUG
+          print("Error refreshing walk details: \(error)")
+          #endif
+        }
       }
     }
   }
@@ -295,7 +300,7 @@ struct StatisticCard: View {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6818, longitude: 139.7680),
+          CLLocation(latitude: 35.6818, longitude: 139.7680)
         ]
       ))
   }

@@ -11,9 +11,9 @@ struct WalkHistoryView: View {
     @State private var selectedTab = 0
     @State private var walks: [Walk] = []
     @State private var isLoading = false
-    
+
     private let walkRepository = WalkRepository.shared
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // セグメントコントロール
@@ -24,13 +24,13 @@ struct WalkHistoryView: View {
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal)
             .padding(.top, 8)
-            
+
             // タブコンテンツ
             TabView(selection: $selectedTab) {
                 // 自分の履歴タブ
                 myWalkHistoryView
                     .tag(0)
-                
+
                 // フレンドの履歴タブ
                 friendWalkHistoryView
                     .tag(1)
@@ -46,7 +46,7 @@ struct WalkHistoryView: View {
             loadMyWalks()
         }
     }
-    
+
     // 自分の散歩履歴ビュー
     private var myWalkHistoryView: some View {
         Group {
@@ -64,55 +64,55 @@ struct WalkHistoryView: View {
             }
         }
     }
-    
+
     // フレンドの散歩履歴ビュー（近日公開予定）
     private var friendWalkHistoryView: some View {
         VStack {
             Spacer()
-            
+
             Image(systemName: "person.2.circle")
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
                 .padding(.bottom, 16)
-            
+
             Text("フレンドの履歴")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .padding(.bottom, 8)
-            
+
             Text("友達の散歩履歴は近日公開予定です")
                 .font(.body)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
+
             Spacer()
         }
     }
-    
+
     // 空の履歴表示
     private var emptyWalkHistoryView: some View {
         VStack(spacing: 16) {
             Spacer()
-            
+
             Image(systemName: "figure.walk.circle")
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
-            
+
             Text("散歩履歴がありません")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
+
             Text("散歩を完了すると、ここに履歴が表示されます")
                 .font(.body)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
+
             Spacer()
         }
     }
-    
+
     // 散歩履歴リスト
     private var walkHistoryListView: some View {
         List {
@@ -129,7 +129,7 @@ struct WalkHistoryView: View {
             loadMyWalks()
         }
     }
-    
+
     // 散歩データの読み込み
     private func loadMyWalks() {
         isLoading = true
@@ -143,14 +143,16 @@ struct WalkHistoryView: View {
                         .filter { $0.isCompleted }
                         .sorted { $0.createdAt > $1.createdAt }
                 case .failure(let error):
+                    // エラーログは適切なロギングシステムに記録
+                    #if DEBUG
                     print("散歩履歴の読み込みに失敗しました: \(error)")
+                    #endif
                     self.walks = []
                 }
             }
         }
     }
 }
-
 
 #Preview {
     NavigationView {
