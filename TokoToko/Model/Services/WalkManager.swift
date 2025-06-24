@@ -15,7 +15,6 @@ class WalkManager: NSObject, ObservableObject {
 
   // 現在の散歩
   @Published var currentWalk: Walk?
-  @Published private var _isWalking: Bool = false
   @Published var elapsedTime: TimeInterval = 0
   @Published var distance: Double = 0
   @Published var currentLocation: CLLocation?
@@ -41,6 +40,11 @@ class WalkManager: NSObject, ObservableObject {
   private override init() {
     super.init()
     setupLocationManager()
+  }
+  
+  deinit {
+    cancellables.removeAll()
+    timer?.invalidate()
   }
 
   // 位置情報マネージャーの設定
@@ -76,7 +80,6 @@ class WalkManager: NSObject, ObservableObject {
     }
 
     currentWalk = newWalk
-    _isWalking = true
     elapsedTime = 0
     distance = 0
 
@@ -127,7 +130,6 @@ class WalkManager: NSObject, ObservableObject {
 
     walk.complete()
     currentWalk = walk
-    _isWalking = false
 
     // タイマーを停止
     stopTimer()
@@ -144,7 +146,6 @@ class WalkManager: NSObject, ObservableObject {
   // 散歩をキャンセル
   func cancelWalk() {
     currentWalk = nil
-    _isWalking = false
     elapsedTime = 0
     distance = 0
 

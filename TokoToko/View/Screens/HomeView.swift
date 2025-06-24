@@ -11,7 +11,6 @@ import SwiftUI
 
 struct HomeView: View {
   @StateObject private var walkManager = WalkManager.shared
-  @State private var walks: [Walk] = []
   @State private var isLoading = false
   @State private var region: MKCoordinateRegion
 
@@ -20,8 +19,6 @@ struct HomeView: View {
   @State private var currentLocation: CLLocation?
   @State private var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
 
-  // リポジトリ
-  private let walkRepository = WalkRepository.shared
 
   init() {
     // 東京駅をデフォルト位置に
@@ -169,56 +166,6 @@ struct HomeView: View {
     .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
   }
 
-  // 散歩履歴セクション
-  private var walkHistorySection: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Text("散歩履歴")
-          .font(.headline)
-          .padding(.horizontal)
-
-        Spacer()
-
-        if !walks.isEmpty {
-          NavigationLink("すべて見る", destination: WalkHistoryView())
-            .font(.caption)
-            .padding(.horizontal)
-        }
-      }
-
-      if walks.isEmpty {
-        VStack(spacing: 12) {
-          Image(systemName: "figure.walk.circle")
-            .font(.system(size: 40))
-            .foregroundColor(.secondary)
-
-          Text("まだ散歩記録がありません")
-            .font(.subheadline)
-            .foregroundColor(.secondary)
-
-          Text("「新しい散歩を開始」ボタンで最初の散歩を記録しましょう！")
-            .font(.caption)
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-      } else {
-        ScrollView {
-          LazyVStack(spacing: 8) {
-            ForEach(walks.prefix(5)) { walk in
-              NavigationLink(destination: DetailView(walk: walk)) {
-                WalkRow(walk: walk)
-                  .padding(.horizontal)
-              }
-              .buttonStyle(PlainButtonStyle())
-            }
-          }
-        }
-        .frame(maxHeight: 200)
-      }
-    }
-  }
 
   // 位置情報の許可を求めるビュー
   private var requestPermissionView: some View {
@@ -280,19 +227,6 @@ struct HomeView: View {
     .padding()
   }
 
-  // 記録の読み込み
-  private func loadWalks() {
-    isLoading = true
-    walkRepository.fetchWalks { result in
-      isLoading = false
-      switch result {
-      case .success(let fetchedWalks):
-        self.walks = fetchedWalks.sorted { $0.createdAt > $1.createdAt }
-      case .failure(let error):
-        print("Error loading walks: \(error)")
-      }
-    }
-  }
 
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
@@ -324,18 +258,6 @@ struct HomeView: View {
   private func createMapAnnotations() -> [MapItem] {
     var annotations: [MapItem] = []
 
-    // 完了した散歩の開始地点を表示
-    for walk in walks.prefix(10) {
-      if let location = walk.location {
-        annotations.append(
-          MapItem(
-            coordinate: location,
-            title: walk.title,
-            imageName: "mappin.circle.fill",
-            id: walk.id
-          ))
-      }
-    }
 
     // 現在の散歩の軌跡を表示
     if let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty {

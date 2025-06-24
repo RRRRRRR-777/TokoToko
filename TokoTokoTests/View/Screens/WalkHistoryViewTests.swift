@@ -97,6 +97,8 @@ final class WalkHistoryViewTests: XCTestCase {
     
     // MARK: - ナビゲーションテスト
     
+    // iOS 16.0以降でのみテスト可能
+    @available(iOS 16.0, *)
     func testNavigationTitle() throws {
         // Given
         let walkHistoryView = WalkHistoryView()
@@ -174,12 +176,8 @@ final class DetailViewTests: XCTestCase {
     
     private func createMockWalk() -> Walk {
         return Walk(
-            id: "test-walk-id",
             title: "テスト散歩",
-            description: "テスト用の散歩です",
-            totalSteps: 1000,
-            distance: 1.5,
-            duration: 1800 // 30分
+            description: "テスト用の散歩です"
         )
     }
     
@@ -220,6 +218,8 @@ final class DetailViewTests: XCTestCase {
         XCTAssertNoThrow(try inspectedView.find(text: "テスト用の散歩です"))
     }
     
+    // iOS 16.0以降でのみテスト可能
+    @available(iOS 16.0, *)
     func testDetailViewNavigationTitle() throws {
         // Given
         let mockWalk = createMockWalk()
@@ -239,8 +239,8 @@ class MockWalkRepository {
     func fetchWalks(completion: @escaping (Result<[Walk], Error>) -> Void) {
         // モック実装：テスト用のダミーデータを返す
         let mockWalks = [
-            Walk(id: "1", title: "朝の散歩", description: "", totalSteps: 500, distance: 0.8, duration: 900),
-            Walk(id: "2", title: "夕方の散歩", description: "公園を歩きました", totalSteps: 800, distance: 1.2, duration: 1200)
+            Walk(title: "朝の散歩", description: ""),
+            Walk(title: "夕方の散歩", description: "公園を歩きました")
         ]
         DispatchQueue.main.async {
             completion(.success(mockWalks))

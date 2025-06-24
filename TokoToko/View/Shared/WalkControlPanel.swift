@@ -60,32 +60,7 @@ struct WalkControlPanel: View {
             .accessibilityIdentifier("散歩一時停止")
           }
         } else {
-          // 散歩開始ボタン
-          Button(action: {
-            showingStartAlert = true
-          }) {
-            Image(systemName: "figure.walk")
-              .font(.title)
-              .frame(width: 60, height: 60)
-              .background(
-                LinearGradient(
-                  gradient: Gradient(colors: [
-                    Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-                    Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
-                  ]),
-                  startPoint: .leading,
-                  endPoint: .trailing
-                )
-              )
-              .foregroundColor(.white)
-              .clipShape(Circle())
-              .shadow(
-                color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), radius: 8,
-                x: 0, y: 4)
-          }
-          .accessibilityIdentifier("新しい散歩を開始")
-          .scaleEffect(walkManager.isWalking ? 0.95 : 1.0)
-          .animation(.easeInOut(duration: 0.1), value: walkManager.isWalking)
+          startWalkButton(isCircular: true)
         }
       } else {
         // 通常配置用のボタン（横並び）
@@ -127,32 +102,7 @@ struct WalkControlPanel: View {
             }
             .accessibilityIdentifier("散歩終了")
           } else {
-            // 散歩開始ボタン - アイコンのみ
-            Button(action: {
-              showingStartAlert = true
-            }) {
-              Image(systemName: "figure.walk")
-                .font(.title)
-                .frame(width: 60, height: 60)
-                .background(
-                  LinearGradient(
-                    gradient: Gradient(colors: [
-                      Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-                      Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
-                    ]),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                  )
-                )
-                .foregroundColor(.white)
-                .clipShape(Circle())
-                .shadow(
-                  color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), radius: 8,
-                  x: 0, y: 4)
-            }
-            .accessibilityIdentifier("新しい散歩を開始")
-            .scaleEffect(walkManager.isWalking ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: walkManager.isWalking)
+            startWalkButton(isCircular: true)
           }
         }
       }
@@ -178,6 +128,36 @@ struct WalkControlPanel: View {
     } message: {
       Text("散歩を終了しますか？記録が保存されます。")
     }
+  }
+  
+  // 散歩開始ボタンの共通コンポーネント
+  private func startWalkButton(isCircular: Bool) -> some View {
+    Button(action: {
+      showingStartAlert = true
+    }) {
+      Image(systemName: "figure.walk")
+        .font(.title)
+        .frame(width: 60, height: 60)
+        .background(
+          LinearGradient(
+            gradient: Gradient(colors: [
+              Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
+              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+          )
+        )
+        .foregroundColor(.white)
+        .clipShape(Circle())
+        .shadow(
+          color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4), 
+          radius: 8, x: 0, y: 4
+        )
+    }
+    .accessibilityIdentifier("新しい散歩を開始")
+    .scaleEffect(walkManager.isWalking ? 0.95 : 1.0)
+    .animation(.easeInOut(duration: 0.1), value: walkManager.isWalking)
   }
 }
 
