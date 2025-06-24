@@ -35,13 +35,27 @@ struct WalkRow: View {
         HStack(spacing: 16) {
           if walk.isCompleted {
             // 完了した散歩の情報
-            Label(walk.durationString, systemImage: "clock")
-              .font(.caption)
-              .foregroundColor(.secondary)
+            HStack(spacing: 4) {
+              Image(systemName: "clock")
+                .font(.caption)
+                .foregroundColor(.secondary)
+              Text(walk.durationString)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: true, vertical: false)
+                .lineLimit(1)
+            }
 
-            Label(walk.distanceString, systemImage: "figure.walk")
-              .font(.caption)
-              .foregroundColor(.secondary)
+            HStack(spacing: 4) {
+              Image(systemName: "figure.walk")
+                .font(.caption)
+                .foregroundColor(.secondary)
+              Text(walk.distanceString)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: true, vertical: false)
+                .lineLimit(1)
+            }
           } else {
             // 進行中または未開始の散歩
             Text(walk.status.displayName)
