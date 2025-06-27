@@ -11,17 +11,92 @@ import FirebaseFirestore
 
 final class WalkRepositoryTests: XCTestCase {
   var repository: WalkRepository!
-  var mockFirestore: Firestore!
+  var mockRepository: MockWalkRepository!
   
   override func setUpWithError() throws {
     super.setUp()
-    // テスト用のFirestoreインスタンスを設定
+    // 実際のFirestoreインスタンスを設定（統合テスト用）
     repository = WalkRepository.shared
+    // モックリポジトリを設定（ユニットテスト用）
+    mockRepository = MockWalkRepository()
   }
   
   override func tearDownWithError() throws {
     repository = nil
+    mockRepository = nil
     super.tearDown()
+  }
+  
+  // MARK: - ユニットテスト（モック使用）
+  
+  func testMockFetchWalksSuccess() async throws {
+    // Arrange
+    let sampleWalks = MockWalkRepository.createSampleWalks(count: 3, userId: "test-user")
+    sampleWalks.forEach { mockRepository.addMockWalk($0) }
+    mockRepository.setMockCurrentUserId("test-user")
+    
+    let expectation = XCTestExpectation(description: "Should fetch walks from mock")
+    
+    // Act & Assert
+    mockRepository.fetchWalks { result in
+      switch result {
+      case .success(let walks):
+        XCTAssertEqual(walks.count, 3)
+        XCTAssertTrue(walks.allSatisfy { $0.userId == "test-user" })
+        expectation.fulfill()
+      case .failure:
+        XCTFail("Mock should not fail")
+      }
+    }
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
+  }
+  
+  func testMockErrorSimulation() async throws {
+    // Arrange
+    mockRepository.simulateError(.networkError)
+    let expectation = XCTestExpectation(description: "Should simulate network error")
+    
+    // Act & Assert
+    mockRepository.fetchWalks { result in
+      switch result {
+      case .success:
+        XCTFail("Should simulate error")
+      case .failure(let error):
+        XCTAssertEqual(error, .networkError)
+        expectation.fulfill()
+      }
+    }
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
+  }
+  
+  func testMockUserDataSeparation() async throws {
+    // Arrange
+    let user1Walks = MockWalkRepository.createSampleWalks(count: 2, userId: "user-1")
+    let user2Walks = MockWalkRepository.createSampleWalks(count: 2, userId: "user-2")
+    
+    user1Walks.forEach { mockRepository.addMockWalk($0) }
+    user2Walks.forEach { mockRepository.addMockWalk($0) }
+    
+    mockRepository.setMockCurrentUserId("user-1")
+    
+    let expectation = XCTestExpectation(description: "Should separate user data in mock")
+    
+    // Act & Assert
+    mockRepository.fetchWalks { result in
+      switch result {
+      case .success(let walks):
+        XCTAssertEqual(walks.count, 2)
+        XCTAssertTrue(walks.allSatisfy { $0.userId == "user-1" })
+        XCTAssertFalse(walks.contains { $0.userId == "user-2" })
+        expectation.fulfill()
+      case .failure:
+        XCTFail("Mock should not fail")
+      }
+    }
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
   
   // MARK: - Firestore統合テスト
