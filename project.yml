@@ -43,6 +43,7 @@ targets:
     resources:
       - path: TokoToko/Preview Content
       - path: TokoToko/Assets.xcassets
+      - path: TokoToko/GoogleService-Info.plist
     templates: [CommonSettings]
     dependencies:
       - package: Firebase
