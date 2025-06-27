@@ -55,10 +55,10 @@ struct Walk: Identifiable, Codable {
   var updatedAt: Date
 
   init(
-    id: UUID = UUID(),
     title: String,
     description: String,
     userId: String? = nil,
+    id: UUID = UUID(),
     startTime: Date? = nil,
     endTime: Date? = nil,
     totalDistance: Double = 0.0,
