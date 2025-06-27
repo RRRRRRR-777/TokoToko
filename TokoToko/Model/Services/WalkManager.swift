@@ -8,6 +8,7 @@
 import Combine
 import CoreLocation
 import Foundation
+import FirebaseAuth
 
 class WalkManager: NSObject, ObservableObject {
   // シングルトンインスタンス
@@ -65,11 +66,18 @@ class WalkManager: NSObject, ObservableObject {
   // 散歩を開始
   func startWalk(title: String = "新しい散歩", description: String = "") {
     guard !isWalking else { return }
+    
+    // 認証されたユーザーIDを取得
+    guard let userId = Auth.auth().currentUser?.uid else {
+      print("エラー: ユーザーが認証されていません")
+      return
+    }
 
     // 新しい散歩を作成
     var newWalk = Walk(
       title: title,
       description: description,
+      userId: userId,
       status: .inProgress
     )
     newWalk.start()
@@ -169,14 +177,21 @@ class WalkManager: NSObject, ObservableObject {
 
   // 現在の散歩を保存
   private func saveCurrentWalk() {
-    guard let walk = currentWalk else { return }
+    guard let walk = currentWalk else { 
+      print("エラー: 保存する散歩がありません")
+      return 
+    }
+    
+    print("散歩を保存しています: \(walk.title), userID: \(walk.userId ?? "nil")")
 
     walkRepository.saveWalk(walk) { result in
-      switch result {
-      case .success(let savedWalk):
-        print("散歩を保存しました: \(savedWalk.title)")
-      case .failure(let error):
-        print("散歩の保存に失敗しました: \(error)")
+      DispatchQueue.main.async {
+        switch result {
+        case .success:
+          break
+        case .failure(let error):
+          print("❌ 散歩の保存に失敗しました: \(error)")
+        }
       }
     }
 

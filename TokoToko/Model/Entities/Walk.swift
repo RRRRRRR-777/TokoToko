@@ -7,9 +7,10 @@
 
 import CoreLocation
 import Foundation
+import FirebaseFirestore
 
 // 散歩の状態を表す列挙型
-enum WalkStatus: String, CaseIterable {
+enum WalkStatus: String, CaseIterable, Codable {
   case notStarted = "not_started"
   case inProgress = "in_progress"
   case paused = "paused"
@@ -29,7 +30,7 @@ enum WalkStatus: String, CaseIterable {
   }
 }
 
-struct Walk: Identifiable {
+struct Walk: Identifiable, Codable {
   let id: UUID
   var userId: String?
   var title: String
@@ -55,9 +56,9 @@ struct Walk: Identifiable {
 
   init(
     id: UUID = UUID(),
-    userId: String? = nil,
     title: String,
     description: String,
+    userId: String? = nil,
     startTime: Date? = nil,
     endTime: Date? = nil,
     totalDistance: Double = 0.0,
@@ -209,5 +210,116 @@ struct Walk: Identifiable {
     endTime = Date()
     status = .completed
     updatedAt = Date()
+  }
+}
+
+// MARK: - Firestore Codable Support
+extension Walk {
+  // Firestore用のCodingKeys
+  enum CodingKeys: String, CodingKey {
+    case id
+    case userId = "user_id"
+    case title
+    case description
+    case startTime = "start_time"
+    case endTime = "end_time"
+    case totalDistance = "total_distance"
+    case totalSteps = "total_steps"
+    case polylineData = "polyline_data"
+    case status
+    case pausedAt = "paused_at"
+    case totalPausedDuration = "total_paused_duration"
+    case locationData = "location_data"
+    case createdAt = "created_at"
+    case updatedAt = "updated_at"
+  }
+  
+  // CLLocationをシリアライズするための構造体
+  struct LocationData: Codable {
+    let latitude: Double
+    let longitude: Double
+    let altitude: Double
+    let timestamp: Date
+    let horizontalAccuracy: Double
+    let verticalAccuracy: Double
+    let speed: Double
+    let course: Double
+    
+    init(from location: CLLocation) {
+      self.latitude = location.coordinate.latitude
+      self.longitude = location.coordinate.longitude
+      self.altitude = location.altitude
+      self.timestamp = location.timestamp
+      self.horizontalAccuracy = location.horizontalAccuracy
+      self.verticalAccuracy = location.verticalAccuracy
+      self.speed = location.speed
+      self.course = location.course
+    }
+    
+    func toCLLocation() -> CLLocation {
+      let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+      return CLLocation(
+        coordinate: coordinate,
+        altitude: altitude,
+        horizontalAccuracy: horizontalAccuracy,
+        verticalAccuracy: verticalAccuracy,
+        course: course,
+        speed: speed,
+        timestamp: timestamp
+      )
+    }
+  }
+  
+  // カスタムエンコーディング
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    
+    try container.encode(id.uuidString, forKey: .id)
+    try container.encodeIfPresent(userId, forKey: .userId)
+    try container.encode(title, forKey: .title)
+    try container.encode(description, forKey: .description)
+    try container.encodeIfPresent(startTime, forKey: .startTime)
+    try container.encodeIfPresent(endTime, forKey: .endTime)
+    try container.encode(totalDistance, forKey: .totalDistance)
+    try container.encode(totalSteps, forKey: .totalSteps)
+    try container.encodeIfPresent(polylineData, forKey: .polylineData)
+    try container.encode(status, forKey: .status)
+    try container.encodeIfPresent(pausedAt, forKey: .pausedAt)
+    try container.encode(totalPausedDuration, forKey: .totalPausedDuration)
+    try container.encode(createdAt, forKey: .createdAt)
+    try container.encode(updatedAt, forKey: .updatedAt)
+    
+    // CLLocation配列をLocationData配列に変換
+    let locationDataArray = locations.map { LocationData(from: $0) }
+    try container.encode(locationDataArray, forKey: .locationData)
+  }
+  
+  // カスタムデコーディング
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    
+    let idString = try container.decode(String.self, forKey: .id)
+    guard let uuid = UUID(uuidString: idString) else {
+      throw DecodingError.dataCorruptedError(forKey: .id, in: container, debugDescription: "Invalid UUID string")
+    }
+    self.id = uuid
+    
+    self.userId = try container.decodeIfPresent(String.self, forKey: .userId)
+    self.title = try container.decode(String.self, forKey: .title)
+    self.description = try container.decode(String.self, forKey: .description)
+    self.startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
+    self.endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
+    self.totalDistance = try container.decode(Double.self, forKey: .totalDistance)
+    self.totalSteps = try container.decode(Int.self, forKey: .totalSteps)
+    self.polylineData = try container.decodeIfPresent(String.self, forKey: .polylineData)
+    self.status = try container.decode(WalkStatus.self, forKey: .status)
+    self.pausedAt = try container.decodeIfPresent(Date.self, forKey: .pausedAt)
+    self.totalPausedDuration = try container.decode(TimeInterval.self, forKey: .totalPausedDuration)
+    self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+    self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    
+    // LocationData配列をCLLocation配列に変換
+    let locationDataArray = try container.decode([LocationData].self, forKey: .locationData)
+    self.locations = locationDataArray.map { $0.toCLLocation() }
   }
 }
