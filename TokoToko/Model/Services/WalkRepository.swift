@@ -60,10 +60,9 @@ class WalkRepository {
     settings.cacheSizeBytes = 50 * 1024 * 1024  // 50MB キャッシュサイズ
 
     db.settings = settings
-    
-    // ネットワークタイムアウトの設定
-    db.app?.options.deepLinkURLScheme = "tokotoko"
-    
+
+    // Firestore設定完了（deepLinkURLSchemeは必要に応じてAppDelegate等で設定）
+
     // オフライン時の自動再試行設定
     db.enableNetwork { [weak self] error in
       if let error = error {

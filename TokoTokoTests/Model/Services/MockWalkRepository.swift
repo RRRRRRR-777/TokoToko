@@ -78,8 +78,7 @@ class MockWalkRepository {
   
   func addWalk(
     title: String, 
-    description: String, 
-    location: CLLocationCoordinate2D? = nil,
+    description: String,
     completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
   ) {
     if shouldSimulateError {
@@ -92,12 +91,7 @@ class MockWalkRepository {
       return
     }
     
-    var newWalk = Walk(title: title, description: description, userId: userId)
-    
-    if let location = location {
-      let clLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-      newWalk.addLocation(clLocation)
-    }
+    let newWalk = Walk(title: title, description: description, userId: userId)
     
     mockWalks.append(newWalk)
     completion(.success(newWalk))
@@ -167,6 +161,25 @@ class MockWalkRepository {
     
     mockWalks.remove(at: index)
     completion(.success(true))
+  }
+  
+  // WalkRepositoryと同じインターフェースのメソッドを追加
+  func saveWalkToFirestore(_ walk: Walk, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
+    saveWalk(walk, completion: completion)
+  }
+  
+  func fetchWalksFromFirestore(userId: String, completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void) {
+    setMockCurrentUserId(userId)
+    fetchWalks(completion: completion)
+  }
+  
+  func updateWalkInFirestore(_ walk: Walk, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
+    updateWalk(walk, completion: completion)
+  }
+  
+  func deleteWalkFromFirestore(walkId: UUID, userId: String, completion: @escaping (Result<Bool, WalkRepositoryError>) -> Void) {
+    setMockCurrentUserId(userId)
+    deleteWalk(withID: walkId, completion: completion)
   }
 }
 

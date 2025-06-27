@@ -31,7 +31,7 @@ final class WalkRepositoryTests: XCTestCase {
   
   func testMockFetchWalksSuccess() async throws {
     // Arrange
-    let sampleWalks = MockWalkRepository.createSampleWalks(count: 3, userId: "test-user")
+    let sampleWalks: [Walk] = MockWalkRepository.createSampleWalks(count: 3, userId: "test-user")
     sampleWalks.forEach { mockRepository.addMockWalk($0) }
     mockRepository.setMockCurrentUserId("test-user")
     
@@ -54,7 +54,7 @@ final class WalkRepositoryTests: XCTestCase {
   
   func testMockErrorSimulation() async throws {
     // Arrange
-    mockRepository.simulateError(.networkError)
+    mockRepository.simulateError(WalkRepositoryError.networkError)
     let expectation = XCTestExpectation(description: "Should simulate network error")
     
     // Act & Assert
@@ -63,7 +63,7 @@ final class WalkRepositoryTests: XCTestCase {
       case .success:
         XCTFail("Should simulate error")
       case .failure(let error):
-        XCTAssertEqual(error, .networkError)
+        XCTAssertEqual(error, WalkRepositoryError.networkError)
         expectation.fulfill()
       }
     }
@@ -73,8 +73,8 @@ final class WalkRepositoryTests: XCTestCase {
   
   func testMockUserDataSeparation() async throws {
     // Arrange
-    let user1Walks = MockWalkRepository.createSampleWalks(count: 2, userId: "user-1")
-    let user2Walks = MockWalkRepository.createSampleWalks(count: 2, userId: "user-2")
+    let user1Walks: [Walk] = MockWalkRepository.createSampleWalks(count: 2, userId: "user-1")
+    let user2Walks: [Walk] = MockWalkRepository.createSampleWalks(count: 2, userId: "user-2")
     
     user1Walks.forEach { mockRepository.addMockWalk($0) }
     user2Walks.forEach { mockRepository.addMockWalk($0) }
@@ -243,7 +243,7 @@ final class WalkRepositoryTests: XCTestCase {
     let user2Id = "user-2"
     let walkId = UUID()
     
-    let user1Walk = Walk(id: walkId, title: "ユーザー1の散歩", description: "プライベート", userId: user1Id)
+    let user1Walk = Walk(title: "ユーザー1の散歩", description: "プライベート", userId: user1Id, id: walkId)
     
     let expectation = XCTestExpectation(description: "Unauthorized access should be prevented")
     
@@ -259,7 +259,7 @@ final class WalkRepositoryTests: XCTestCase {
             XCTFail("User2 should not be able to delete User1's walk")
           case .failure(let error):
             // 認証エラーまたは権限エラーが発生することを確認
-            XCTAssertTrue(error == .authenticationRequired || error == .notFound)
+            XCTAssertTrue(error == WalkRepositoryError.authenticationRequired || error == WalkRepositoryError.notFound)
             expectation.fulfill()
           }
         }
@@ -308,7 +308,7 @@ final class WalkRepositoryTests: XCTestCase {
         expectation.fulfill()
       case .failure(let error):
         // 認証エラーが発生することを確認
-        XCTAssertEqual(error, .authenticationRequired)
+        XCTAssertEqual(error, WalkRepositoryError.authenticationRequired)
         expectation.fulfill()
       }
     }
