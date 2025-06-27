@@ -1,0 +1,101 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Walks collection - ユーザーは自分のデータのみアクセス可能
+    match /walks/{walkId} {
+      // 認証済みユーザーのみアクセス可能
+      allow read, write: if request.auth != null 
+        && request.auth.uid == resource.data.user_id;
+      
+      // 新規作成時は認証済みユーザーかつuser_idが自分のUIDであることを確認
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.user_id
+        && validateWalkData(request.resource.data);
+      
+      // 更新時は自分のデータのみ更新可能かつデータ構造が正しいことを確認
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.user_id
+        && request.auth.uid == request.resource.data.user_id
+        && validateWalkData(request.resource.data);
+      
+      // 削除時は自分のデータのみ削除可能
+      allow delete: if request.auth != null 
+        && request.auth.uid == resource.data.user_id;
+    }
+    
+    // Users collection - ユーザーは自分のプロフィールのみアクセス可能
+    match /users/{userId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+      
+      allow create: if request.auth != null 
+        && request.auth.uid == userId
+        && validateUserData(request.resource.data);
+      
+      allow update: if request.auth != null 
+        && request.auth.uid == userId
+        && validateUserData(request.resource.data);
+    }
+    
+    // Photos collection - 散歩に関連付けられた写真の管理
+    match /photos/{photoId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == resource.data.user_id;
+      
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.user_id
+        && validatePhotoData(request.resource.data);
+    }
+    
+    // Shared links collection - 共有リンクの管理
+    match /shared_links/{linkId} {
+      // 作成者のみ読み書き可能
+      allow read, write: if request.auth != null 
+        && request.auth.uid == resource.data.user_id;
+      
+      // 公開リンクは誰でも読み取り可能（認証不要）
+      allow read: if resource.data.is_public == true;
+      
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.user_id;
+    }
+    
+    // デフォルトルール - 他のすべてのパスはアクセス拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+  
+  // データ検証関数
+  function validateWalkData(data) {
+    return data.keys().hasAll(['id', 'title', 'description', 'user_id', 'created_at', 'updated_at'])
+      && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+      && data.description is string && data.description.size() <= 500
+      && data.user_id is string && data.user_id.size() > 0
+      && data.created_at is timestamp
+      && data.updated_at is timestamp
+      && (data.start_time == null || data.start_time is timestamp)
+      && (data.end_time == null || data.end_time is timestamp)
+      && data.total_distance is number && data.total_distance >= 0
+      && data.total_steps is number && data.total_steps >= 0
+      && data.status in ['not_started', 'in_progress', 'paused', 'completed'];
+  }
+  
+  function validateUserData(data) {
+    return data.keys().hasAll(['id', 'email'])
+      && data.email is string && data.email.size() > 0
+      && (data.display_name == null || (data.display_name is string && data.display_name.size() <= 50))
+      && (data.photo_url == null || data.photo_url is string);
+  }
+  
+  function validatePhotoData(data) {
+    return data.keys().hasAll(['id', 'walk_id', 'user_id', 'created_at'])
+      && data.walk_id is string && data.walk_id.size() > 0
+      && data.user_id is string && data.user_id.size() > 0
+      && data.created_at is timestamp
+      && (data.latitude == null || data.latitude is number)
+      && (data.longitude == null || data.longitude is number);
+  }
+}

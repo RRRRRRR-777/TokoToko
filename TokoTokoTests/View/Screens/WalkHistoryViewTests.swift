@@ -235,7 +235,7 @@ final class DetailViewTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-class MockWalkRepository {
+class MockWalkRepositoryForViewTests {
     func fetchWalks(completion: @escaping (Result<[Walk], Error>) -> Void) {
         // モック実装：テスト用のダミーデータを返す
         let mockWalks = [

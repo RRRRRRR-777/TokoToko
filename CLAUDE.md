@@ -295,5 +295,12 @@ TokoToko/
 ## ビルド
 プロジェクトはproject.yml設定でXcodeGenを使用。依存関係変更後は常にプロジェクトを再生成:
 ```bash
-xcodegen generate
+set -a && source .env && xcodegen generate
 ```
+
+## Firebase連携
+
+### 新規Firebaseプロジェクト作成タスク
+* Firebase DatabaseとAuthentication連携の初期セットアップを進める
+* Firebase Project ID: TokoToko-iOS
+* プロジェクトの初期セットアップを行う

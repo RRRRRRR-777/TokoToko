@@ -133,20 +133,17 @@ struct WalkHistoryView: View {
     // 散歩データの読み込み
     private func loadMyWalks() {
         isLoading = true
+
         walkRepository.fetchWalks { result in
             DispatchQueue.main.async {
                 isLoading = false
                 switch result {
                 case .success(let fetchedWalks):
                     // 完了した散歩のみを表示し、作成日時の降順でソート
-                    self.walks = fetchedWalks
-                        .filter { $0.isCompleted }
-                        .sorted { $0.createdAt > $1.createdAt }
+                    let completedWalks = fetchedWalks.filter { $0.isCompleted }
+                    self.walks = completedWalks.sorted { $0.createdAt > $1.createdAt }
                 case .failure(let error):
-                    // エラーログは適切なロギングシステムに記録
-                    #if DEBUG
-                    print("散歩履歴の読み込みに失敗しました: \(error)")
-                    #endif
+                    print("❌ 散歩履歴の読み込みに失敗しました: \(error)")
                     self.walks = []
                 }
             }
