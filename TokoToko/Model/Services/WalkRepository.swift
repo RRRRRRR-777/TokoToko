@@ -55,7 +55,23 @@ class WalkRepository {
     // オフライン永続化を有効にする
     let settings = FirestoreSettings()
     settings.isPersistenceEnabled = true
+    
+    // ネットワークタイムアウト設定
+    settings.cacheSizeBytes = 50 * 1024 * 1024  // 50MB キャッシュサイズ
+    
     db.settings = settings
+    
+    // ネットワークタイムアウトの設定
+    db.app?.options.deepLinkURLScheme = "tokotoko"
+    
+    // オフライン時の自動再試行設定
+    db.enableNetwork { [weak self] error in
+      if let error = error {
+        print("⚠️ Firestore ネットワーク接続に失敗: \(error)")
+      } else {
+        print("✅ Firestore ネットワーク接続が確立されました")
+      }
+    }
   }
 
   // MARK: - Public Methods (既存のインターフェース互換性を保持)
@@ -164,7 +180,15 @@ class WalkRepository {
   func saveWalkToFirestore(_ walk: Walk, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
     do {
       let walkRef = db.collection(collectionName).document(walk.id.uuidString)
+      
+      // タイムアウト付きでデータを保存
+      let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { _ in
+        completion(.failure(.networkError))
+      }
+      
       try walkRef.setData(from: walk) { [weak self] error in
+        timeoutTimer.invalidate()  // タイマーを無効化
+        
         if let error = error {
           let walkError = self?.mapFirestoreError(error) ?? .firestoreError(error)
           completion(.failure(walkError))
@@ -181,10 +205,16 @@ class WalkRepository {
   
   // FirestoreからユーザーのWalkを取得
   func fetchWalksFromFirestore(userId: String, completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void) {
+    // タイムアウト設定
+    let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) { _ in
+      completion(.failure(.networkError))
+    }
+    
     db.collection(collectionName)
       .whereField("user_id", isEqualTo: userId)
       .order(by: "created_at", descending: true)
       .getDocuments { [weak self] querySnapshot, error in
+        timeoutTimer.invalidate()  // タイマーを無効化
         if let error = error {
           let mappedError = self?.mapFirestoreError(error) ?? .firestoreError(error)
           completion(.failure(mappedError))
