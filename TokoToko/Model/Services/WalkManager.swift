@@ -66,7 +66,7 @@ class WalkManager: NSObject, ObservableObject {
   // 散歩を開始
   func startWalk(title: String = "新しい散歩", description: String = "") {
     guard !isWalking else { return }
-    
+
     // 認証されたユーザーIDを取得
     guard let userId = Auth.auth().currentUser?.uid else {
       print("エラー: ユーザーが認証されていません")
@@ -177,11 +177,11 @@ class WalkManager: NSObject, ObservableObject {
 
   // 現在の散歩を保存
   private func saveCurrentWalk() {
-    guard let walk = currentWalk else { 
+    guard let walk = currentWalk else {
       print("エラー: 保存する散歩がありません")
-      return 
+      return
     }
-    
+
     print("散歩を保存しています: \(walk.title), userID: \(walk.userId ?? "nil")")
 
     walkRepository.saveWalk(walk) { result in

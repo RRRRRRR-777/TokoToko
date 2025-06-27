@@ -6,8 +6,8 @@
 //
 
 import CoreLocation
-import Foundation
 import FirebaseFirestore
+import Foundation
 
 // 散歩の状態を表す列挙型
 enum WalkStatus: String, CaseIterable, Codable {
@@ -233,7 +233,7 @@ extension Walk {
     case createdAt = "created_at"
     case updatedAt = "updated_at"
   }
-  
+
   // CLLocationをシリアライズするための構造体
   struct LocationData: Codable {
     let latitude: Double
@@ -244,7 +244,7 @@ extension Walk {
     let verticalAccuracy: Double
     let speed: Double
     let course: Double
-    
+
     init(from location: CLLocation) {
       self.latitude = location.coordinate.latitude
       self.longitude = location.coordinate.longitude
@@ -255,7 +255,7 @@ extension Walk {
       self.speed = location.speed
       self.course = location.course
     }
-    
+
     func toCLLocation() -> CLLocation {
       let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
       return CLLocation(
@@ -269,11 +269,11 @@ extension Walk {
       )
     }
   }
-  
+
   // カスタムエンコーディング
   func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
-    
+
     try container.encode(id.uuidString, forKey: .id)
     try container.encodeIfPresent(userId, forKey: .userId)
     try container.encode(title, forKey: .title)
@@ -288,22 +288,23 @@ extension Walk {
     try container.encode(totalPausedDuration, forKey: .totalPausedDuration)
     try container.encode(createdAt, forKey: .createdAt)
     try container.encode(updatedAt, forKey: .updatedAt)
-    
+
     // CLLocation配列をLocationData配列に変換
     let locationDataArray = locations.map { LocationData(from: $0) }
     try container.encode(locationDataArray, forKey: .locationData)
   }
-  
+
   // カスタムデコーディング
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    
+
     let idString = try container.decode(String.self, forKey: .id)
     guard let uuid = UUID(uuidString: idString) else {
-      throw DecodingError.dataCorruptedError(forKey: .id, in: container, debugDescription: "Invalid UUID string")
+      throw DecodingError.dataCorruptedError(
+        forKey: .id, in: container, debugDescription: "Invalid UUID string")
     }
     self.id = uuid
-    
+
     self.userId = try container.decodeIfPresent(String.self, forKey: .userId)
     self.title = try container.decode(String.self, forKey: .title)
     self.description = try container.decode(String.self, forKey: .description)
@@ -317,7 +318,7 @@ extension Walk {
     self.totalPausedDuration = try container.decode(TimeInterval.self, forKey: .totalPausedDuration)
     self.createdAt = try container.decode(Date.self, forKey: .createdAt)
     self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
-    
+
     // LocationData配列をCLLocation配列に変換
     let locationDataArray = try container.decode([LocationData].self, forKey: .locationData)
     self.locations = locationDataArray.map { $0.toCLLocation() }

@@ -133,7 +133,7 @@ struct WalkHistoryView: View {
     // 散歩データの読み込み
     private func loadMyWalks() {
         isLoading = true
-        
+
         walkRepository.fetchWalks { result in
             DispatchQueue.main.async {
                 isLoading = false
