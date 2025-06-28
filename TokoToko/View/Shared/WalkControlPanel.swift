@@ -111,8 +111,7 @@ struct WalkControlPanel: View {
     .alert("散歩を開始", isPresented: $showingStartAlert) {
       TextField("散歩のタイトル（任意）", text: $walkTitle)
       Button("開始") {
-        let title = walkTitle.isEmpty ? "新しい散歩" : walkTitle
-        walkManager.startWalk(title: title)
+        walkManager.startWalk(title: walkTitle)
         walkTitle = ""
       }
       Button("キャンセル", role: .cancel) {

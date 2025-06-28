@@ -75,7 +75,7 @@ class WalkManager: NSObject, ObservableObject {
   }
 
   // 散歩を開始
-  func startWalk(title: String = "新しい散歩", description: String = "") {
+  func startWalk(title: String = "", description: String = "") {
     guard !isWalking else { return }
 
     // 認証されたユーザーIDを取得
@@ -95,9 +95,12 @@ class WalkManager: NSObject, ObservableObject {
       return  // 権限が許可されてから再度呼び出される
     }
 
+    // タイトルが空の場合はデフォルトタイトルを使用
+    let finalTitle = title.isEmpty ? defaultWalkTitle() : title
+
     // 新しい散歩を作成
     var newWalk = Walk(
-      title: title,
+      title: finalTitle,
       description: description,
       userId: userId,
       status: .inProgress
@@ -119,7 +122,7 @@ class WalkManager: NSObject, ObservableObject {
     // タイマーを開始
     startTimer()
 
-    print("散歩を開始しました: \(title)")
+    print("散歩を開始しました: \(finalTitle)")
   }
 
   // 散歩を一時停止
@@ -269,6 +272,14 @@ class WalkManager: NSObject, ObservableObject {
     }
   }
 
+  // デフォルトの散歩タイトルを生成
+  private func defaultWalkTitle() -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "M月d日"
+    formatter.locale = Locale(identifier: "ja_JP")
+    return "\(formatter.string(from: Date()))の散歩"
+  }
+
   // 位置情報権限の変更を処理
   private func handleAuthorizationStatusChange(_ status: CLAuthorizationStatus) {
     switch status {
@@ -276,9 +287,10 @@ class WalkManager: NSObject, ObservableObject {
       // 常時権限が許可された場合、待機中の散歩があれば開始
       if let title = pendingWalkTitle, let description = pendingWalkDescription {
         print("常時権限が許可されました。散歩を開始します。")
+        let finalTitle = title.isEmpty ? defaultWalkTitle() : title
         pendingWalkTitle = nil
         pendingWalkDescription = nil
-        startWalk(title: title, description: description)
+        startWalk(title: finalTitle, description: description)
       }
     case .denied, .restricted:
       // 権限が拒否された場合、待機中の散歩をクリア
