@@ -147,63 +147,53 @@ struct DetailView: View {
         .font(.headline)
 
       if let location = walk.location {
-        // iOS 17以上と未満で分岐
-        if #available(iOS 17.0, *) {
-          // iOS 17以上用のマップ表示
-          Map(
-            initialPosition: .region(
-              MKCoordinateRegion(
-                center: location,
-                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-              ))
-          ) {
-            // 散歩の軌跡を表示
-            ForEach(Array(walk.locations.enumerated()), id: \.offset) { index, walkLocation in
-              let isStart = index == 0
-              let isEnd = index == walk.locations.count - 1
-
-              Annotation(
-                isStart ? "開始地点" : (isEnd ? "終了地点" : ""),
-                coordinate: walkLocation.coordinate
-              ) {
-                Image(
-                  systemName: isStart
-                    ? "play.circle.fill" : (isEnd ? "stop.circle.fill" : "circle.fill")
-                )
-                .foregroundColor(isStart ? .green : (isEnd ? .red : .blue))
-                .font(.title2)
-              }
-            }
-          }
-          .frame(height: 250)
-          .cornerRadius(12)
-        } else {
-          // iOS 15-16用のマップ表示
-          let region = MKCoordinateRegion(
-            center: location,
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-          )
-
-          let annotations = walk.locations.enumerated().map { index, walkLocation in
-            let isStart = index == 0
-            let isEnd = index == walk.locations.count - 1
-            return MapItem(
-              coordinate: walkLocation.coordinate,
-              title: isStart ? "開始地点" : (isEnd ? "終了地点" : ""),
-              imageName: isStart ? "play.circle.fill" : (isEnd ? "stop.circle.fill" : "circle.fill")
+        let region = MKCoordinateRegion(
+          center: location,
+          span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+        
+        // 開始・終了地点のアノテーション
+        let annotations: [MapItem] = {
+          guard !walk.locations.isEmpty else { return [] }
+          
+          var items: [MapItem] = []
+          
+          // 開始地点
+          if let firstLocation = walk.locations.first {
+            items.append(
+              MapItem(
+                coordinate: firstLocation.coordinate,
+                title: "開始地点",
+                imageName: "play.circle.fill"
+              )
             )
           }
-
-          Map(coordinateRegion: .constant(region), annotationItems: annotations) { item in
-            MapAnnotation(coordinate: item.coordinate) {
-              Image(systemName: item.imageName)
-                .foregroundColor(.red)
-                .font(.title2)
-            }
+          
+          // 終了地点（開始地点と異なる場合のみ）
+          if let lastLocation = walk.locations.last, walk.locations.count > 1 {
+            items.append(
+              MapItem(
+                coordinate: lastLocation.coordinate,
+                title: "終了地点",
+                imageName: "checkmark.circle.fill"
+              )
+            )
           }
-          .frame(height: 250)
-          .cornerRadius(12)
-        }
+          
+          return items
+        }()
+        
+        // ポリライン座標
+        let polylineCoordinates = walk.locations.map { $0.coordinate }
+        
+        MapViewComponent(
+          region: region,
+          annotations: annotations,
+          polylineCoordinates: polylineCoordinates,
+          showsUserLocation: false
+        )
+        .frame(height: 250)
+        .cornerRadius(12)
       }
 
       // 位置情報の詳細

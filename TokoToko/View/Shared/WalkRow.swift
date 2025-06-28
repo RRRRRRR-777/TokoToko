@@ -6,21 +6,23 @@
 //
 
 import CoreLocation
+import MapKit
 import SwiftUI
 
 struct WalkRow: View {
   let walk: Walk
 
   var body: some View {
-    HStack(spacing: 12) {
-      // 状態アイコン
-      statusIcon
-        .frame(width: 40, height: 40)
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(8)
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(spacing: 12) {
+        // 状態アイコン
+        statusIcon
+          .frame(width: 40, height: 40)
+          .background(statusColor.opacity(0.1))
+          .cornerRadius(8)
 
-      // 散歩情報
-      VStack(alignment: .leading, spacing: 4) {
+        // 散歩情報
+        VStack(alignment: .leading, spacing: 4) {
         Text(walk.title)
           .font(.headline)
           .foregroundColor(.primary)
@@ -67,24 +69,87 @@ struct WalkRow: View {
               .cornerRadius(4)
           }
         }
-      }
-
-      Spacer()
-
-      // 日時表示
-      VStack(alignment: .trailing, spacing: 2) {
-        Text(dateString)
-          .font(.caption)
-          .foregroundColor(.secondary)
-
-        if walk.hasLocation {
-          Image(systemName: "location.fill")
-            .font(.caption)
-            .foregroundColor(.blue)
         }
+
+        Spacer()
+
+        // 日時表示
+        VStack(alignment: .trailing, spacing: 2) {
+          Text(dateString)
+            .font(.caption)
+            .foregroundColor(.secondary)
+
+          if walk.hasLocation {
+            Image(systemName: "location.fill")
+              .font(.caption)
+              .foregroundColor(.blue)
+          }
+        }
+      }
+      
+      // 完了した散歩で位置情報がある場合はマップのプレビューを表示
+      if walk.isCompleted && walk.hasLocation, let firstLocation = walk.locations.first {
+        mapPreview
       }
     }
     .padding(.vertical, 4)
+  }
+  
+  // マップのプレビュー
+  private var mapPreview: some View {
+    Group {
+      if let firstLocation = walk.locations.first {
+        let region = MKCoordinateRegion(
+          center: firstLocation.coordinate,
+          span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+        )
+        
+        // 開始・終了地点のアノテーション
+        let annotations: [MapItem] = {
+          guard !walk.locations.isEmpty else { return [] }
+          
+          var items: [MapItem] = []
+          
+          // 開始地点
+          items.append(
+            MapItem(
+              coordinate: firstLocation.coordinate,
+              title: "開始",
+              imageName: "play.circle.fill"
+            )
+          )
+          
+          // 終了地点（開始地点と異なる場合のみ）
+          if let lastLocation = walk.locations.last, walk.locations.count > 1 {
+            items.append(
+              MapItem(
+                coordinate: lastLocation.coordinate,
+                title: "終了",
+                imageName: "checkmark.circle.fill"
+              )
+            )
+          }
+          
+          return items
+        }()
+        
+        // ポリライン座標
+        let polylineCoordinates = walk.locations.map { $0.coordinate }
+        
+        MapViewComponent(
+          region: region,
+          annotations: annotations,
+          polylineCoordinates: polylineCoordinates,
+          showsUserLocation: false
+        )
+        .frame(height: 120)
+        .cornerRadius(8)
+        .overlay(
+          RoundedRectangle(cornerRadius: 8)
+            .stroke(Color(.systemGray4), lineWidth: 1)
+        )
+      }
+    }
   }
 
   // 状態に応じたアイコン

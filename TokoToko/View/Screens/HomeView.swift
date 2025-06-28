@@ -128,7 +128,8 @@ struct HomeView: View {
       case .authorizedWhenInUse, .authorizedAlways:
         MapViewComponent(
           region: region,
-          annotations: createMapAnnotations()
+          annotations: createMapAnnotations(),
+          polylineCoordinates: createPolylineCoordinates()
         )
 
       @unknown default:
@@ -258,27 +259,49 @@ struct HomeView: View {
     return window.safeAreaInsets
   }
 
-  // マップアノテーションを作成
+  // マップアノテーションを作成（開始・終了ポイントのみ）
   private func createMapAnnotations() -> [MapItem] {
     var annotations: [MapItem] = []
 
-    // 現在の散歩の軌跡を表示
+    // 現在の散歩の開始・終了地点のみ表示
     if let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty {
-      for (index, location) in currentWalk.locations.enumerated() {
-        let isStart = index == 0
-        let isEnd = index == currentWalk.locations.count - 1
-
+      let locations = currentWalk.locations
+      
+      // 開始地点
+      if let startLocation = locations.first {
         annotations.append(
           MapItem(
-            coordinate: location.coordinate,
-            title: isStart ? "開始地点" : (isEnd ? "現在地" : ""),
-            imageName: isStart ? "play.circle.fill" : (isEnd ? "location.fill" : "circle.fill"),
+            coordinate: startLocation.coordinate,
+            title: "開始地点",
+            imageName: "play.circle.fill",
             id: UUID()
-          ))
+          )
+        )
+      }
+      
+      // 終了地点（完了した散歩の場合のみ）
+      if let endLocation = locations.last, locations.count > 1, currentWalk.status == .completed {
+        annotations.append(
+          MapItem(
+            coordinate: endLocation.coordinate,
+            title: "終了地点",
+            imageName: "checkmark.circle.fill",
+            id: UUID()
+          )
+        )
       }
     }
 
     return annotations
+  }
+  
+  // ポリライン座標を作成
+  private func createPolylineCoordinates() -> [CLLocationCoordinate2D] {
+    guard let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty else {
+      return []
+    }
+    
+    return currentWalk.locations.map { $0.coordinate }
   }
 }
 
