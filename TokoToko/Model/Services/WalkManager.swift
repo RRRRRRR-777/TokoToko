@@ -30,6 +30,10 @@ class WalkManager: NSObject, ObservableObject {
     currentWalk?.status == .inProgress
   }
 
+  // 散歩開始待機中のパラメータ（権限要求中に使用）
+  private var pendingWalkTitle: String?
+  private var pendingWalkDescription: String?
+
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
   private let walkRepository = WalkRepository.shared
@@ -61,6 +65,13 @@ class WalkManager: NSObject, ObservableObject {
         }
       }
       .store(in: &cancellables)
+
+    // 位置情報権限の変更を監視
+    locationManager.$authorizationStatus
+      .sink { [weak self] status in
+        self?.handleAuthorizationStatusChange(status)
+      }
+      .store(in: &cancellables)
   }
 
   // 散歩を開始
@@ -71,6 +82,17 @@ class WalkManager: NSObject, ObservableObject {
     guard let userId = Auth.auth().currentUser?.uid else {
       print("エラー: ユーザーが認証されていません")
       return
+    }
+
+    // バックグラウンドでの位置情報追跡のため、常時権限を要求
+    let authStatus = locationManager.checkAuthorizationStatus()
+    if authStatus != .authorizedAlways {
+      print("バックグラウンド位置情報のため常時権限を要求します")
+      // 散歩開始パラメータを保存
+      pendingWalkTitle = title
+      pendingWalkDescription = description
+      locationManager.requestAlwaysAuthorization()
+      return  // 権限が許可されてから再度呼び出される
     }
 
     // 新しい散歩を作成
@@ -244,6 +266,29 @@ class WalkManager: NSObject, ObservableObject {
       return String(format: "%.2f km", distance / 1000)
     } else {
       return String(format: "%.0f m", distance)
+    }
+  }
+
+  // 位置情報権限の変更を処理
+  private func handleAuthorizationStatusChange(_ status: CLAuthorizationStatus) {
+    switch status {
+    case .authorizedAlways:
+      // 常時権限が許可された場合、待機中の散歩があれば開始
+      if let title = pendingWalkTitle, let description = pendingWalkDescription {
+        print("常時権限が許可されました。散歩を開始します。")
+        pendingWalkTitle = nil
+        pendingWalkDescription = nil
+        startWalk(title: title, description: description)
+      }
+    case .denied, .restricted:
+      // 権限が拒否された場合、待機中の散歩をクリア
+      if pendingWalkTitle != nil {
+        print("位置情報の権限が拒否されました。散歩を開始できません。")
+        pendingWalkTitle = nil
+        pendingWalkDescription = nil
+      }
+    default:
+      break
     }
   }
 }

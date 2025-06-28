@@ -15,9 +15,8 @@ struct HomeView: View {
   @State private var region: MKCoordinateRegion
 
   // 位置情報マネージャー
-  private let locationManager = LocationManager.shared
+  @StateObject private var locationManager = LocationManager.shared
   @State private var currentLocation: CLLocation?
-  @State private var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
 
   init() {
     // 東京駅をデフォルト位置に
@@ -102,6 +101,16 @@ struct HomeView: View {
     .onAppear {
       setupLocationManager()
     }
+    .onChange(of: locationManager.authorizationStatus) { status in
+      print("位置情報許可状態が変更されました: \(status)")
+      setupLocationManager()
+    }
+    .onChange(of: locationManager.currentLocation) { location in
+      if let location = location {
+        currentLocation = location
+        region = locationManager.region(for: location)
+      }
+    }
     .loadingOverlay(isLoading: isLoading)
   }
 
@@ -109,7 +118,7 @@ struct HomeView: View {
   private var mapSection: some View {
     ZStack {
       // 位置情報の許可状態に応じて表示を切り替え
-      switch locationAuthorizationStatus {
+      switch locationManager.authorizationStatus {
       case .notDetermined:
         requestPermissionView
 
@@ -227,11 +236,10 @@ struct HomeView: View {
 
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
-    locationAuthorizationStatus = locationManager.checkAuthorizationStatus()
     currentLocation = locationManager.currentLocation
 
-    if locationAuthorizationStatus == .authorizedWhenInUse
-      || locationAuthorizationStatus == .authorizedAlways {
+    if locationManager.authorizationStatus == .authorizedWhenInUse
+      || locationManager.authorizationStatus == .authorizedAlways {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
