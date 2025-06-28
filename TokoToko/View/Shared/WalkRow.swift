@@ -23,52 +23,52 @@ struct WalkRow: View {
 
         // 散歩情報
         VStack(alignment: .leading, spacing: 4) {
-        Text(walk.title)
-          .font(.headline)
-          .foregroundColor(.primary)
+          Text(walk.title)
+            .font(.headline)
+            .foregroundColor(.primary)
 
-        if !walk.description.isEmpty {
-          Text(walk.description)
-            .font(.caption)
-            .foregroundColor(.secondary)
-            .lineLimit(2)
-        }
-
-        HStack(spacing: 16) {
-          if walk.isCompleted {
-            // 完了した散歩の情報
-            HStack(spacing: 4) {
-              Image(systemName: "clock")
-                .font(.caption)
-                .foregroundColor(.secondary)
-              Text(walk.durationString)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: true, vertical: false)
-                .lineLimit(1)
-            }
-
-            HStack(spacing: 4) {
-              Image(systemName: "figure.walk")
-                .font(.caption)
-                .foregroundColor(.secondary)
-              Text(walk.distanceString)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: true, vertical: false)
-                .lineLimit(1)
-            }
-          } else {
-            // 進行中または未開始の散歩
-            Text(walk.status.displayName)
+          if !walk.description.isEmpty {
+            Text(walk.description)
               .font(.caption)
-              .foregroundColor(statusColor)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 2)
-              .background(statusColor.opacity(0.1))
-              .cornerRadius(4)
+              .foregroundColor(.secondary)
+              .lineLimit(2)
           }
-        }
+
+          HStack(spacing: 16) {
+            if walk.isCompleted {
+              // 完了した散歩の情報
+              HStack(spacing: 4) {
+                Image(systemName: "clock")
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                Text(walk.durationString)
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                  .fixedSize(horizontal: true, vertical: false)
+                  .lineLimit(1)
+              }
+
+              HStack(spacing: 4) {
+                Image(systemName: "figure.walk")
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                Text(walk.distanceString)
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                  .fixedSize(horizontal: true, vertical: false)
+                  .lineLimit(1)
+              }
+            } else {
+              // 進行中または未開始の散歩
+              Text(walk.status.displayName)
+                .font(.caption)
+                .foregroundColor(statusColor)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(statusColor.opacity(0.1))
+                .cornerRadius(4)
+            }
+          }
         }
 
         Spacer()
@@ -86,7 +86,7 @@ struct WalkRow: View {
           }
         }
       }
-      
+
       // 完了した散歩で位置情報がある場合はマップのプレビューを表示
       if walk.isCompleted && walk.hasLocation, let firstLocation = walk.locations.first {
         mapPreview
@@ -94,7 +94,7 @@ struct WalkRow: View {
     }
     .padding(.vertical, 4)
   }
-  
+
   // マップのプレビュー
   private var mapPreview: some View {
     Group {
@@ -107,9 +107,9 @@ struct WalkRow: View {
         // 開始・終了地点のアノテーション
         let annotations: [MapItem] = {
           guard !walk.locations.isEmpty else { return [] }
-          
+
           var items: [MapItem] = []
-          
+
           // 開始地点
           items.append(
             MapItem(
@@ -118,7 +118,7 @@ struct WalkRow: View {
               imageName: "play.circle.fill"
             )
           )
-          
+
           // 終了地点（開始地点と異なる場合のみ）
           if let lastLocation = walk.locations.last, walk.locations.count > 1 {
             items.append(
@@ -129,13 +129,13 @@ struct WalkRow: View {
               )
             )
           }
-          
+
           return items
         }()
-        
+
         // ポリライン座標
         let polylineCoordinates = walk.locations.map { $0.coordinate }
-        
+
         MapViewComponent(
           region: region,
           annotations: annotations,

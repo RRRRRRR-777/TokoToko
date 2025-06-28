@@ -7,8 +7,8 @@
 
 import Combine
 import CoreLocation
-import Foundation
 import FirebaseAuth
+import Foundation
 
 class WalkManager: NSObject, ObservableObject {
   // シングルトンインスタンス

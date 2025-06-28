@@ -66,7 +66,7 @@ struct HomeView: View {
                   LinearGradient(
                     gradient: Gradient(colors: [
                       Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
-                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing
@@ -74,7 +74,9 @@ struct HomeView: View {
                 )
                 .foregroundColor(.white)
                 .cornerRadius(12)
-                .shadow(color: Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255).opacity(0.3), radius: 4, x: 0, y: 2)
+                .shadow(
+                  color: Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255).opacity(0.3),
+                  radius: 4, x: 0, y: 2)
               }
               .padding(.top, 8)
               .padding(.horizontal)
@@ -158,9 +160,12 @@ struct HomeView: View {
       Circle()
         .fill(walkManager.currentWalk?.status == .paused ? Color.orange : Color.red)
         .frame(width: 8, height: 8)
-        .scaleEffect(walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5))
+        .scaleEffect(
+          walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5)
+        )
         .animation(
-          walkManager.currentWalk?.status == .paused ? .none : .easeInOut(duration: 1.0).repeatForever(),
+          walkManager.currentWalk?.status == .paused
+            ? .none : .easeInOut(duration: 1.0).repeatForever(),
           value: walkManager.isWalking
         )
 
@@ -240,7 +245,8 @@ struct HomeView: View {
     currentLocation = locationManager.currentLocation
 
     if locationManager.authorizationStatus == .authorizedWhenInUse
-      || locationManager.authorizationStatus == .authorizedAlways {
+      || locationManager.authorizationStatus == .authorizedAlways
+    {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
@@ -266,7 +272,7 @@ struct HomeView: View {
     // 現在の散歩の開始・終了地点のみ表示
     if let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty {
       let locations = currentWalk.locations
-      
+
       // 開始地点
       if let startLocation = locations.first {
         annotations.append(
@@ -278,7 +284,7 @@ struct HomeView: View {
           )
         )
       }
-      
+
       // 終了地点（完了した散歩の場合のみ）
       if let endLocation = locations.last, locations.count > 1, currentWalk.status == .completed {
         annotations.append(
@@ -294,13 +300,13 @@ struct HomeView: View {
 
     return annotations
   }
-  
+
   // ポリライン座標を作成
   private func createPolylineCoordinates() -> [CLLocationCoordinate2D] {
     guard let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty else {
       return []
     }
-    
+
     return currentWalk.locations.map { $0.coordinate }
   }
 }

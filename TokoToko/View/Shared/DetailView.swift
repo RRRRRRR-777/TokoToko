@@ -108,7 +108,7 @@ struct DetailView: View {
       LazyVGrid(
         columns: [
           GridItem(.flexible()),
-          GridItem(.flexible())
+          GridItem(.flexible()),
         ], spacing: 16
       ) {
         StatisticCard(
@@ -155,9 +155,9 @@ struct DetailView: View {
         // 開始・終了地点のアノテーション
         let annotations: [MapItem] = {
           guard !walk.locations.isEmpty else { return [] }
-          
+
           var items: [MapItem] = []
-          
+
           // 開始地点
           if let firstLocation = walk.locations.first {
             items.append(
@@ -168,7 +168,7 @@ struct DetailView: View {
               )
             )
           }
-          
+
           // 終了地点（開始地点と異なる場合のみ）
           if let lastLocation = walk.locations.last, walk.locations.count > 1 {
             items.append(
@@ -179,13 +179,13 @@ struct DetailView: View {
               )
             )
           }
-          
+
           return items
         }()
-        
+
         // ポリライン座標
         let polylineCoordinates = walk.locations.map { $0.coordinate }
-        
+
         MapViewComponent(
           region: region,
           annotations: annotations,
@@ -239,7 +239,7 @@ struct DetailView: View {
         case .failure(let error):
           // エラーログは適切なロギングシステムに記録
           #if DEBUG
-          print("Error refreshing walk details: \(error)")
+            print("Error refreshing walk details: \(error)")
           #endif
         }
       }
@@ -290,7 +290,7 @@ struct StatisticCard: View {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6818, longitude: 139.7680)
+          CLLocation(latitude: 35.6818, longitude: 139.7680),
         ]
       ))
   }

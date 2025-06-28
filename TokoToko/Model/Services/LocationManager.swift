@@ -64,7 +64,8 @@ class LocationManager: NSObject, ObservableObject {
   private func configureBackgroundLocationUpdates() {
     if authorizationStatus == .authorizedAlways {
       if Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") != nil {
-        let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+        let backgroundModes =
+          Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
         if backgroundModes.contains("location") {
           do {
             locationManager.allowsBackgroundLocationUpdates = true

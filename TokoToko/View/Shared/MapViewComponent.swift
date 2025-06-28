@@ -5,9 +5,9 @@
 //  Created by bokuyamada on 2025/05/18.
 //
 
+import CoreLocation
 import MapKit
 import SwiftUI
-import CoreLocation
 
 struct MapViewComponent: View {
   // 位置情報マネージャー
@@ -16,10 +16,10 @@ struct MapViewComponent: View {
 
   // 表示するアノテーション
   var annotations: [MapItem] = []
-  
+
   // 表示するポリライン座標
   var polylineCoordinates: [CLLocationCoordinate2D] = []
-  
+
   // ユーザー位置を表示するかどうか
   var showsUserLocation: Bool = true
 
@@ -27,7 +27,10 @@ struct MapViewComponent: View {
     region: MKCoordinateRegion = MKCoordinateRegion(
       center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),  // 東京駅をデフォルト位置に
       span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-    ), annotations: [MapItem] = [], polylineCoordinates: [CLLocationCoordinate2D] = [], showsUserLocation: Bool = true
+    ),
+    annotations: [MapItem] = [],
+    polylineCoordinates: [CLLocationCoordinate2D] = [],
+    showsUserLocation: Bool = true
   ) {
     _region = State(initialValue: region)
     self.annotations = annotations
@@ -38,9 +41,13 @@ struct MapViewComponent: View {
   var body: some View {
     // iOS 17以上と未満で分岐
     if #available(iOS 17.0, *) {
-      iOS17MapView(region: $region, annotations: annotations, polylineCoordinates: polylineCoordinates, showsUserLocation: showsUserLocation, locationManager: locationManager)
+      iOS17MapView(
+        region: $region, annotations: annotations, polylineCoordinates: polylineCoordinates,
+        showsUserLocation: showsUserLocation, locationManager: locationManager)
     } else {
-      iOS15MapView(region: $region, annotations: annotations, polylineCoordinates: polylineCoordinates, showsUserLocation: showsUserLocation, locationManager: locationManager)
+      iOS15MapView(
+        region: $region, annotations: annotations, polylineCoordinates: polylineCoordinates,
+        showsUserLocation: showsUserLocation, locationManager: locationManager)
     }
   }
 }
@@ -56,7 +63,11 @@ private struct iOS17MapView: View {
   @State private var cameraPosition: MapCameraPosition
 
   init(
-    region: Binding<MKCoordinateRegion>, annotations: [MapItem], polylineCoordinates: [CLLocationCoordinate2D], showsUserLocation: Bool, locationManager: LocationManager
+    region: Binding<MKCoordinateRegion>,
+    annotations: [MapItem],
+    polylineCoordinates: [CLLocationCoordinate2D],
+    showsUserLocation: Bool,
+    locationManager: LocationManager
   ) {
     self._region = region
     self.annotations = annotations
@@ -73,7 +84,7 @@ private struct iOS17MapView: View {
       if showsUserLocation {
         UserAnnotation()
       }
-      
+
       // アノテーション表示
       ForEach(annotations) { item in
         Annotation("", coordinate: item.coordinate) {
@@ -90,7 +101,7 @@ private struct iOS17MapView: View {
           }
         }
       }
-      
+
       // ポリライン表示
       if polylineCoordinates.count >= 2 {
         MapPolyline(coordinates: polylineCoordinates)
@@ -144,7 +155,10 @@ private struct iOS15MapView: View {
         )
       } else {
         // ポリラインなしの通常のマップ
-        Map(coordinateRegion: $region, showsUserLocation: showsUserLocation, annotationItems: annotations) { item in
+        Map(
+          coordinateRegion: $region, showsUserLocation: showsUserLocation,
+          annotationItems: annotations
+        ) { item in
           MapAnnotation(coordinate: item.coordinate) {
             VStack {
               Image(systemName: item.imageName)
@@ -192,7 +206,7 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
   var annotations: [MapItem]
   var polylineCoordinates: [CLLocationCoordinate2D]
   var showsUserLocation: Bool
-  
+
   func makeUIView(context: Context) -> MKMapView {
     let mapView = MKMapView()
     mapView.delegate = context.coordinator
@@ -200,17 +214,17 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
     mapView.setRegion(region, animated: false)
     return mapView
   }
-  
+
   func updateUIView(_ mapView: MKMapView, context: Context) {
     // リージョンの更新
     if !mapView.region.isApproximatelyEqual(to: region) {
       mapView.setRegion(region, animated: true)
     }
-    
+
     // 既存のアノテーションとオーバーレイを削除
     mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
     mapView.removeOverlays(mapView.overlays)
-    
+
     // アノテーションの追加
     for item in annotations {
       let annotation = MKPointAnnotation()
@@ -218,25 +232,25 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
       annotation.title = item.title
       mapView.addAnnotation(annotation)
     }
-    
+
     // ポリラインの追加
     if polylineCoordinates.count >= 2 {
       let polyline = MKPolyline(coordinates: polylineCoordinates, count: polylineCoordinates.count)
       mapView.addOverlay(polyline)
     }
   }
-  
+
   func makeCoordinator() -> Coordinator {
     Coordinator(self)
   }
-  
+
   class Coordinator: NSObject, MKMapViewDelegate {
     var parent: iOS15MapWithPolylineView
-    
+
     init(_ parent: iOS15MapWithPolylineView) {
       self.parent = parent
     }
-    
+
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
       if let polyline = overlay as? MKPolyline {
         let renderer = MKPolylineRenderer(polyline: polyline)
@@ -246,7 +260,7 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
       }
       return MKOverlayRenderer(overlay: overlay)
     }
-    
+
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
       parent.region = mapView.region
     }
@@ -254,12 +268,14 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
 }
 
 // MKCoordinateRegionの比較用拡張
-private extension MKCoordinateRegion {
-  func isApproximatelyEqual(to other: MKCoordinateRegion, tolerance: Double = 0.0001) -> Bool {
-    abs(center.latitude - other.center.latitude) < tolerance &&
-    abs(center.longitude - other.center.longitude) < tolerance &&
-    abs(span.latitudeDelta - other.span.latitudeDelta) < tolerance &&
-    abs(span.longitudeDelta - other.span.longitudeDelta) < tolerance
+extension MKCoordinateRegion {
+  fileprivate func isApproximatelyEqual(to other: MKCoordinateRegion, tolerance: Double = 0.0001)
+    -> Bool
+  {
+    abs(center.latitude - other.center.latitude) < tolerance
+      && abs(center.longitude - other.center.longitude) < tolerance
+      && abs(span.latitudeDelta - other.span.latitudeDelta) < tolerance
+      && abs(span.longitudeDelta - other.span.longitudeDelta) < tolerance
   }
 }
 
