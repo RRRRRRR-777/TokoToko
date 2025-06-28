@@ -93,6 +93,29 @@ struct WalkRow: View {
       }
     }
     .padding(.vertical, 4)
+    .onAppear {
+      // WalkRow描画パフォーマンスの計測
+      PerformanceMeasurement.shared.startMeasurement(
+        operationName: "WalkRow.rendering",
+        additionalInfo: [
+          "walkId": walk.id.uuidString,
+          "hasMap": walk.isCompleted && walk.hasLocation,
+          "locationCount": walk.locations.count
+        ]
+      )
+      
+      // 描画完了の近似
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        PerformanceMeasurement.shared.endMeasurement(
+          operationName: "WalkRow.rendering",
+          additionalInfo: [
+            "walkId": walk.id.uuidString,
+            "hasMap": walk.isCompleted && walk.hasLocation,
+            "locationCount": walk.locations.count
+          ]
+        )
+      }
+    }
   }
 
   // マップのプレビュー
@@ -186,49 +209,59 @@ struct WalkRow: View {
 
   // 散歩ルート全体を含む領域を計算
   private func calculateRegionForWalk() -> MKCoordinateRegion {
-    guard !walk.locations.isEmpty else {
-      return MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-      )
-    }
-
-    // 1つの座標のみの場合
-    if walk.locations.count == 1 {
-      guard let firstLocation = walk.locations.first else {
+    // 地域計算パフォーマンスの計測
+    let operationName = "WalkRow.calculateRegion"
+    return measurePerformance(
+      operationName: operationName,
+      additionalInfo: [
+        "walkId": walk.id.uuidString,
+        "locationCount": walk.locations.count
+      ]
+    ) {
+      guard !walk.locations.isEmpty else {
         return MKCoordinateRegion(
           center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+          span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+      }
+
+      // 1つの座標のみの場合
+      if walk.locations.count == 1 {
+        guard let firstLocation = walk.locations.first else {
+          return MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+          )
+        }
+        return MKCoordinateRegion(
+          center: firstLocation.coordinate,
           span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
         )
       }
+
+      // 全座標の境界を計算
+      let coordinates = walk.locations.map { $0.coordinate }
+      let latitudes = coordinates.map { $0.latitude }
+      let longitudes = coordinates.map { $0.longitude }
+
+      let minLat = latitudes.min() ?? 0
+      let maxLat = latitudes.max() ?? 0
+      let minLon = longitudes.min() ?? 0
+      let maxLon = longitudes.max() ?? 0
+
+      // 中心点を計算
+      let centerLat = (minLat + maxLat) / 2
+      let centerLon = (minLon + maxLon) / 2
+
+      // スパンを計算（ルート全体が確実に表示されるよう十分な余裕を持たせる）
+      let latDelta = max((maxLat - minLat) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
+      let lonDelta = max((maxLon - minLon) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
+
       return MKCoordinateRegion(
-        center: firstLocation.coordinate,
-        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+        center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+        span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
       )
     }
-
-    // 全座標の境界を計算
-    let coordinates = walk.locations.map { $0.coordinate }
-    let latitudes = coordinates.map { $0.latitude }
-    let longitudes = coordinates.map { $0.longitude }
-
-    let minLat = latitudes.min() ?? 0
-    let maxLat = latitudes.max() ?? 0
-    let minLon = longitudes.min() ?? 0
-    let maxLon = longitudes.max() ?? 0
-
-    // 中心点を計算
-    let centerLat = (minLat + maxLat) / 2
-    let centerLon = (minLon + maxLon) / 2
-
-    // スパンを計算（ルート全体が確実に表示されるよう十分な余裕を持たせる）
-    let latDelta = max((maxLat - minLat) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
-    let lonDelta = max((maxLon - minLon) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
-
-    return MKCoordinateRegion(
-      center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
-      span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
-    )
   }
 
   // 日時文字列

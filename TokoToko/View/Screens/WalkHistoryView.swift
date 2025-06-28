@@ -39,11 +39,24 @@ struct WalkHistoryView: View {
     }
     .navigationTitle("おさんぽ")
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      #if DEBUG
+      ToolbarItem(placement: .navigationBarTrailing) {
+        PerformanceDebugView()
+      }
+      #endif
+    }
     .onAppear {
       loadMyWalks()
     }
     .refreshable {
       loadMyWalks()
+    }
+    .onDisappear {
+      // 画面を離れる時に統計情報を出力
+      #if DEBUG
+      PerformanceMeasurement.shared.printAllStatistics()
+      #endif
     }
   }
 
@@ -128,24 +141,70 @@ struct WalkHistoryView: View {
     .refreshable {
       loadMyWalks()
     }
+    .onAppear {
+      // リスト描画パフォーマンスの計測
+      PerformanceMeasurement.shared.startMeasurement(
+        operationName: "WalkHistory.listRendering",
+        additionalInfo: ["walkCount": walks.count]
+      )
+      
+      // 少し遅延してから完了とする（描画完了の近似）
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        PerformanceMeasurement.shared.endMeasurement(
+          operationName: "WalkHistory.listRendering",
+          additionalInfo: ["walkCount": walks.count]
+        )
+      }
+    }
   }
 
   // 散歩データの読み込み
   private func loadMyWalks() {
+    // パフォーマンス計測開始
+    PerformanceMeasurement.shared.startMeasurement(operationName: "WalkHistory.loadMyWalks")
+    
     isLoading = true
 
     walkRepository.fetchWalks { result in
       DispatchQueue.main.async {
+        // データ処理の計測開始
+        PerformanceMeasurement.shared.startMeasurement(
+          operationName: "WalkHistory.processData", 
+          additionalInfo: ["thread": "main"]
+        )
+        
         isLoading = false
         switch result {
         case .success(let fetchedWalks):
           // 完了した散歩のみを表示し、作成日時の降順でソート
           let completedWalks = fetchedWalks.filter { $0.isCompleted }
           self.walks = completedWalks.sorted { $0.createdAt > $1.createdAt }
+          
+          // データ処理完了
+          PerformanceMeasurement.shared.endMeasurement(
+            operationName: "WalkHistory.processData",
+            additionalInfo: [
+              "totalWalks": fetchedWalks.count,
+              "completedWalks": completedWalks.count
+            ]
+          )
+          
         case .failure(let error):
           print("❌ 散歩履歴の読み込みに失敗しました: \(error)")
           self.walks = []
+          
+          // エラー時もデータ処理完了として記録
+          PerformanceMeasurement.shared.endMeasurement(
+            operationName: "WalkHistory.processData",
+            additionalInfo: ["error": "\(error)"]
+          )
         }
+        
+        // 全体の読み込み処理完了
+        PerformanceMeasurement.shared.endMeasurement(
+          operationName: "WalkHistory.loadMyWalks",
+          additionalInfo: ["resultWalks": self.walks.count]
+        )
       }
     }
   }
