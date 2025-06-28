@@ -221,9 +221,9 @@ struct WalkRow: View {
     let centerLat = (minLat + maxLat) / 2
     let centerLon = (minLon + maxLon) / 2
 
-    // スパンを計算（少し余裕を持たせる）
-    let latDelta = max((maxLat - minLat) * 1.2, 0.002)  // 最小値を設定
-    let lonDelta = max((maxLon - minLon) * 1.2, 0.002)  // 最小値を設定
+    // スパンを計算（ルート全体が確実に表示されるよう十分な余裕を持たせる）
+    let latDelta = max((maxLat - minLat) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
+    let lonDelta = max((maxLon - minLon) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
 
     return MKCoordinateRegion(
       center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),

@@ -108,7 +108,7 @@ struct DetailView: View {
       LazyVGrid(
         columns: [
           GridItem(.flexible()),
-          GridItem(.flexible()),
+          GridItem(.flexible())
         ], spacing: 16
       ) {
         StatisticCard(
@@ -247,9 +247,9 @@ struct DetailView: View {
     let centerLat = (minLat + maxLat) / 2
     let centerLon = (minLon + maxLon) / 2
 
-    // スパンを計算（少し余裕を持たせる）
-    let latDelta = max((maxLat - minLat) * 1.3, 0.005)  // 詳細画面では少し大きめの最小値
-    let lonDelta = max((maxLon - minLon) * 1.3, 0.005)  // 詳細画面では少し大きめの最小値
+    // スパンを計算（詳細画面ではルート全体が確実に表示されるよう余裕を持たせる）
+    let latDelta = max((maxLat - minLat) * 1.4, 0.004)  // 詳細画面では40%のマージンと適切な最小値を設定
+    let lonDelta = max((maxLon - minLon) * 1.4, 0.004)  // 詳細画面では40%のマージンと適切な最小値を設定
 
     return MKCoordinateRegion(
       center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
@@ -334,7 +334,7 @@ struct StatisticCard: View {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6818, longitude: 139.7680),
+          CLLocation(latitude: 35.6818, longitude: 139.7680)
         ]
       ))
   }
