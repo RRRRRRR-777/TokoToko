@@ -11,6 +11,8 @@ import SwiftUI
 struct DetailView: View {
   @State private var walk: Walk
   @State private var isLoading = false
+  @State private var showingDeleteAlert = false
+  @Environment(\.presentationMode) var presentationMode
 
   // リポジトリ
   private let walkRepository = WalkRepository.shared
@@ -63,11 +65,32 @@ struct DetailView: View {
     .navigationTitle("散歩詳細")
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      Button(action: { refreshWalkDetails() }) {
-        Image(systemName: "arrow.clockwise")
+      ToolbarItem(placement: .navigationBarTrailing) {
+        Menu {
+          Button(action: { refreshWalkDetails() }) {
+            Label("更新", systemImage: "arrow.clockwise")
+          }
+          
+          if walk.isCompleted {
+            Button(action: { showingDeleteAlert = true }) {
+              Label("削除", systemImage: "trash")
+            }
+            .foregroundColor(.red)
+          }
+        } label: {
+          Image(systemName: "ellipsis.circle")
+        }
       }
     }
     .loadingOverlay(isLoading: isLoading)
+    .alert("散歩を削除", isPresented: $showingDeleteAlert) {
+      Button("削除", role: .destructive) {
+        deleteWalk()
+      }
+      Button("キャンセル", role: .cancel) {}
+    } message: {
+      Text("この散歩記録を削除しますか？この操作は取り消せません。")
+    }
     .onAppear {
       refreshWalkDetails()
     }
@@ -284,6 +307,26 @@ struct DetailView: View {
           // エラーログは適切なロギングシステムに記録
           #if DEBUG
             print("Error refreshing walk details: \(error)")
+          #endif
+        }
+      }
+    }
+  }
+  
+  // 散歩を削除
+  private func deleteWalk() {
+    isLoading = true
+    walkRepository.deleteWalk(withID: walk.id) { result in
+      DispatchQueue.main.async {
+        self.isLoading = false
+        switch result {
+        case .success:
+          // 削除成功時は前の画面に戻る
+          self.presentationMode.wrappedValue.dismiss()
+        case .failure(let error):
+          // エラーログは適切なロギングシステムに記録
+          #if DEBUG
+            print("Error deleting walk: \(error)")
           #endif
         }
       }
