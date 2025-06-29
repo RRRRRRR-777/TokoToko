@@ -40,6 +40,7 @@ struct Walk: Identifiable, Codable {
   var totalDistance: Double = 0.0  // メートル単位
   var totalSteps: Int = 0
   var polylineData: String?  // 散歩ルートのポリライン文字列
+  var thumbnailImageUrl: String?  // サムネイル画像のFirebase Storage URL
   // 散歩の状態管理
   var status: WalkStatus = .notStarted
   // 一時停止時間の記録
@@ -64,6 +65,7 @@ struct Walk: Identifiable, Codable {
     totalDistance: Double = 0.0,
     totalSteps: Int = 0,
     polylineData: String? = nil,
+    thumbnailImageUrl: String? = nil,
     status: WalkStatus = .notStarted,
     pausedAt: Date? = nil,
     totalPausedDuration: TimeInterval = 0.0,
@@ -80,6 +82,7 @@ struct Walk: Identifiable, Codable {
     self.totalDistance = totalDistance
     self.totalSteps = totalSteps
     self.polylineData = polylineData
+    self.thumbnailImageUrl = thumbnailImageUrl
     self.status = status
     self.pausedAt = pausedAt
     self.totalPausedDuration = totalPausedDuration
@@ -226,6 +229,7 @@ extension Walk {
     case totalDistance = "total_distance"
     case totalSteps = "total_steps"
     case polylineData = "polyline_data"
+    case thumbnailImageUrl = "thumbnail_image_url"
     case status
     case pausedAt = "paused_at"
     case totalPausedDuration = "total_paused_duration"
@@ -283,6 +287,7 @@ extension Walk {
     try container.encode(totalDistance, forKey: .totalDistance)
     try container.encode(totalSteps, forKey: .totalSteps)
     try container.encodeIfPresent(polylineData, forKey: .polylineData)
+    try container.encodeIfPresent(thumbnailImageUrl, forKey: .thumbnailImageUrl)
     try container.encode(status, forKey: .status)
     try container.encodeIfPresent(pausedAt, forKey: .pausedAt)
     try container.encode(totalPausedDuration, forKey: .totalPausedDuration)
@@ -313,6 +318,7 @@ extension Walk {
     self.totalDistance = try container.decode(Double.self, forKey: .totalDistance)
     self.totalSteps = try container.decode(Int.self, forKey: .totalSteps)
     self.polylineData = try container.decodeIfPresent(String.self, forKey: .polylineData)
+    self.thumbnailImageUrl = try container.decodeIfPresent(String.self, forKey: .thumbnailImageUrl)
     self.status = try container.decode(WalkStatus.self, forKey: .status)
     self.pausedAt = try container.decodeIfPresent(Date.self, forKey: .pausedAt)
     self.totalPausedDuration = try container.decode(TimeInterval.self, forKey: .totalPausedDuration)

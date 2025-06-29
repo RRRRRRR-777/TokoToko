@@ -87,6 +87,76 @@ final class MapViewComponentTests: XCTestCase {
         // Then
         XCTAssertNotNil(mapViewComponent)
     }
+    
+    func testMapViewComponentWithPolylineCoordinates() {
+        // Given
+        let polylineCoordinates = [
+            CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671), // Tokyo Station
+            CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.7738), // Imperial Palace
+            CLLocationCoordinate2D(latitude: 35.6584, longitude: 139.7016)  // Shibuya
+        ]
+        
+        // When
+        let mapViewComponent = MapViewComponent(polylineCoordinates: polylineCoordinates)
+        
+        // Then
+        XCTAssertNotNil(mapViewComponent)
+    }
+    
+    func testMapViewComponentWithAnnotationsAndPolyline() {
+        // Given
+        let annotations = [
+            MapItem(
+                coordinate: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+                title: "Start Point",
+                imageName: "play.circle.fill"
+            ),
+            MapItem(
+                coordinate: CLLocationCoordinate2D(latitude: 35.6584, longitude: 139.7016),
+                title: "End Point",
+                imageName: "checkmark.circle.fill"
+            )
+        ]
+        
+        let polylineCoordinates = [
+            CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+            CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.7738),
+            CLLocationCoordinate2D(latitude: 35.6584, longitude: 139.7016)
+        ]
+        
+        // When
+        let mapViewComponent = MapViewComponent(
+            annotations: annotations,
+            polylineCoordinates: polylineCoordinates
+        )
+        
+        // Then
+        XCTAssertNotNil(mapViewComponent)
+    }
+    
+    func testMapViewComponentWithEmptyPolylineCoordinates() {
+        // Given
+        let emptyPolylineCoordinates: [CLLocationCoordinate2D] = []
+        
+        // When
+        let mapViewComponent = MapViewComponent(polylineCoordinates: emptyPolylineCoordinates)
+        
+        // Then
+        XCTAssertNotNil(mapViewComponent)
+    }
+    
+    func testMapViewComponentWithSinglePolylineCoordinate() {
+        // Given
+        let singleCoordinate = [
+            CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671)
+        ]
+        
+        // When
+        let mapViewComponent = MapViewComponent(polylineCoordinates: singleCoordinate)
+        
+        // Then
+        XCTAssertNotNil(mapViewComponent)
+    }
 }
 
 // iOS17MapViewとiOS15MapViewの個別テスト
@@ -113,6 +183,21 @@ extension MapViewComponentTests {
         // Then
         XCTAssertNotNil(mapViewComponent)
     }
+    
+    func testIOS17MapViewWithPolyline() {
+        // Given
+        let polylineCoordinates = [
+            CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+            CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.7738),
+            CLLocationCoordinate2D(latitude: 35.6584, longitude: 139.7016)
+        ]
+        
+        // When
+        let mapViewComponent = MapViewComponent(polylineCoordinates: polylineCoordinates)
+        
+        // Then
+        XCTAssertNotNil(mapViewComponent)
+    }
 }
 
 extension MapViewComponentTests {
@@ -133,6 +218,21 @@ extension MapViewComponentTests {
         
         // When
         let mapViewComponent = MapViewComponent(region: region, annotations: annotations)
+        
+        // Then
+        XCTAssertNotNil(mapViewComponent)
+    }
+    
+    func testIOS15MapViewWithPolyline() {
+        // Given
+        let polylineCoordinates = [
+            CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+            CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.7738),
+            CLLocationCoordinate2D(latitude: 35.6584, longitude: 139.7016)
+        ]
+        
+        // When
+        let mapViewComponent = MapViewComponent(polylineCoordinates: polylineCoordinates)
         
         // Then
         XCTAssertNotNil(mapViewComponent)

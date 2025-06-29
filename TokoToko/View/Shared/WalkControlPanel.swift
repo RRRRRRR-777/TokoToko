@@ -76,7 +76,8 @@ struct WalkControlPanel: View {
             }) {
               HStack {
                 Image(
-                  systemName: walkManager.currentWalk?.status == .paused ? "play.fill" : "pause.fill")
+                  systemName: walkManager.currentWalk?.status == .paused
+                    ? "play.fill" : "pause.fill")
                 Text(walkManager.currentWalk?.status == .paused ? "再開" : "一時停止")
               }
               .frame(maxWidth: .infinity)
@@ -110,8 +111,7 @@ struct WalkControlPanel: View {
     .alert("散歩を開始", isPresented: $showingStartAlert) {
       TextField("散歩のタイトル（任意）", text: $walkTitle)
       Button("開始") {
-        let title = walkTitle.isEmpty ? "新しい散歩" : walkTitle
-        walkManager.startWalk(title: title)
+        walkManager.startWalk(title: walkTitle)
         walkTitle = ""
       }
       Button("キャンセル", role: .cancel) {
@@ -142,7 +142,7 @@ struct WalkControlPanel: View {
           LinearGradient(
             gradient: Gradient(colors: [
               Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
+              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
             ]),
             startPoint: .leading,
             endPoint: .trailing

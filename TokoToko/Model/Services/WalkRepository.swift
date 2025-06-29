@@ -219,6 +219,7 @@ class WalkRepository {
       .order(by: "created_at", descending: true)
       .getDocuments { [weak self] querySnapshot, error in
         timeoutTimer.invalidate()  // タイマーを無効化
+
         if let error = error {
           let mappedError = self?.mapFirestoreError(error) ?? .firestoreError(error)
           completion(.failure(mappedError))
@@ -230,17 +231,22 @@ class WalkRepository {
           return
         }
 
-        do {
-          let walks = try documents.compactMap { document in
-            try document.data(as: Walk.self)
+        // データ解析
+        let parseResult = documents.compactMap { document in
+          do {
+            return try document.data(as: Walk.self)
+          } catch {
+            #if DEBUG
+            print("⚠️ Walk解析エラー: \(error)")
+            #endif
+            return nil
           }
-
-          // キャッシュを更新
-          self?.cachedWalks = walks
-          completion(.success(walks))
-        } catch {
-          completion(.failure(.invalidData))
         }
+
+        // キャッシュを更新
+        self?.cachedWalks = parseResult
+
+        completion(.success(parseResult))
       }
   }
 

@@ -99,6 +99,58 @@ final class WalkRepositoryTests: XCTestCase {
     await fulfillment(of: [expectation], timeout: 1.0)
   }
   
+  func testMockDeleteWalkSuccess() async throws {
+    // Arrange
+    let walk = MockWalkRepository.createSampleWalk(userId: "test-user")
+    mockRepository.addMockWalk(walk)
+    mockRepository.setMockCurrentUserId("test-user")
+    
+    let expectation = XCTestExpectation(description: "Should delete walk successfully")
+    
+    // Act & Assert
+    mockRepository.deleteWalk(withID: walk.id) { result in
+      switch result {
+      case .success(let deleted):
+        XCTAssertTrue(deleted)
+        // 削除後に取得して確認
+        self.mockRepository.fetchWalk(withID: walk.id) { fetchResult in
+          switch fetchResult {
+          case .success:
+            XCTFail("Walk should be deleted")
+          case .failure(let error):
+            XCTAssertEqual(error, WalkRepositoryError.notFound)
+            expectation.fulfill()
+          }
+        }
+      case .failure:
+        XCTFail("Delete should succeed")
+      }
+    }
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
+  }
+  
+  func testMockDeleteWalkNotFound() async throws {
+    // Arrange
+    let nonExistentWalkId = UUID()
+    mockRepository.setMockCurrentUserId("test-user")
+    
+    let expectation = XCTestExpectation(description: "Should fail when walk not found")
+    
+    // Act & Assert
+    mockRepository.deleteWalk(withID: nonExistentWalkId) { result in
+      switch result {
+      case .success:
+        XCTFail("Should not succeed for non-existent walk")
+      case .failure(let error):
+        XCTAssertEqual(error, WalkRepositoryError.notFound)
+        expectation.fulfill()
+      }
+    }
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
+  }
+  
   // MARK: - Firestore統合テスト
   
   func testSaveWalkToFirestore() async throws {

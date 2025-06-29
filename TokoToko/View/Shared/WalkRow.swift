@@ -5,86 +5,106 @@
 //  Created by bokuyamada on 2025/06/03.
 //
 
-import CoreLocation
 import SwiftUI
 
 struct WalkRow: View {
   let walk: Walk
 
   var body: some View {
-    HStack(spacing: 12) {
-      // 状態アイコン
-      statusIcon
-        .frame(width: 40, height: 40)
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(8)
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(spacing: 12) {
+        // 状態アイコン
+        statusIcon
+          .frame(width: 40, height: 40)
+          .background(statusColor.opacity(0.1))
+          .cornerRadius(8)
 
-      // 散歩情報
-      VStack(alignment: .leading, spacing: 4) {
-        Text(walk.title)
-          .font(.headline)
-          .foregroundColor(.primary)
+        // 散歩情報
+        VStack(alignment: .leading, spacing: 4) {
+          Text(walk.title)
+            .font(.headline)
+            .foregroundColor(.primary)
 
-        if !walk.description.isEmpty {
-          Text(walk.description)
-            .font(.caption)
-            .foregroundColor(.secondary)
-            .lineLimit(2)
+          if !walk.description.isEmpty {
+            Text(walk.description)
+              .font(.caption)
+              .foregroundColor(.secondary)
+              .lineLimit(2)
+          }
+
+          HStack(spacing: 16) {
+            if walk.isCompleted {
+              // 完了した散歩の情報
+              HStack(spacing: 4) {
+                Image(systemName: "clock")
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                Text(walk.durationString)
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                  .fixedSize(horizontal: true, vertical: false)
+                  .lineLimit(1)
+              }
+
+              HStack(spacing: 4) {
+                Image(systemName: "figure.walk")
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                Text(walk.distanceString)
+                  .font(.caption)
+                  .foregroundColor(.secondary)
+                  .fixedSize(horizontal: true, vertical: false)
+                  .lineLimit(1)
+              }
+            } else {
+              // 進行中または未開始の散歩
+              Text(walk.status.displayName)
+                .font(.caption)
+                .foregroundColor(statusColor)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(statusColor.opacity(0.1))
+                .cornerRadius(4)
+            }
+          }
         }
 
-        HStack(spacing: 16) {
-          if walk.isCompleted {
-            // 完了した散歩の情報
-            HStack(spacing: 4) {
-              Image(systemName: "clock")
-                .font(.caption)
-                .foregroundColor(.secondary)
-              Text(walk.durationString)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: true, vertical: false)
-                .lineLimit(1)
-            }
+        Spacer()
 
-            HStack(spacing: 4) {
-              Image(systemName: "figure.walk")
-                .font(.caption)
-                .foregroundColor(.secondary)
-              Text(walk.distanceString)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: true, vertical: false)
-                .lineLimit(1)
-            }
-          } else {
-            // 進行中または未開始の散歩
-            Text(walk.status.displayName)
+        // 日時表示
+        VStack(alignment: .trailing, spacing: 2) {
+          Text(dateString)
+            .font(.caption)
+            .foregroundColor(.secondary)
+
+          if walk.hasLocation {
+            Image(systemName: "location.fill")
               .font(.caption)
-              .foregroundColor(statusColor)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 2)
-              .background(statusColor.opacity(0.1))
-              .cornerRadius(4)
+              .foregroundColor(.blue)
           }
         }
       }
 
-      Spacer()
-
-      // 日時表示
-      VStack(alignment: .trailing, spacing: 2) {
-        Text(dateString)
-          .font(.caption)
-          .foregroundColor(.secondary)
-
-        if walk.hasLocation {
-          Image(systemName: "location.fill")
-            .font(.caption)
-            .foregroundColor(.blue)
-        }
+      // 完了した散歩で位置情報がある場合はサムネイル画像を表示
+      if walk.isCompleted && walk.hasLocation {
+        thumbnailView
       }
     }
     .padding(.vertical, 4)
+  }
+
+  // サムネイル画像のプレビュー
+  private var thumbnailView: some View {
+    Group {
+      // ローカル画像をまず試行、次にFirebase、最後にフォールバック
+      ThumbnailImageView(walkId: walk.id, thumbnailImageUrl: walk.thumbnailImageUrl)
+        .frame(height: 120)
+        .cornerRadius(8)
+        .overlay(
+          RoundedRectangle(cornerRadius: 8)
+            .stroke(Color(.systemGray4), lineWidth: 1)
+        )
+    }
   }
 
   // 状態に応じたアイコン
@@ -121,6 +141,7 @@ struct WalkRow: View {
       return .blue
     }
   }
+
 
   // 日時文字列
   private var dateString: String {

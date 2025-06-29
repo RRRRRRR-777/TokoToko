@@ -15,9 +15,8 @@ struct HomeView: View {
   @State private var region: MKCoordinateRegion
 
   // 位置情報マネージャー
-  private let locationManager = LocationManager.shared
+  @StateObject private var locationManager = LocationManager.shared
   @State private var currentLocation: CLLocation?
-  @State private var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
 
   init() {
     // 東京駅をデフォルト位置に
@@ -67,7 +66,7 @@ struct HomeView: View {
                   LinearGradient(
                     gradient: Gradient(colors: [
                       Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
-                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing
@@ -75,7 +74,9 @@ struct HomeView: View {
                 )
                 .foregroundColor(.white)
                 .cornerRadius(12)
-                .shadow(color: Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255).opacity(0.3), radius: 4, x: 0, y: 2)
+                .shadow(
+                  color: Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255).opacity(0.3),
+                  radius: 4, x: 0, y: 2)
               }
               .padding(.top, 8)
               .padding(.horizontal)
@@ -102,6 +103,16 @@ struct HomeView: View {
     .onAppear {
       setupLocationManager()
     }
+    .onChange(of: locationManager.authorizationStatus) { status in
+      print("位置情報許可状態が変更されました: \(status)")
+      setupLocationManager()
+    }
+    .onChange(of: locationManager.currentLocation) { location in
+      if let location = location {
+        currentLocation = location
+        region = locationManager.region(for: location)
+      }
+    }
     .loadingOverlay(isLoading: isLoading)
   }
 
@@ -109,7 +120,7 @@ struct HomeView: View {
   private var mapSection: some View {
     ZStack {
       // 位置情報の許可状態に応じて表示を切り替え
-      switch locationAuthorizationStatus {
+      switch locationManager.authorizationStatus {
       case .notDetermined:
         requestPermissionView
 
@@ -119,7 +130,8 @@ struct HomeView: View {
       case .authorizedWhenInUse, .authorizedAlways:
         MapViewComponent(
           region: region,
-          annotations: createMapAnnotations()
+          annotations: createMapAnnotations(),
+          polylineCoordinates: createPolylineCoordinates()
         )
 
       @unknown default:
@@ -148,9 +160,12 @@ struct HomeView: View {
       Circle()
         .fill(walkManager.currentWalk?.status == .paused ? Color.orange : Color.red)
         .frame(width: 8, height: 8)
-        .scaleEffect(walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5))
+        .scaleEffect(
+          walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5)
+        )
         .animation(
-          walkManager.currentWalk?.status == .paused ? .none : .easeInOut(duration: 1.0).repeatForever(),
+          walkManager.currentWalk?.status == .paused
+            ? .none : .easeInOut(duration: 1.0).repeatForever(),
           value: walkManager.isWalking
         )
 
@@ -227,11 +242,11 @@ struct HomeView: View {
 
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
-    locationAuthorizationStatus = locationManager.checkAuthorizationStatus()
     currentLocation = locationManager.currentLocation
 
-    if locationAuthorizationStatus == .authorizedWhenInUse
-      || locationAuthorizationStatus == .authorizedAlways {
+    if locationManager.authorizationStatus == .authorizedWhenInUse
+      || locationManager.authorizationStatus == .authorizedAlways
+    {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
@@ -250,27 +265,49 @@ struct HomeView: View {
     return window.safeAreaInsets
   }
 
-  // マップアノテーションを作成
+  // マップアノテーションを作成（開始・終了ポイントのみ）
   private func createMapAnnotations() -> [MapItem] {
     var annotations: [MapItem] = []
 
-    // 現在の散歩の軌跡を表示
+    // 現在の散歩の開始・終了地点のみ表示
     if let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty {
-      for (index, location) in currentWalk.locations.enumerated() {
-        let isStart = index == 0
-        let isEnd = index == currentWalk.locations.count - 1
+      let locations = currentWalk.locations
 
+      // 開始地点
+      if let startLocation = locations.first {
         annotations.append(
           MapItem(
-            coordinate: location.coordinate,
-            title: isStart ? "開始地点" : (isEnd ? "現在地" : ""),
-            imageName: isStart ? "play.circle.fill" : (isEnd ? "location.fill" : "circle.fill"),
+            coordinate: startLocation.coordinate,
+            title: "開始地点",
+            imageName: "play.circle.fill",
             id: UUID()
-          ))
+          )
+        )
+      }
+
+      // 終了地点（完了した散歩の場合のみ）
+      if let endLocation = locations.last, locations.count > 1, currentWalk.status == .completed {
+        annotations.append(
+          MapItem(
+            coordinate: endLocation.coordinate,
+            title: "終了地点",
+            imageName: "checkmark.circle.fill",
+            id: UUID()
+          )
+        )
       }
     }
 
     return annotations
+  }
+
+  // ポリライン座標を作成
+  private func createPolylineCoordinates() -> [CLLocationCoordinate2D] {
+    guard let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty else {
+      return []
+    }
+
+    return currentWalk.locations.map { $0.coordinate }
   }
 }
 

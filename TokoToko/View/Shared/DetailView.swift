@@ -11,6 +11,8 @@ import SwiftUI
 struct DetailView: View {
   @State private var walk: Walk
   @State private var isLoading = false
+  @State private var showingDeleteAlert = false
+  @Environment(\.presentationMode) var presentationMode
 
   // リポジトリ
   private let walkRepository = WalkRepository.shared
@@ -63,11 +65,32 @@ struct DetailView: View {
     .navigationTitle("散歩詳細")
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      Button(action: { refreshWalkDetails() }) {
-        Image(systemName: "arrow.clockwise")
+      ToolbarItem(placement: .navigationBarTrailing) {
+        Menu {
+          Button(action: { refreshWalkDetails() }) {
+            Label("更新", systemImage: "arrow.clockwise")
+          }
+          
+          if walk.isCompleted {
+            Button(action: { showingDeleteAlert = true }) {
+              Label("削除", systemImage: "trash")
+            }
+            .foregroundColor(.red)
+          }
+        } label: {
+          Image(systemName: "ellipsis.circle")
+        }
       }
     }
     .loadingOverlay(isLoading: isLoading)
+    .alert("散歩を削除", isPresented: $showingDeleteAlert) {
+      Button("削除", role: .destructive) {
+        deleteWalk()
+      }
+      Button("キャンセル", role: .cancel) {}
+    } message: {
+      Text("この散歩記録を削除しますか？この操作は取り消せません。")
+    }
     .onAppear {
       refreshWalkDetails()
     }
@@ -146,64 +169,51 @@ struct DetailView: View {
       Text("ルートマップ")
         .font(.headline)
 
-      if let location = walk.location {
-        // iOS 17以上と未満で分岐
-        if #available(iOS 17.0, *) {
-          // iOS 17以上用のマップ表示
-          Map(
-            initialPosition: .region(
-              MKCoordinateRegion(
-                center: location,
-                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-              ))
-          ) {
-            // 散歩の軌跡を表示
-            ForEach(Array(walk.locations.enumerated()), id: \.offset) { index, walkLocation in
-              let isStart = index == 0
-              let isEnd = index == walk.locations.count - 1
+      if walk.hasLocation {
+        let region = calculateRegionForWalk()
 
-              Annotation(
-                isStart ? "開始地点" : (isEnd ? "終了地点" : ""),
-                coordinate: walkLocation.coordinate
-              ) {
-                Image(
-                  systemName: isStart
-                    ? "play.circle.fill" : (isEnd ? "stop.circle.fill" : "circle.fill")
-                )
-                .foregroundColor(isStart ? .green : (isEnd ? .red : .blue))
-                .font(.title2)
-              }
-            }
-          }
-          .frame(height: 250)
-          .cornerRadius(12)
-        } else {
-          // iOS 15-16用のマップ表示
-          let region = MKCoordinateRegion(
-            center: location,
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-          )
+        // 開始・終了地点のアノテーション
+        let annotations: [MapItem] = {
+          guard !walk.locations.isEmpty else { return [] }
 
-          let annotations = walk.locations.enumerated().map { index, walkLocation in
-            let isStart = index == 0
-            let isEnd = index == walk.locations.count - 1
-            return MapItem(
-              coordinate: walkLocation.coordinate,
-              title: isStart ? "開始地点" : (isEnd ? "終了地点" : ""),
-              imageName: isStart ? "play.circle.fill" : (isEnd ? "stop.circle.fill" : "circle.fill")
+          var items: [MapItem] = []
+
+          // 開始地点
+          if let firstLocation = walk.locations.first {
+            items.append(
+              MapItem(
+                coordinate: firstLocation.coordinate,
+                title: "開始地点",
+                imageName: "play.circle.fill"
+              )
             )
           }
 
-          Map(coordinateRegion: .constant(region), annotationItems: annotations) { item in
-            MapAnnotation(coordinate: item.coordinate) {
-              Image(systemName: item.imageName)
-                .foregroundColor(.red)
-                .font(.title2)
-            }
+          // 終了地点（開始地点と異なる場合のみ）
+          if let lastLocation = walk.locations.last, walk.locations.count > 1 {
+            items.append(
+              MapItem(
+                coordinate: lastLocation.coordinate,
+                title: "終了地点",
+                imageName: "checkmark.circle.fill"
+              )
+            )
           }
-          .frame(height: 250)
-          .cornerRadius(12)
-        }
+
+          return items
+        }()
+
+        // ポリライン座標
+        let polylineCoordinates = walk.locations.map { $0.coordinate }
+
+        MapViewComponent(
+          region: region,
+          annotations: annotations,
+          polylineCoordinates: polylineCoordinates,
+          showsUserLocation: false
+        )
+        .frame(height: 250)
+        .cornerRadius(12)
       }
 
       // 位置情報の詳細
@@ -221,6 +231,53 @@ struct DetailView: View {
         }
       }
     }
+  }
+
+  // 散歩ルート全体を含む領域を計算
+  private func calculateRegionForWalk() -> MKCoordinateRegion {
+    guard !walk.locations.isEmpty else {
+      return MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+      )
+    }
+
+    // 1つの座標のみの場合
+    if walk.locations.count == 1 {
+      guard let firstLocation = walk.locations.first else {
+        return MKCoordinateRegion(
+          center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+          span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+      }
+      return MKCoordinateRegion(
+        center: firstLocation.coordinate,
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+      )
+    }
+
+    // 全座標の境界を計算
+    let coordinates = walk.locations.map { $0.coordinate }
+    let latitudes = coordinates.map { $0.latitude }
+    let longitudes = coordinates.map { $0.longitude }
+
+    let minLat = latitudes.min() ?? 0
+    let maxLat = latitudes.max() ?? 0
+    let minLon = longitudes.min() ?? 0
+    let maxLon = longitudes.max() ?? 0
+
+    // 中心点を計算
+    let centerLat = (minLat + maxLat) / 2
+    let centerLon = (minLon + maxLon) / 2
+
+    // スパンを計算（詳細画面ではルート全体が確実に表示されるよう余裕を持たせる）
+    let latDelta = max((maxLat - minLat) * 1.4, 0.004)  // 詳細画面では40%のマージンと適切な最小値を設定
+    let lonDelta = max((maxLon - minLon) * 1.4, 0.004)  // 詳細画面では40%のマージンと適切な最小値を設定
+
+    return MKCoordinateRegion(
+      center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+      span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
+    )
   }
 
   // 日時文字列
@@ -249,7 +306,27 @@ struct DetailView: View {
         case .failure(let error):
           // エラーログは適切なロギングシステムに記録
           #if DEBUG
-          print("Error refreshing walk details: \(error)")
+            print("Error refreshing walk details: \(error)")
+          #endif
+        }
+      }
+    }
+  }
+  
+  // 散歩を削除
+  private func deleteWalk() {
+    isLoading = true
+    walkRepository.deleteWalk(withID: walk.id) { result in
+      DispatchQueue.main.async {
+        self.isLoading = false
+        switch result {
+        case .success:
+          // 削除成功時は前の画面に戻る
+          self.presentationMode.wrappedValue.dismiss()
+        case .failure(let error):
+          // エラーログは適切なロギングシステムに記録
+          #if DEBUG
+            print("Error deleting walk: \(error)")
           #endif
         }
       }
