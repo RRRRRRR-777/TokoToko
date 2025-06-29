@@ -67,13 +67,9 @@ class LocationManager: NSObject, ObservableObject {
         let backgroundModes =
           Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
         if backgroundModes.contains("location") {
-          do {
-            locationManager.allowsBackgroundLocationUpdates = true
-            locationManager.showsBackgroundLocationIndicator = false  // バッテリー節約のためfalse
-            print("バックグラウンド位置情報更新を有効にしました")
-          } catch {
-            print("バックグラウンド位置情報更新の設定に失敗: \(error)")
-          }
+          locationManager.allowsBackgroundLocationUpdates = true
+          locationManager.showsBackgroundLocationIndicator = false  // バッテリー節約のためfalse
+          print("バックグラウンド位置情報更新を有効にしました")
         }
       }
     } else {
