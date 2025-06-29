@@ -37,6 +37,10 @@ class WalkManager: NSObject, ObservableObject {
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
   private let walkRepository = WalkRepository.shared
+  
+  // サムネイル生成関連
+  private let mapThumbnailGenerator = MapThumbnailGenerator()
+  private let imageStorageManager = ImageStorageManager.shared
 
   // タイマー
   private var timer: Timer?
@@ -170,6 +174,9 @@ class WalkManager: NSObject, ObservableObject {
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
 
+    // サムネイル画像を生成して保存
+    generateAndSaveThumbnail(for: walk)
+
     // 散歩をリポジトリに保存
     saveCurrentWalk()
 
@@ -301,6 +308,55 @@ class WalkManager: NSObject, ObservableObject {
       }
     default:
       break
+    }
+  }
+  
+  // MARK: - サムネイル生成機能
+  
+  // 散歩完了時にサムネイル画像を生成して保存
+  private func generateAndSaveThumbnail(for walk: Walk) {
+    // 🔵 Refactor - 非同期でサムネイル画像を生成
+    
+    print("📸 サムネイル画像の生成を開始しました")
+    
+    // 非同期でサムネイル画像を生成
+    mapThumbnailGenerator.generateThumbnail(from: walk) { [weak self] thumbnailImage in
+      guard let self = self, let thumbnailImage = thumbnailImage else {
+        print("⚠️ サムネイル画像の生成に失敗しました")
+        return
+      }
+      
+      #if DEBUG
+      print("✅ サムネイル画像生成完了: \(thumbnailImage.size)")
+      #endif
+      
+      // ローカルに保存
+      let localSaveSuccess = self.imageStorageManager.saveImageLocally(thumbnailImage, for: walk.id)
+      if !localSaveSuccess {
+        print("⚠️ サムネイル画像のローカル保存に失敗しました")
+        return
+      }
+      
+      #if DEBUG
+      print("✅ ローカル保存完了")
+      #endif
+      
+      // Firebase Storageにアップロード（非同期）
+      self.imageStorageManager.uploadToFirebaseStorage(thumbnailImage, for: walk.id) { result in
+        DispatchQueue.main.async {
+          switch result {
+          case .success(let url):
+            // 成功: URLをWalkに設定してFirestoreを更新
+            var updatedWalk = walk
+            updatedWalk.thumbnailImageUrl = url
+            self.walkRepository.saveWalk(updatedWalk) { _ in }
+            print("✅ サムネイル画像のFirebase保存完了: \(url)")
+            
+          case .failure(let error):
+            print("⚠️ サムネイル画像のFirebase保存に失敗: \(error)")
+          }
+        }
+      }
     }
   }
 }

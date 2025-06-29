@@ -5,8 +5,6 @@
 //  Created by bokuyamada on 2025/06/03.
 //
 
-import CoreLocation
-import MapKit
 import SwiftUI
 
 struct WalkRow: View {
@@ -87,9 +85,9 @@ struct WalkRow: View {
         }
       }
 
-      // 完了した散歩で位置情報がある場合はマップのプレビューを表示
-      if walk.isCompleted && walk.hasLocation, let firstLocation = walk.locations.first {
-        mapPreview
+      // 完了した散歩で位置情報がある場合はサムネイル画像を表示
+      if walk.isCompleted && walk.hasLocation {
+        thumbnailView
       }
     }
     .padding(.vertical, 4)
@@ -118,57 +116,17 @@ struct WalkRow: View {
     }
   }
 
-  // マップのプレビュー
-  private var mapPreview: some View {
+  // サムネイル画像のプレビュー
+  private var thumbnailView: some View {
     Group {
-      if let firstLocation = walk.locations.first {
-        let region = calculateRegionForWalk()
-
-        // 開始・終了地点のアノテーション
-        let annotations: [MapItem] = {
-          guard !walk.locations.isEmpty else { return [] }
-
-          var items: [MapItem] = []
-
-          // 開始地点
-          items.append(
-            MapItem(
-              coordinate: firstLocation.coordinate,
-              title: "開始",
-              imageName: "play.circle.fill"
-            )
-          )
-
-          // 終了地点（開始地点と異なる場合のみ）
-          if let lastLocation = walk.locations.last, walk.locations.count > 1 {
-            items.append(
-              MapItem(
-                coordinate: lastLocation.coordinate,
-                title: "終了",
-                imageName: "checkmark.circle.fill"
-              )
-            )
-          }
-
-          return items
-        }()
-
-        // ポリライン座標
-        let polylineCoordinates = walk.locations.map { $0.coordinate }
-
-        MapViewComponent(
-          region: region,
-          annotations: annotations,
-          polylineCoordinates: polylineCoordinates,
-          showsUserLocation: false
-        )
+      // ローカル画像をまず試行、次にFirebase、最後にフォールバック
+      ThumbnailImageView(walkId: walk.id, thumbnailImageUrl: walk.thumbnailImageUrl)
         .frame(height: 120)
         .cornerRadius(8)
         .overlay(
           RoundedRectangle(cornerRadius: 8)
             .stroke(Color(.systemGray4), lineWidth: 1)
         )
-      }
     }
   }
 
@@ -207,62 +165,6 @@ struct WalkRow: View {
     }
   }
 
-  // 散歩ルート全体を含む領域を計算
-  private func calculateRegionForWalk() -> MKCoordinateRegion {
-    // 地域計算パフォーマンスの計測
-    let operationName = "WalkRow.calculateRegion"
-    return measurePerformance(
-      operationName: operationName,
-      additionalInfo: [
-        "walkId": walk.id.uuidString,
-        "locationCount": walk.locations.count
-      ]
-    ) {
-      guard !walk.locations.isEmpty else {
-        return MKCoordinateRegion(
-          center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
-          span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        )
-      }
-
-      // 1つの座標のみの場合
-      if walk.locations.count == 1 {
-        guard let firstLocation = walk.locations.first else {
-          return MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
-            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-          )
-        }
-        return MKCoordinateRegion(
-          center: firstLocation.coordinate,
-          span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-        )
-      }
-
-      // 全座標の境界を計算
-      let coordinates = walk.locations.map { $0.coordinate }
-      let latitudes = coordinates.map { $0.latitude }
-      let longitudes = coordinates.map { $0.longitude }
-
-      let minLat = latitudes.min() ?? 0
-      let maxLat = latitudes.max() ?? 0
-      let minLon = longitudes.min() ?? 0
-      let maxLon = longitudes.max() ?? 0
-
-      // 中心点を計算
-      let centerLat = (minLat + maxLat) / 2
-      let centerLon = (minLon + maxLon) / 2
-
-      // スパンを計算（ルート全体が確実に表示されるよう十分な余裕を持たせる）
-      let latDelta = max((maxLat - minLat) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
-      let lonDelta = max((maxLon - minLon) * 1.5, 0.003)  // 50%のマージンと適切な最小値を設定
-
-      return MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
-        span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
-      )
-    }
-  }
 
   // 日時文字列
   private var dateString: String {
