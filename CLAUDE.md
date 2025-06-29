@@ -156,7 +156,7 @@ swift-format lint --configuration .swift-format [file]
 6. **関連会話の統合ルール**:
    - **同一テーマ判定**: 同じ技術概念や機能に関する連続した質問・回答
    - **統合条件**: 同日内で関連性の高い複数のログファイルが存在する場合
-   - **統合方法**: 
+   - **統合方法**:
      - 最初のファイルを基準として内容を拡張
      - 各プロンプト・回答を時系列順で追記
      - 最終的な総合知見をまとめて記載
@@ -295,7 +295,7 @@ TokoToko/
 ## ビルド
 プロジェクトはproject.yml設定でXcodeGenを使用。依存関係変更後は常にプロジェクトを再生成:
 ```bash
-set -a && source .env && xcodegen generate
+set -a && source .env && set +a && xcodegen generate
 ```
 
 ## Firebase連携

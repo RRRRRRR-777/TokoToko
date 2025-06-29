@@ -7,6 +7,7 @@
 
 import UIKit
 import Foundation
+import FirebaseStorage
 
 // 画像の保存・読み込みを管理するクラス（ローカル + Firebase Storage）
 class ImageStorageManager {
@@ -88,38 +89,130 @@ class ImageStorageManager {
     }
   }
   
-  // MARK: - Firebase Storage 操作（仮実装）
+  // MARK: - Firebase Storage 操作
   
   // Firebase Storage にアップロード
   func uploadToFirebaseStorage(_ image: UIImage, for walkId: UUID, completion: @escaping (Result<String, Error>) -> Void) {
-    // 🟢 仮実装（ベタ書き）- テストを通すための最小限の実装
+    // 🔵 Refactor - 実際のFirebase Storage実装
     
-    // TODO: 実際のFirebase Storage実装
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
-      let fakeURL = "https://firebase.storage.example.com/walk_thumbnails/\(walkId.uuidString).jpg"
-      completion(.success(fakeURL))
+    guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+      completion(.failure(ImageStorageError.compressionFailed))
+      return
+    }
+    
+    // Firebase Storage reference
+    let storage = Storage.storage()
+    let storageRef = storage.reference()
+    let thumbnailsRef = storageRef.child("walk_thumbnails/\(walkId.uuidString).jpg")
+    
+    // メタデータ設定
+    let metadata = StorageMetadata()
+    metadata.contentType = "image/jpeg"
+    metadata.customMetadata = [
+      "walkId": walkId.uuidString,
+      "uploadTime": ISO8601DateFormatter().string(from: Date())
+    ]
+    
+    #if DEBUG
+    print("📤 Firebase Storage アップロード開始: \(walkId.uuidString)")
+    #endif
+    
+    // アップロード実行
+    thumbnailsRef.putData(imageData, metadata: metadata) { metadata, error in
+      if let error = error {
+        #if DEBUG
+        print("❌ Firebase Storage アップロードエラー: \(error.localizedDescription)")
+        #endif
+        completion(.failure(error))
+        return
+      }
+      
+      // ダウンロードURL取得
+      thumbnailsRef.downloadURL { url, error in
+        if let error = error {
+          #if DEBUG
+          print("❌ Firebase Storage URL取得エラー: \(error.localizedDescription)")
+          #endif
+          completion(.failure(error))
+          return
+        }
+        
+        guard let downloadURL = url else {
+          completion(.failure(ImageStorageError.uploadFailed))
+          return
+        }
+        
+        #if DEBUG
+        print("✅ Firebase Storage アップロード完了: \(downloadURL.absoluteString)")
+        #endif
+        completion(.success(downloadURL.absoluteString))
+      }
     }
   }
   
   // Firebase Storage からダウンロード
   func downloadFromFirebaseStorage(url: String, for walkId: UUID, completion: @escaping (Result<UIImage, Error>) -> Void) {
-    // 🟢 仮実装（ベタ書き）- テストを通すための最小限の実装
+    // 🔵 Refactor - 実際のFirebase Storage実装
     
-    // TODO: 実際のFirebase Storage実装
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
-      // とりあえず固定の画像を返す
-      let size = CGSize(width: 160, height: 120)
-      UIGraphicsBeginImageContextWithOptions(size, false, 2.0)
-      defer { UIGraphicsEndImageContext() }
+    guard let downloadURL = URL(string: url) else {
+      completion(.failure(ImageStorageError.invalidURL))
+      return
+    }
+    
+    // Firebase Storage URLの形式をチェック
+    let validFirebaseStorageHosts = ["firebasestorage.googleapis.com", "storage.googleapis.com"]
+    guard let host = downloadURL.host,
+          validFirebaseStorageHosts.contains(host) else {
+      #if DEBUG
+      print("❌ 無効なFirebase Storage URL: \(url)")
+      print("   期待されるホスト: \(validFirebaseStorageHosts)")
+      print("   実際のホスト: \(downloadURL.host ?? "nil")")
+      #endif
+      completion(.failure(ImageStorageError.invalidURL))
+      return
+    }
+    
+    #if DEBUG
+    print("📥 Firebase Storage ダウンロード開始: \(walkId.uuidString)")
+    print("   URL: \(url)")
+    #endif
+    
+    // Firebase Storage reference
+    let storage = Storage.storage()
+    
+    do {
+      let storageRef = storage.reference(forURL: url)
       
-      UIColor.gray.setFill()
-      UIRectFill(CGRect(origin: .zero, size: size))
+      // 最大ダウンロードサイズを5MBに制限
+      let maxSize: Int64 = 5 * 1024 * 1024
       
-      if let fakeImage = UIGraphicsGetImageFromCurrentImageContext() {
-        completion(.success(fakeImage))
-      } else {
-        completion(.failure(ImageStorageError.downloadFailed))
+      storageRef.getData(maxSize: maxSize) { data, error in
+        if let error = error {
+          #if DEBUG
+          print("❌ Firebase Storage ダウンロードエラー: \(error.localizedDescription)")
+          #endif
+          completion(.failure(error))
+          return
+        }
+        
+        guard let imageData = data, let image = UIImage(data: imageData) else {
+          #if DEBUG
+          print("❌ 画像データの変換に失敗")
+          #endif
+          completion(.failure(ImageStorageError.downloadFailed))
+          return
+        }
+        
+        #if DEBUG
+        print("✅ Firebase Storage ダウンロード完了: \(image.size)")
+        #endif
+        completion(.success(image))
       }
+    } catch {
+      #if DEBUG
+      print("❌ Firebase Storage reference作成エラー: \(error.localizedDescription)")
+      #endif
+      completion(.failure(ImageStorageError.invalidURL))
     }
   }
   
@@ -149,7 +242,7 @@ class ImageStorageManager {
 
 // MARK: - エラー定義
 
-enum ImageStorageError: Error {
+enum ImageStorageError: Error, LocalizedError {
   case compressionFailed
   case saveFailed
   case loadFailed
@@ -157,4 +250,35 @@ enum ImageStorageError: Error {
   case uploadFailed
   case downloadFailed
   case fileNotFound
+  case networkUnavailable
+  case authenticationFailed
+  case storageLimitExceeded
+  case invalidURL
+  
+  var errorDescription: String? {
+    switch self {
+    case .compressionFailed:
+      return "画像の圧縮に失敗しました"
+    case .saveFailed:
+      return "画像の保存に失敗しました"
+    case .loadFailed:
+      return "画像の読み込みに失敗しました"
+    case .deleteFailed:
+      return "画像の削除に失敗しました"
+    case .uploadFailed:
+      return "Firebase Storageへのアップロードに失敗しました"
+    case .downloadFailed:
+      return "Firebase Storageからのダウンロードに失敗しました"
+    case .fileNotFound:
+      return "ファイルが見つかりません"
+    case .networkUnavailable:
+      return "ネットワークに接続できません"
+    case .authenticationFailed:
+      return "認証に失敗しました"
+    case .storageLimitExceeded:
+      return "ストレージの容量制限を超えています"
+    case .invalidURL:
+      return "無効なURLです"
+    }
+  }
 }
