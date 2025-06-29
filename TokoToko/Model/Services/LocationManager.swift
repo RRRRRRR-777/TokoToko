@@ -39,7 +39,7 @@ class LocationManager: NSObject, ObservableObject {
   private func setupLocationManager() {
     locationManager.delegate = self
     locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters  // バッテリー効率を考慮
-    locationManager.distanceFilter = 5  // 5メートル移動したら更新（散歩には適切な精度）
+    locationManager.distanceFilter = 15  // 15メートル移動したら更新
     locationManager.pausesLocationUpdatesAutomatically = false  // 自動停止を無効化
   }
 
