@@ -18,7 +18,7 @@ struct ThumbnailImageView: View {
   @State private var hasError = false
 
   // 画像管理マネージャー
-  private let imageStorageManager = ImageStorageManager.shared
+  private let walkManager = WalkManager.shared
 
   var body: some View {
     Group {
@@ -66,7 +66,7 @@ struct ThumbnailImageView: View {
     // 🟢 仮実装（ベタ書き）- テストを通すための最小限の実装
 
     // 1. ローカルストレージから試行
-    if let localImage = imageStorageManager.loadImageLocally(for: walkId) {
+    if let localImage = walkManager.loadImageLocally(for: walkId) {
       self.image = localImage
       self.isLoading = false
       return
@@ -74,7 +74,7 @@ struct ThumbnailImageView: View {
 
     // 2. Firebase Storage URLがある場合はダウンロード試行
     if let urlString = thumbnailImageUrl, !urlString.isEmpty {
-      imageStorageManager.downloadFromFirebaseStorage(url: urlString, for: walkId) { result in
+      walkManager.downloadFromFirebaseStorage(url: urlString, for: walkId) { result in
         DispatchQueue.main.async {
           switch result {
           case .success(let downloadedImage):
@@ -82,7 +82,7 @@ struct ThumbnailImageView: View {
             self.isLoading = false
 
             // ダウンロード成功時はローカルにもキャッシュ
-            _ = imageStorageManager.saveImageLocally(downloadedImage, for: walkId)
+            _ = self.walkManager.saveImageLocally(downloadedImage, for: self.walkId)
 
           case .failure(_):
             // Firebase Storageダウンロード失敗
