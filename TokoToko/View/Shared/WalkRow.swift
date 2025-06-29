@@ -91,29 +91,6 @@ struct WalkRow: View {
       }
     }
     .padding(.vertical, 4)
-    .onAppear {
-      // WalkRow描画パフォーマンスの計測
-      PerformanceMeasurement.shared.startMeasurement(
-        operationName: "WalkRow.rendering",
-        additionalInfo: [
-          "walkId": walk.id.uuidString,
-          "hasMap": walk.isCompleted && walk.hasLocation,
-          "locationCount": walk.locations.count
-        ]
-      )
-      
-      // 描画完了の近似
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-        PerformanceMeasurement.shared.endMeasurement(
-          operationName: "WalkRow.rendering",
-          additionalInfo: [
-            "walkId": walk.id.uuidString,
-            "hasMap": walk.isCompleted && walk.hasLocation,
-            "locationCount": walk.locations.count
-          ]
-        )
-      }
-    }
   }
 
   // サムネイル画像のプレビュー

@@ -209,18 +209,8 @@ class WalkRepository {
   func fetchWalksFromFirestore(
     userId: String, completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void
   ) {
-    // Firestore通信パフォーマンスの計測開始
-    PerformanceMeasurement.shared.startMeasurement(
-      operationName: "WalkRepository.fetchWalksFromFirestore",
-      additionalInfo: ["userId": userId]
-    )
-    
     // タイムアウト設定
     let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) { _ in
-      PerformanceMeasurement.shared.endMeasurement(
-        operationName: "WalkRepository.fetchWalksFromFirestore",
-        additionalInfo: ["userId": userId, "result": "timeout"]
-      )
       completion(.failure(.networkError))
     }
 
@@ -229,70 +219,33 @@ class WalkRepository {
       .order(by: "created_at", descending: true)
       .getDocuments { [weak self] querySnapshot, error in
         timeoutTimer.invalidate()  // タイマーを無効化
-        
+
         if let error = error {
           let mappedError = self?.mapFirestoreError(error) ?? .firestoreError(error)
-          
-          // エラー時の計測完了
-          PerformanceMeasurement.shared.endMeasurement(
-            operationName: "WalkRepository.fetchWalksFromFirestore",
-            additionalInfo: [
-              "userId": userId,
-              "result": "error",
-              "errorType": "\(mappedError)"
-            ]
-          )
-          
           completion(.failure(mappedError))
           return
         }
 
         guard let documents = querySnapshot?.documents else {
-          // 空結果の計測完了
-          PerformanceMeasurement.shared.endMeasurement(
-            operationName: "WalkRepository.fetchWalksFromFirestore",
-            additionalInfo: [
-              "userId": userId,
-              "result": "empty",
-              "documentCount": 0
-            ]
-          )
-          
           completion(.success([]))
           return
         }
 
-        // データ解析パフォーマンスの計測
-        let parseResult = measurePerformance(
-          operationName: "WalkRepository.parseDocuments",
-          additionalInfo: ["documentCount": documents.count]
-        ) {
-          return documents.compactMap { document in
-            do {
-              return try document.data(as: Walk.self)
-            } catch {
-              #if DEBUG
-              print("⚠️ Walk解析エラー: \(error)")
-              #endif
-              return nil
-            }
+        // データ解析
+        let parseResult = documents.compactMap { document in
+          do {
+            return try document.data(as: Walk.self)
+          } catch {
+            #if DEBUG
+            print("⚠️ Walk解析エラー: \(error)")
+            #endif
+            return nil
           }
         }
 
         // キャッシュを更新
         self?.cachedWalks = parseResult
-        
-        // 成功時の計測完了
-        PerformanceMeasurement.shared.endMeasurement(
-          operationName: "WalkRepository.fetchWalksFromFirestore",
-          additionalInfo: [
-            "userId": userId,
-            "result": "success",
-            "documentCount": documents.count,
-            "walkCount": parseResult.count
-          ]
-        )
-        
+
         completion(.success(parseResult))
       }
   }

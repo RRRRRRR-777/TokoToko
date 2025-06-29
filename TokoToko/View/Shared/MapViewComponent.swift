@@ -39,18 +39,8 @@ struct MapViewComponent: View {
   }
 
   var body: some View {
-    // マップコンポーネント初期化の計測
-    let _ = PerformanceMeasurement.shared.startMeasurement(
-      operationName: "MapViewComponent.init",
-      additionalInfo: [
-        "annotationCount": annotations.count,
-        "polylinePointCount": polylineCoordinates.count,
-        "showsUserLocation": showsUserLocation
-      ]
-    )
-    
     // iOS 17以上と未満で分岐
-    let mapView = Group {
+    Group {
       if #available(iOS 17.0, *) {
         iOS17MapView(
           region: $region, annotations: annotations, polylineCoordinates: polylineCoordinates,
@@ -61,19 +51,6 @@ struct MapViewComponent: View {
           showsUserLocation: showsUserLocation, locationManager: locationManager)
       }
     }
-    .onAppear {
-      // マップ表示完了の計測
-      PerformanceMeasurement.shared.endMeasurement(
-        operationName: "MapViewComponent.init",
-        additionalInfo: [
-          "annotationCount": annotations.count,
-          "polylinePointCount": polylineCoordinates.count,
-          "showsUserLocation": showsUserLocation
-        ]
-      )
-    }
-    
-    return mapView
   }
 }
 
@@ -233,55 +210,35 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
   var showsUserLocation: Bool
 
   func makeUIView(context: Context) -> MKMapView {
-    // UIViewRepresentable MKMapView作成の計測
-    return measurePerformance(
-      operationName: "MapViewComponent.makeUIView",
-      additionalInfo: [
-        "annotationCount": annotations.count,
-        "polylinePointCount": polylineCoordinates.count
-      ]
-    ) {
-      let mapView = MKMapView()
-      mapView.delegate = context.coordinator
-      mapView.showsUserLocation = showsUserLocation
-      mapView.setRegion(region, animated: false)
-      return mapView
-    }
+    let mapView = MKMapView()
+    mapView.delegate = context.coordinator
+    mapView.showsUserLocation = showsUserLocation
+    mapView.setRegion(region, animated: false)
+    return mapView
   }
 
   func updateUIView(_ mapView: MKMapView, context: Context) {
-    // UIView更新の計測
-    measurePerformance(
-      operationName: "MapViewComponent.updateUIView",
-      additionalInfo: [
-        "annotationCount": annotations.count,
-        "polylinePointCount": polylineCoordinates.count,
-        "existingAnnotations": mapView.annotations.count,
-        "existingOverlays": mapView.overlays.count
-      ]
-    ) {
-      // リージョンの更新
-      if !mapView.region.isApproximatelyEqual(to: region) {
-        mapView.setRegion(region, animated: true)
-      }
+    // リージョンの更新
+    if !mapView.region.isApproximatelyEqual(to: region) {
+      mapView.setRegion(region, animated: true)
+    }
 
-      // 既存のアノテーションとオーバーレイを削除
-      mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
-      mapView.removeOverlays(mapView.overlays)
+    // 既存のアノテーションとオーバーレイを削除
+    mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
+    mapView.removeOverlays(mapView.overlays)
 
-      // アノテーションの追加
-      for item in annotations {
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = item.coordinate
-        annotation.title = item.title
-        mapView.addAnnotation(annotation)
-      }
+    // アノテーションの追加
+    for item in annotations {
+      let annotation = MKPointAnnotation()
+      annotation.coordinate = item.coordinate
+      annotation.title = item.title
+      mapView.addAnnotation(annotation)
+    }
 
-      // ポリラインの追加
-      if polylineCoordinates.count >= 2 {
-        let polyline = MKPolyline(coordinates: polylineCoordinates, count: polylineCoordinates.count)
-        mapView.addOverlay(polyline)
-      }
+    // ポリラインの追加
+    if polylineCoordinates.count >= 2 {
+      let polyline = MKPolyline(coordinates: polylineCoordinates, count: polylineCoordinates.count)
+      mapView.addOverlay(polyline)
     }
   }
 
