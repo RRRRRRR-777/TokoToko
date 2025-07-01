@@ -7,13 +7,14 @@
 
 import Combine
 import CoreLocation
+import CoreMotion
 import FirebaseAuth
 import FirebaseStorage
 import Foundation
 import MapKit
 import UIKit
 
-class WalkManager: NSObject, ObservableObject {
+class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   // シングルトンインスタンス
   static let shared = WalkManager()
 
@@ -22,6 +23,7 @@ class WalkManager: NSObject, ObservableObject {
   @Published var elapsedTime: TimeInterval = 0
   @Published var distance: Double = 0
   @Published var currentLocation: CLLocation?
+  @Published var currentStepCount: StepCountSource = .unavailable
 
   // 散歩中かどうか（一時停止中も含む）
   var isWalking: Bool {
@@ -40,6 +42,7 @@ class WalkManager: NSObject, ObservableObject {
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
   private let walkRepository = WalkRepository.shared
+  private let stepCountManager = StepCountManager.shared
 
   // タイマー
   private var timer: Timer?
@@ -58,11 +61,13 @@ class WalkManager: NSObject, ObservableObject {
     createThumbnailsDirectoryIfNeeded()
 
     setupLocationManager()
+    setupStepCountManager()
   }
 
   deinit {
     cancellables.removeAll()
     timer?.invalidate()
+    stepCountManager.stopTracking()
   }
 
   // 位置情報マネージャーの設定
@@ -85,6 +90,25 @@ class WalkManager: NSObject, ObservableObject {
         self?.handleAuthorizationStatusChange(status)
       }
       .store(in: &cancellables)
+  }
+
+  // 歩数カウントマネージャーの設定
+  private func setupStepCountManager() {
+    #if DEBUG
+      print("🔧 WalkManager: StepCountManager設定開始")
+    #endif
+    
+    do {
+      stepCountManager.delegate = self
+      #if DEBUG
+        print("✅ WalkManager: StepCountManager設定完了")
+        print("📊 WalkManager: StepCountManager利用可能性: \(stepCountManager.isStepCountingAvailable())")
+      #endif
+    } catch {
+      #if DEBUG
+        print("❌ WalkManager: StepCountManager設定エラー: \(error)")
+      #endif
+    }
   }
 
   // 散歩を開始
@@ -132,6 +156,33 @@ class WalkManager: NSObject, ObservableObject {
     // 位置情報の更新を開始
     locationManager.startUpdatingLocation()
 
+    // 歩数トラッキングを開始
+    #if DEBUG
+      print("🚶‍♂️ WalkManager: 歩数トラッキング開始を要求")
+    #endif
+    
+    do {
+      // CoreMotion利用可能性を事前チェック
+      if stepCountManager.isStepCountingAvailable() {
+        stepCountManager.startTracking()
+        #if DEBUG
+          print("✅ WalkManager: CoreMotion歩数トラッキング開始")
+        #endif
+      } else {
+        #if DEBUG
+          print("⚠️ WalkManager: CoreMotion利用不可、推定モードで開始")
+        #endif
+        // シミュレーターや非対応デバイスでは最初から推定モードに設定
+        currentStepCount = .estimated(steps: 0)
+      }
+    } catch {
+      #if DEBUG
+        print("❌ WalkManager: 歩数トラッキング開始でエラー: \(error)")
+      #endif
+      // エラー時も推定モードで続行
+      currentStepCount = .estimated(steps: 0)
+    }
+
     // タイマーを開始
     startTimer()
 
@@ -151,6 +202,9 @@ class WalkManager: NSObject, ObservableObject {
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
 
+    // 歩数トラッキングを停止
+    stepCountManager.stopTracking()
+
     print("散歩を一時停止しました")
   }
 
@@ -164,6 +218,9 @@ class WalkManager: NSObject, ObservableObject {
     // 位置情報の更新を再開
     locationManager.startUpdatingLocation()
 
+    // 歩数トラッキングを再開
+    stepCountManager.startTracking()
+
     // タイマーを再開
     startTimer()
 
@@ -174,6 +231,8 @@ class WalkManager: NSObject, ObservableObject {
   func stopWalk() {
     guard var walk = currentWalk else { return }
 
+    // 最終歩数を保存
+    walk.totalSteps = totalSteps
     walk.complete()
     currentWalk = walk
 
@@ -182,6 +241,9 @@ class WalkManager: NSObject, ObservableObject {
 
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
+
+    // 歩数トラッキングを停止
+    stepCountManager.stopTracking()
 
     // サムネイル画像を生成して保存
     generateAndSaveThumbnail(for: walk)
@@ -203,6 +265,9 @@ class WalkManager: NSObject, ObservableObject {
 
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
+
+    // 歩数トラッキングを停止
+    stepCountManager.stopTracking()
 
     print("散歩をキャンセルしました")
   }
@@ -257,6 +322,21 @@ class WalkManager: NSObject, ObservableObject {
   private func updateElapsedTime() {
     guard let walk = currentWalk else { return }
     elapsedTime = walk.duration
+    
+    // CoreMotion非対応時は推定歩数をリアルタイム更新
+    if case .estimated = currentStepCount {
+      let newEstimatedStepCount = stepCountManager.estimateSteps(
+        distance: distance,
+        duration: elapsedTime
+      )
+      currentStepCount = newEstimatedStepCount
+      
+      #if DEBUG
+        if let steps = newEstimatedStepCount.steps {
+          print("📊 推定歩数更新: \(steps)歩 (距離: \(String(format: "%.1f", distance))m, 時間: \(String(format: "%.0f", elapsedTime))s)")
+        }
+      #endif
+    }
   }
 
   // 経過時間を文字列で取得
@@ -274,9 +354,14 @@ class WalkManager: NSObject, ObservableObject {
 
   // 歩数の取得
   var totalSteps: Int {
+    // StepCountManagerから歩数を取得、フォールバックで推定歩数を使用
+    if let steps = currentStepCount.steps {
+      return steps
+    }
 
-    // 仮の実装。実際には歩数計APIやセンサーから取得する必要があります。
-    Int(elapsedTime / 2)  // 1秒あたり0.5歩と仮定
+    // CoreMotionが利用できない場合は距離ベースで推定
+    let estimatedStepCount = stepCountManager.estimateSteps(distance: distance, duration: elapsedTime)
+    return estimatedStepCount.steps ?? 0
   }
 
   // 距離を文字列で取得
@@ -376,6 +461,40 @@ extension WalkManager: LocationUpdateDelegate {
 
   func didFailWithError(_ error: Error) {
     print("位置情報の取得に失敗しました: \(error.localizedDescription)")
+  }
+}
+
+// MARK: - StepCountDelegate
+extension WalkManager {
+  func stepCountDidUpdate(_ stepCount: StepCountSource) {
+    DispatchQueue.main.async { [weak self] in
+      self?.currentStepCount = stepCount
+      
+      #if DEBUG
+        if let steps = stepCount.steps {
+          print("📊 歩数更新: \(steps)歩 (\(stepCount.isRealTime ? "実測" : "推定"))")
+        }
+      #endif
+    }
+  }
+
+  func stepCountDidFailWithError(_ error: Error) {
+    DispatchQueue.main.async { [weak self] in
+      self?.currentStepCount = .unavailable
+      
+      #if DEBUG
+        print("❌ 歩数取得エラー: \(error.localizedDescription)")
+      #endif
+      
+      // エラー発生時は距離ベースの推定値にフォールバック
+      if let self = self, self.isRecording {
+        let estimatedStepCount = self.stepCountManager.estimateSteps(
+          distance: self.distance,
+          duration: self.elapsedTime
+        )
+        self.currentStepCount = estimatedStepCount
+      }
+    }
   }
 }
 
