@@ -117,7 +117,7 @@ swift-format lint --configuration .swift-format [file]
    - ユーザーからの要求に対する処理が完了した時
    - 問題解決や設計決定が完了した時
 
-2. **記録場所**: `/TokoTokoDocs/AIAgentLogs/` 配下
+2. **記録場所**: `~/RRRRRRR777/TokoTokoDocs/AIAgentLogs/` 配下
    - ディレクトリが存在しない場合は作成する
    - ファイル名: `[MMDD]_[成果物概要20文字以内].md`
 
