@@ -5,6 +5,7 @@
 //  Created by bokuyamada on 2025/06/03.
 //
 
+import CoreMotion
 import SwiftUI
 
 struct WalkControlPanel: View {
@@ -165,6 +166,7 @@ struct WalkInfoDisplay: View {
   let elapsedTime: String
   let totalSteps: Int
   let distance: String
+  let stepCountSource: StepCountSource
 
   var body: some View {
     HStack {
@@ -181,13 +183,14 @@ struct WalkInfoDisplay: View {
       Spacer()
 
       VStack(alignment: .center, spacing: 4) {
-        Text("歩数")
-          .font(.caption)
-          .foregroundColor(.secondary)
-        Text(String(totalSteps) + "歩")
-          .font(.title2)
-          .fontWeight(.bold)
-          .foregroundColor(.primary)
+        HStack(spacing: 4) {
+          stepCountLabel
+            .font(.caption)
+            .foregroundColor(.secondary)
+          stepSourceIndicator
+        }
+        
+        stepCountDisplay
       }
 
       Spacer()
@@ -203,6 +206,63 @@ struct WalkInfoDisplay: View {
       }
     }
   }
+  
+  // 歩数ラベル
+  private var stepCountLabel: some View {
+    Text(stepCountLabelText)
+  }
+  
+  // 歩数ラベルテキスト
+  private var stepCountLabelText: String {
+    switch stepCountSource {
+    case .coremotion:
+      return "歩数"
+    case .estimated:
+      return "歩数(推定)"
+    case .unavailable:
+      return "歩数"
+    }
+  }
+  
+  // 歩数ソースインジケーター
+  private var stepSourceIndicator: some View {
+    Group {
+      switch stepCountSource {
+      case .coremotion:
+        Image(systemName: "sensor.tag.radiowaves.forward.fill")
+          .font(.caption2)
+          .foregroundColor(.green)
+          .help("センサー実測値")
+      case .estimated:
+        Image(systemName: "ruler.fill")
+          .font(.caption2)
+          .foregroundColor(.orange)
+          .help("距離ベース推定値")
+      case .unavailable:
+        Image(systemName: "exclamationmark.triangle.fill")
+          .font(.caption2)
+          .foregroundColor(.red)
+          .help("歩数計測不可")
+      }
+    }
+  }
+  
+  // 歩数表示
+  private var stepCountDisplay: some View {
+    Group {
+      if let steps = stepCountSource.steps {
+        Text(String(steps) + "歩")
+          .font(.title2)
+          .fontWeight(.bold)
+          .foregroundColor(.primary)
+      } else {
+        Text("計測不可")
+          .font(.title3)
+          .fontWeight(.medium)
+          .foregroundColor(.secondary)
+      }
+    }
+  }
 }
 
 #Preview {
@@ -212,10 +272,37 @@ struct WalkInfoDisplay: View {
 
     Divider()
 
-    WalkInfoDisplay(elapsedTime: "12:34", totalSteps: 1234, distance: "1.2 km")
-      .padding()
-      .background(Color(.systemGray6))
-      .cornerRadius(12)
-      .padding()
+    WalkInfoDisplay(
+      elapsedTime: "12:34", 
+      totalSteps: 1234, 
+      distance: "1.2 km",
+      stepCountSource: .coremotion(steps: 1234)
+    )
+    .padding()
+    .background(Color(.systemGray6))
+    .cornerRadius(12)
+    .padding()
+    
+    WalkInfoDisplay(
+      elapsedTime: "08:15", 
+      totalSteps: 650, 
+      distance: "0.5 km",
+      stepCountSource: .estimated(steps: 650)
+    )
+    .padding()
+    .background(Color(.systemGray6))
+    .cornerRadius(12)
+    .padding()
+    
+    WalkInfoDisplay(
+      elapsedTime: "05:20", 
+      totalSteps: 0, 
+      distance: "0.3 km",
+      stepCountSource: .unavailable
+    )
+    .padding()
+    .background(Color(.systemGray6))
+    .cornerRadius(12)
+    .padding()
   }
 }

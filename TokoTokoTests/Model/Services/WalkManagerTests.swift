@@ -6,6 +6,7 @@
 //
 
 import CoreLocation
+import CoreMotion
 import UIKit
 import XCTest
 
@@ -229,20 +230,57 @@ final class WalkManagerTests: XCTestCase {
     walkManager.elapsedTime = 0
   }
 
-  func testWalkManager_TotalSteps() throws {
+  func testWalkManager_TotalSteps_WithStepCountManager() throws {
     // Arrange
-    let testElapsedTime: TimeInterval = 120 // 2分
+    let testDistance: Double = 1000 // 1km
+    let testElapsedTime: TimeInterval = 900 // 15分
 
-    // Act - 歩数計算のテスト（仮実装ベース）
+    // Act - StepCountManager統合による歩数計算のテスト
+    walkManager.distance = testDistance
     walkManager.elapsedTime = testElapsedTime
+    
+    // currentStepCountが.unavailableの場合は推定歩数が使用される
+    XCTAssertEqual(walkManager.currentStepCount.steps, nil, "初期状態では歩数はnil")
+    
     let steps = walkManager.totalSteps
 
-    // Assert - 仮実装（1秒あたり0.5歩）に基づく期待値
-    let expectedSteps = Int(testElapsedTime / 2)
-    XCTAssertEqual(steps, expectedSteps, "歩数計算が仮実装通りに動作")
+    // Assert - 距離ベース推定（1km = 約1,300歩）
+    let expectedSteps = Int(testDistance / 1000.0 * 1300) // 1,300歩
+    XCTAssertEqual(steps, expectedSteps, "距離ベース推定歩数が正しく計算される")
 
     // リセット
+    walkManager.distance = 0
     walkManager.elapsedTime = 0
+  }
+
+  func testWalkManager_TotalSteps_WithCoreMotionData() throws {
+    // Arrange
+    let testSteps = 1500
+
+    // Act - CoreMotionデータがある場合のテスト
+    walkManager.currentStepCount = .coremotion(steps: testSteps)
+    let totalSteps = walkManager.totalSteps
+
+    // Assert
+    XCTAssertEqual(totalSteps, testSteps, "CoreMotionデータが優先的に使用される")
+
+    // リセット
+    walkManager.currentStepCount = .unavailable
+  }
+
+  func testWalkManager_TotalSteps_WithEstimatedData() throws {
+    // Arrange
+    let testSteps = 800
+
+    // Act - 推定データがある場合のテスト
+    walkManager.currentStepCount = .estimated(steps: testSteps)
+    let totalSteps = walkManager.totalSteps
+
+    // Assert
+    XCTAssertEqual(totalSteps, testSteps, "推定歩数データが使用される")
+
+    // リセット
+    walkManager.currentStepCount = .unavailable
   }
 
   func testWalkManager_CancelWalk_ResetsState() throws {
@@ -259,6 +297,73 @@ final class WalkManagerTests: XCTestCase {
     XCTAssertEqual(walkManager.distance, 0, "キャンセル後は距離がリセット")
     XCTAssertFalse(walkManager.isWalking, "キャンセル後は散歩中ではない")
     XCTAssertFalse(walkManager.isRecording, "キャンセル後は記録中ではない")
+  }
+
+  // MARK: - StepCountManager統合テスト
+
+  func testWalkManager_StepCountDelegateIntegration() throws {
+    // Arrange
+    let testSteps = 2500
+    let initialStepCount = walkManager.currentStepCount
+
+    // Act - StepCountDelegateメソッドの動作確認
+    walkManager.stepCountDidUpdate(.coremotion(steps: testSteps))
+
+    // Assert
+    XCTAssertNotEqual(walkManager.currentStepCount.steps, initialStepCount.steps, "歩数が更新された")
+    XCTAssertEqual(walkManager.currentStepCount.steps, testSteps, "CoreMotion歩数が正しく設定された")
+    XCTAssertTrue(walkManager.currentStepCount.isRealTime, "CoreMotionはリアルタイムである")
+
+    // リセット
+    walkManager.currentStepCount = .unavailable
+  }
+
+  func testWalkManager_StepCountErrorHandling() throws {
+    // Arrange
+    let testError = StepCountError.sensorUnavailable
+    walkManager.distance = 2000 // 2km - フォールバック用
+    walkManager.elapsedTime = 1800 // 30分
+
+    // 散歩記録中の状態をシミュレート
+    walkManager.elapsedTime = 1800
+
+    // Act - エラーハンドリングの確認
+    walkManager.stepCountDidFailWithError(testError)
+
+    // Assert - エラー時はフォールバック推定値が設定される
+    if case .estimated(let steps) = walkManager.currentStepCount {
+      let expectedSteps = Int(2000 / 1000.0 * 1300) // 2km = 2,600歩
+      XCTAssertEqual(steps, expectedSteps, "フォールバック推定歩数が設定された")
+    } else {
+      XCTFail("エラー時にフォールバック推定値が設定されるべき")
+    }
+
+    // リセット
+    walkManager.distance = 0
+    walkManager.elapsedTime = 0
+    walkManager.currentStepCount = .unavailable
+  }
+
+  func testWalkManager_StepCountSaving() throws {
+    // Arrange
+    var testWalk = Walk(title: "テスト散歩", description: "歩数保存テスト")
+    let testSteps = 3000
+
+    // Act - 散歩に歩数を設定
+    walkManager.currentStepCount = .coremotion(steps: testSteps)
+    walkManager.currentWalk = testWalk
+
+    // 散歩終了のシミュレート（部分的）
+    testWalk.totalSteps = walkManager.totalSteps
+    testWalk.complete()
+
+    // Assert
+    XCTAssertEqual(testWalk.totalSteps, testSteps, "散歩完了時に歩数が保存された")
+    XCTAssertEqual(testWalk.status, .completed, "散歩が完了状態になった")
+
+    // リセット
+    walkManager.currentWalk = nil
+    walkManager.currentStepCount = .unavailable
   }
 
   // MARK: - ヘルパーメソッド
