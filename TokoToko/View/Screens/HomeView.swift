@@ -6,6 +6,7 @@
 //
 
 import CoreLocation
+import CoreMotion
 import MapKit
 import SwiftUI
 
@@ -41,7 +42,8 @@ struct HomeView: View {
             WalkInfoDisplay(
               elapsedTime: walkManager.elapsedTimeString,
               totalSteps: walkManager.totalSteps,
-              distance: walkManager.distanceString
+              distance: walkManager.distanceString,
+              stepCountSource: walkManager.currentStepCount
             )
             .padding()
             .background(Color.white.opacity(0.95))
