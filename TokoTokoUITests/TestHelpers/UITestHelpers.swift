@@ -24,7 +24,7 @@ class UITestHelpers {
 
     /// タブを切り替えるヘルパーメソッド
     static func switchToTab(_ app: XCUIApplication, tabName: String) -> Bool {
-        let tabButton = app.tabBars.buttons[tabName]
+        let tabButton = app.buttons[tabName]
         if tabButton.exists {
             tabButton.tap()
             return tabButton.isSelected
@@ -124,7 +124,7 @@ extension XCTestCase {
 
     /// タブが選択されていることを確認する
     func assertTabIsSelected(_ app: XCUIApplication, tabName: String, message: String) {
-        let tabButton = app.tabBars.buttons[tabName]
+        let tabButton = app.buttons[tabName]
         XCTAssertTrue(tabButton.waitForExistence(timeout: 2), "\(tabName)タブが表示されていません")
         XCTAssertTrue(tabButton.isSelected, message)
     }

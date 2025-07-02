@@ -96,3 +96,4 @@ Pods/*
 GoogleService-Info.plist
 .env
 tmp/*
+info.plist

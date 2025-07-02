@@ -79,7 +79,7 @@ public class UITestingExtensions {
     /// 特定の画面にディープリンクでアプリを起動する
     /// - Parameters:
     ///   - app: XCUIApplicationインスタンス
-    ///   - destination: ディープリンク先（"home", "map", "settings"など）
+    ///   - destination: ディープリンク先（"outing", "walk", "settings"など）
     ///   - isLoggedIn: ログイン状態
     public static func launchAppWithDeepLink(_ app: XCUIApplication, destination: String, isLoggedIn: Bool = true) {
         launchApp(app, options: LaunchOptions(

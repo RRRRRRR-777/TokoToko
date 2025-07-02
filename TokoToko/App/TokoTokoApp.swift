@@ -13,6 +13,7 @@ import SwiftUI
 // Firebase認証状態を管理するクラス
 class AuthManager: ObservableObject {
   @Published var isLoggedIn = false
+  @Published var isInitializing = true
   private var authStateHandler: AuthStateDidChangeListenerHandle?
 
   // UIテストヘルパーへの参照
@@ -23,10 +24,14 @@ class AuthManager: ObservableObject {
     if testingHelper.isUITesting {
       // モックログイン状態を設定
       isLoggedIn = testingHelper.isMockLoggedIn
+      isInitializing = false
     } else {
       // 通常の動作: Firebase認証状態の変更を監視
       authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-        self?.isLoggedIn = user != nil
+        DispatchQueue.main.async {
+          self?.isLoggedIn = user != nil
+          self?.isInitializing = false
+        }
       }
     }
   }
@@ -66,7 +71,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    return GIDSignIn.sharedInstance.handle(url)
+    GIDSignIn.sharedInstance.handle(url)
   }
 }
 
@@ -78,7 +83,9 @@ struct TokoTokoApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        if authManager.isLoggedIn {
+        if authManager.isInitializing {
+          SplashView()
+        } else if authManager.isLoggedIn {
           MainTabView()
             .environmentObject(authManager)
         } else {
@@ -99,8 +106,8 @@ struct MainTabView: View {
   private let testingHelper = UITestingHelper.shared
 
   enum Tab {
-    case home
-    case map
+    case outing
+    case walk
     case settings
   }
 
@@ -111,49 +118,127 @@ struct MainTabView: View {
       if testingHelper.hasDeepLink {
         // ディープリンク先に基づいてタブを設定
         switch testingHelper.deepLinkDestination {
-        case "map":
-          _selectedTab = State(initialValue: .map)
+        case "walk":
+          _selectedTab = State(initialValue: .walk)
         case "settings":
           _selectedTab = State(initialValue: .settings)
         default:
-          _selectedTab = State(initialValue: .home)
+          _selectedTab = State(initialValue: .outing)
         }
       } else {
-        // デフォルトはホームタブ
-        _selectedTab = State(initialValue: .home)
+        // デフォルトはおでかけタブ
+        _selectedTab = State(initialValue: .outing)
       }
     } else {
       // 通常の動作
-      _selectedTab = State(initialValue: .home)
+      _selectedTab = State(initialValue: .outing)
     }
   }
 
   var body: some View {
-    TabView(selection: $selectedTab) {
-      NavigationView {
-        HomeView()
+    ZStack {
+      // メインコンテンツ
+      VStack(spacing: 0) {
+        // 選択されたタブのビューを表示
+        Group {
+          switch selectedTab {
+          case .outing:
+            NavigationView {
+              HomeView()
+            }
+          case .walk:
+            NavigationView {
+              WalkHistoryView()
+            }
+          case .settings:
+            NavigationView {
+              SettingsView()
+                .environmentObject(authManager)
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Spacer()
       }
-      .tabItem {
-        Label("ホーム", systemImage: "house")
-      }
-      .tag(Tab.home)
 
-      NavigationView {
-        MapView()
+      // カスタムタブバー
+      VStack {
+        Spacer()
+        CustomTabBar(selectedTab: $selectedTab)
+          .padding(.horizontal, 20)
+          .padding(.bottom, 20)
       }
-      .tabItem {
-        Label("マップ", systemImage: "map")
-      }
-      .tag(Tab.map)
-
-      NavigationView {
-        SettingsView()
-          .environmentObject(authManager)
-      }
-      .tabItem {
-        Label("設定", systemImage: "gear")
-      }
-      .tag(Tab.settings)
     }
+    .ignoresSafeArea(.all, edges: .bottom)
+  }
+}
+
+// カスタムタブバー
+struct CustomTabBar: View {
+  @Binding var selectedTab: MainTabView.Tab
+
+  var body: some View {
+    HStack(spacing: 0) {
+      TabBarItem(
+        tab: .outing,
+        icon: "location.fill",
+        title: "おでかけ",
+        selectedTab: $selectedTab
+      )
+
+      TabBarItem(
+        tab: .walk,
+        icon: "figure.walk",
+        title: "おさんぽ",
+        selectedTab: $selectedTab
+      )
+
+      TabBarItem(
+        tab: .settings,
+        icon: "gearshape.fill",
+        title: "設定",
+        selectedTab: $selectedTab
+      )
+    }
+    .frame(width: 280, height: 70)
+    .background(
+      RoundedRectangle(cornerRadius: 35)
+        .fill(Color.white)
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+    )
+    .padding(.trailing, 80)
+  }
+}
+
+// 個別のタブバーアイテム
+struct TabBarItem: View {
+  let tab: MainTabView.Tab
+  let icon: String
+  let title: String
+  @Binding var selectedTab: MainTabView.Tab
+
+  var isSelected: Bool {
+    selectedTab == tab
+  }
+
+  var body: some View {
+    Button(action: {
+      selectedTab = tab
+    }) {
+      VStack(spacing: 4) {
+        Image(systemName: icon)
+          .font(.system(size: 20, weight: .medium))
+          .foregroundColor(isSelected ? .red : .gray)
+
+        Text(title)
+          .font(.system(size: 12, weight: .medium))
+          .foregroundColor(isSelected ? .red : .gray)
+      }
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, 8)
+    }
+    .buttonStyle(PlainButtonStyle())
+    .accessibilityIdentifier(title)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 }

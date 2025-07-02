@@ -1,0 +1,93 @@
+name: Swift Format & Lint
+
+on:
+  push:
+    branches:
+      - main
+      - dev-*
+  pull_request:
+
+jobs:
+  swift-format-lint:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Swift
+        run: |
+          # Swift is pre-installed on macOS runners
+          swift --version
+          which swift
+
+      - name: Install Swift Format
+        run: |
+          brew install swift-format
+          echo "SWIFT_FORMAT_PATH=$(which swift-format)" >> $GITHUB_ENV
+
+      - name: Install SwiftLint
+        run: |
+          # Install SwiftLint using Homebrew
+          brew install swiftlint
+
+      - name: Install reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Get changed Swift files
+        id: changed-files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          else
+            BASE_BRANCH="main"
+          fi
+          git fetch origin $BASE_BRANCH
+          # 変更されたファイルをスペース区切りで設定
+          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift' | tr '\n' ' ')
+          echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
+
+      - name: Run Swift Format (Lint Mode) with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Changed files: $CHANGED_FILES"
+            # 各ファイルに対してSwift Formatを実行
+            for file in $CHANGED_FILES; do
+              if [ -n "$file" ] && [ -f "$file" ]; then
+                echo "Running Swift Format on $file"
+                # Swift Formatの結果を直接reviewdogに渡す
+                $SWIFT_FORMAT_PATH lint --configuration .swift-format "$file" 2>&1 | \
+                  reviewdog -f=diff -name="swift-format-$file" -reporter=github-pr-check -filter-mode=added || true
+              fi
+            done
+            echo "✅ Swift Format check completed"
+          else
+            echo "No Swift files changed."
+          fi
+
+      - name: Run SwiftLint with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Changed files: $CHANGED_FILES"
+            # 各ファイルに対してSwiftLintを実行
+            for file in $CHANGED_FILES; do
+              if [ -n "$file" ] && [ -f "$file" ]; then
+                echo "Running SwiftLint on $file"
+                # SwiftLintの結果を直接reviewdogに渡す（JSON形式）
+                swiftlint lint "$file" --config .swiftlint.yml --reporter json 2>/dev/null | \
+                  jq -r '.[] | "\(.file):\(.line):\(.column): \(.severity): \(.reason) (\(.rule_id))"' 2>/dev/null | \
+                  reviewdog -f=diff -name="swiftlint-$file" -reporter=github-pr-check -filter-mode=added || true
+              fi
+            done
+            echo "✅ SwiftLint check completed"
+          else
+            echo "No Swift files changed."
+          fi
