@@ -7,6 +7,9 @@ set -x
 
 echo "🚀 Starting XcodeCloud Pre-action script..."
 
+# Change to the project root directory
+cd /Volumes/workspace/repository
+
 # Check if xcodegen is installed
 if ! command -v xcodegen &> /dev/null; then
     echo "📦 Installing xcodegen via Homebrew..."
