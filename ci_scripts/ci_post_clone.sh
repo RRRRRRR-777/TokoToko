@@ -34,14 +34,8 @@ fi
 # Verify xcodegen installation
 xcodegen --version
 
-# Load environment variables from .env file
-if [ -f .env ]; then
-    echo "📁 Loading environment variables from .env file..."
-    export $(cat .env | grep -v '^#' | xargs)
-    echo "✅ Environment variables loaded"
-else
-    echo "⚠️  Warning: .env file not found, using default values"
-fi
+# Environment variables are provided by XcodeCloud
+echo "📁 Using XcodeCloud environment variables..."
 
 # Check if project.yml exists
 if [ ! -f project.yml ]; then
