@@ -10,6 +10,27 @@ echo "🚀 Starting XcodeCloud Pre-action script..."
 # Change to the project root directory
 cd /Volumes/workspace/repository
 
+# Generate GoogleService-Info.plist from environment variable
+echo "🔧 Generating GoogleService-Info.plist from environment variable..."
+
+# Check if GOOGLE_SERVICE_INFO_PLIST environment variable is set
+if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+    echo "❌ Error: GOOGLE_SERVICE_INFO_PLIST environment variable is not set"
+    exit 1
+fi
+
+# Create GoogleService-Info.plist from environment variable
+echo "$GOOGLE_SERVICE_INFO_PLIST" > TokoToko/GoogleService-Info.plist
+
+# Verify the file was created
+if [ -f TokoToko/GoogleService-Info.plist ]; then
+    echo "✅ Successfully generated GoogleService-Info.plist"
+    echo "📋 GoogleService-Info.plist file size: $(wc -c < TokoToko/GoogleService-Info.plist) bytes"
+else
+    echo "❌ Error: Failed to generate GoogleService-Info.plist"
+    exit 1
+fi
+
 # Check if xcodegen is installed
 if ! command -v xcodegen &> /dev/null; then
     echo "📦 Installing xcodegen via Homebrew..."
