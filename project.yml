@@ -9,10 +9,6 @@ options:
   indentWidth: 2
   tabWidth: 2
 
-include:
-  - path: .env
-    relativePaths: true
-    optional: true
 
 targetTemplates:
   CommonSettings:
