@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import UIKit
+import Darwin
 
 // MARK: - TokoToko Specialized Types (Phase 3)
 
@@ -988,7 +989,16 @@ public class EnhancedVibeLogger {
       self.outputToConsole(logEntry)
 
       if self.enableFileOutput {
-        self.outputToFile(logEntry)
+        if self.batchTimer != nil {
+          // バッチモード時はバッファに追加
+          self.logBuffer.append(logEntry)
+          if self.logBuffer.count >= self.batchSize {
+            self.flushLogBuffer()
+          }
+        } else {
+          // 通常モード時は即座に出力
+          self.outputToFile(logEntry)
+        }
       }
     }
   }
@@ -1542,6 +1552,232 @@ public class EnhancedVibeLogger {
       stateTransition: stateTransition,
       anomalyDetection: validationResult.anomalyInfo
     )
+  }
+
+  // MARK: - Phase 5: 自動化・最適化機能
+  
+  // ログレベル動的調整機能
+  public func adjustLogLevelBasedOnConditions() {
+    logQueue.async { [weak self] in
+      guard let self = self else { return }
+      
+      let currentBattery = UIDevice.current.batteryLevel
+      let memoryPressure = self.getMemoryPressureLevel()
+      let errorFrequency = self.getRecentErrorFrequency()
+      
+      var newLogLevel: LogLevel = .info
+      
+      // バッテリー残量による調整
+      if currentBattery < 0.20 {
+        newLogLevel = .warning  // 低バッテリー時は警告以上のみ
+      } else if currentBattery < 0.50 {
+        newLogLevel = .info      // 中バッテリー時は情報以上
+      } else {
+        newLogLevel = .debug     // 高バッテリー時は全て
+      }
+      
+      // メモリ圧迫時の調整
+      if memoryPressure > 0.8 {
+        newLogLevel = LogLevel(rawValue: max(newLogLevel.rawValue, LogLevel.warning.rawValue)) ?? .warning
+      }
+      
+      // エラー頻度による調整
+      if errorFrequency > 5 {
+        newLogLevel = .debug  // エラー多発時は詳細ログ
+      }
+      
+      if newLogLevel != self.logLevel {
+        let oldLevel = self.logLevel
+        self.logLevel = newLogLevel
+        
+        self.log(
+          level: .info,
+          operation: "adjustLogLevelBasedOnConditions",
+          message: "ログレベルを自動調整しました",
+          context: [
+            "old_level": oldLevel.rawValue,
+            "new_level": newLogLevel.rawValue,
+            "battery_level": String(format: "%.2f", currentBattery),
+            "memory_pressure": String(format: "%.2f", memoryPressure),
+            "error_frequency": String(errorFrequency)
+          ],
+          humanNote: "システム状態に基づいてログレベルを最適化",
+          aiTodo: "ログレベル変更の効果を監視"
+        )
+      }
+    }
+  }
+  
+  // メモリ圧迫レベルの取得
+  private func getMemoryPressureLevel() -> Double {
+    let info = mach_task_basic_info()
+    var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
+    
+    let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+      $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+        task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+      }
+    }
+    
+    if kerr == KERN_SUCCESS {
+      let usedMemory = Double(info.resident_size)
+      let totalMemory = Double(ProcessInfo.processInfo.physicalMemory)
+      return usedMemory / totalMemory
+    }
+    
+    return 0.0
+  }
+  
+  // 最近のエラー頻度の取得
+  private func getRecentErrorFrequency() -> Int {
+    let recentTimeInterval: TimeInterval = 300  // 5分間
+    let cutoffDate = Date().addingTimeInterval(-recentTimeInterval)
+    
+    // 簡易的な実装（実際はログファイルを解析）
+    return 0
+  }
+  
+  // ログファイル自動ローテーション
+  public func rotateLogFiles() {
+    logQueue.async { [weak self] in
+      guard let self = self else { return }
+      
+      let fileManager = FileManager.default
+      let maxFileSize: Int64 = 10 * 1024 * 1024  // 10MB
+      let maxFiles = 5
+      
+      do {
+        let files = try fileManager.contentsOfDirectory(atPath: self.logDirectoryPath)
+        let logFiles = files.filter { $0.hasSuffix(".log") }.sorted()
+        
+        for file in logFiles {
+          let filePath = "\(self.logDirectoryPath)/\(file)"
+          let attributes = try fileManager.attributesOfItem(atPath: filePath)
+          
+          if let fileSize = attributes[.size] as? Int64, fileSize > maxFileSize {
+            // ファイルサイズが上限を超えた場合、ローテーション
+            let timestamp = ISO8601DateFormatter().string(from: Date())
+            let rotatedFileName = file.replacingOccurrences(of: ".log", with: "_\(timestamp).log")
+            let rotatedFilePath = "\(self.logDirectoryPath)/\(rotatedFileName)"
+            
+            try fileManager.moveItem(atPath: filePath, toPath: rotatedFilePath)
+            
+            self.log(
+              level: .info,
+              operation: "rotateLogFiles",
+              message: "ログファイルをローテーションしました",
+              context: [
+                "original_file": file,
+                "rotated_file": rotatedFileName,
+                "file_size": String(fileSize)
+              ]
+            )
+          }
+        }
+        
+        // 古いローテーションファイルを削除
+        let allFiles = try fileManager.contentsOfDirectory(atPath: self.logDirectoryPath)
+        let rotatedFiles = allFiles.filter { $0.contains("_") && $0.hasSuffix(".log") }.sorted()
+        
+        if rotatedFiles.count > maxFiles {
+          let filesToDelete = rotatedFiles.prefix(rotatedFiles.count - maxFiles)
+          for file in filesToDelete {
+            let filePath = "\(self.logDirectoryPath)/\(file)"
+            try fileManager.removeItem(atPath: filePath)
+          }
+        }
+      } catch {
+        print("ログファイルローテーションエラー: \(error)")
+      }
+    }
+  }
+  
+  // バッチログ出力機能
+  private var logBuffer: [EnhancedVibeLogEntry] = []
+  private var batchSize = 10
+  private var batchTimer: Timer?
+  
+  public func enableBatchLogging(batchSize: Int = 10, flushInterval: TimeInterval = 5.0) {
+    self.batchSize = batchSize
+    
+    batchTimer?.invalidate()
+    batchTimer = Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: true) { [weak self] _ in
+      self?.flushLogBuffer()
+    }
+  }
+  
+  public func disableBatchLogging() {
+    batchTimer?.invalidate()
+    batchTimer = nil
+    flushLogBuffer()
+  }
+  
+  private func flushLogBuffer() {
+    logQueue.async { [weak self] in
+      guard let self = self, !self.logBuffer.isEmpty else { return }
+      
+      let logsToFlush = self.logBuffer
+      self.logBuffer.removeAll()
+      
+      for logEntry in logsToFlush {
+        self.outputToFile(logEntry)
+      }
+      
+      if logsToFlush.count > 0 {
+        self.log(
+          level: .debug,
+          operation: "flushLogBuffer",
+          message: "バッチログを出力しました",
+          context: [
+            "batch_size": String(logsToFlush.count),
+            "buffer_cleared": "true"
+          ]
+        )
+      }
+    }
+  }
+  
+  // パフォーマンス最適化設定
+  public func optimizePerformance() {
+    logQueue.async { [weak self] in
+      guard let self = self else { return }
+      
+      let currentBattery = UIDevice.current.batteryLevel
+      let memoryPressure = self.getMemoryPressureLevel()
+      
+      // バッテリー残量に基づく最適化
+      if currentBattery < 0.20 {
+        self.enableFileOutput = false
+        self.adjustLogLevelBasedOnConditions()
+        self.enableBatchLogging(batchSize: 20, flushInterval: 10.0)
+      } else if currentBattery < 0.50 {
+        self.enableFileOutput = true
+        self.enableBatchLogging(batchSize: 15, flushInterval: 7.0)
+      } else {
+        self.enableFileOutput = true
+        self.enableBatchLogging(batchSize: 10, flushInterval: 5.0)
+      }
+      
+      // メモリ圧迫時の最適化
+      if memoryPressure > 0.8 {
+        self.clearOldLogs(olderThanDays: 3)
+        self.rotateLogFiles()
+      }
+      
+      self.log(
+        level: .info,
+        operation: "optimizePerformance",
+        message: "パフォーマンス最適化を実行しました",
+        context: [
+          "battery_level": String(format: "%.2f", currentBattery),
+          "memory_pressure": String(format: "%.2f", memoryPressure),
+          "file_output": String(self.enableFileOutput),
+          "batch_logging": self.batchTimer != nil ? "enabled" : "disabled"
+        ],
+        humanNote: "システムリソースに基づいて最適化",
+        aiTodo: "最適化効果を監視"
+      )
+    }
   }
 
   // MARK: - Log Management Methods
