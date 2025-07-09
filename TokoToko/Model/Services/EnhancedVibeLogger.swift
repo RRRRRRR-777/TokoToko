@@ -1,5 +1,391 @@
+import CoreLocation
 import Foundation
 import UIKit
+
+// MARK: - TokoToko Specialized Types (Phase 3)
+
+// 位置情報関連の型定義
+public struct LocationAnomalyResult {
+  let severity: AnomalySeverity
+  let anomalyInfo: AnomalyInfo?
+  let aiRecommendation: String?
+}
+
+public struct LocationAnomalyDetector {
+  static func analyze(
+    location: CLLocation,
+    accuracy: CLLocationAccuracy,
+    batteryLevel: Float,
+    duration: TimeInterval
+  ) -> LocationAnomalyResult {
+    var anomalies: [Anomaly] = []
+    var severity: AnomalySeverity = .low
+    var aiRecommendation: String?
+
+    // GPS精度の異常検知
+    if accuracy > 100.0 {
+      anomalies.append(
+        Anomaly(
+          type: .responseTime,
+          description: "GPS精度が低下しています",
+          value: accuracy,
+          threshold: 100.0,
+          impact: "位置追跡の精度が低下"
+        ))
+      severity = .medium
+      aiRecommendation = "GPS精度が低下しています。屋外での使用を推奨します。"
+    }
+
+    // バッテリー消費の異常検知
+    if batteryLevel < 0.2 {
+      anomalies.append(
+        Anomaly(
+          type: .batteryDrain,
+          description: "バッテリーレベルが低下しています",
+          value: Double(batteryLevel * 100),
+          threshold: 20.0,
+          impact: "位置追跡の継続が困難"
+        ))
+      severity = .high
+      aiRecommendation = "バッテリーレベルが低下しています。充電を推奨します。"
+    }
+
+    // 追跡時間の異常検知
+    if duration > 7200 {  // 2時間
+      anomalies.append(
+        Anomaly(
+          type: .responseTime,
+          description: "追跡時間が異常に長くなっています",
+          value: duration,
+          threshold: 7200.0,
+          impact: "バッテリー消費の増加"
+        ))
+      severity = .medium
+      aiRecommendation = "長時間の追跡によりバッテリー消費が増加しています。"
+    }
+
+    let anomalyInfo =
+      !anomalies.isEmpty
+      ? AnomalyInfo(
+        detectedAnomalies: anomalies,
+        severity: severity,
+        confidence: 0.85,
+        recommendedAction: aiRecommendation ?? "正常",
+        detectionMethod: "LocationAnomalyDetector"
+      ) : nil
+
+    return LocationAnomalyResult(
+      severity: severity,
+      anomalyInfo: anomalyInfo,
+      aiRecommendation: aiRecommendation
+    )
+  }
+}
+
+// Firebase同期関連の型定義
+public struct FirebaseSyncResult {
+  let severity: AnomalySeverity
+  let anomalyInfo: AnomalyInfo?
+  let aiRecommendation: String?
+  let healthScore: String
+}
+
+public struct FirebaseSyncAnalyzer {
+  static func analyze(
+    isOnline: Bool,
+    pendingWrites: Int,
+    lastSync: Date?
+  ) -> FirebaseSyncResult {
+    var anomalies: [Anomaly] = []
+    var severity: AnomalySeverity = .low
+    var aiRecommendation: String?
+    var healthScore = "良好"
+
+    // オフライン状態の検知
+    if !isOnline {
+      anomalies.append(
+        Anomaly(
+          type: .networkTimeout,
+          description: "オフライン状態です",
+          value: 0.0,
+          threshold: 1.0,
+          impact: "データ同期が停止"
+        ))
+      severity = .medium
+      aiRecommendation = "ネットワーク接続を確認してください。"
+      healthScore = "注意"
+    }
+
+    // 未送信データの蓄積
+    if pendingWrites > 10 {
+      anomalies.append(
+        Anomaly(
+          type: .errorRate,
+          description: "未送信データが蓄積しています",
+          value: Double(pendingWrites),
+          threshold: 10.0,
+          impact: "データ損失のリスク"
+        ))
+      severity = .high
+      aiRecommendation = "未送信データが蓄積しています。オフライン時のデータ損失リスクを評価してください。"
+      healthScore = "危険"
+    }
+
+    // 最後の同期からの経過時間
+    if let lastSync = lastSync {
+      let timeSinceLastSync = Date().timeIntervalSince(lastSync)
+      if timeSinceLastSync > 3600 {  // 1時間
+        anomalies.append(
+          Anomaly(
+            type: .responseTime,
+            description: "最後の同期から時間が経過しています",
+            value: timeSinceLastSync,
+            threshold: 3600.0,
+            impact: "データの整合性リスク"
+          ))
+        severity = .medium
+        aiRecommendation = "長時間同期されていません。ネットワーク接続を確認してください。"
+        healthScore = "注意"
+      }
+    }
+
+    let anomalyInfo =
+      !anomalies.isEmpty
+      ? AnomalyInfo(
+        detectedAnomalies: anomalies,
+        severity: severity,
+        confidence: 0.9,
+        recommendedAction: aiRecommendation ?? "正常",
+        detectionMethod: "FirebaseSyncAnalyzer"
+      ) : nil
+
+    return FirebaseSyncResult(
+      severity: severity,
+      anomalyInfo: anomalyInfo,
+      aiRecommendation: aiRecommendation,
+      healthScore: healthScore
+    )
+  }
+}
+
+// メモリ圧迫度の型定義
+public struct MemoryPressure {
+  let level: String
+  let usage: Int64
+
+  init(usage: Int64) {
+    self.usage = usage
+    if usage > 1024 * 1024 * 500 {  // 500MB
+      self.level = "高"
+    } else if usage > 1024 * 1024 * 200 {  // 200MB
+      self.level = "中"
+    } else {
+      self.level = "低"
+    }
+  }
+}
+
+// 写真メモリ分析関連の型定義
+public struct PhotoMemoryResult {
+  let severity: AnomalySeverity
+  let anomalyInfo: AnomalyInfo?
+  let aiRecommendation: String?
+}
+
+public struct PhotoMemoryAnalyzer {
+  static func analyze(
+    currentMemoryUsage: Int64,
+    photoCount: Int,
+    cacheSize: Int64
+  ) -> PhotoMemoryResult {
+    var anomalies: [Anomaly] = []
+    var severity: AnomalySeverity = .low
+    var aiRecommendation: String?
+
+    // メモリ使用量のチェック
+    if currentMemoryUsage > 300 * 1024 * 1024 {  // 300MB
+      anomalies.append(
+        Anomaly(
+          type: .memoryLeak,
+          description: "メモリ使用量が高くなっています",
+          value: Double(currentMemoryUsage),
+          threshold: 300 * 1024 * 1024,
+          impact: "アプリのパフォーマンス低下"
+        ))
+      severity = .high
+      aiRecommendation = "メモリ使用量が高くなっています。写真の解像度を下げるか、枚数を減らしてください。"
+    }
+
+    // 写真枚数の制限チェック
+    if photoCount > 10 {
+      anomalies.append(
+        Anomaly(
+          type: .memoryLeak,
+          description: "写真枚数が制限を超えています",
+          value: Double(photoCount),
+          threshold: 10.0,
+          impact: "メモリ使用量の増加"
+        ))
+      severity = .medium
+      aiRecommendation = "写真枚数が制限(10枚)を超えています。不要な写真を削除してください。"
+    }
+
+    // キャッシュサイズのチェック
+    if cacheSize > 50 * 1024 * 1024 {  // 50MB
+      anomalies.append(
+        Anomaly(
+          type: .memoryLeak,
+          description: "キャッシュサイズが大きくなっています",
+          value: Double(cacheSize),
+          threshold: 50 * 1024 * 1024,
+          impact: "メモリ使用量の増加"
+        ))
+      severity = .medium
+      aiRecommendation = "キャッシュサイズが大きくなっています。キャッシュをクリアしてください。"
+    }
+
+    let anomalyInfo =
+      !anomalies.isEmpty
+      ? AnomalyInfo(
+        detectedAnomalies: anomalies,
+        severity: severity,
+        confidence: 0.8,
+        recommendedAction: aiRecommendation ?? "正常",
+        detectionMethod: "PhotoMemoryAnalyzer"
+      ) : nil
+
+    return PhotoMemoryResult(
+      severity: severity,
+      anomalyInfo: anomalyInfo,
+      aiRecommendation: aiRecommendation
+    )
+  }
+}
+
+// 散歩状態関連の型定義
+public enum WalkState: String, Codable {
+  case notStarted = "notStarted"
+  case inProgress = "inProgress"
+  case paused = "paused"
+  case completed = "completed"
+  case error = "error"
+}
+
+public struct WalkStateTransitionResult {
+  let anomalyInfo: AnomalyInfo?
+  let healthScore: String
+}
+
+public struct WalkStateValidationResult {
+  let isValid: Bool
+  let severity: AnomalySeverity
+  let anomalyInfo: AnomalyInfo?
+  let aiRecommendation: String?
+}
+
+public struct WalkStateValidator {
+  static func validate(
+    fromState: String,
+    toState: String,
+    trigger: String,
+    context: [String: String]
+  ) -> WalkStateValidationResult {
+    let isValid = isValidTransition(from: fromState, to: toState, trigger: trigger)
+    var severity: AnomalySeverity = .low
+    var anomalyInfo: AnomalyInfo?
+    var aiRecommendation: String?
+
+    if !isValid {
+      severity = .high
+      let anomaly = Anomaly(
+        type: .errorRate,
+        description: "不正な状態遷移が検出されました",
+        value: 1.0,
+        threshold: 0.0,
+        impact: "散歩データの整合性問題"
+      )
+      anomalyInfo = AnomalyInfo(
+        detectedAnomalies: [anomaly],
+        severity: severity,
+        confidence: 1.0,
+        recommendedAction: "状態遷移ロジックを確認してください",
+        detectionMethod: "WalkStateValidator"
+      )
+      aiRecommendation = "不正な状態遷移: \(fromState) -> \(toState) (trigger: \(trigger))"
+    }
+
+    return WalkStateValidationResult(
+      isValid: isValid,
+      severity: severity,
+      anomalyInfo: anomalyInfo,
+      aiRecommendation: aiRecommendation
+    )
+  }
+
+  private static func isValidTransition(from: String, to: String, trigger: String) -> Bool {
+    switch (from, to) {
+    case ("notStarted", "inProgress"):
+      return true
+    case ("inProgress", "paused"):
+      return true
+    case ("paused", "inProgress"):
+      return true
+    case ("inProgress", "completed"):
+      return true
+    case ("paused", "completed"):
+      return true
+    default:
+      return false
+    }
+  }
+}
+
+public struct WalkStateTransitionAnalyzer {
+  static func analyze(
+    walkId: String,
+    from: WalkState,
+    to: WalkState,
+    trigger: String,
+    isValid: Bool
+  ) -> WalkStateTransitionResult {
+    var anomalies: [Anomaly] = []
+    var healthScore = "良好"
+
+    if !isValid {
+      anomalies.append(
+        Anomaly(
+          type: .errorRate,
+          description: "不正な状態遷移が検出されました",
+          value: 1.0,
+          threshold: 0.0,
+          impact: "散歩データの整合性問題"
+        ))
+      healthScore = "危険"
+    }
+
+    let anomalyInfo =
+      !anomalies.isEmpty
+      ? AnomalyInfo(
+        detectedAnomalies: anomalies,
+        severity: .high,
+        confidence: 1.0,
+        recommendedAction: "状態遷移ロジックを確認してください",
+        detectionMethod: "WalkStateTransitionAnalyzer"
+      ) : nil
+
+    return WalkStateTransitionResult(
+      anomalyInfo: anomalyInfo,
+      healthScore: healthScore
+    )
+  }
+}
+
+// Date拡張（ISO8601フォーマット用）
+extension Date {
+  var iso8601: String {
+    return ISO8601DateFormatter().string(from: self)
+  }
+}
 
 // MARK: - Enhanced Log Entry Structure (Phase 2)
 public struct EnhancedVibeLogEntry: Codable {
@@ -996,7 +1382,7 @@ public class EnhancedVibeLogger {
     location: CLLocation,
     accuracy: CLLocationAccuracy,
     batteryLevel: Float,
-    trackingDuration: TimeInterval,
+    duration: TimeInterval,
     context: [String: String] = [:],
     humanNote: String? = nil,
     aiTodo: String? = nil
@@ -1005,12 +1391,12 @@ public class EnhancedVibeLogger {
       location: location,
       accuracy: accuracy,
       batteryLevel: batteryLevel,
-      duration: trackingDuration
+      duration: duration
     )
 
     let performanceMetrics = PerformanceMetrics(
-      executionTime: trackingDuration,
-      batteryDrain: Double(batteryLevel),
+      executionTime: duration,
+      memoryUsage: getCurrentMemoryUsage(),
       threadInfo: ThreadInfo()
     )
 
@@ -1022,10 +1408,10 @@ public class EnhancedVibeLogger {
     enhancedContext["speed"] = String(location.speed)
     enhancedContext["course"] = String(location.course)
     enhancedContext["battery_level"] = String(batteryLevel)
-    enhancedContext["tracking_duration"] = String(trackingDuration)
+    enhancedContext["tracking_duration"] = String(duration)
 
     let level: LogLevel = locationAnomalies.severity == .low ? .info : .warning
-    let message = "位置情報追跡の最適化分析: 精度\(accuracy)m, バッテリー\(batteryLevel * 100)%"
+    let message = "位置情報追跡の最適化分析: 精度\(accuracy)m, バッテリー\(Int(batteryLevel * 100))%"
 
     log(
       level: level,
@@ -1041,7 +1427,6 @@ public class EnhancedVibeLogger {
 
   // 🔄 Firebase同期バグ対策
   public func logFirebaseSyncBugPrevention(
-    operation: String,
     isOnline: Bool,
     pendingWrites: Int,
     lastSync: Date?,
@@ -1077,34 +1462,33 @@ public class EnhancedVibeLogger {
 
   // 📸 写真・メモリバグ対策
   public func logPhotoMemoryBugPrevention(
+    currentMemoryUsage: Int64,
     photoCount: Int,
-    memoryPressure: MemoryPressure,
-    diskUsage: Int64,
+    cacheSize: Int64,
     context: [String: String] = [:],
     humanNote: String? = nil,
     aiTodo: String? = nil
   ) {
     let memoryHealth = PhotoMemoryAnalyzer.analyze(
+      currentMemoryUsage: currentMemoryUsage,
       photoCount: photoCount,
-      memoryPressure: memoryPressure,
-      diskUsage: diskUsage
+      cacheSize: cacheSize
     )
 
     let performanceMetrics = PerformanceMetrics(
       executionTime: 0.0,
-      memoryUsage: Int64(memoryPressure.usage),
-      diskIO: DiskIOMetrics(bytesRead: diskUsage, bytesWritten: 0, operationCount: 1)
+      memoryUsage: currentMemoryUsage,
+      threadInfo: ThreadInfo()
     )
 
     var enhancedContext = context
     enhancedContext["photo_count"] = String(photoCount)
-    enhancedContext["memory_pressure"] = memoryPressure.level
-    enhancedContext["memory_usage"] = String(memoryPressure.usage)
-    enhancedContext["disk_usage"] = String(diskUsage)
+    enhancedContext["memory_usage"] = String(currentMemoryUsage)
+    enhancedContext["cache_size"] = String(cacheSize)
     enhancedContext["max_photo_limit"] = "10"
 
     let level: LogLevel = memoryHealth.severity == .low ? .info : .warning
-    let message = "写真管理のメモリ分析: \(photoCount)枚, メモリ圧迫度=\(memoryPressure.level)"
+    let message = "写真管理のメモリ分析: \(photoCount)枚, メモリ使用量=\(currentMemoryUsage)bytes"
 
     log(
       level: level,
@@ -1120,38 +1504,33 @@ public class EnhancedVibeLogger {
 
   // 🔄 散歩状態遷移バグ対策
   public func logWalkStateTransitionBugPrevention(
-    walkId: String,
-    from: WalkState,
-    to: WalkState,
+    fromState: String,
+    toState: String,
     trigger: String,
     context: [String: String] = [:],
     humanNote: String? = nil,
     aiTodo: String? = nil
   ) {
-    let isValidTransition = WalkStateValidator.validate(from: from, to: to, trigger: trigger)
-    let transitionHealth = WalkStateTransitionAnalyzer.analyze(
-      walkId: walkId,
-      from: from,
-      to: to,
+    let validationResult = WalkStateValidator.validate(
+      fromState: fromState,
+      toState: toState,
       trigger: trigger,
-      isValid: isValidTransition
+      context: context
     )
 
     let stateTransition = StateTransition(
       component: "WalkManager",
-      fromState: from.rawValue,
-      toState: to.rawValue,
+      fromState: fromState,
+      toState: toState,
       trigger: trigger,
-      isValid: isValidTransition
+      isValid: validationResult.isValid
     )
 
     var enhancedContext = context
-    enhancedContext["walk_id"] = walkId
-    enhancedContext["is_valid_transition"] = String(isValidTransition)
-    enhancedContext["transition_health"] = transitionHealth.healthScore
+    enhancedContext["is_valid_transition"] = String(validationResult.isValid)
 
-    let level: LogLevel = isValidTransition ? .info : .error
-    let message = "散歩状態遷移: \(from.rawValue) → \(to.rawValue) (\(trigger))"
+    let level: LogLevel = validationResult.isValid ? .info : .error
+    let message = "散歩状態遷移: \(fromState) → \(toState) (\(trigger))"
 
     log(
       level: level,
@@ -1159,9 +1538,9 @@ public class EnhancedVibeLogger {
       message: message,
       context: enhancedContext,
       humanNote: humanNote,
-      aiTodo: aiTodo ?? (isValidTransition ? nil : "不正な状態遷移を検出。原因を分析してください"),
+      aiTodo: aiTodo ?? validationResult.aiRecommendation,
       stateTransition: stateTransition,
-      anomalyDetection: transitionHealth.anomalyInfo
+      anomalyDetection: validationResult.anomalyInfo
     )
   }
 

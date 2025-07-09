@@ -542,4 +542,300 @@ class EnhancedVibeLoggerTests: XCTestCase {
 
     waitForExpectations(timeout: 1.0)
   }
+
+  // MARK: - Phase 3 TokoToko Specialized Tests
+  func testLocationAnomalyDetector() {
+    // Given
+    let location = CLLocation(latitude: 35.6762, longitude: 139.6503)
+    let lowAccuracy: CLLocationAccuracy = 150.0
+    let highAccuracy: CLLocationAccuracy = 5.0
+    let lowBattery: Float = 0.15
+    let highBattery: Float = 0.8
+    let shortDuration: TimeInterval = 1800 // 30分
+    let longDuration: TimeInterval = 8400 // 2時間20分
+
+    // When & Then - 正常な状態
+    let normalResult = LocationAnomalyDetector.analyze(
+      location: location,
+      accuracy: highAccuracy,
+      batteryLevel: highBattery,
+      duration: shortDuration
+    )
+    XCTAssertEqual(normalResult.severity, .low)
+    XCTAssertNil(normalResult.anomalyInfo)
+    XCTAssertNil(normalResult.aiRecommendation)
+
+    // When & Then - GPS精度異常
+    let lowAccuracyResult = LocationAnomalyDetector.analyze(
+      location: location,
+      accuracy: lowAccuracy,
+      batteryLevel: highBattery,
+      duration: shortDuration
+    )
+    XCTAssertEqual(lowAccuracyResult.severity, .medium)
+    XCTAssertNotNil(lowAccuracyResult.anomalyInfo)
+    XCTAssertTrue(lowAccuracyResult.aiRecommendation?.contains("GPS精度が低下") ?? false)
+
+    // When & Then - バッテリー低下
+    let lowBatteryResult = LocationAnomalyDetector.analyze(
+      location: location,
+      accuracy: highAccuracy,
+      batteryLevel: lowBattery,
+      duration: shortDuration
+    )
+    XCTAssertEqual(lowBatteryResult.severity, .high)
+    XCTAssertNotNil(lowBatteryResult.anomalyInfo)
+    XCTAssertTrue(lowBatteryResult.aiRecommendation?.contains("バッテリー") ?? false)
+
+    // When & Then - 長時間追跡
+    let longDurationResult = LocationAnomalyDetector.analyze(
+      location: location,
+      accuracy: highAccuracy,
+      batteryLevel: highBattery,
+      duration: longDuration
+    )
+    XCTAssertEqual(longDurationResult.severity, .medium)
+    XCTAssertNotNil(longDurationResult.anomalyInfo)
+    XCTAssertTrue(longDurationResult.aiRecommendation?.contains("長時間の追跡") ?? false)
+  }
+
+  func testFirebaseSyncAnalyzer() {
+    // Given
+    let recentSync = Date().addingTimeInterval(-300) // 5分前
+    let oldSync = Date().addingTimeInterval(-3600) // 1時間前
+    let veryOldSync = Date().addingTimeInterval(-7200) // 2時間前
+
+    // When & Then - 正常な状態
+    let normalResult = FirebaseSyncAnalyzer.analyze(
+      isOnline: true,
+      pendingWrites: 2,
+      lastSync: recentSync
+    )
+    XCTAssertEqual(normalResult.severity, .low)
+    XCTAssertNil(normalResult.anomalyInfo)
+    XCTAssertEqual(normalResult.healthScore, "良好")
+
+    // When & Then - オフライン状態
+    let offlineResult = FirebaseSyncAnalyzer.analyze(
+      isOnline: false,
+      pendingWrites: 2,
+      lastSync: recentSync
+    )
+    XCTAssertEqual(offlineResult.severity, .medium)
+    XCTAssertNotNil(offlineResult.anomalyInfo)
+    XCTAssertEqual(offlineResult.healthScore, "注意")
+
+    // When & Then - 過度な未同期データ
+    let pendingWritesResult = FirebaseSyncAnalyzer.analyze(
+      isOnline: true,
+      pendingWrites: 15,
+      lastSync: recentSync
+    )
+    XCTAssertEqual(pendingWritesResult.severity, .high)
+    XCTAssertNotNil(pendingWritesResult.anomalyInfo)
+
+    // When & Then - 最終同期が古い
+    let oldSyncResult = FirebaseSyncAnalyzer.analyze(
+      isOnline: true,
+      pendingWrites: 2,
+      lastSync: veryOldSync
+    )
+    XCTAssertEqual(oldSyncResult.severity, .high)
+    XCTAssertNotNil(oldSyncResult.anomalyInfo)
+
+    // When & Then - 同期履歴なし
+    let noSyncResult = FirebaseSyncAnalyzer.analyze(
+      isOnline: true,
+      pendingWrites: 2,
+      lastSync: nil
+    )
+    XCTAssertEqual(noSyncResult.severity, .medium)
+    XCTAssertNotNil(noSyncResult.anomalyInfo)
+  }
+
+  func testPhotoMemoryAnalyzer() {
+    // Given
+    let lowMemory: Int64 = 50 * 1024 * 1024 // 50MB
+    let mediumMemory: Int64 = 150 * 1024 * 1024 // 150MB
+    let highMemory: Int64 = 350 * 1024 * 1024 // 350MB
+
+    // When & Then - 正常な状態
+    let normalResult = PhotoMemoryAnalyzer.analyze(
+      currentMemoryUsage: lowMemory,
+      photoCount: 5,
+      cacheSize: 10 * 1024 * 1024
+    )
+    XCTAssertEqual(normalResult.severity, .low)
+    XCTAssertNil(normalResult.anomalyInfo)
+
+    // When & Then - 高メモリ使用量
+    let highMemoryResult = PhotoMemoryAnalyzer.analyze(
+      currentMemoryUsage: highMemory,
+      photoCount: 5,
+      cacheSize: 10 * 1024 * 1024
+    )
+    XCTAssertEqual(highMemoryResult.severity, .high)
+    XCTAssertNotNil(highMemoryResult.anomalyInfo)
+
+    // When & Then - 過度な写真枚数
+    let tooManyPhotosResult = PhotoMemoryAnalyzer.analyze(
+      currentMemoryUsage: mediumMemory,
+      photoCount: 12,
+      cacheSize: 10 * 1024 * 1024
+    )
+    XCTAssertEqual(tooManyPhotosResult.severity, .medium)
+    XCTAssertNotNil(tooManyPhotosResult.anomalyInfo)
+
+    // When & Then - 大きなキャッシュサイズ
+    let largeCacheResult = PhotoMemoryAnalyzer.analyze(
+      currentMemoryUsage: mediumMemory,
+      photoCount: 5,
+      cacheSize: 60 * 1024 * 1024
+    )
+    XCTAssertEqual(largeCacheResult.severity, .medium)
+    XCTAssertNotNil(largeCacheResult.anomalyInfo)
+  }
+
+  func testWalkStateValidator() {
+    // Given
+    let validTransitions = [
+      ("notStarted", "inProgress"),
+      ("inProgress", "paused"),
+      ("paused", "inProgress"),
+      ("inProgress", "completed"),
+      ("paused", "completed")
+    ]
+
+    let invalidTransitions = [
+      ("notStarted", "paused"),
+      ("notStarted", "completed"),
+      ("completed", "inProgress"),
+      ("completed", "paused")
+    ]
+
+    // When & Then - 有効な遷移
+    for (from, to) in validTransitions {
+      let result = WalkStateValidator.validate(
+        fromState: from,
+        toState: to,
+        trigger: "test",
+        context: [:]
+      )
+      XCTAssertTrue(result.isValid, "遷移 \(from) -> \(to) は有効であるべきです")
+      XCTAssertEqual(result.severity, .low)
+    }
+
+    // When & Then - 無効な遷移
+    for (from, to) in invalidTransitions {
+      let result = WalkStateValidator.validate(
+        fromState: from,
+        toState: to,
+        trigger: "test",
+        context: [:]
+      )
+      XCTAssertFalse(result.isValid, "遷移 \(from) -> \(to) は無効であるべきです")
+      XCTAssertEqual(result.severity, .high)
+      XCTAssertNotNil(result.anomalyInfo)
+    }
+  }
+
+  func testLogLocationBugPrevention() {
+    // Given
+    let location = CLLocation(latitude: 35.6762, longitude: 139.6503)
+    let context = ["accuracy": "5.0", "speed": "1.2"]
+
+    // When & Then - 正常な位置情報
+    logger.logLocationBugPrevention(
+      location: location,
+      accuracy: 5.0,
+      batteryLevel: 0.8,
+      duration: 1800,
+      context: context
+    )
+
+    // When & Then - 異常な位置情報
+    logger.logLocationBugPrevention(
+      location: location,
+      accuracy: 150.0,
+      batteryLevel: 0.15,
+      duration: 8400,
+      context: context
+    )
+
+    // 例外が発生しないことを確認
+    XCTAssertNotNil(logger)
+  }
+
+  func testLogFirebaseSyncBugPrevention() {
+    // Given
+    let context = ["collection": "walks", "operation": "save"]
+    let lastSync = Date().addingTimeInterval(-3600)
+
+    // When & Then - 正常な同期状態
+    logger.logFirebaseSyncBugPrevention(
+      isOnline: true,
+      pendingWrites: 2,
+      lastSync: lastSync,
+      context: context
+    )
+
+    // When & Then - 異常な同期状態
+    logger.logFirebaseSyncBugPrevention(
+      isOnline: false,
+      pendingWrites: 15,
+      lastSync: nil,
+      context: context
+    )
+
+    // 例外が発生しないことを確認
+    XCTAssertNotNil(logger)
+  }
+
+  func testLogPhotoMemoryBugPrevention() {
+    // Given
+    let context = ["photo_source": "camera", "resolution": "high"]
+
+    // When & Then - 正常なメモリ使用量
+    logger.logPhotoMemoryBugPrevention(
+      currentMemoryUsage: 50 * 1024 * 1024,
+      photoCount: 5,
+      cacheSize: 10 * 1024 * 1024,
+      context: context
+    )
+
+    // When & Then - 異常なメモリ使用量
+    logger.logPhotoMemoryBugPrevention(
+      currentMemoryUsage: 350 * 1024 * 1024,
+      photoCount: 12,
+      cacheSize: 60 * 1024 * 1024,
+      context: context
+    )
+
+    // 例外が発生しないことを確認
+    XCTAssertNotNil(logger)
+  }
+
+  func testLogWalkStateTransitionBugPrevention() {
+    // Given
+    let context = ["user_action": "tap_start", "previous_duration": "0"]
+
+    // When & Then - 有効な状態遷移
+    logger.logWalkStateTransitionBugPrevention(
+      fromState: "notStarted",
+      toState: "inProgress",
+      trigger: "startWalk",
+      context: context
+    )
+
+    // When & Then - 無効な状態遷移
+    logger.logWalkStateTransitionBugPrevention(
+      fromState: "completed",
+      toState: "inProgress",
+      trigger: "invalidAction",
+      context: context
+    )
+
+    // 例外が発生しないことを確認
+    XCTAssertNotNil(logger)
+  }
 }
