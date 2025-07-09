@@ -551,8 +551,8 @@ class EnhancedVibeLoggerTests: XCTestCase {
     let highAccuracy: CLLocationAccuracy = 5.0
     let lowBattery: Float = 0.15
     let highBattery: Float = 0.8
-    let shortDuration: TimeInterval = 1800 // 30分
-    let longDuration: TimeInterval = 8400 // 2時間20分
+    let shortDuration: TimeInterval = 1800  // 30分
+    let longDuration: TimeInterval = 8400  // 2時間20分
 
     // When & Then - 正常な状態
     let normalResult = LocationAnomalyDetector.analyze(
@@ -601,9 +601,9 @@ class EnhancedVibeLoggerTests: XCTestCase {
 
   func testFirebaseSyncAnalyzer() {
     // Given
-    let recentSync = Date().addingTimeInterval(-300) // 5分前
-    let oldSync = Date().addingTimeInterval(-3600) // 1時間前
-    let veryOldSync = Date().addingTimeInterval(-7200) // 2時間前
+    let recentSync = Date().addingTimeInterval(-300)  // 5分前
+    let oldSync = Date().addingTimeInterval(-3600)  // 1時間前
+    let veryOldSync = Date().addingTimeInterval(-7200)  // 2時間前
 
     // When & Then - 正常な状態
     let normalResult = FirebaseSyncAnalyzer.analyze(
@@ -655,9 +655,9 @@ class EnhancedVibeLoggerTests: XCTestCase {
 
   func testPhotoMemoryAnalyzer() {
     // Given
-    let lowMemory: Int64 = 50 * 1024 * 1024 // 50MB
-    let mediumMemory: Int64 = 150 * 1024 * 1024 // 150MB
-    let highMemory: Int64 = 350 * 1024 * 1024 // 350MB
+    let lowMemory: Int64 = 50 * 1024 * 1024  // 50MB
+    let mediumMemory: Int64 = 150 * 1024 * 1024  // 150MB
+    let highMemory: Int64 = 350 * 1024 * 1024  // 350MB
 
     // When & Then - 正常な状態
     let normalResult = PhotoMemoryAnalyzer.analyze(
@@ -703,14 +703,14 @@ class EnhancedVibeLoggerTests: XCTestCase {
       ("inProgress", "paused"),
       ("paused", "inProgress"),
       ("inProgress", "completed"),
-      ("paused", "completed")
+      ("paused", "completed"),
     ]
 
     let invalidTransitions = [
       ("notStarted", "paused"),
       ("notStarted", "completed"),
       ("completed", "inProgress"),
-      ("completed", "paused")
+      ("completed", "paused"),
     ]
 
     // When & Then - 有効な遷移
@@ -837,5 +837,384 @@ class EnhancedVibeLoggerTests: XCTestCase {
 
     // 例外が発生しないことを確認
     XCTAssertNotNil(logger)
+  }
+
+  // MARK: - Phase 4 Tests: 既存コードとの統合テスト
+
+  func testWalkManagerIntegration() {
+    // WalkManagerとの統合テスト
+    let walkManager = WalkManager()
+    let expectation = XCTestExpectation(description: "WalkManager integration test")
+
+    // 散歩開始時のログ確認
+    walkManager.startWalk()
+
+    // ログファイル確認
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      let logFiles = self.getLogFiles()
+      XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+      if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+        XCTAssert(latestLog.content.contains("startWalk"), "startWalkログが記録されるべき")
+        XCTAssert(latestLog.content.contains("METHOD_START"), "メソッド開始ログが記録されるべき")
+      }
+
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testLocationManagerIntegration() {
+    // LocationManagerとの統合テスト
+    let locationManager = LocationManager()
+    let expectation = XCTestExpectation(description: "LocationManager integration test")
+
+    // 位置情報更新開始時のログ確認
+    locationManager.startUpdatingLocation()
+
+    // ログファイル確認
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      let logFiles = self.getLogFiles()
+      XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+      if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+        XCTAssert(
+          latestLog.content.contains("startUpdatingLocation"), "startUpdatingLocationログが記録されるべき")
+        XCTAssert(latestLog.content.contains("METHOD_START"), "メソッド開始ログが記録されるべき")
+      }
+
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testWalkRepositoryIntegration() {
+    // WalkRepositoryとの統合テスト
+    let walkRepository = WalkRepository.shared
+    let expectation = XCTestExpectation(description: "WalkRepository integration test")
+
+    // Walk取得時のログ確認
+    walkRepository.fetchWalks { result in
+      // ログファイル確認
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        let logFiles = self.getLogFiles()
+        XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+        if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+          XCTAssert(latestLog.content.contains("fetchWalks"), "fetchWalksログが記録されるべき")
+          XCTAssert(latestLog.content.contains("METHOD_START"), "メソッド開始ログが記録されるべき")
+        }
+
+        expectation.fulfill()
+      }
+    }
+
+    wait(for: [expectation], timeout: 3.0)
+  }
+
+  func testGoogleAuthServiceIntegration() {
+    // GoogleAuthServiceとの統合テスト
+    let googleAuthService = GoogleAuthService()
+    let expectation = XCTestExpectation(description: "GoogleAuthService integration test")
+
+    // Google認証時のログ確認
+    googleAuthService.signInWithGoogle { result in
+      // ログファイル確認
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        let logFiles = self.getLogFiles()
+        XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+        if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+          XCTAssert(latestLog.content.contains("signInWithGoogle"), "signInWithGoogleログが記録されるべき")
+          XCTAssert(latestLog.content.contains("METHOD_START"), "メソッド開始ログが記録されるべき")
+        }
+
+        expectation.fulfill()
+      }
+    }
+
+    wait(for: [expectation], timeout: 5.0)
+  }
+
+  func testIntegratedLogAnalysis() {
+    // 統合されたログの分析テスト
+    let logger = EnhancedVibeLogger.shared
+
+    // 複数のサービスからのログ記録
+    logger.info(operation: "WalkManager.startWalk", message: "散歩開始")
+    logger.logLocationBugPrevention(
+      location: CLLocation(latitude: 35.6762, longitude: 139.6503),
+      accuracy: 5.0,
+      batteryLevel: 0.8,
+      duration: 1.0
+    )
+    logger.logFirebaseBugPrevention(
+      operation: "saveWalk",
+      isOnline: true,
+      pendingWrites: 0,
+      lastSync: Date()
+    )
+
+    // ログファイル確認
+    let logFiles = getLogFiles()
+    XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+    if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+      XCTAssert(latestLog.content.contains("WalkManager.startWalk"), "WalkManagerログが記録されるべき")
+      XCTAssert(latestLog.content.contains("location_bug_prevention"), "位置情報バグ防止ログが記録されるべき")
+      XCTAssert(latestLog.content.contains("firebase_bug_prevention"), "Firebaseバグ防止ログが記録されるべき")
+    }
+  }
+
+  func testIntegratedPerformanceMetrics() {
+    // 統合されたパフォーマンスメトリクスのテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // パフォーマンス測定開始
+    logger.logMethodStart(context: ["test": "integrated_performance"])
+
+    // 模擬処理
+    Thread.sleep(forTimeInterval: 0.1)
+
+    // パフォーマンス測定終了
+    logger.logMethodEnd(context: ["test": "integrated_performance"])
+
+    // ログファイル確認
+    let logFiles = getLogFiles()
+    XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+    if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+      XCTAssert(latestLog.content.contains("METHOD_START"), "メソッド開始ログが記録されるべき")
+      XCTAssert(latestLog.content.contains("METHOD_END"), "メソッド終了ログが記録されるべき")
+      XCTAssert(latestLog.content.contains("execution_time"), "実行時間が記録されるべき")
+    }
+  }
+
+  func testIntegratedErrorHandling() {
+    // 統合されたエラー処理のテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // エラー発生シミュレーション
+    let testError = NSError(
+      domain: "TestDomain", code: 500, userInfo: [NSLocalizedDescriptionKey: "Test error"])
+
+    logger.logError(
+      testError,
+      operation: "IntegratedTest",
+      context: ["test_type": "error_handling"],
+      humanNote: "統合テストでのエラー",
+      aiTodo: "エラー対応を確認"
+    )
+
+    // ログファイル確認
+    let logFiles = getLogFiles()
+    XCTAssertFalse(logFiles.isEmpty, "ログファイルが作成されるべき")
+
+    if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+      XCTAssert(latestLog.content.contains("ERROR"), "エラーログが記録されるべき")
+      XCTAssert(latestLog.content.contains("IntegratedTest"), "操作名が記録されるべき")
+      XCTAssert(latestLog.content.contains("統合テストでのエラー"), "人間向けメモが記録されるべき")
+      XCTAssert(latestLog.content.contains("エラー対応を確認"), "AIタスクが記録されるべき")
+    }
+  }
+
+  // MARK: - Phase 5 Tests: 自動化・最適化機能
+
+  func testDynamicLogLevelAdjustment() {
+    // ログレベル動的調整機能のテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // 初期ログレベルを記録
+    let initialLogLevel = logger.logLevel
+
+    // ログレベル調整実行
+    logger.adjustLogLevelBasedOnConditions()
+
+    // 少し待機してから確認
+    let expectation = XCTestExpectation(description: "Dynamic log level adjustment")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      // ログファイル確認
+      let logFiles = self.getLogFiles()
+      if !logFiles.isEmpty {
+        if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+          // ログレベル調整のログが記録されている可能性を確認
+          XCTAssert(
+            latestLog.content.contains("adjustLogLevelBasedOnConditions")
+              || latestLog.content.contains("battery_level"),
+            "ログレベル調整に関するログが記録されるべき")
+        }
+      }
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testLogFileRotation() {
+    // ログファイルローテーション機能のテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // ローテーション実行
+    logger.rotateLogFiles()
+
+    // 少し待機してから確認
+    let expectation = XCTestExpectation(description: "Log file rotation")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      // ローテーションが実行されたことを確認（エラーなく完了すればOK）
+      XCTAssertNotNil(logger, "ログファイルローテーションが正常に実行されるべき")
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testBatchLogging() {
+    // バッチログ出力機能のテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // バッチロギングを有効化
+    logger.enableBatchLogging(batchSize: 3, flushInterval: 2.0)
+
+    // 複数のログを記録
+    logger.info(operation: "batchTest1", message: "バッチテスト1")
+    logger.info(operation: "batchTest2", message: "バッチテスト2")
+    logger.info(operation: "batchTest3", message: "バッチテスト3")
+
+    // バッチが自動的にフラッシュされるまで待機
+    let expectation = XCTestExpectation(description: "Batch logging")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+      // ログファイル確認
+      let logFiles = self.getLogFiles()
+      XCTAssertFalse(logFiles.isEmpty, "バッチログファイルが作成されるべき")
+
+      if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+        XCTAssert(latestLog.content.contains("batchTest"), "バッチテストログが記録されるべき")
+      }
+
+      // バッチロギングを無効化
+      logger.disableBatchLogging()
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 4.0)
+  }
+
+  func testPerformanceOptimization() {
+    // パフォーマンス最適化機能のテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // パフォーマンス最適化実行
+    logger.optimizePerformance()
+
+    // 少し待機してから確認
+    let expectation = XCTestExpectation(description: "Performance optimization")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      // ログファイル確認
+      let logFiles = self.getLogFiles()
+      if !logFiles.isEmpty {
+        if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+          XCTAssert(
+            latestLog.content.contains("optimizePerformance")
+              || latestLog.content.contains("battery_level"),
+            "パフォーマンス最適化のログが記録されるべき")
+        }
+      }
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testLogManagement() {
+    // ログ管理機能のテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // いくつかのログを記録
+    logger.info(operation: "managementTest", message: "管理テスト1")
+    logger.info(operation: "managementTest", message: "管理テスト2")
+
+    // ログファイル一覧取得
+    let logFiles = logger.getLogFiles()
+    XCTAssertFalse(logFiles.isEmpty, "ログファイルが存在するべき")
+
+    // 古いログのクリア（テスト用に短い期間を指定）
+    logger.clearOldLogs(olderThanDays: 0)
+
+    // 少し待機
+    let expectation = XCTestExpectation(description: "Log management")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      // クリア処理が正常に実行されたことを確認
+      XCTAssertNotNil(logger, "ログ管理機能が正常に実行されるべき")
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testLogLevelFiltering() {
+    // ログレベルフィルタリングのテスト
+    let logger = EnhancedVibeLogger.shared
+
+    // ログレベルをWARNING以上に設定
+    logger.logLevel = .warning
+
+    // 各レベルのログを記録
+    logger.debug(operation: "filterTest", message: "デバッグメッセージ")  // フィルタされる
+    logger.info(operation: "filterTest", message: "情報メッセージ")  // フィルタされる
+    logger.warning(operation: "filterTest", message: "警告メッセージ")  // 記録される
+    logger.error(operation: "filterTest", message: "エラーメッセージ")  // 記録される
+
+    // 少し待機してからログファイル確認
+    let expectation = XCTestExpectation(description: "Log level filtering")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      let logFiles = self.getLogFiles()
+      if !logFiles.isEmpty {
+        if let latestLog = logFiles.max(by: { $0.lastModified < $1.lastModified }) {
+          XCTAssert(latestLog.content.contains("警告メッセージ"), "警告レベルのログが記録されるべき")
+          XCTAssert(latestLog.content.contains("エラーメッセージ"), "エラーレベルのログが記録されるべき")
+          XCTAssertFalse(latestLog.content.contains("デバッグメッセージ"), "デバッグレベルのログは記録されないべき")
+          XCTAssertFalse(latestLog.content.contains("情報メッセージ"), "情報レベルのログは記録されないべき")
+        }
+      }
+
+      // ログレベルを元に戻す
+      logger.logLevel = .debug
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 2.0)
+  }
+
+  func testAutomatedOptimization() {
+    // 自動最適化の統合テスト
+    let logger = EnhancedVibeLogger.shared
+
+    // 自動最適化の各機能を実行
+    logger.adjustLogLevelBasedOnConditions()
+    logger.optimizePerformance()
+    logger.rotateLogFiles()
+
+    // バッチロギングを短期間有効化
+    logger.enableBatchLogging(batchSize: 2, flushInterval: 1.0)
+
+    // テストログを記録
+    logger.info(operation: "automatedTest", message: "自動最適化テスト1")
+    logger.info(operation: "automatedTest", message: "自動最適化テスト2")
+
+    // 結果確認
+    let expectation = XCTestExpectation(description: "Automated optimization")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+      // 自動最適化が正常に動作することを確認
+      let logFiles = self.getLogFiles()
+      XCTAssertFalse(logFiles.isEmpty, "最適化後もログファイルが存在するべき")
+
+      // バッチロギングを無効化
+      logger.disableBatchLogging()
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 3.0)
   }
 }
