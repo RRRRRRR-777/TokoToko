@@ -59,12 +59,9 @@ class WalkRepository {
 
     // オフライン永続化を有効にする
     let settings = FirestoreSettings()
-    settings.isPersistenceEnabled = true
-
-    // ネットワークタイムアウト設定
-    settings.cacheSizeBytes = 50 * 1024 * 1024  // 50MB キャッシュサイズ
-
-    db.settings = settings
+    let newSettings = Firestore.firestore().settings
+    newSettings.cacheSettings = PersistentCacheSettings()
+    db.settings = newSettings
 
     // Firestore設定完了（deepLinkURLSchemeは必要に応じてAppDelegate等で設定）
 
@@ -90,8 +87,8 @@ class WalkRepository {
       operation: "configureFirestore",
       message: "Firestore設定完了",
       context: [
-        "persistence_enabled": "true",
-        "cache_size_bytes": String(settings.cacheSizeBytes),
+        "persistence_enabled": "true", // PersistentCacheSettings.unlimited を使用しているため常にtrue
+        "cache_size_bytes": "unlimited", // PersistentCacheSettings.unlimited を使用しているため
       ]
     )
   }
@@ -147,7 +144,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "fetchWalk:getDocument",
-            context: ["walk_id": id.uuidString, "user_id": userId],
             humanNote: "Firestoreからのドキュメント取得に失敗",
             aiTodo: "ネットワーク接続とFirebase設定を確認"
           )
@@ -189,7 +185,7 @@ class WalkRepository {
               context: [
                 "walk_id": id.uuidString,
                 "requested_user_id": userId,
-                "walk_owner_id": walk.userId,
+                "walk_owner_id": walk.userId ?? "unknown",
               ],
               humanNote: "権限のないWalkへのアクセス",
               aiTodo: "ユーザー権限を確認してください"
@@ -200,7 +196,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "fetchWalk:dataDecoding",
-            context: ["walk_id": id.uuidString, "user_id": userId],
             humanNote: "Walkデータの解析に失敗",
             aiTodo: "データ構造の整合性を確認"
           )
@@ -278,7 +273,7 @@ class WalkRepository {
       message: "Walk保存開始",
       context: [
         "walk_id": walk.id.uuidString,
-        "user_id": walk.userId,
+        "user_id": walk.userId ?? "unknown",
         "title": walk.title,
         "status": walk.status.rawValue,
         "locations_count": String(walk.locations.count),
@@ -301,7 +296,7 @@ class WalkRepository {
       message: "Walk更新開始",
       context: [
         "walk_id": walk.id.uuidString,
-        "user_id": walk.userId,
+        "user_id": walk.userId ?? "unknown",
         "title": walk.title,
         "status": walk.status.rawValue,
         "locations_count": String(walk.locations.count),
@@ -354,11 +349,6 @@ class WalkRepository {
         self?.logger.logError(
           error as Error,
           operation: "deleteWalk",
-          context: [
-            "walk_id": id.uuidString,
-            "user_id": userId,
-            "error_type": String(describing: error),
-          ],
           humanNote: "Walk削除に失敗",
           aiTodo: "削除権限と存在を確認"
         )
@@ -378,15 +368,14 @@ class WalkRepository {
       "operation": "saveWalkToFirestore",
     ])
 
-    logger.logFirebaseBugPrevention(
-      operation: "saveWalkToFirestore",
-      isOnline: true,
-      pendingWrites: 0,
-      lastSync: Date(),
+    logger.logFirebaseSyncBugPrevention(
+      isOnline: true, // 仮定
+      pendingWrites: 0, // 仮定
+      lastSync: Date(), // 仮定
       context: [
         "walk_id": walk.id.uuidString,
         "collection": collectionName,
-        "user_id": walk.userId,
+        "user_id": walk.userId ?? "unknown",
       ]
     )
 
@@ -414,11 +403,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "saveWalkToFirestore:setData",
-            context: [
-              "walk_id": walk.id.uuidString,
-              "collection": self?.collectionName ?? "",
-              "error_type": String(describing: walkError),
-            ],
             humanNote: "Firestoreへの保存に失敗",
             aiTodo: "ネットワーク接続とFirebase設定を確認"
           )
@@ -432,7 +416,7 @@ class WalkRepository {
             context: [
               "walk_id": walk.id.uuidString,
               "collection": self?.collectionName ?? "",
-              "user_id": walk.userId,
+              "user_id": walk.userId ?? "unknown",
               "cached": "true",
             ]
           )
@@ -443,10 +427,6 @@ class WalkRepository {
       logger.logError(
         error,
         operation: "saveWalkToFirestore:setData",
-        context: [
-          "walk_id": walk.id.uuidString,
-          "collection": collectionName,
-        ],
         humanNote: "Walkデータの変換に失敗",
         aiTodo: "データ構造の整合性を確認"
       )
@@ -463,11 +443,10 @@ class WalkRepository {
       "operation": "fetchWalksFromFirestore",
     ])
 
-    logger.logFirebaseBugPrevention(
-      operation: "fetchWalksFromFirestore",
-      isOnline: true,
-      pendingWrites: 0,
-      lastSync: Date(),
+    logger.logFirebaseSyncBugPrevention(
+      isOnline: true, // 仮定
+      pendingWrites: 0, // 仮定
+      lastSync: Date(), // 仮定
       context: [
         "user_id": userId,
         "collection": collectionName,
@@ -498,11 +477,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "fetchWalksFromFirestore:getDocuments",
-            context: [
-              "user_id": userId,
-              "collection": self?.collectionName ?? "",
-              "error_type": String(describing: mappedError),
-            ],
             humanNote: "Firestoreからの取得に失敗",
             aiTodo: "ネットワーク接続とFirebase設定を確認"
           )
@@ -528,10 +502,6 @@ class WalkRepository {
             self?.logger.logError(
               error,
               operation: "fetchWalksFromFirestore:dataParsing",
-              context: [
-                "user_id": userId,
-                "document_id": document.documentID,
-              ],
               humanNote: "Walk解析エラー",
               aiTodo: "データ構造の整合性を確認"
             )
@@ -572,7 +542,7 @@ class WalkRepository {
         message: "異なるユーザーのWalk更新試行",
         context: [
           "walk_id": walk.id.uuidString,
-          "walk_user_id": walk.userId,
+          "walk_user_id": walk.userId ?? "unknown",
           "current_user_id": getCurrentUserId() ?? "nil",
         ],
         humanNote: "権限のないWalk更新試行",
@@ -582,15 +552,14 @@ class WalkRepository {
       return
     }
 
-    logger.logFirebaseBugPrevention(
-      operation: "updateWalkInFirestore",
-      isOnline: true,
-      pendingWrites: 0,
-      lastSync: Date(),
+    logger.logFirebaseSyncBugPrevention(
+      isOnline: true, // 仮定
+      pendingWrites: 0, // 仮定
+      lastSync: Date(), // 仮定
       context: [
         "walk_id": walk.id.uuidString,
         "collection": collectionName,
-        "user_id": walk.userId,
+        "user_id": walk.userId ?? "unknown",
       ]
     )
 
@@ -602,11 +571,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "updateWalkInFirestore:setData",
-            context: [
-              "walk_id": walk.id.uuidString,
-              "collection": self?.collectionName ?? "",
-              "error_type": String(describing: walkError),
-            ],
             humanNote: "Firestoreでの更新に失敗",
             aiTodo: "ネットワーク接続とFirebase設定を確認"
           )
@@ -620,7 +584,7 @@ class WalkRepository {
             context: [
               "walk_id": walk.id.uuidString,
               "collection": self?.collectionName ?? "",
-              "user_id": walk.userId,
+              "user_id": walk.userId ?? "unknown",
               "cached": "true",
             ]
           )
@@ -631,10 +595,6 @@ class WalkRepository {
       logger.logError(
         error,
         operation: "updateWalkInFirestore:setData",
-        context: [
-          "walk_id": walk.id.uuidString,
-          "collection": collectionName,
-        ],
         humanNote: "Walkデータの変換に失敗",
         aiTodo: "データ構造の整合性を確認"
       )
@@ -652,11 +612,10 @@ class WalkRepository {
       "operation": "deleteWalkFromFirestore",
     ])
 
-    logger.logFirebaseBugPrevention(
-      operation: "deleteWalkFromFirestore",
-      isOnline: true,
-      pendingWrites: 0,
-      lastSync: Date(),
+    logger.logFirebaseSyncBugPrevention(
+      isOnline: true, // 仮定
+      pendingWrites: 0, // 仮定
+      lastSync: Date(), // 仮定
       context: [
         "walk_id": walkId.uuidString,
         "collection": collectionName,
@@ -672,11 +631,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "deleteWalkFromFirestore:getDocument",
-            context: [
-              "walk_id": walkId.uuidString,
-              "user_id": userId,
-              "collection": self?.collectionName ?? "",
-            ],
             humanNote: "削除権限確認のためのドキュメント取得に失敗",
             aiTodo: "ネットワーク接続とFirebase設定を確認"
           )
@@ -708,7 +662,7 @@ class WalkRepository {
               context: [
                 "walk_id": walkId.uuidString,
                 "requested_user_id": userId,
-                "walk_owner_id": walk.userId,
+                "walk_owner_id": walk.userId ?? "unknown",
               ],
               humanNote: "権限のないWalk削除試行",
               aiTodo: "ユーザー権限を確認してください"
@@ -723,11 +677,6 @@ class WalkRepository {
               self?.logger.logError(
                 error,
                 operation: "deleteWalkFromFirestore:delete",
-                context: [
-                  "walk_id": walkId.uuidString,
-                  "user_id": userId,
-                  "collection": self?.collectionName ?? "",
-                ],
                 humanNote: "Firestoreからの削除に失敗",
                 aiTodo: "ネットワーク接続とFirebase設定を確認"
               )
@@ -752,10 +701,6 @@ class WalkRepository {
           self?.logger.logError(
             error,
             operation: "deleteWalkFromFirestore:dataParsing",
-            context: [
-              "walk_id": walkId.uuidString,
-              "user_id": userId,
-            ],
             humanNote: "削除権限確認のためのWalkデータ解析に失敗",
             aiTodo: "データ構造の整合性を確認"
           )

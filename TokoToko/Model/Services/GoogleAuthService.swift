@@ -129,10 +129,6 @@ class GoogleAuthService {
           self?.logger.logError(
             error,
             operation: "signInWithGoogle:firebaseAuth",
-            context: [
-              "user_id": user.userID ?? "unknown",
-              "credential_type": "google",
-            ],
             humanNote: "Firebase認証でエラー発生",
             aiTodo: "Firebase設定とネットワーク接続を確認"
           )

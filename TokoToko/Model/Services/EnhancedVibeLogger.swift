@@ -590,7 +590,7 @@ public struct ThreadInfo: Codable {
     threadName: String = Thread.current.name ?? "Unknown",
     threadId: String = String(describing: Thread.current),
     isMainThread: Bool = Thread.isMainThread,
-    queueLabel: String? = DispatchQueue.current?.label
+    queueLabel: String? = nil
   ) {
     self.threadName = threadName
     self.threadId = threadId
@@ -830,8 +830,8 @@ public class EnhancedVibeLogger {
   public static let shared = EnhancedVibeLogger()
 
   private let logQueue = DispatchQueue(label: "com.tokotoko.logger", qos: .utility)
-  private let logLevel: LogLevel
-  private let enableFileOutput: Bool
+  private var logLevel: LogLevel
+  private var enableFileOutput: Bool
   private let logDirectoryPath: String
 
   private init() {
@@ -1586,31 +1586,32 @@ public class EnhancedVibeLogger {
         newLogLevel = .debug  // エラー多発時は詳細ログ
       }
       
-      if newLogLevel != self.logLevel {
-        let oldLevel = self.logLevel
-        self.logLevel = newLogLevel
-        
-        self.log(
-          level: .info,
-          operation: "adjustLogLevelBasedOnConditions",
-          message: "ログレベルを自動調整しました",
-          context: [
-            "old_level": oldLevel.rawValue,
-            "new_level": newLogLevel.rawValue,
-            "battery_level": String(format: "%.2f", currentBattery),
-            "memory_pressure": String(format: "%.2f", memoryPressure),
-            "error_frequency": String(errorFrequency)
-          ],
-          humanNote: "システム状態に基づいてログレベルを最適化",
-          aiTodo: "ログレベル変更の効果を監視"
-        )
-      }
+      // ログレベルの動的変更は現在無効化
+      // if newLogLevel != self.logLevel {
+      //   let oldLevel = self.logLevel
+      //   self.logLevel = newLogLevel
+      //   
+      //   self.log(
+      //     level: .info,
+      //     operation: "adjustLogLevelBasedOnConditions",
+      //     message: "ログレベルを自動調整しました",
+      //     context: [
+      //       "old_level": oldLevel.rawValue,
+      //       "new_level": newLogLevel.rawValue,
+      //       "battery_level": String(format: "%.2f", currentBattery),
+      //       "memory_pressure": String(format: "%.2f", memoryPressure),
+      //       "error_frequency": String(errorFrequency)
+      //     ],
+      //     humanNote: "システム状態に基づいてログレベルを最適化",
+      //     aiTodo: "ログレベル変更の効果を監視"
+      //   )
+      // }
     }
   }
   
   // メモリ圧迫レベルの取得
   private func getMemoryPressureLevel() -> Double {
-    let info = mach_task_basic_info()
+    var info = mach_task_basic_info()
     var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
     
     let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
@@ -1745,18 +1746,18 @@ public class EnhancedVibeLogger {
       let currentBattery = UIDevice.current.batteryLevel
       let memoryPressure = self.getMemoryPressureLevel()
       
-      // バッテリー残量に基づく最適化
-      if currentBattery < 0.20 {
-        self.enableFileOutput = false
-        self.adjustLogLevelBasedOnConditions()
-        self.enableBatchLogging(batchSize: 20, flushInterval: 10.0)
-      } else if currentBattery < 0.50 {
-        self.enableFileOutput = true
-        self.enableBatchLogging(batchSize: 15, flushInterval: 7.0)
-      } else {
-        self.enableFileOutput = true
-        self.enableBatchLogging(batchSize: 10, flushInterval: 5.0)
-      }
+      // バッテリー残量に基づく最適化（無効化）
+      // if currentBattery < 0.20 {
+      //   self.enableFileOutput = false
+      //   self.adjustLogLevelBasedOnConditions()
+      //   self.enableBatchLogging(batchSize: 20, flushInterval: 10.0)
+      // } else if currentBattery < 0.50 {
+      //   self.enableFileOutput = true
+      //   self.enableBatchLogging(batchSize: 15, flushInterval: 7.0)
+      // } else {
+      //   self.enableFileOutput = true
+      //   self.enableBatchLogging(batchSize: 10, flushInterval: 5.0)
+      // }
       
       // メモリ圧迫時の最適化
       if memoryPressure > 0.8 {

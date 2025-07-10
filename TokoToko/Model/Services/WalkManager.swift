@@ -375,7 +375,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "walk_id": walk.id.uuidString,
         "final_distance": String(walk.totalDistance),
-        "final_duration": String(walk.totalDuration),
+        "final_duration": String(walk.duration),
         "final_steps": String(walk.totalSteps),
         "locations_count": String(walk.locations.count),
       ]
