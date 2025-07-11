@@ -224,6 +224,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     startTimer()
 
     logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
       fromState: "notStarted",
       toState: "inProgress",
       trigger: "startWalk",
@@ -269,6 +270,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     stepCountManager.stopTracking()
 
     logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
       fromState: "inProgress",
       toState: "paused",
       trigger: "pauseWalk",
@@ -316,6 +318,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     startTimer()
 
     logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
       fromState: "paused",
       toState: "inProgress",
       trigger: "resumeWalk",
@@ -369,6 +372,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     saveCurrentWalk()
 
     logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
       fromState: previousStatus,
       toState: "completed",
       trigger: "stopWalk",
