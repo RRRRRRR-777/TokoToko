@@ -43,6 +43,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   private let locationManager = LocationManager.shared
   private let walkRepository = WalkRepository.shared
   private let stepCountManager = StepCountManager.shared
+  private let logger = EnhancedVibeLogger.shared
 
   // タイマー
   private var timer: Timer?
@@ -97,7 +98,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     #if DEBUG
       print("🔧 WalkManager: StepCountManager設定開始")
     #endif
-    
+
     do {
       stepCountManager.delegate = self
       #if DEBUG
@@ -113,18 +114,36 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   // 散歩を開始
   func startWalk(title: String = "", description: String = "") {
-    guard !isWalking else { return }
+    logger.logMethodStart(context: ["title": title, "description": description])
+
+    guard !isWalking else {
+      logger.warning(
+        operation: "startWalk",
+        message: "散歩が既に開始されています",
+        context: ["current_status": currentWalk?.status.rawValue ?? "none"]
+      )
+      return
+    }
 
     // 認証されたユーザーIDを取得
     guard let userId = Auth.auth().currentUser?.uid else {
-      print("エラー: ユーザーが認証されていません")
+      logger.error(
+        operation: "startWalk",
+        message: "認証されていないユーザーが散歩を開始しようとしました",
+        humanNote: "ユーザー認証が必要です",
+        aiTodo: "認証フローを確認してください"
+      )
       return
     }
 
     // バックグラウンドでの位置情報追跡のため、常時権限を要求
     let authStatus = locationManager.checkAuthorizationStatus()
     if authStatus != .authorizedAlways {
-      print("バックグラウンド位置情報のため常時権限を要求します")
+      logger.info(
+        operation: "startWalk",
+        message: "バックグラウンド位置情報のため常時権限を要求します",
+        context: ["current_status": authStatus.rawValue.description]
+      )
       // 散歩開始パラメータを保存
       pendingWalkTitle = title
       pendingWalkDescription = description
@@ -147,6 +166,13 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 現在位置を開始地点として追加
     if let location = currentLocation {
       newWalk.addLocation(location)
+      logger.logLocationBugPrevention(
+        location: location,
+        accuracy: location.horizontalAccuracy,
+        batteryLevel: UIDevice.current.batteryLevel,
+        duration: 0,
+        context: ["action": "walk_start", "title": finalTitle]
+      )
     }
 
     currentWalk = newWalk
@@ -157,28 +183,39 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     locationManager.startUpdatingLocation()
 
     // 歩数トラッキングを開始
-    #if DEBUG
-      print("🚶‍♂️ WalkManager: 歩数トラッキング開始を要求")
-    #endif
-    
+    logger.info(
+      operation: "startWalk",
+      message: "歩数トラッキング開始を要求",
+      context: ["step_counting_available": String(stepCountManager.isStepCountingAvailable())]
+    )
+
     do {
       // CoreMotion利用可能性を事前チェック
       if stepCountManager.isStepCountingAvailable() {
         stepCountManager.startTracking()
-        #if DEBUG
-          print("✅ WalkManager: CoreMotion歩数トラッキング開始")
-        #endif
+        logger.info(
+          operation: "startWalk",
+          message: "CoreMotion歩数トラッキング開始",
+          context: ["tracking_mode": "coreMotion"]
+        )
       } else {
-        #if DEBUG
-          print("⚠️ WalkManager: CoreMotion利用不可、推定モードで開始")
-        #endif
+        logger.warning(
+          operation: "startWalk",
+          message: "CoreMotion利用不可、推定モードで開始",
+          context: ["tracking_mode": "estimated"],
+          humanNote: "シミュレーターまたは非対応デバイス",
+          aiTodo: "実機での動作確認を推奨"
+        )
         // シミュレーターや非対応デバイスでは最初から推定モードに設定
         currentStepCount = .estimated(steps: 0)
       }
     } catch {
-      #if DEBUG
-        print("❌ WalkManager: 歩数トラッキング開始でエラー: \(error)")
-      #endif
+      logger.logError(
+        error,
+        operation: "startWalk",
+        humanNote: "歩数トラッキング開始でエラー",
+        aiTodo: "CoreMotionの権限と設定を確認"
+      )
       // エラー時も推定モードで続行
       currentStepCount = .estimated(steps: 0)
     }
@@ -186,12 +223,39 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // タイマーを開始
     startTimer()
 
-    print("散歩を開始しました: \(finalTitle)")
+    logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
+      fromState: "notStarted",
+      toState: "inProgress",
+      trigger: "startWalk",
+      context: [
+        "title": finalTitle,
+        "user_id": userId,
+        "has_location": String(currentLocation != nil),
+      ]
+    )
+
+    logger.info(
+      operation: "startWalk",
+      message: "散歩開始完了",
+      context: ["title": finalTitle, "walk_id": newWalk.id.uuidString]
+    )
   }
 
   // 散歩を一時停止
   func pauseWalk() {
-    guard isRecording, var walk = currentWalk else { return }
+    logger.logMethodStart()
+
+    guard isRecording, var walk = currentWalk else {
+      logger.warning(
+        operation: "pauseWalk",
+        message: "一時停止可能な散歩が存在しません",
+        context: [
+          "is_recording": String(isRecording), "current_walk": currentWalk?.id.uuidString ?? "none",
+        ]
+      )
+      return
+    }
 
     walk.pause()
     currentWalk = walk
@@ -205,12 +269,41 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 歩数トラッキングを停止
     stepCountManager.stopTracking()
 
-    print("散歩を一時停止しました")
+    logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
+      fromState: "inProgress",
+      toState: "paused",
+      trigger: "pauseWalk",
+      context: [
+        "walk_id": walk.id.uuidString,
+        "elapsed_time": String(elapsedTime),
+        "distance": String(distance),
+      ]
+    )
+
+    logger.info(
+      operation: "pauseWalk",
+      message: "散歩を一時停止しました",
+      context: ["walk_id": walk.id.uuidString]
+    )
   }
 
   // 散歩を再開
   func resumeWalk() {
-    guard !isRecording, var walk = currentWalk, walk.status == .paused else { return }
+    logger.logMethodStart()
+
+    guard !isRecording, var walk = currentWalk, walk.status == .paused else {
+      logger.warning(
+        operation: "resumeWalk",
+        message: "再開可能な散歩が存在しません",
+        context: [
+          "is_recording": String(isRecording),
+          "current_walk": currentWalk?.id.uuidString ?? "none",
+          "walk_status": currentWalk?.status.rawValue ?? "none",
+        ]
+      )
+      return
+    }
 
     walk.resume()
     currentWalk = walk
@@ -224,12 +317,39 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // タイマーを再開
     startTimer()
 
-    print("散歩を再開しました")
+    logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
+      fromState: "paused",
+      toState: "inProgress",
+      trigger: "resumeWalk",
+      context: [
+        "walk_id": walk.id.uuidString,
+        "elapsed_time": String(elapsedTime),
+        "distance": String(distance),
+      ]
+    )
+
+    logger.info(
+      operation: "resumeWalk",
+      message: "散歩を再開しました",
+      context: ["walk_id": walk.id.uuidString]
+    )
   }
 
   // 散歩を終了
   func stopWalk() {
-    guard var walk = currentWalk else { return }
+    logger.logMethodStart()
+
+    guard var walk = currentWalk else {
+      logger.warning(
+        operation: "stopWalk",
+        message: "終了可能な散歩が存在しません",
+        context: ["current_walk": "none"]
+      )
+      return
+    }
+
+    let previousStatus = walk.status.rawValue
 
     // 最終歩数を保存
     walk.totalSteps = totalSteps
@@ -251,7 +371,30 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 散歩をリポジトリに保存
     saveCurrentWalk()
 
-    print("散歩を終了しました。距離: \(walk.distanceString), 時間: \(walk.durationString)")
+    logger.logWalkStateTransitionBugPrevention(
+      walkId: currentWalk?.id.uuidString ?? "unknown",
+      fromState: previousStatus,
+      toState: "completed",
+      trigger: "stopWalk",
+      context: [
+        "walk_id": walk.id.uuidString,
+        "final_distance": String(walk.totalDistance),
+        "final_duration": String(walk.duration),
+        "final_steps": String(walk.totalSteps),
+        "locations_count": String(walk.locations.count),
+      ]
+    )
+
+    logger.info(
+      operation: "stopWalk",
+      message: "散歩を終了しました",
+      context: [
+        "walk_id": walk.id.uuidString,
+        "distance": walk.distanceString,
+        "duration": walk.durationString,
+        "steps": String(walk.totalSteps),
+      ]
+    )
   }
 
   // 散歩をキャンセル
@@ -322,7 +465,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   private func updateElapsedTime() {
     guard let walk = currentWalk else { return }
     elapsedTime = walk.duration
-    
+
     // CoreMotion非対応時は推定歩数をリアルタイム更新
     if case .estimated = currentStepCount {
       let newEstimatedStepCount = stepCountManager.estimateSteps(
@@ -330,10 +473,12 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         duration: elapsedTime
       )
       currentStepCount = newEstimatedStepCount
-      
+
       #if DEBUG
         if let steps = newEstimatedStepCount.steps {
-          print("📊 推定歩数更新: \(steps)歩 (距離: \(String(format: "%.1f", distance))m, 時間: \(String(format: "%.0f", elapsedTime))s)")
+          print(
+            "📊 推定歩数更新: \(steps)歩 (距離: \(String(format: "%.1f", distance))m, 時間: \(String(format: "%.0f", elapsedTime))s)"
+          )
         }
       #endif
     }
@@ -360,7 +505,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
 
     // CoreMotionが利用できない場合は距離ベースで推定
-    let estimatedStepCount = stepCountManager.estimateSteps(distance: distance, duration: elapsedTime)
+    let estimatedStepCount = stepCountManager.estimateSteps(
+      distance: distance, duration: elapsedTime)
     return estimatedStepCount.steps ?? 0
   }
 
@@ -469,7 +615,7 @@ extension WalkManager {
   func stepCountDidUpdate(_ stepCount: StepCountSource) {
     DispatchQueue.main.async { [weak self] in
       self?.currentStepCount = stepCount
-      
+
       #if DEBUG
         if let steps = stepCount.steps {
           print("📊 歩数更新: \(steps)歩 (\(stepCount.isRealTime ? "実測" : "推定"))")
@@ -481,11 +627,11 @@ extension WalkManager {
   func stepCountDidFailWithError(_ error: Error) {
     DispatchQueue.main.async { [weak self] in
       self?.currentStepCount = .unavailable
-      
+
       #if DEBUG
         print("❌ 歩数取得エラー: \(error.localizedDescription)")
       #endif
-      
+
       // エラー発生時は距離ベースの推定値にフォールバック
       if let self = self, self.isRecording {
         let estimatedStepCount = self.stepCountManager.estimateSteps(
@@ -670,10 +816,10 @@ extension WalkManager {
     // Firebase Storage reference
     let storage = Storage.storage()
     let storageRef = storage.reference(forURL: url)
-    
+
     // 最大ダウンロードサイズを5MBに制限
     let maxSize: Int64 = 5 * 1024 * 1024
-    
+
     storageRef.getData(maxSize: maxSize) { data, error in
       if let error = error {
         #if DEBUG
@@ -682,7 +828,7 @@ extension WalkManager {
         completion(.failure(error))
         return
       }
-      
+
       guard let imageData = data, let image = UIImage(data: imageData) else {
         #if DEBUG
           print("❌ 画像データの変換に失敗")
@@ -690,7 +836,7 @@ extension WalkManager {
         completion(.failure(ImageStorageError.downloadFailed))
         return
       }
-      
+
       #if DEBUG
         print("✅ Firebase Storage ダウンロード完了: \(image.size)")
       #endif
