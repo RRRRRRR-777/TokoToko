@@ -19,11 +19,14 @@ struct WalkHistoryView: View {
       // セグメントコントロール
       Picker("履歴タブ", selection: $selectedTab) {
         Text("自分の履歴").tag(0)
+          .accessibilityIdentifier("自分の履歴")
         Text("フレンドの履歴").tag(1)
+          .accessibilityIdentifier("フレンドの履歴")
       }
       .pickerStyle(SegmentedPickerStyle())
       .padding(.horizontal)
       .padding(.top, 8)
+      .accessibilityIdentifier("履歴タブSegmentedControl")
 
       // タブコンテンツ
       TabView(selection: $selectedTab) {
@@ -98,16 +101,19 @@ struct WalkHistoryView: View {
       Image(systemName: "figure.walk.circle")
         .font(.system(size: 60))
         .foregroundColor(.gray)
+        .accessibilityIdentifier("空の散歩履歴アイコン")
 
       Text("散歩履歴がありません")
         .font(.title2)
         .fontWeight(.semibold)
+        .accessibilityIdentifier("散歩履歴がありません")
 
       Text("散歩を完了すると、ここに履歴が表示されます")
         .font(.body)
         .foregroundColor(.gray)
         .multilineTextAlignment(.center)
         .padding(.horizontal)
+        .accessibilityIdentifier("散歩を完了すると、ここに履歴が表示されます")
 
       Spacer()
     }

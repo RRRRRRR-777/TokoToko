@@ -35,16 +35,24 @@ public class ProductionUITestingProvider: UITestingProvider {
 /// UIテスト環境用のUIテストプロバイダー実装
 public class UITestUITestingProvider: UITestingProvider {
   public var isUITesting: Bool { true }
-  public var isMockLoggedIn: Bool { ProcessInfo.processInfo.arguments.contains("--logged-in") }
+  public var isMockLoggedIn: Bool {
+    let args = ProcessInfo.processInfo.arguments
+    return args.contains("--logged-in") || args.contains("MOCK_LOGGED_IN")
+  }
   public var hasDeepLink: Bool {
     let args = ProcessInfo.processInfo.arguments
     return args.contains("--deep-link") || args.contains("--destination")
+      || args.contains(where: { $0.hasPrefix("DEEP_LINK_DESTINATION_") })
   }
 
   public var deepLinkDestination: String? {
     let args = ProcessInfo.processInfo.arguments
     if let index = args.firstIndex(of: "--destination"), index + 1 < args.count {
       return args[index + 1]
+    }
+    // DEEP_LINK_DESTINATION_walk 形式の引数を探す
+    if let deepLinkArg = args.first(where: { $0.hasPrefix("DEEP_LINK_DESTINATION_") }) {
+      return String(deepLinkArg.dropFirst("DEEP_LINK_DESTINATION_".count))
     }
     return nil
   }

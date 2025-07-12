@@ -87,8 +87,8 @@ class WalkRepository {
       operation: "configureFirestore",
       message: "Firestore設定完了",
       context: [
-        "persistence_enabled": "true", // PersistentCacheSettings.unlimited を使用しているため常にtrue
-        "cache_size_bytes": "unlimited", // PersistentCacheSettings.unlimited を使用しているため
+        "persistence_enabled": "true",  // PersistentCacheSettings.unlimited を使用しているため常にtrue
+        "cache_size_bytes": "unlimited",  // PersistentCacheSettings.unlimited を使用しているため
       ]
     )
   }
@@ -98,6 +98,17 @@ class WalkRepository {
   // すべてのWalkを取得（現在のユーザーのみ）
   func fetchWalks(completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void) {
     logger.logMethodStart()
+
+    // UIテストモード時は空のリストを返す
+    if UITestingHelper.shared.isUITesting {
+      logger.info(
+        operation: "fetchWalks",
+        message: "UIテストモード: 空のWalkリストを返します",
+        context: ["ui_testing": "true"]
+      )
+      completion(.success([]))
+      return
+    }
 
     // 認証済みユーザーIDが必要
     guard let userId = getCurrentUserId() else {
@@ -369,9 +380,9 @@ class WalkRepository {
     ])
 
     logger.logFirebaseSyncBugPrevention(
-      isOnline: true, // 仮定
-      pendingWrites: 0, // 仮定
-      lastSync: Date(), // 仮定
+      isOnline: true,  // 仮定
+      pendingWrites: 0,  // 仮定
+      lastSync: Date(),  // 仮定
       context: [
         "walk_id": walk.id.uuidString,
         "collection": collectionName,
@@ -444,9 +455,9 @@ class WalkRepository {
     ])
 
     logger.logFirebaseSyncBugPrevention(
-      isOnline: true, // 仮定
-      pendingWrites: 0, // 仮定
-      lastSync: Date(), // 仮定
+      isOnline: true,  // 仮定
+      pendingWrites: 0,  // 仮定
+      lastSync: Date(),  // 仮定
       context: [
         "user_id": userId,
         "collection": collectionName,
@@ -553,9 +564,9 @@ class WalkRepository {
     }
 
     logger.logFirebaseSyncBugPrevention(
-      isOnline: true, // 仮定
-      pendingWrites: 0, // 仮定
-      lastSync: Date(), // 仮定
+      isOnline: true,  // 仮定
+      pendingWrites: 0,  // 仮定
+      lastSync: Date(),  // 仮定
       context: [
         "walk_id": walk.id.uuidString,
         "collection": collectionName,
@@ -613,9 +624,9 @@ class WalkRepository {
     ])
 
     logger.logFirebaseSyncBugPrevention(
-      isOnline: true, // 仮定
-      pendingWrites: 0, // 仮定
-      lastSync: Date(), // 仮定
+      isOnline: true,  // 仮定
+      pendingWrites: 0,  // 仮定
+      lastSync: Date(),  // 仮定
       context: [
         "walk_id": walkId.uuidString,
         "collection": collectionName,
