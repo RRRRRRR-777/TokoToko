@@ -5,6 +5,7 @@
 //  Created by Claude Code on 2025/07/12.
 //
 
+import FirebaseAuth
 import Foundation
 import SwiftUI
 
@@ -97,6 +98,35 @@ struct WalkHistoryDetailView: View {
       }
 
       Spacer()
+
+      // ユーザー情報表示
+      VStack(alignment: .trailing, spacing: 4) {
+        // ユーザーアイコン
+        if let user = Auth.auth().currentUser,
+          let photoURL = user.photoURL
+        {
+          AsyncImage(url: photoURL) { image in
+            image
+              .resizable()
+              .aspectRatio(contentMode: .fill)
+          } placeholder: {
+            Image(systemName: "person.crop.circle.fill")
+              .foregroundColor(.gray)
+          }
+          .frame(width: 40, height: 40)
+          .clipShape(Circle())
+        } else {
+          Image(systemName: "person.crop.circle.fill")
+            .foregroundColor(.gray)
+            .frame(width: 40, height: 40)
+        }
+
+        // ユーザー名（コメントアウト - ユーザー名登録機能未実装のため）
+        // Text(user.displayName ?? "ユーザー")
+        //   .font(.caption)
+        //   .fontWeight(.medium)
+        //   .foregroundColor(.black)
+      }
     }
     .padding()
     .background(
@@ -105,7 +135,7 @@ struct WalkHistoryDetailView: View {
           Color.white.opacity(0.8),
           Color.white.opacity(0.7),
           Color.white.opacity(0.6),
-          Color.clear
+          Color.clear,
         ],
         startPoint: .top,
         endPoint: .bottom
