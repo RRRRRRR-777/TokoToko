@@ -95,8 +95,23 @@ struct HomeView: View {
         Spacer()
         HStack {
           Spacer()
-          WalkControlPanel(walkManager: walkManager, isFloating: true)
-            .padding(.trailing, 20)
+          VStack(spacing: 16) {
+            // 新しい詳細画面テスト用ボタン(削除予定)
+            NavigationLink(destination: createTestDetailView()) {
+              Text("新UI確認")
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.blue)
+                .cornerRadius(20)
+                .shadow(radius: 3)
+            }
+
+            WalkControlPanel(walkManager: walkManager, isFloating: true)
+          }
+          .padding(.trailing, 20)
         }
       }
     }
@@ -116,6 +131,44 @@ struct HomeView: View {
       }
     }
     .loadingOverlay(isLoading: isLoading)
+  }
+
+  // テスト用の詳細画面を作成(削除予定)
+  private func createTestDetailView() -> some View {
+    let testWalks = [
+      Walk(
+        title: "朝の散歩",
+        description: "公園を歩きました",
+        id: UUID(),
+        startTime: Date().addingTimeInterval(-3600),
+        endTime: Date().addingTimeInterval(-3000),
+        totalDistance: 1200,
+        totalSteps: 1500,
+        status: .completed,
+        locations: [
+          CLLocation(latitude: 35.6812, longitude: 139.7671),
+          CLLocation(latitude: 35.6815, longitude: 139.7675),
+          CLLocation(latitude: 35.6818, longitude: 139.7680),
+        ]
+      ),
+      Walk(
+        title: "夕方の散歩",
+        description: "川沿いを歩きました",
+        id: UUID(),
+        startTime: Date().addingTimeInterval(-7200),
+        endTime: Date().addingTimeInterval(-6600),
+        totalDistance: 800,
+        totalSteps: 1000,
+        status: .completed,
+        locations: [
+          CLLocation(latitude: 35.6820, longitude: 139.7680),
+          CLLocation(latitude: 35.6825, longitude: 139.7685),
+          CLLocation(latitude: 35.6828, longitude: 139.7688),
+        ]
+      ),
+    ]
+
+    return WalkHistoryDetailView(walks: testWalks, initialIndex: 0)
   }
 
   // マップセクション
