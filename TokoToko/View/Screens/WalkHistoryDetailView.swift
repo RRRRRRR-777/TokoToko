@@ -65,7 +65,18 @@ struct WalkHistoryDetailView: View {
   private var mainContentView: some View {
     VStack {
       headerView
+
       Spacer()
+
+      HStack {
+        // 左側の統計情報バー
+        leftStatsBarView
+
+        Spacer()
+      }
+
+      Spacer()
+
       bottomContentView
     }
   }
@@ -86,17 +97,6 @@ struct WalkHistoryDetailView: View {
       }
 
       Spacer()
-
-      Button {
-        viewModel.toggleStatsBar()
-      } label: {
-        Image(systemName: viewModel.isStatsBarVisible ? "eye.slash" : "eye")
-          .font(.title2)
-          .foregroundColor(.white)
-          .padding(12)
-          .background(Color.black.opacity(0.5))
-          .clipShape(Circle())
-      }
     }
     .padding()
     .background(
@@ -108,13 +108,25 @@ struct WalkHistoryDetailView: View {
     )
   }
 
+  private var leftStatsBarView: some View {
+    VStack {
+      StatsBarView(
+        walk: viewModel.currentWalk,
+        isExpanded: Binding(
+          get: { viewModel.isStatsBarVisible },
+          set: { _ in }
+        ),
+        onToggle: {
+          viewModel.toggleStatsBar()
+        }
+      )
+      .transition(.move(edge: .leading).combined(with: .opacity))
+    }
+    .padding(.leading, 10)
+  }
+
   private var bottomContentView: some View {
     VStack(spacing: 16) {
-      if viewModel.isStatsBarVisible {
-        StatsBarView(walk: viewModel.currentWalk)
-          .transition(.move(edge: .leading).combined(with: .opacity))
-      }
-
       if !mockPhotoURLs.isEmpty {
         ArchGalleryView(
           photoURLs: mockPhotoURLs
