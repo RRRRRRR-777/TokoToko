@@ -18,7 +18,8 @@ public class UITestingHelper {
 
   /// 初期化時にUIテストモードかどうかを判定し、適切なプロバイダーを設定
   private init() {
-    let isUITesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
+    let args = ProcessInfo.processInfo.arguments
+    let isUITesting = args.contains("--uitesting") || args.contains("UI_TESTING")
     provider = isUITesting ? UITestUITestingProvider() : ProductionUITestingProvider()
   }
 
