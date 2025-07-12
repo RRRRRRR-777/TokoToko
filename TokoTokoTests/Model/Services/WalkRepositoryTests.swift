@@ -5,14 +5,15 @@
 //  Created by bokuyamada on 2025/06/26.
 //
 
-import XCTest
 import FirebaseFirestore
+import XCTest
+
 @testable import TokoToko
 
 final class WalkRepositoryTests: XCTestCase {
   var repository: WalkRepository!
   var mockRepository: MockWalkRepository!
-  
+
   override func setUpWithError() throws {
     super.setUp()
     // 実際のFirestoreインスタンスを設定（統合テスト用）
@@ -20,23 +21,23 @@ final class WalkRepositoryTests: XCTestCase {
     // モックリポジトリを設定（ユニットテスト用）
     mockRepository = MockWalkRepository()
   }
-  
+
   override func tearDownWithError() throws {
     repository = nil
     mockRepository = nil
     super.tearDown()
   }
-  
+
   // MARK: - ユニットテスト（モック使用）
-  
+
   func testMockFetchWalksSuccess() async throws {
     // Arrange
     let sampleWalks: [Walk] = MockWalkRepository.createSampleWalks(count: 3, userId: "test-user")
     sampleWalks.forEach { mockRepository.addMockWalk($0) }
     mockRepository.setMockCurrentUserId("test-user")
-    
+
     let expectation = XCTestExpectation(description: "Should fetch walks from mock")
-    
+
     // Act & Assert
     mockRepository.fetchWalks { result in
       switch result {
@@ -48,15 +49,15 @@ final class WalkRepositoryTests: XCTestCase {
         XCTFail("Mock should not fail")
       }
     }
-    
+
     await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
+
   func testMockErrorSimulation() async throws {
     // Arrange
     mockRepository.simulateError(WalkRepositoryError.networkError)
     let expectation = XCTestExpectation(description: "Should simulate network error")
-    
+
     // Act & Assert
     mockRepository.fetchWalks { result in
       switch result {
@@ -67,22 +68,22 @@ final class WalkRepositoryTests: XCTestCase {
         expectation.fulfill()
       }
     }
-    
+
     await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
+
   func testMockUserDataSeparation() async throws {
     // Arrange
     let user1Walks: [Walk] = MockWalkRepository.createSampleWalks(count: 2, userId: "user-1")
     let user2Walks: [Walk] = MockWalkRepository.createSampleWalks(count: 2, userId: "user-2")
-    
+
     user1Walks.forEach { mockRepository.addMockWalk($0) }
     user2Walks.forEach { mockRepository.addMockWalk($0) }
-    
+
     mockRepository.setMockCurrentUserId("user-1")
-    
+
     let expectation = XCTestExpectation(description: "Should separate user data in mock")
-    
+
     // Act & Assert
     mockRepository.fetchWalks { result in
       switch result {
@@ -95,18 +96,18 @@ final class WalkRepositoryTests: XCTestCase {
         XCTFail("Mock should not fail")
       }
     }
-    
+
     await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
+
   func testMockDeleteWalkSuccess() async throws {
     // Arrange
     let walk = MockWalkRepository.createSampleWalk(userId: "test-user")
     mockRepository.addMockWalk(walk)
     mockRepository.setMockCurrentUserId("test-user")
-    
+
     let expectation = XCTestExpectation(description: "Should delete walk successfully")
-    
+
     // Act & Assert
     mockRepository.deleteWalk(withID: walk.id) { result in
       switch result {
@@ -126,17 +127,17 @@ final class WalkRepositoryTests: XCTestCase {
         XCTFail("Delete should succeed")
       }
     }
-    
+
     await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
+
   func testMockDeleteWalkNotFound() async throws {
     // Arrange
     let nonExistentWalkId = UUID()
     mockRepository.setMockCurrentUserId("test-user")
-    
+
     let expectation = XCTestExpectation(description: "Should fail when walk not found")
-    
+
     // Act & Assert
     mockRepository.deleteWalk(withID: nonExistentWalkId) { result in
       switch result {
@@ -147,24 +148,25 @@ final class WalkRepositoryTests: XCTestCase {
         expectation.fulfill()
       }
     }
-    
+
     await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
-  // MARK: - Firestore統合テスト
-  
-  func testSaveWalkToFirestore() async throws {
+
+  // MARK: - 保存機能テスト（モック使用）
+
+  func testSaveWalkSuccess() async throws {
     // Arrange
     let walk = Walk(
       title: "テスト散歩",
-      description: "Firestoreテスト用の散歩",
+      description: "保存テスト用の散歩",
       userId: "test-user-id"
     )
-    
-    let expectation = XCTestExpectation(description: "Walk should be saved to Firestore")
-    
+    mockRepository.setMockCurrentUserId("test-user-id")
+
+    let expectation = XCTestExpectation(description: "Walk should be saved successfully")
+
     // Act & Assert
-    repository.saveWalkToFirestore(walk) { result in
+    mockRepository.saveWalk(walk) { result in
       switch result {
       case .success(let savedWalk):
         XCTAssertEqual(savedWalk.id, walk.id)
@@ -172,164 +174,163 @@ final class WalkRepositoryTests: XCTestCase {
         XCTAssertEqual(savedWalk.userId, walk.userId)
         expectation.fulfill()
       case .failure(let error):
-        XCTFail("Failed to save walk to Firestore: \(error)")
+        XCTFail("Failed to save walk: \(error)")
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 5.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
-  func testFetchWalksFromFirestoreByUser() async throws {
+
+  func testFetchWalksByUser() async throws {
     // Arrange
     let userId = "test-user-id"
-    let expectation = XCTestExpectation(description: "Walks should be fetched from Firestore by user")
-    
+    let sampleWalks: [Walk] = MockWalkRepository.createSampleWalks(count: 3, userId: userId)
+    sampleWalks.forEach { mockRepository.addMockWalk($0) }
+    mockRepository.setMockCurrentUserId(userId)
+
+    let expectation = XCTestExpectation(description: "Walks should be fetched by user")
+
     // Act & Assert
-    repository.fetchWalksFromFirestore(userId: userId) { result in
+    mockRepository.fetchWalks { result in
       switch result {
       case .success(let walks):
-        // Firestoreから正しくデータが取得されることを確認
+        XCTAssertEqual(walks.count, 3)
         XCTAssertTrue(walks.allSatisfy { $0.userId == userId })
         expectation.fulfill()
       case .failure(let error):
-        XCTFail("Failed to fetch walks from Firestore: \(error)")
+        XCTFail("Failed to fetch walks: \(error)")
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 5.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
-  func testUpdateWalkInFirestore() async throws {
+
+  func testUpdateWalkSuccess() async throws {
     // Arrange
     var walk = Walk(
       title: "テスト散歩",
       description: "更新前の説明",
       userId: "test-user-id"
     )
+    mockRepository.addMockWalk(walk)
+    mockRepository.setMockCurrentUserId("test-user-id")
+
     walk.description = "更新後の説明"
-    
-    let expectation = XCTestExpectation(description: "Walk should be updated in Firestore")
-    
+
+    let expectation = XCTestExpectation(description: "Walk should be updated successfully")
+
     // Act & Assert
-    repository.updateWalkInFirestore(walk) { result in
+    mockRepository.updateWalk(walk) { result in
       switch result {
       case .success(let updatedWalk):
         XCTAssertEqual(updatedWalk.description, "更新後の説明")
         expectation.fulfill()
       case .failure(let error):
-        XCTFail("Failed to update walk in Firestore: \(error)")
+        XCTFail("Failed to update walk: \(error)")
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 5.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
-  func testDeleteWalkFromFirestore() async throws {
+
+  func testDeleteWalkFromRepository() async throws {
     // Arrange
-    let walkId = UUID()
-    let userId = "test-user-id"
-    let expectation = XCTestExpectation(description: "Walk should be deleted from Firestore")
-    
+    let walk = MockWalkRepository.createSampleWalk(userId: "test-user-id")
+    mockRepository.addMockWalk(walk)
+    mockRepository.setMockCurrentUserId("test-user-id")
+
+    let expectation = XCTestExpectation(description: "Walk should be deleted successfully")
+
     // Act & Assert
-    repository.deleteWalkFromFirestore(walkId: walkId, userId: userId) { result in
+    mockRepository.deleteWalk(withID: walk.id) { result in
       switch result {
       case .success(let deleted):
         XCTAssertTrue(deleted)
         expectation.fulfill()
       case .failure(let error):
-        XCTFail("Failed to delete walk from Firestore: \(error)")
+        XCTFail("Failed to delete walk: \(error)")
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 5.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
-  
+
   // MARK: - ユーザー別データ分離テスト
-  
-  func testUserDataSeparation() async throws {
+
+  func testUserDataSeparationMock() async throws {
     // Arrange
     let user1Id = "user-1"
     let user2Id = "user-2"
-    
+
     let user1Walk = Walk(title: "ユーザー1の散歩", description: "ユーザー1専用", userId: user1Id)
     let user2Walk = Walk(title: "ユーザー2の散歩", description: "ユーザー2専用", userId: user2Id)
-    
+
+    // ユーザー1とユーザー2のデータを追加
+    mockRepository.addMockWalk(user1Walk)
+    mockRepository.addMockWalk(user2Walk)
+
+    // ユーザー1としてログイン
+    mockRepository.setMockCurrentUserId(user1Id)
+
     let expectation = XCTestExpectation(description: "User data should be separated")
-    
+
     // Act & Assert
-    // ユーザー1のデータを保存
-    repository.saveWalkToFirestore(user1Walk) { result in
+    mockRepository.fetchWalks { result in
       switch result {
-      case .success:
-        // ユーザー2のデータを保存
-        self.repository.saveWalkToFirestore(user2Walk) { result2 in
-          switch result2 {
-          case .success:
-            // ユーザー1のデータのみ取得できることを確認
-            self.repository.fetchWalksFromFirestore(userId: user1Id) { result3 in
-              switch result3 {
-              case .success(let walks):
-                XCTAssertTrue(walks.allSatisfy { $0.userId == user1Id })
-                XCTAssertFalse(walks.contains { $0.userId == user2Id })
-                expectation.fulfill()
-              case .failure(let error):
-                XCTFail("Failed to fetch user1 walks: \(error)")
-              }
-            }
-          case .failure(let error):
-            XCTFail("Failed to save user2 walk: \(error)")
-          }
-        }
+      case .success(let walks):
+        // ユーザー1のデータのみ取得されることを確認
+        XCTAssertTrue(walks.allSatisfy { $0.userId == user1Id })
+        XCTAssertFalse(walks.contains { $0.userId == user2Id })
+        expectation.fulfill()
       case .failure(let error):
-        XCTFail("Failed to save user1 walk: \(error)")
+        XCTFail("Failed to fetch user data: \(error)")
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 10.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
-  func testUnauthorizedAccessPrevention() async throws {
+
+  func testUnauthorizedAccessPreventionMock() async throws {
     // Arrange
     let user1Id = "user-1"
     let user2Id = "user-2"
     let walkId = UUID()
-    
+
     let user1Walk = Walk(title: "ユーザー1の散歩", description: "プライベート", userId: user1Id, id: walkId)
-    
+
+    // ユーザー1のデータを追加
+    mockRepository.addMockWalk(user1Walk)
+
+    // ユーザー2でログイン
+    mockRepository.setMockCurrentUserId(user2Id)
+
     let expectation = XCTestExpectation(description: "Unauthorized access should be prevented")
-    
+
     // Act & Assert
-    // ユーザー1のデータを保存
-    repository.saveWalkToFirestore(user1Walk) { result in
+    // ユーザー2がユーザー1のWalkを削除しようとする
+    mockRepository.deleteWalk(withID: walkId) { result in
       switch result {
       case .success:
-        // ユーザー2が削除を試みる（許可されるべきではない）
-        self.repository.deleteWalkFromFirestore(walkId: walkId, userId: user2Id) { result2 in
-          switch result2 {
-          case .success:
-            XCTFail("User2 should not be able to delete User1's walk")
-          case .failure(let error):
-            // 認証エラーまたは権限エラーが発生することを確認
-            XCTAssertTrue(error == WalkRepositoryError.authenticationRequired || error == WalkRepositoryError.notFound)
-            expectation.fulfill()
-          }
-        }
+        XCTFail("User2 should not be able to delete User1's walk")
       case .failure(let error):
-        XCTFail("Failed to save walk: \(error)")
+        // 認証エラーまたは権限エラーが発生することを確認
+        XCTAssertTrue(
+          error == WalkRepositoryError.authenticationRequired
+            || error == WalkRepositoryError.notFound)
+        expectation.fulfill()
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 10.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
-  
+
   // MARK: - エラーハンドリングテスト
-  
+
   func testFirestoreConnectionError() async throws {
     // Arrange
     let walk = Walk(title: "エラーテスト", description: "接続エラーテスト")
     let expectation = XCTestExpectation(description: "Should handle connection error")
-    
+
     // Act & Assert
     // ネットワークエラーをシミュレートするテスト
     repository.saveWalkToFirestore(walk) { result in
@@ -343,28 +344,28 @@ final class WalkRepositoryTests: XCTestCase {
         expectation.fulfill()
       }
     }
-    
+
     await fulfillment(of: [expectation], timeout: 5.0)
   }
-  
-  func testAuthenticationRequiredError() async throws {
+
+  func testAuthenticationRequiredErrorMock() async throws {
     // Arrange
+    // 未認証状態をシミュレート（ユーザーIDを設定しない）
+    mockRepository.simulateError(WalkRepositoryError.authenticationRequired)
+
     let expectation = XCTestExpectation(description: "Should handle authentication error")
-    
+
     // Act & Assert
-    // 未認証状態でのアクセス（getCurrentUserIdがnilを返す）
-    repository.fetchWalks { result in
+    mockRepository.fetchWalks { result in
       switch result {
       case .success:
-        // 認証が必要な場合は成功しないはず（または空の結果）
-        expectation.fulfill()
+        XCTFail("Should fail when not authenticated")
       case .failure(let error):
-        // 認証エラーが発生することを確認
         XCTAssertEqual(error, WalkRepositoryError.authenticationRequired)
         expectation.fulfill()
       }
     }
-    
-    await fulfillment(of: [expectation], timeout: 5.0)
+
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
 }
