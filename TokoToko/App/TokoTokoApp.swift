@@ -241,7 +241,6 @@ struct TabBarItem: View {
     }
     .buttonStyle(PlainButtonStyle())
     .accessibilityIdentifier(title)
-    .accessibilityLabel(title)
     .accessibilityValue(isSelected ? "選択中" : "未選択")
     .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
     .accessibilityHint("\(title)タブに切り替えます")
