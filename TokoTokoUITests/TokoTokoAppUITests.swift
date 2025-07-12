@@ -51,6 +51,10 @@ final class TokoTokoAppUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--logged-in"]
         app.launch()
 
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+
         // おでかけタブが選択されていることを確認
         let outingTab = app.buttons["おでかけ"]
         XCTAssertTrue(outingTab.waitForExistence(timeout: 5), "おでかけタブが表示されていません")
@@ -58,13 +62,13 @@ final class TokoTokoAppUITests: XCTestCase {
 
         // おさんぽタブをタップ
         let walkTab = app.buttons["おさんぽ"]
-        XCTAssertTrue(walkTab.waitForExistence(timeout: 2), "おさんぽタブが表示されていません")
+        XCTAssertTrue(walkTab.waitForExistence(timeout: 5), "おさんぽタブが表示されていません")
         walkTab.tap()
         XCTAssertTrue(walkTab.isSelected, "おさんぽタブが選択されていません")
 
         // 設定タブをタップ
         let settingsTab = app.buttons["設定"]
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: 2), "設定タブが表示されていません")
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
         XCTAssertTrue(settingsTab.isSelected, "設定タブが選択されていません")
 
@@ -101,13 +105,17 @@ final class TokoTokoAppUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--logged-in"]
         app.launch()
 
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+
         // おでかけタブが表示されることを確認
-        let outingTab = app.tabBars.buttons["おでかけ"]
+        let outingTab = app.buttons["おでかけ"]
         XCTAssertTrue(outingTab.waitForExistence(timeout: 5), "おでかけタブが表示されていません")
 
         // 設定タブをタップ
-        let settingsTab = app.tabBars.buttons["設定"]
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: 2), "設定タブが表示されていません")
+        let settingsTab = app.buttons["設定"]
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         settingsTab.tap()
         XCTAssertTrue(settingsTab.isSelected, "設定タブが選択されていません")
 
@@ -121,7 +129,7 @@ final class TokoTokoAppUITests: XCTestCase {
         app.activate()
 
         // アプリの状態が保持されていることを確認（設定タブが選択されたまま）
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: 10), "設定タブが表示されていません")
         XCTAssertTrue(settingsTab.isSelected, "アプリの状態が保持されていません（設定タブ）")
     }
 
@@ -129,6 +137,10 @@ final class TokoTokoAppUITests: XCTestCase {
     func testDeepLinking() {
         // UITestHelpersを使用してディープリンクでアプリを起動
         app.launchWithDeepLink(to: "walk")
+
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
 
         // ディープリンクによっておさんぽ画面が表示されることを確認
         let walkTab = app.buttons["おさんぽ"]
@@ -138,6 +150,10 @@ final class TokoTokoAppUITests: XCTestCase {
         // 設定画面へのディープリンクもテスト
         app.terminate()
         app.launchWithDeepLink(to: "settings")
+
+        // メインタブバーが表示されるまで待機
+        let mainTabBar2 = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar2.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
 
         // 設定タブが選択されていることを確認
         let settingsTab = app.buttons["設定"]
@@ -164,16 +180,21 @@ final class TokoTokoAppUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--logged-in"]
         app.launch()
 
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+
         // タブバーが表示されることを確認
         XCTAssertTrue(app.buttons["おでかけ"].waitForExistence(timeout: 5), "タブバーが表示されていません")
 
         // おでかけタブが選択されていることを確認
         let outingTab = app.buttons["おでかけ"]
-        XCTAssertTrue(outingTab.waitForExistence(timeout: 2), "おでかけタブが表示されていません")
+        XCTAssertTrue(outingTab.waitForExistence(timeout: 5), "おでかけタブが表示されていません")
         XCTAssertTrue(outingTab.isSelected, "おでかけタブが選択されていません")
 
-        // おでかけ画面の要素が表示されていることを確認
-        XCTAssertTrue(app.navigationBars.element.exists, "ナビゲーションバーが表示されていません")
+        // おでかけ画面のマップビューが表示されていることを確認
+        let mapView = app.maps.element
+        XCTAssertTrue(mapView.waitForExistence(timeout: 10), "マップビューが表示されていません")
     }
 
     // アプリの画面回転テスト
@@ -182,8 +203,9 @@ final class TokoTokoAppUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--logged-in"]
         app.launch()
 
-        // タブバーが表示されることを確認
-        XCTAssertTrue(app.tabBars.element.waitForExistence(timeout: 5), "タブバーが表示されていません")
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
 
         // デバイスを横向きに回転
         XCUIDevice.shared.orientation = .landscapeLeft
@@ -192,7 +214,7 @@ final class TokoTokoAppUITests: XCTestCase {
         sleep(1)
 
         // タブバーが表示されていることを確認
-        XCTAssertTrue(app.buttons["おでかけ"].exists, "横向き時にタブバーが表示されていません")
+        XCTAssertTrue(app.buttons["おでかけ"].waitForExistence(timeout: 5), "横向き時にタブバーが表示されていません")
 
         // デバイスを縦向きに戻す
         XCUIDevice.shared.orientation = .portrait
@@ -204,17 +226,21 @@ final class TokoTokoAppUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--logged-in"]
         app.launch()
 
-        // タブバーが表示されることを確認
-        XCTAssertTrue(app.tabBars.element.waitForExistence(timeout: 5), "タブバーが表示されていません")
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
 
         // タブバーのボタンがアクセシビリティ対応していることを確認
         let outingTab = app.buttons["おでかけ"]
+        XCTAssertTrue(outingTab.waitForExistence(timeout: 5), "おでかけタブが表示されていません")
         XCTAssertTrue(outingTab.isEnabled, "おでかけタブが有効になっていません")
 
         let walkTab = app.buttons["おさんぽ"]
+        XCTAssertTrue(walkTab.waitForExistence(timeout: 5), "おさんぽタブが表示されていません")
         XCTAssertTrue(walkTab.isEnabled, "おさんぽタブが有効になっていません")
 
         let settingsTab = app.buttons["設定"]
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         XCTAssertTrue(settingsTab.isEnabled, "設定タブが有効になっていません")
     }
 }
