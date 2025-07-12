@@ -207,6 +207,8 @@ struct CustomTabBar: View {
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
     )
     .padding(.trailing, 80)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("MainTabBar")
   }
 }
 
@@ -239,6 +241,9 @@ struct TabBarItem: View {
     }
     .buttonStyle(PlainButtonStyle())
     .accessibilityIdentifier(title)
-    .accessibilityAddTraits(isSelected ? .isSelected : [])
+    .accessibilityLabel(title)
+    .accessibilityValue(isSelected ? "選択中" : "未選択")
+    .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : [.isButton])
+    .accessibilityHint("\(title)タブに切り替えます")
   }
 }
