@@ -138,6 +138,10 @@ final class TokoTokoAppUITests: XCTestCase {
         // UITestHelpersを使用してディープリンクでアプリを起動
         app.launchWithDeepLink(to: "walk")
 
+        // メインタブバーが表示されるまで待機
+        let mainTabBar = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+
         // ディープリンクによっておさんぽ画面が表示されることを確認
         let walkTab = app.buttons["おさんぽ"]
         XCTAssertTrue(walkTab.waitForExistence(timeout: 5), "おさんぽタブが表示されていません")
@@ -146,6 +150,10 @@ final class TokoTokoAppUITests: XCTestCase {
         // 設定画面へのディープリンクもテスト
         app.terminate()
         app.launchWithDeepLink(to: "settings")
+
+        // メインタブバーが表示されるまで待機
+        let mainTabBar2 = app.otherElements["MainTabBar"]
+        XCTAssertTrue(mainTabBar2.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
 
         // 設定タブが選択されていることを確認
         let settingsTab = app.buttons["設定"]
@@ -234,21 +242,5 @@ final class TokoTokoAppUITests: XCTestCase {
         let settingsTab = app.buttons["設定"]
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
         XCTAssertTrue(settingsTab.isEnabled, "設定タブが有効になっていません")
-    }
-
-    // シンプルなタブバー表示テスト
-    func testTabBarVisibility() {
-        // テスト用の起動引数を設定（ログイン状態をモック）
-        app.launchArguments = ["--uitesting", "--logged-in"]
-        app.launch()
-
-        // メインタブバーが表示されるまで待機
-        let mainTabBar = app.otherElements["MainTabBar"]
-        XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
-
-        // 各タブボタンの存在を確認
-        XCTAssertTrue(app.buttons["おでかけ"].waitForExistence(timeout: 5), "おでかけタブが見つかりません")
-        XCTAssertTrue(app.buttons["おさんぽ"].waitForExistence(timeout: 5), "おさんぽタブが見つかりません")
-        XCTAssertTrue(app.buttons["設定"].waitForExistence(timeout: 5), "設定タブが見つかりません")
     }
 }
