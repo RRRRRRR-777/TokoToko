@@ -3,6 +3,8 @@
 このファイルは、このリポジトリでコード作業を行う際のClaude Code (claude.ai/code) へのガイダンスを提供します。
 
 ## 最重要ルール
+**🚨 絶対遵守 - 違反は許可されません 🚨**
+
 ###  新しいルールの追加プロセス
 * ユーザーから今回限りではなく常に対応が必要だと思われる指示を受けた場合
   1. 「これを標準のルールにしますか？」と質問する
@@ -11,7 +13,7 @@
 * このプロセスにより、プロジェクトのルールを継続的に改善していきます。
 
 ### TDD TODOリスト（t-wada流）
-**最重要・強制実行**: 以下のルールは例外なく実行すること
+**🔴 最重要・強制実行・例外なし**: 以下のルールは100%遵守すること
 #### 基本方針
 - 🔴 Red: 失敗するテストを書く
 - 🟢 Green: テストを通す最小限の実装
@@ -55,6 +57,7 @@ xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platf
 ```
 
 ### リンティングとフォーマッティング
+**🔴 品質確保・必須実行**: コード変更後は必ず実行
 ```bash
 # SwiftLint設定が存在（.swiftlint.yml）
 swiftlint lint
@@ -101,17 +104,16 @@ swift-format lint --configuration .swift-format [file]
 3. `refactor: [機能名] のコード整理 (#[チケット番号])` (Refactor)
 
 #### コミット実行・Push規則
-**重要**:
+**🔴 絶対遵守・例外なし**:
 - **コミット粒度の徹底**: 論理的に分割可能な変更は、できるだけ細かく分けてコミットする
 - **事前差分確認**: コミット実行前に必ず`git diff`でステージングされた差分を確認する
 - **コミットメッセージ確認**: 差分確認後、提案するコミットメッセージをユーザーに提示し承認を得る
-- コミット実行前に必ずユーザーに「コミットしますか？」と確認する
-- ユーザーから明示的な承認を得てからコミットを実行する
-- ローカルコミットのみ実行し、リモートへのPushは行わない
-- ユーザーが明示的にPushを要求した場合のみ`git push`を実行
+- **🚨 必須確認**: コミット実行前に必ずユーザーに「コミットしますか？」と確認する
+- **🚨 出力**: 直接コミットすることは禁止しているのでコマンドだけ出力してください。また、EOFは使用しないようにしてください。
 
 
 ### 処理完了時の自動ログ記録
+**🔴 必須実行・例外なし**:
 1. **記録タイミング**:
    - 重要なタスクや機能実装が完全に終了した時
    - ユーザーからの要求に対する処理が完了した時
@@ -151,7 +153,7 @@ swift-format lint --configuration .swift-format [file]
    - 成果物: 具体的なファイルパスとコマンドを記載
    - ファイル名: 成果物の概要を20文字以内で表現
 
-5. **自動実行**: 処理完了時に例外なく実行する
+5. **🚨 自動実行**: 処理完了時に例外なく実行する（忘れた場合は重大な違反）
 
 6. **関連会話の統合ルール**:
    - **同一テーマ判定**: 同じ技術概念や機能に関する連続した質問・回答
@@ -180,7 +182,7 @@ swift-format lint --configuration .swift-format [file]
 brew install xcodegen
 
 # Xcodeプロジェクトファイルの生成
-xcodegen generate
+set -a && source .env && set +a && xcodegen generate
 ```
 
 #### 開発環境
@@ -194,27 +196,33 @@ xcodegen generate
 ```
 TokoToko/
 ├── Model/
-│   ├── Entities/          # データ構造（Walk.swift, User.swift）
-│   ├── Services/          # データ操作の抽象化（WalkRepository.swift）
-│   └── Network/           # API通信（APIClient.swift）
+│   ├── Entities/          # データ構造（Walk.swift, MapItem.swift）
+│   ├── Services/          # データ操作の抽象化（WalkRepository.swift, GoogleAuthService.swift, LocationManager.swift, StepCountManager.swift, WalkManager.swift）
+│   ├── Network/           # API通信（将来実装予定）
+│   └── Testing/           # テスト用のプロトコルとヘルパー（TestingProtocols.swift, UITestingHelper.swift）
 ├── View/
-│   ├── Screens/           # 画面固有のファイル（WalkView.swift, HomeView.swift）
-│   └── Shared/            # 再利用可能なコンポーネント（ErrorView, LoadingView）
-├── Resources/             # 画像、ローカライズ、カラーパレット
-└── App/                   # エントリーポイント（AppDelegate, TokoTokoApp.swift）
+│   ├── Screens/           # 画面固有のファイル（HomeView.swift, LoginView.swift, SettingsView.swift, SplashView.swift, WalkHistoryView.swift）
+│   └── Shared/            # 再利用可能なコンポーネント（DetailView.swift, LoadingView.swift, MapViewComponent.swift, ThumbnailImageView.swift, WalkControlPanel.swift, WalkRow.swift）
+├── Assets.xcassets/       # アプリアイコン、カラーパレット
+├── Preview Content/       # SwiftUIプレビュー用のアセット
+└── App/                   # エントリーポイント（TokoTokoApp.swift）
 ```
 
 #### コアコンポーネント
-- **AuthManager**: Google Sign-In統合を含むFirebaseベースの認証
+- **GoogleAuthService**: Google Sign-In統合を含むFirebaseベースの認証
 - **WalkManager**: 散歩記録、位置追跡、散歩状態を管理するシングルトン
 - **LocationManager**: GPS追跡のためのCoreLocationラッパー
+- **StepCountManager**: 歩数計測を管理するコンポーネント
 - **WalkRepository**: 散歩記録のデータ永続化層
 
 #### メインビュー構造
-- **MainTabView**: タブベースナビゲーション（ホーム、マップ、設定）
+- **SplashView**: 初期ローディング画面
+- **LoginView**: ログイン画面
 - **HomeView**: 散歩履歴とメインダッシュボード
-- **MapView**: ルート可視化とマッピング
+- **WalkHistoryView**: 散歩履歴の詳細表示
+- **MapViewComponent**: ルート可視化とマッピング
 - **SettingsView**: ユーザー設定とログアウト
+- **DetailView**: 詳細情報表示用の汎用コンポーネント
 
 #### データモデル（ERD）
 - **Walk**: 散歩セッションを表すコアエンティティ:
@@ -222,6 +230,7 @@ TokoToko/
   - 状態管理（notStarted, inProgress, paused, completed）
   - 距離計算と時間追跡
   - ルート可視化のためのポリラインデータ
+- **MapItem**: マップ上のアイテム（散歩ルート、写真位置等）
 - **User**: ユーザー情報（email, display_name, photo_url, auth_provider）
 - **Photo**: 散歩に関連付けられた写真（最大10枚/散歩、位置座標付き）
 - **SharedLink**: 共有URL生成用（永続的なリンク）
@@ -251,7 +260,7 @@ TokoToko/
 ## 開発ガイドライン
 
 ### タスク完了時の自動処理ルール
-**重要**: 「完了です」と報告する際に自動実行すること
+**🔴 絶対遵守・自動実行**: 「完了です」と報告する際に必ず自動実行すること
 
 1. **自動コミット処理**:
    - タスク完了報告と同時にコミット処理を自動実行
