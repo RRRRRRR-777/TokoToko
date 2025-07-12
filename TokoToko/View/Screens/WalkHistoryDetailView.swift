@@ -87,12 +87,12 @@ struct WalkHistoryDetailView: View {
         Text(viewModel.currentWalk.title)
           .font(.title2)
           .fontWeight(.bold)
-          .foregroundColor(.white)
+          .foregroundColor(.black)
 
         if let startTime = viewModel.currentWalk.startTime {
           Text(startTime.formatted(date: .abbreviated, time: .shortened))
             .font(.caption)
-            .foregroundColor(.white.opacity(0.8))
+            .foregroundColor(.black)
         }
       }
 
@@ -101,7 +101,12 @@ struct WalkHistoryDetailView: View {
     .padding()
     .background(
       LinearGradient(
-        colors: [Color.black.opacity(0.6), Color.clear],
+        colors: [
+          Color.white.opacity(0.8),
+          Color.white.opacity(0.7),
+          Color.white.opacity(0.6),
+          Color.clear
+        ],
         startPoint: .top,
         endPoint: .bottom
       )
