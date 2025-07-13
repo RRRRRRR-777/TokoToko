@@ -63,6 +63,10 @@ struct WalkHistoryDetailView: View {
         },
         onNextTap: {
           viewModel.selectNextWalk()
+        },
+        photoURLs: mockPhotoURLs,
+        onImageTap: { index in
+          viewModel.selectImage(at: index)
         }
       )
       .padding(.bottom, 50)
@@ -83,8 +87,6 @@ struct WalkHistoryDetailView: View {
       }
 
       Spacer()
-
-      bottomContentView
     }
   }
 
@@ -164,26 +166,6 @@ struct WalkHistoryDetailView: View {
       .transition(.move(edge: .leading).combined(with: .opacity))
     }
     .padding(.leading, 10)
-  }
-
-  private var bottomContentView: some View {
-    VStack(spacing: 16) {
-      if !mockPhotoURLs.isEmpty {
-        ArchGalleryView(
-          photoURLs: mockPhotoURLs
-        ) { index in
-          viewModel.selectImage(at: index)
-        }
-      }
-    }
-    .padding()
-    .background(
-      LinearGradient(
-        colors: [Color.clear, Color.black.opacity(0.4)],
-        startPoint: .top,
-        endPoint: .bottom
-      )
-    )
   }
 
   @ViewBuilder private var imagePopupView: some View {
