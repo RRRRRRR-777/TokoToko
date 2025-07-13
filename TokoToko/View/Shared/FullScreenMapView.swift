@@ -14,19 +14,27 @@ struct FullScreenMapView: View {
 
   init(walk: Walk) {
     self.walk = walk
-    self._region = State(initialValue: Self.calculateRegionForWalk(walk))
+    let initialRegion = Self.calculateRegionForWalk(walk)
+    self._region = State(initialValue: initialRegion)
   }
 
   var body: some View {
     ZStack {
-      MapViewComponent(
+      StaticMapView(
         region: $region,
         annotations: mapAnnotations,
-        polylineCoordinates: walk.locations.map { $0.coordinate },
-        showsUserLocation: false
+        polylineCoordinates: walk.locations.map { $0.coordinate }
       )
       .onAppear {
         // マップ表示時に散歩ルートに適したリージョンを設定
+        region = Self.calculateRegionForWalk(walk)
+      }
+      .onChange(of: walk.id) { _ in
+        // 散歩が変更された時にリージョンを再計算
+        region = Self.calculateRegionForWalk(walk)
+      }
+      .onChange(of: walk.title) { _ in
+        // タイトル変更でも確実にリージョンを更新
         region = Self.calculateRegionForWalk(walk)
       }
     }
@@ -91,8 +99,8 @@ struct FullScreenMapView: View {
     let centerLat = (minLat + maxLat) / 2
     let centerLon = (minLon + maxLon) / 2
 
-    let latDelta = max((maxLat - minLat) * 1.4, 0.004)
-    let lonDelta = max((maxLon - minLon) * 1.4, 0.004)
+    let latDelta = max((maxLat - minLat) * 1.5, 0.001)
+    let lonDelta = max((maxLon - minLon) * 1.5, 0.001)
 
     return MKCoordinateRegion(
       center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
@@ -114,7 +122,9 @@ struct FullScreenMapView: View {
       locations: [
         CLLocation(latitude: 35.6812, longitude: 139.7671),
         CLLocation(latitude: 35.6815, longitude: 139.7675),
-        CLLocation(latitude: 35.6818, longitude: 139.7680),
+        CLLocation(latitude: 35.6820, longitude: 139.7680),
+        CLLocation(latitude: 35.6825, longitude: 139.7690),
+        CLLocation(latitude: 35.6830, longitude: 139.7700),
       ]
     )
   )

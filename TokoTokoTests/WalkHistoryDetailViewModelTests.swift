@@ -40,6 +40,8 @@ final class WalkHistoryDetailViewModelTests: XCTestCase {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
+          CLLocation(latitude: 35.6820, longitude: 139.7680),
+          CLLocation(latitude: 35.6825, longitude: 139.7690),
         ]
       ),
       Walk(
@@ -52,8 +54,11 @@ final class WalkHistoryDetailViewModelTests: XCTestCase {
         totalSteps: 1000,
         status: .completed,
         locations: [
-          CLLocation(latitude: 35.6820, longitude: 139.7680),
-          CLLocation(latitude: 35.6825, longitude: 139.7685),
+          CLLocation(latitude: 35.6700, longitude: 139.7500),
+          CLLocation(latitude: 35.6720, longitude: 139.7520),
+          CLLocation(latitude: 35.6740, longitude: 139.7540),
+          CLLocation(latitude: 35.6760, longitude: 139.7560),
+          CLLocation(latitude: 35.6780, longitude: 139.7580),
         ]
       ),
     ]
