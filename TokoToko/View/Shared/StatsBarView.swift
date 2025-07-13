@@ -71,6 +71,7 @@ struct StatsBarView: View {
         .clipShape(Circle())
         .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
     }
+    .accessibilityLabel("統計情報を表示")
   }
 }
 
