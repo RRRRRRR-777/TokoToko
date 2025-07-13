@@ -37,8 +37,8 @@ struct WalkHistoryDetailView: View {
   var body: some View {
     ZStack {
       backgroundMapView
-      storyNavigationOverlay
       mainContentView
+      storyNavigationOverlay
       imagePopupView
     }
     .navigationBarHidden(true)
@@ -53,14 +53,18 @@ struct WalkHistoryDetailView: View {
   }
 
   private var storyNavigationOverlay: some View {
-    StoryCarouselView(
-      onPreviousTap: {
-        viewModel.selectPreviousWalk()
-      },
-      onNextTap: {
-        viewModel.selectNextWalk()
-      }
-    )
+    VStack {
+      Spacer()
+      StoryCarouselView(
+        onPreviousTap: {
+          viewModel.selectPreviousWalk()
+        },
+        onNextTap: {
+          viewModel.selectNextWalk()
+        }
+      )
+      .padding(.bottom, 50)
+    }
   }
 
   private var mainContentView: some View {

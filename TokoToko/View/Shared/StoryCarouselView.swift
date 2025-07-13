@@ -12,23 +12,30 @@ struct StoryCarouselView: View {
   let onNextTap: () -> Void
 
   var body: some View {
-    HStack(spacing: 0) {
+    HStack {
       // 左側タップ領域（前の散歩）
       Button {
         onPreviousTap()
       } label: {
-        Color.clear
+        Image(systemName: "chevron.left")
+          .font(.title)
+          .frame(width: 50, height: 100)
+          .contentShape(Rectangle())
       }
-      .frame(maxWidth: .infinity)
+
+      Spacer()
 
       // 右側タップ領域（次の散歩）
       Button {
         onNextTap()
       } label: {
-        Color.clear
+        Image(systemName: "chevron.right")
+          .font(.title)
+          .frame(width: 50, height: 100)
+          .contentShape(Rectangle())
       }
-      .frame(maxWidth: .infinity)
     }
+    .frame(maxWidth: .infinity)
   }
 }
 
@@ -41,6 +48,6 @@ struct StoryCarouselView: View {
       print("Next walk tapped")
     }
   )
-  .frame(height: 300)
+  .frame(maxHeight: .infinity)
   .background(Color.gray.opacity(0.3))
 }
