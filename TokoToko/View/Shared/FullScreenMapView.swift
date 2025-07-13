@@ -20,11 +20,15 @@ struct FullScreenMapView: View {
   var body: some View {
     ZStack {
       MapViewComponent(
-        region: region,
+        region: $region,
         annotations: mapAnnotations,
         polylineCoordinates: walk.locations.map { $0.coordinate },
         showsUserLocation: false
       )
+      .onAppear {
+        // マップ表示時に散歩ルートに適したリージョンを設定
+        region = Self.calculateRegionForWalk(walk)
+      }
     }
     .ignoresSafeArea()
   }

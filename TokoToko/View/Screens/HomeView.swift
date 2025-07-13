@@ -184,7 +184,7 @@ struct HomeView: View {
 
       case .authorizedWhenInUse, .authorizedAlways:
         MapViewComponent(
-          region: region,
+          region: $region,
           annotations: createMapAnnotations(),
           polylineCoordinates: createPolylineCoordinates()
         )
