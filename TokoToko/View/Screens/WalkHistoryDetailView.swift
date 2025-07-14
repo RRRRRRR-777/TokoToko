@@ -14,22 +14,23 @@ struct WalkHistoryDetailView: View {
   @StateObject private var viewModel: WalkHistoryDetailViewModel
 
   init(walks: [Walk], initialIndex: Int) {
-    // ViewModelの初期化を安全に行う
-    let viewModel: WalkHistoryDetailViewModel
+    // 入力値を安全にサニタイズしてViewModelを初期化
+    let safeWalks = walks.isEmpty ? [Walk(title: "エラー", description: "データが見つかりません")] : walks
+    let safeIndex = max(0, min(initialIndex, safeWalks.count - 1))
 
-    if walks.isEmpty {
-      // 空の場合はフォールバック
-      let fallbackWalk = Walk(title: "エラー", description: "データが見つかりません")
-      // swiftlint:disable:next force_try
-      viewModel = try! WalkHistoryDetailViewModel(walks: [fallbackWalk], initialIndex: 0)
-    } else if initialIndex >= 0 && initialIndex < walks.count {
-      // 正常な範囲の場合
-      // swiftlint:disable:next force_try
-      viewModel = try! WalkHistoryDetailViewModel(walks: walks, initialIndex: initialIndex)
-    } else {
-      // インデックスが範囲外の場合はゼロに修正
-      // swiftlint:disable:next force_try
-      viewModel = try! WalkHistoryDetailViewModel(walks: walks, initialIndex: 0)
+    // サニタイズ後は必ず成功するためdo-catchで処理
+    let viewModel: WalkHistoryDetailViewModel
+    do {
+      viewModel = try WalkHistoryDetailViewModel(walks: safeWalks, initialIndex: safeIndex)
+    } catch {
+      // フォールバック処理（理論上は到達しないが安全のため）
+      let fallbackWalk = Walk(title: "システムエラー", description: "ViewModelの初期化に失敗しました")
+      do {
+        viewModel = try WalkHistoryDetailViewModel(walks: [fallbackWalk], initialIndex: 0)
+      } catch {
+        // 最終的なフォールバック（この時点では絶対成功するはず）
+        fatalError("致命的エラー: WalkHistoryDetailViewModelの初期化に失敗しました")
+      }
     }
 
     self._viewModel = StateObject(wrappedValue: viewModel)
@@ -64,11 +65,10 @@ struct WalkHistoryDetailView: View {
         onNextTap: {
           viewModel.selectNextWalk()
         },
-        photoURLs: mockPhotoURLs,
-        onImageTap: { index in
-          viewModel.selectImage(at: index)
-        }
-      )
+        photoURLs: mockPhotoURLs
+      ) { index in
+        viewModel.selectImage(at: index)
+      }
       .padding(.bottom, 50)
     }
   }
@@ -111,8 +111,7 @@ struct WalkHistoryDetailView: View {
       VStack(alignment: .trailing, spacing: 4) {
         // ユーザーアイコン
         if let user = Auth.auth().currentUser,
-          let photoURL = user.photoURL
-        {
+           let photoURL = user.photoURL {
           AsyncImage(url: photoURL) { image in
             image
               .resizable()
@@ -143,7 +142,7 @@ struct WalkHistoryDetailView: View {
           Color.white.opacity(0.8),
           Color.white.opacity(0.7),
           Color.white.opacity(0.6),
-          Color.clear,
+          Color.clear
         ],
         startPoint: .top,
         endPoint: .bottom
@@ -158,11 +157,10 @@ struct WalkHistoryDetailView: View {
         isExpanded: Binding(
           get: { viewModel.isStatsBarVisible },
           set: { _ in }
-        ),
-        onToggle: {
-          viewModel.toggleStatsBar()
-        }
-      )
+        )
+      ) {
+        viewModel.toggleStatsBar()
+      }
       .transition(.move(edge: .leading).combined(with: .opacity))
     }
     .padding(.leading, 10)
@@ -191,7 +189,7 @@ struct WalkHistoryDetailView: View {
       "https://picsum.photos/600/400",
       "https://picsum.photos/600/400",
       "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400"
     ]
   }
 }
@@ -218,7 +216,7 @@ extension Array {
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
           CLLocation(latitude: 35.6820, longitude: 139.7680),
-          CLLocation(latitude: 35.6825, longitude: 139.7690),
+          CLLocation(latitude: 35.6825, longitude: 139.7690)
         ]
       ),
       Walk(
@@ -234,9 +232,9 @@ extension Array {
           CLLocation(latitude: 35.6720, longitude: 139.7520),
           CLLocation(latitude: 35.6740, longitude: 139.7540),
           CLLocation(latitude: 35.6760, longitude: 139.7560),
-          CLLocation(latitude: 35.6780, longitude: 139.7580),
+          CLLocation(latitude: 35.6780, longitude: 139.7580)
         ]
-      ),
+      )
     ],
     initialIndex: 0
   )
