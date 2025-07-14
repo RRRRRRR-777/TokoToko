@@ -9,11 +9,15 @@ import SwiftUI
 import CoreLocation
 
 struct WalkHistoryView: View {
-  @State private var selectedTab = 0
+  @State private var selectedTab: Int
   @State private var walks: [Walk] = []
   @State private var isLoading = false
 
   private let walkRepository = WalkRepository.shared
+
+  init(selectedTab: Int = 0) {
+    self._selectedTab = State(initialValue: selectedTab)
+  }
 
   var body: some View {
     VStack(spacing: 0) {
@@ -115,7 +119,7 @@ struct WalkHistoryView: View {
         .multilineTextAlignment(.center)
         .padding(.horizontal)
         .accessibilityIdentifier("散歩を完了すると、ここに履歴が表示されます")
-      
+
       // デバッグ用：新しい詳細画面のプレビューボタン
       NavigationLink(destination: WalkHistoryDetailView(walks: mockWalksForPreview, initialIndex: 0)) {
         Text("新しい詳細画面をプレビュー")
@@ -130,7 +134,7 @@ struct WalkHistoryView: View {
       Spacer()
     }
   }
-  
+
   // デバッグ用のモックデータ
   private var mockWalksForPreview: [Walk] {
     [

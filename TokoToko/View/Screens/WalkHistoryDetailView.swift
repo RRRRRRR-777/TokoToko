@@ -42,6 +42,7 @@ struct WalkHistoryDetailView: View {
       mainContentView
       storyNavigationOverlay
       imagePopupView
+      friendHistoryButton
     }
     .navigationBarHidden(true)
     .animation(.easeInOut(duration: 0.3), value: viewModel.isStatsBarVisible)
@@ -174,6 +175,38 @@ struct WalkHistoryDetailView: View {
         viewModel.deselectImage()
       }
       .transition(.opacity)
+    }
+  }
+
+  private var friendHistoryButton: some View {
+    VStack {
+      Spacer()
+      HStack {
+        Spacer()
+        NavigationLink(destination: WalkHistoryView(selectedTab: 1)) {
+          Image(systemName: "person.2.fill")
+            .font(.title)
+            .frame(width: 60, height: 60)
+            .background(
+              LinearGradient(
+                gradient: Gradient(colors: [
+                  Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
+                  Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
+                ]),
+                startPoint: .leading,
+                endPoint: .trailing
+              )
+            )
+            .foregroundColor(.white)
+            .clipShape(Circle())
+            .shadow(
+              color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4),
+              radius: 8, x: 0, y: 4
+            )
+        }
+        .accessibilityIdentifier("フレンドの履歴を表示")
+        .padding(.trailing, 20)
+      }
     }
   }
 
