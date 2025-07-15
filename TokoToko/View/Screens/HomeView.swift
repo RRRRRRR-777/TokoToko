@@ -95,8 +95,10 @@ struct HomeView: View {
         Spacer()
         HStack {
           Spacer()
-          WalkControlPanel(walkManager: walkManager, isFloating: true)
-            .padding(.trailing, 20)
+          VStack(spacing: 16) {
+            WalkControlPanel(walkManager: walkManager, isFloating: true)
+          }
+          .padding(.trailing, 20)
         }
       }
     }
@@ -118,6 +120,7 @@ struct HomeView: View {
     .loadingOverlay(isLoading: isLoading)
   }
 
+
   // マップセクション
   private var mapSection: some View {
     ZStack {
@@ -131,7 +134,7 @@ struct HomeView: View {
 
       case .authorizedWhenInUse, .authorizedAlways:
         MapViewComponent(
-          region: region,
+          region: $region,
           annotations: createMapAnnotations(),
           polylineCoordinates: createPolylineCoordinates()
         )

@@ -12,7 +12,7 @@ import SwiftUI
 struct MapViewComponent: View {
   // 位置情報マネージャー
   private let locationManager = LocationManager.shared
-  @State private var region: MKCoordinateRegion
+  @Binding var region: MKCoordinateRegion
 
   // 表示するアノテーション
   var annotations: [MapItem] = []
@@ -24,15 +24,28 @@ struct MapViewComponent: View {
   var showsUserLocation: Bool = true
 
   init(
-    region: MKCoordinateRegion = MKCoordinateRegion(
-      center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),  // 東京駅をデフォルト位置に
-      span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-    ),
+    region: Binding<MKCoordinateRegion>,
     annotations: [MapItem] = [],
     polylineCoordinates: [CLLocationCoordinate2D] = [],
     showsUserLocation: Bool = true
   ) {
-    _region = State(initialValue: region)
+    self._region = region
+    self.annotations = annotations
+    self.polylineCoordinates = polylineCoordinates
+    self.showsUserLocation = showsUserLocation
+  }
+
+  // デフォルトリージョン用の便利なイニシャライザ
+  init(
+    annotations: [MapItem] = [],
+    polylineCoordinates: [CLLocationCoordinate2D] = [],
+    showsUserLocation: Bool = true
+  ) {
+    self._region = .constant(
+      MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),  // 東京駅をデフォルト位置に
+        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+      ))
     self.annotations = annotations
     self.polylineCoordinates = polylineCoordinates
     self.showsUserLocation = showsUserLocation
@@ -282,5 +295,9 @@ extension MKCoordinateRegion {
 }
 
 #Preview {
-  MapViewComponent()
+  MapViewComponent(
+    annotations: [],
+    polylineCoordinates: [],
+    showsUserLocation: true
+  )
 }

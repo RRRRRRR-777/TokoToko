@@ -70,7 +70,6 @@ struct DetailView: View {
           Button(action: { refreshWalkDetails() }) {
             Label("更新", systemImage: "arrow.clockwise")
           }
-          
           if walk.isCompleted {
             Button(action: { showingDeleteAlert = true }) {
               Label("削除", systemImage: "trash")
@@ -131,7 +130,7 @@ struct DetailView: View {
       LazyVGrid(
         columns: [
           GridItem(.flexible()),
-          GridItem(.flexible())
+          GridItem(.flexible()),
         ], spacing: 16
       ) {
         StatisticCard(
@@ -170,50 +169,9 @@ struct DetailView: View {
         .font(.headline)
 
       if walk.hasLocation {
-        let region = calculateRegionForWalk()
-
-        // 開始・終了地点のアノテーション
-        let annotations: [MapItem] = {
-          guard !walk.locations.isEmpty else { return [] }
-
-          var items: [MapItem] = []
-
-          // 開始地点
-          if let firstLocation = walk.locations.first {
-            items.append(
-              MapItem(
-                coordinate: firstLocation.coordinate,
-                title: "開始地点",
-                imageName: "play.circle.fill"
-              )
-            )
-          }
-
-          // 終了地点（開始地点と異なる場合のみ）
-          if let lastLocation = walk.locations.last, walk.locations.count > 1 {
-            items.append(
-              MapItem(
-                coordinate: lastLocation.coordinate,
-                title: "終了地点",
-                imageName: "checkmark.circle.fill"
-              )
-            )
-          }
-
-          return items
-        }()
-
-        // ポリライン座標
-        let polylineCoordinates = walk.locations.map { $0.coordinate }
-
-        MapViewComponent(
-          region: region,
-          annotations: annotations,
-          polylineCoordinates: polylineCoordinates,
-          showsUserLocation: false
-        )
-        .frame(height: 250)
-        .cornerRadius(12)
+        MapSectionView(walk: walk)
+          .frame(height: 250)
+          .cornerRadius(12)
       }
 
       // 位置情報の詳細
@@ -312,7 +270,7 @@ struct DetailView: View {
       }
     }
   }
-  
+
   // 散歩を削除
   private func deleteWalk() {
     isLoading = true
@@ -331,6 +289,96 @@ struct DetailView: View {
         }
       }
     }
+  }
+}
+
+// マップセクション用のビュー
+struct MapSectionView: View {
+  let walk: Walk
+  @State private var region: MKCoordinateRegion
+
+  init(walk: Walk) {
+    self.walk = walk
+    self._region = State(initialValue: Self.calculateRegionForWalk(walk))
+  }
+
+  var body: some View {
+    MapViewComponent(
+      region: $region,
+      annotations: mapAnnotations,
+      polylineCoordinates: walk.locations.map { $0.coordinate },
+      showsUserLocation: false
+    )
+    .onAppear {
+      region = Self.calculateRegionForWalk(walk)
+    }
+  }
+
+  private var mapAnnotations: [MapItem] {
+    guard !walk.locations.isEmpty else { return [] }
+
+    var items: [MapItem] = []
+
+    // 開始地点
+    if let firstLocation = walk.locations.first {
+      items.append(
+        MapItem(
+          coordinate: firstLocation.coordinate,
+          title: "開始地点",
+          imageName: "play.circle.fill"
+        )
+      )
+    }
+
+    // 終了地点（開始地点と異なる場合のみ）
+    if let lastLocation = walk.locations.last, walk.locations.count > 1 {
+      items.append(
+        MapItem(
+          coordinate: lastLocation.coordinate,
+          title: "終了地点",
+          imageName: "checkmark.circle.fill"
+        )
+      )
+    }
+
+    return items
+  }
+
+  private static func calculateRegionForWalk(_ walk: Walk) -> MKCoordinateRegion {
+    guard !walk.locations.isEmpty else {
+      return MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+      )
+    }
+
+    if walk.locations.count == 1 {
+      let coordinate = walk.locations[0].coordinate
+      return MKCoordinateRegion(
+        center: coordinate,
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+      )
+    }
+
+    let coordinates = walk.locations.map { $0.coordinate }
+    let latitudes = coordinates.map { $0.latitude }
+    let longitudes = coordinates.map { $0.longitude }
+
+    let minLat = latitudes.min() ?? 0
+    let maxLat = latitudes.max() ?? 0
+    let minLon = longitudes.min() ?? 0
+    let maxLon = longitudes.max() ?? 0
+
+    let centerLat = (minLat + maxLat) / 2
+    let centerLon = (minLon + maxLon) / 2
+
+    let latDelta = max((maxLat - minLat) * 1.4, 0.004)
+    let lonDelta = max((maxLon - minLon) * 1.4, 0.004)
+
+    return MKCoordinateRegion(
+      center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+      span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
+    )
   }
 }
 
@@ -377,7 +425,7 @@ struct StatisticCard: View {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6818, longitude: 139.7680)
+          CLLocation(latitude: 35.6818, longitude: 139.7680),
         ]
       ))
   }
