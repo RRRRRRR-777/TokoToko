@@ -52,7 +52,7 @@ struct StatsBarView: View {
       }
     }
     .padding(.all, 16)
-    .frame(width: 100)
+    .frame(width: 105)
     .background(Color.white.opacity(0.85))
     .foregroundColor(.black)
     .cornerRadius(20)
