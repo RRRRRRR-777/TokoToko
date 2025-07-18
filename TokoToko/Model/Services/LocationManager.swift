@@ -31,11 +31,19 @@ class LocationManager: NSObject, ObservableObject {
 
   // ログ
   private let logger = EnhancedVibeLogger.shared
+  
+  // UIテストヘルパー
+  private let testingHelper = UITestingHelper.shared
 
   // 初期化
   override private init() {
     super.init()
     setupLocationManager()
+    
+    // UIテストモードの場合は初期化時にモック状態を設定
+    if testingHelper.isUITesting {
+      setupMockLocationForTesting()
+    }
   }
 
   // 位置情報マネージャーの設定
@@ -121,8 +129,30 @@ class LocationManager: NSObject, ObservableObject {
 
   // 位置情報の許可状態を確認
   func checkAuthorizationStatus() -> CLAuthorizationStatus {
-    locationManager.authorizationStatus
+    // UIテストモードの場合はモック状態を返す
+    if testingHelper.isUITesting {
+      return .authorizedWhenInUse
+    }
+    return locationManager.authorizationStatus
   }
+    
+  // UIテスト用のモック位置情報設定
+  private func setupMockLocationForTesting() {
+    // 東京駅の座標をモック位置として設定
+    let mockLocation = CLLocation(latitude: 35.6812, longitude: 139.7671)
+    currentLocation = mockLocation
+    authorizationStatus = .authorizedWhenInUse
+  
+    logger.info(
+      operation: "setupMockLocationForTesting",
+      message: "UIテスト用のモック位置情報を設定しました",
+      context: [
+        "latitude": "\(mockLocation.coordinate.latitude)",
+        "longitude": "\(mockLocation.coordinate.longitude)",
+        "authorization_status": "authorizedWhenInUse"
+      ]
+    )
+   }
 
   // 指定された座標を中心とするマップ領域を作成
   func region(
