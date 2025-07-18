@@ -9,6 +9,11 @@ options:
   indentWidth: 2
   tabWidth: 2
 
+fileGroups:
+  - project.yml
+  - .swiftlint.yml
+  - CLAUDE.md
+
 
 targetTemplates:
   CommonSettings:
