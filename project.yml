@@ -90,6 +90,7 @@ targets:
               - com.googleusercontent.apps.730739320416-rjs5ngp3np3b4d8hd4fmn4c6o05ppoek
         UIBackgroundModes:
           - location
+        ITSAppUsesNonExemptEncryption: false
     scheme:
       testTargets:
         - TokoTokoTests
