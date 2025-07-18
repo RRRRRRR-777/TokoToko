@@ -9,6 +9,11 @@ options:
   indentWidth: 2
   tabWidth: 2
 
+fileGroups:
+  - project.yml
+  - .swiftlint.yml
+  - CLAUDE.md
+
 
 targetTemplates:
   CommonSettings:
@@ -32,6 +37,7 @@ targets:
     platform: iOS
     deploymentTarget:
       iOS: 15.0
+    supportedDestinations: [iOS]
     sources:
       - path: TokoToko
         excludes:
@@ -68,14 +74,13 @@ targets:
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "このアプリはバックグラウンドでも位置情報を追跡するために位置情報を使用します。"
         INFOPLIST_KEY_NSLocationAlwaysUsageDescription: "このアプリはバックグラウンドでも位置情報を追跡するために位置情報を使用します。"
         INFOPLIST_KEY_NSMotionUsageDescription: "このアプリは散歩中の歩数を正確に記録するためにモーションセンサーを使用します。"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
         MARKETING_VERSION: 1.0
         CURRENT_PROJECT_VERSION: 1
         ENABLE_PREVIEWS: YES
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
     info:
       path: Info.plist
       properties:
@@ -85,6 +90,7 @@ targets:
               - com.googleusercontent.apps.730739320416-rjs5ngp3np3b4d8hd4fmn4c6o05ppoek
         UIBackgroundModes:
           - location
+        ITSAppUsesNonExemptEncryption: false
     scheme:
       testTargets:
         - TokoTokoTests
@@ -95,6 +101,7 @@ targets:
     platform: iOS
     deploymentTarget:
       iOS: 15.0
+    supportedDestinations: [iOS]
     sources:
       - path: TokoTokoTests
     templates: [CommonSettings]
@@ -103,7 +110,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoTests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: TokoToko
       - package: ViewInspector
@@ -114,6 +121,7 @@ targets:
     platform: iOS
     deploymentTarget:
       iOS: 15.0
+    supportedDestinations: [iOS]
     sources:
       - path: TokoTokoUITests
     templates: [CommonSettings]
@@ -122,7 +130,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: TokoToko
       - package: ViewInspector

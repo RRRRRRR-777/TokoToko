@@ -64,6 +64,7 @@ struct MapViewComponent: View {
           showsUserLocation: showsUserLocation, locationManager: locationManager)
       }
     }
+    .accessibilityIdentifier("MapView")
   }
 }
 
