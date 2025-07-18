@@ -152,7 +152,7 @@ class LocationManager: NSObject, ObservableObject {
         "authorization_status": "authorizedWhenInUse"
       ]
     )
-   }
+  }
 
   // 指定された座標を中心とするマップ領域を作成
   func region(
