@@ -37,6 +37,7 @@ targets:
     platform: iOS
     deploymentTarget:
       iOS: 15.0
+    supportedDestinations: [iOS]
     sources:
       - path: TokoToko
         excludes:
@@ -99,6 +100,7 @@ targets:
     platform: iOS
     deploymentTarget:
       iOS: 15.0
+    supportedDestinations: [iOS]
     sources:
       - path: TokoTokoTests
     templates: [CommonSettings]
@@ -118,6 +120,7 @@ targets:
     platform: iOS
     deploymentTarget:
       iOS: 15.0
+    supportedDestinations: [iOS]
     sources:
       - path: TokoTokoUITests
     templates: [CommonSettings]
