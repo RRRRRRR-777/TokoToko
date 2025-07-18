@@ -74,7 +74,7 @@ targets:
         ENABLE_PREVIEWS: YES
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
     info:
       path: Info.plist
       properties:
@@ -102,7 +102,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoTests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: TokoToko
       - package: ViewInspector
@@ -121,7 +121,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: TokoToko
       - package: ViewInspector
