@@ -193,8 +193,20 @@ final class TokoTokoAppUITests: XCTestCase {
         XCTAssertTrue(outingTab.isSelected, "おでかけタブが選択されていません")
 
         // おでかけ画面のマップビューが表示されていることを確認
-        let mapView = app.maps.element
-        XCTAssertTrue(mapView.waitForExistence(timeout: 10), "マップビューが表示されていません")
+        let mapView = app.otherElements["MapView"]
+        if !mapView.waitForExistence(timeout: 10) {
+            // マップビューが見つからない場合、位置情報許可関連の要素を確認
+            let locationPermissionText = app.staticTexts["位置情報の使用許可が必要です"]
+            let locationDeniedText = app.staticTexts["位置情報へのアクセスが拒否されています"]
+            
+            if locationPermissionText.exists {
+                XCTFail("位置情報許可要求画面が表示されています。マップビューが表示されません")
+            } else if locationDeniedText.exists {
+                XCTFail("位置情報アクセス拒否画面が表示されています。マップビューが表示されません")
+            } else {
+                XCTFail("マップビューが表示されていません")
+            }
+        }
     }
 
     // アプリの画面回転テスト
