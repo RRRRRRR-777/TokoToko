@@ -68,8 +68,7 @@ targets:
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "このアプリはバックグラウンドでも位置情報を追跡するために位置情報を使用します。"
         INFOPLIST_KEY_NSLocationAlwaysUsageDescription: "このアプリはバックグラウンドでも位置情報を追跡するために位置情報を使用します。"
         INFOPLIST_KEY_NSMotionUsageDescription: "このアプリは散歩中の歩数を正確に記録するためにモーションセンサーを使用します。"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
         MARKETING_VERSION: 1.0
         CURRENT_PROJECT_VERSION: 1
         ENABLE_PREVIEWS: YES
