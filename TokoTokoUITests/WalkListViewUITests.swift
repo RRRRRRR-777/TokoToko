@@ -1,5 +1,5 @@
 //
-//  WalkHistoryViewUITests.swift
+//  WalkListViewUITests.swift
 //  TokoTokoUITests
 //
 //  Created by Claude on 2025/06/21.
@@ -7,7 +7,7 @@
 
 import XCTest
 
-final class WalkHistoryViewUITests: XCTestCase {
+final class WalkListViewUITests: XCTestCase {
 
   var app: XCUIApplication!
 
@@ -31,7 +31,7 @@ final class WalkHistoryViewUITests: XCTestCase {
 
   // MARK: - 基本ナビゲーションテスト
 
-  func testWalkHistoryViewBasicNavigation() throws {
+  func testWalkListViewBasicNavigation() throws {
     // Given: アプリが起動している
 
     // When: おさんぽタブが表示される
@@ -42,7 +42,7 @@ final class WalkHistoryViewUITests: XCTestCase {
     XCTAssertTrue(friendTab.isSelected)
   }
 
-  func testWalkHistoryViewNavigationTitle() throws {
+  func testWalkListViewNavigationTitle() throws {
     // Given: おさんぽタブが表示されている
 
     // When: ナビゲーションタイトルを確認
