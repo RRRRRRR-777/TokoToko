@@ -148,7 +148,7 @@ struct MainTabView: View {
             }
           case .walk:
             NavigationView {
-              WalkHistoryView()
+              WalkHistoryMainView()
             }
           case .settings:
             NavigationView {

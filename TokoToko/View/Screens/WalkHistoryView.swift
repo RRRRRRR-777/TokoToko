@@ -2,146 +2,245 @@
 //  WalkHistoryView.swift
 //  TokoToko
 //
-//  Created by bokuyamada on 2025/06/16.
+//  Created by bokuyamada on 2025/07/19.
 //
 
-import SwiftUI
 import CoreLocation
+import FirebaseAuth
+import Foundation
+import SwiftUI
 
 struct WalkHistoryView: View {
-  @State private var selectedTab: Int
-  @State private var walks: [Walk] = []
-  @State private var isLoading = false
+  @StateObject private var viewModel: WalkHistoryViewModel
 
-  private let walkRepository = WalkRepository.shared
+  init(walks: [Walk], initialIndex: Int) {
+    // 入力値を安全にサニタイズしてViewModelを初期化
+    let safeWalks = walks.isEmpty ? [Walk(title: "エラー", description: "データが見つかりません")] : walks
+    let safeIndex = max(0, min(initialIndex, safeWalks.count - 1))
 
-  init(selectedTab: Int = 0) {
-    self._selectedTab = State(initialValue: selectedTab)
+    // サニタイズ後は必ず成功するためdo-catchで処理
+    let viewModel: WalkHistoryViewModel
+    do {
+      viewModel = try WalkHistoryViewModel(walks: safeWalks, initialIndex: safeIndex)
+    } catch {
+      // フォールバック処理（理論上は到達しないが安全のため）
+      let fallbackWalk = Walk(title: "システムエラー", description: "ViewModelの初期化に失敗しました")
+      do {
+        viewModel = try WalkHistoryViewModel(walks: [fallbackWalk], initialIndex: 0)
+      } catch {
+        // 最終的なフォールバック（この時点では絶対成功するはず）
+        fatalError("致命的エラー: WalkHistoryViewModelの初期化に失敗しました")
+      }
+    }
+
+    self._viewModel = StateObject(wrappedValue: viewModel)
   }
 
   var body: some View {
-    VStack(spacing: 0) {
-      // セグメントコントロール
-      Picker("履歴タブ", selection: $selectedTab) {
-        Text("自分の履歴").tag(0)
-          .accessibilityIdentifier("自分の履歴")
-        Text("フレンドの履歴").tag(1)
-          .accessibilityIdentifier("フレンドの履歴")
-      }
-      .pickerStyle(SegmentedPickerStyle())
-      .padding(.horizontal)
-      .padding(.top, 8)
-      .accessibilityIdentifier("履歴タブSegmentedControl")
-
-      // タブコンテンツ
-      TabView(selection: $selectedTab) {
-        // 自分の履歴タブ
-        myWalkHistoryView
-          .tag(0)
-
-        // フレンドの履歴タブ
-        friendWalkHistoryView
-          .tag(1)
-      }
-      .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+    ZStack {
+      backgroundMapView
+      mainContentView
+      storyNavigationOverlay
+      imagePopupView
+      friendHistoryButton
     }
-    .navigationTitle("おさんぽ")
-    .navigationBarTitleDisplayMode(.inline)
-    .onAppear {
-      loadMyWalks()
-    }
-    .refreshable {
-      loadMyWalks()
-    }
+    .navigationBarHidden(true)
+    .animation(.easeInOut(duration: 0.3), value: viewModel.isStatsBarVisible)
+    .animation(.easeInOut(duration: 0.2), value: viewModel.selectedImageIndex)
   }
 
-  // 自分の散歩履歴ビュー
-  private var myWalkHistoryView: some View {
-    Group {
-      if isLoading {
-        VStack {
-          Spacer()
-          ProgressView("読み込み中...")
-            .foregroundColor(.secondary)
-          Spacer()
-        }
-      } else if walks.isEmpty {
-        emptyWalkHistoryView
-      } else {
-        walkHistoryListView
-      }
-    }
+  // MARK: - View Components
+
+  private var backgroundMapView: some View {
+    FullScreenMapView(walk: viewModel.currentWalk)
+      .id(viewModel.currentWalk.id)  // 散歩が変更されたら確実にViewを再作成
   }
 
-  // フレンドの散歩履歴ビュー（近日公開予定）
-  private var friendWalkHistoryView: some View {
+  private var storyNavigationOverlay: some View {
     VStack {
       Spacer()
-
-      Image(systemName: "person.2.circle")
-        .font(.system(size: 60))
-        .foregroundColor(.gray)
-        .padding(.bottom, 16)
-
-      Text("フレンドの履歴")
-        .font(.title2)
-        .fontWeight(.semibold)
-        .padding(.bottom, 8)
-
-      Text("友達の散歩履歴は近日公開予定です")
-        .font(.body)
-        .foregroundColor(.gray)
-        .multilineTextAlignment(.center)
-        .padding(.horizontal)
-
-      Spacer()
-    }
-  }
-
-  // 空の履歴表示
-  private var emptyWalkHistoryView: some View {
-    VStack(spacing: 16) {
-      Spacer()
-
-      Image(systemName: "figure.walk.circle")
-        .font(.system(size: 60))
-        .foregroundColor(.gray)
-        .accessibilityIdentifier("空の散歩履歴アイコン")
-
-      Text("散歩履歴がありません")
-        .font(.title2)
-        .fontWeight(.semibold)
-        .accessibilityIdentifier("散歩履歴がありません")
-
-      Text("散歩を完了すると、ここに履歴が表示されます")
-        .font(.body)
-        .foregroundColor(.gray)
-        .multilineTextAlignment(.center)
-        .padding(.horizontal)
-        .accessibilityIdentifier("散歩を完了すると、ここに履歴が表示されます")
-
-      // デバッグ用：新しい詳細画面のプレビューボタン
-      NavigationLink(destination: WalkHistoryDetailView(walks: mockWalksForPreview, initialIndex: 0)) {
-        Text("新しい詳細画面をプレビュー")
-          .font(.headline)
-          .foregroundColor(.white)
-          .padding()
-          .background(Color.blue)
-          .cornerRadius(12)
+      StoryCarouselView(
+        onPreviousTap: {
+          viewModel.selectPreviousWalk()
+        },
+        onNextTap: {
+          viewModel.selectNextWalk()
+        },
+        photoURLs: mockPhotoURLs
+      ) { index in
+        viewModel.selectImage(at: index)
       }
-      .padding(.top, 20)
+      .padding(.bottom, 50)
+    }
+  }
+
+  private var mainContentView: some View {
+    VStack {
+      headerView
+
+      Spacer()
+
+      HStack {
+        // 左側の統計情報バー
+        leftStatsBarView
+
+        Spacer()
+      }
 
       Spacer()
     }
   }
 
-  // デバッグ用のモックデータ
-  private var mockWalksForPreview: [Walk] {
+  private var headerView: some View {
+    HStack {
+      VStack(alignment: .leading, spacing: 4) {
+        Text(viewModel.currentWalk.title)
+          .font(.title2)
+          .fontWeight(.bold)
+          .foregroundColor(.black)
+
+        if let startTime = viewModel.currentWalk.startTime {
+          Text(startTime.formatted(date: .abbreviated, time: .shortened))
+            .font(.caption)
+            .foregroundColor(.black)
+        }
+      }
+
+      Spacer()
+
+      // ユーザー情報表示
+      VStack(alignment: .trailing, spacing: 4) {
+        // ユーザーアイコン
+        if let user = Auth.auth().currentUser,
+           let photoURL = user.photoURL {
+          AsyncImage(url: photoURL) { image in
+            image
+              .resizable()
+              .aspectRatio(contentMode: .fill)
+          } placeholder: {
+            Image(systemName: "person.crop.circle.fill")
+              .foregroundColor(.gray)
+          }
+          .frame(width: 40, height: 40)
+          .clipShape(Circle())
+        } else {
+          Image(systemName: "person.crop.circle.fill")
+            .foregroundColor(.gray)
+            .frame(width: 40, height: 40)
+        }
+
+        // ユーザー名（コメントアウト - ユーザー名登録機能未実装のため）
+        // Text(user.displayName ?? "ユーザー")
+        //   .font(.caption)
+        //   .fontWeight(.medium)
+        //   .foregroundColor(.black)
+      }
+    }
+    .padding()
+    .background(
+      LinearGradient(
+        colors: [
+          Color.white.opacity(0.8),
+          Color.white.opacity(0.7),
+          Color.white.opacity(0.6),
+          Color.clear
+        ],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+    )
+  }
+
+  private var leftStatsBarView: some View {
+    VStack {
+      StatsBarView(
+        walk: viewModel.currentWalk,
+        isExpanded: Binding(
+          get: { viewModel.isStatsBarVisible },
+          set: { _ in }
+        )
+      ) {
+        viewModel.toggleStatsBar()
+      }
+      .transition(.move(edge: .leading).combined(with: .opacity))
+    }
+    .padding(.leading, 10)
+  }
+
+  @ViewBuilder private var imagePopupView: some View {
+    if let selectedIndex = viewModel.selectedImageIndex {
+      ImagePopupView(
+        imageURL: mockPhotoURLs[safe: selectedIndex] ?? ""
+      ) {
+        viewModel.deselectImage()
+      }
+      .transition(.opacity)
+    }
+  }
+
+
+  private var friendHistoryButton: some View {
+    VStack {
+      Spacer()
+      HStack {
+        Spacer()
+        NavigationLink(destination: WalkListView(selectedTab: 1)) {
+          Image(systemName: "person.2.fill")
+            .font(.title)
+            .frame(width: 60, height: 60)
+            .background(
+              LinearGradient(
+                gradient: Gradient(colors: [
+                  Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
+                  Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
+                ]),
+                startPoint: .leading,
+                endPoint: .trailing
+              )
+            )
+            .foregroundColor(.white)
+            .clipShape(Circle())
+            .shadow(
+              color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4),
+              radius: 8, x: 0, y: 4
+            )
+        }
+        .accessibilityIdentifier("フレンドの履歴を表示")
+        .padding(.trailing, 20)
+      }
+    }
+  }
+
+  // MARK: - Mock Data (将来的にはWalkデータから取得)
+  private var mockPhotoURLs: [String] {
     [
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400",
+      "https://picsum.photos/600/400"
+    ]
+  }
+}
+
+// 安全な配列アクセス用の拡張
+extension Array {
+  subscript(safe index: Index) -> Element? {
+    indices.contains(index) ? self[index] : nil
+  }
+}
+
+#Preview {
+  WalkHistoryView(
+    walks: [
       Walk(
         title: "朝の散歩",
         description: "公園を歩きました",
-        id: UUID(),
         startTime: Date().addingTimeInterval(-3600),
         endTime: Date().addingTimeInterval(-3000),
         totalDistance: 1200,
@@ -150,83 +249,27 @@ struct WalkHistoryView: View {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6818, longitude: 139.7680)
+          CLLocation(latitude: 35.6820, longitude: 139.7680),
+          CLLocation(latitude: 35.6825, longitude: 139.7690)
         ]
       ),
       Walk(
         title: "夕方の散歩",
         description: "川沿いを歩きました",
-        id: UUID(),
         startTime: Date().addingTimeInterval(-7200),
         endTime: Date().addingTimeInterval(-6600),
         totalDistance: 800,
         totalSteps: 1000,
         status: .completed,
         locations: [
-          CLLocation(latitude: 35.6820, longitude: 139.7680),
-          CLLocation(latitude: 35.6825, longitude: 139.7685),
-          CLLocation(latitude: 35.6828, longitude: 139.7688)
-        ]
-      ),
-      Walk(
-        title: "夜の散歩",
-        description: "商店街を歩きました",
-        id: UUID(),
-        startTime: Date().addingTimeInterval(-10800),
-        endTime: Date().addingTimeInterval(-9600),
-        totalDistance: 1800,
-        totalSteps: 2200,
-        status: .completed,
-        locations: [
-          CLLocation(latitude: 35.6830, longitude: 139.7690),
-          CLLocation(latitude: 35.6835, longitude: 139.7695),
-          CLLocation(latitude: 35.6840, longitude: 139.7700)
+          CLLocation(latitude: 35.6700, longitude: 139.7500),
+          CLLocation(latitude: 35.6720, longitude: 139.7520),
+          CLLocation(latitude: 35.6740, longitude: 139.7540),
+          CLLocation(latitude: 35.6760, longitude: 139.7560),
+          CLLocation(latitude: 35.6780, longitude: 139.7580)
         ]
       )
-    ]
-  }
-
-  // 散歩履歴リスト
-  private var walkHistoryListView: some View {
-    List {
-      ForEach(Array(walks.enumerated()), id: \.element.id) { index, walk in
-        NavigationLink(destination: WalkHistoryDetailView(walks: walks, initialIndex: index)) {
-          WalkRow(walk: walk)
-        }
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
-      }
-    }
-    .listStyle(PlainListStyle())
-    .refreshable {
-      loadMyWalks()
-    }
-  }
-
-  // 散歩データの読み込み
-  private func loadMyWalks() {
-    isLoading = true
-
-    walkRepository.fetchWalks { result in
-      DispatchQueue.main.async {
-        isLoading = false
-        switch result {
-        case .success(let fetchedWalks):
-          // 完了した散歩のみを表示し、作成日時の降順でソート
-          let completedWalks = fetchedWalks.filter { $0.isCompleted }
-          self.walks = completedWalks.sorted { $0.createdAt > $1.createdAt }
-
-        case .failure(let error):
-          print("❌ 散歩履歴の読み込みに失敗しました: \(error)")
-          self.walks = []
-        }
-      }
-    }
-  }
-}
-
-#Preview {
-  NavigationView {
-    WalkHistoryView()
-  }
+    ],
+    initialIndex: 0
+  )
 }
