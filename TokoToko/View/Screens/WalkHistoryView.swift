@@ -12,8 +12,9 @@ import SwiftUI
 
 struct WalkHistoryView: View {
   @StateObject private var viewModel: WalkHistoryViewModel
+  let onWalkDeleted: ((UUID) -> Void)?
 
-  init(walks: [Walk], initialIndex: Int) {
+  init(walks: [Walk], initialIndex: Int, onWalkDeleted: ((UUID) -> Void)? = nil) {
     // 入力値を安全にサニタイズしてViewModelを初期化
     let safeWalks = walks.isEmpty ? [Walk(title: "エラー", description: "データが見つかりません")] : walks
     let safeIndex = max(0, min(initialIndex, safeWalks.count - 1))
@@ -34,6 +35,7 @@ struct WalkHistoryView: View {
     }
 
     self._viewModel = StateObject(wrappedValue: viewModel)
+    self.onWalkDeleted = onWalkDeleted
   }
 
   var body: some View {
@@ -158,10 +160,14 @@ struct WalkHistoryView: View {
         isExpanded: Binding(
           get: { viewModel.isStatsBarVisible },
           set: { _ in }
-        )
-      ) {
-        viewModel.toggleStatsBar()
-      }
+        ),
+        onToggle: {
+          viewModel.toggleStatsBar()
+        },
+        onWalkDeleted: { walkId in
+          onWalkDeleted?(walkId)
+        }
+      )
       .transition(.move(edge: .leading).combined(with: .opacity))
     }
     .padding(.leading, 10)

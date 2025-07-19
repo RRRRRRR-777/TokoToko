@@ -190,7 +190,11 @@ struct WalkListView: View {
   private var walkHistoryListView: some View {
     List {
       ForEach(Array(walks.enumerated()), id: \.element.id) { index, walk in
-        NavigationLink(destination: WalkHistoryView(walks: walks, initialIndex: index)) {
+        NavigationLink(destination: WalkHistoryView(
+          walks: walks, 
+          initialIndex: index,
+          onWalkDeleted: handleWalkDeletion
+        )) {
           WalkRow(walk: walk)
         }
         .listRowSeparator(.hidden)
@@ -222,6 +226,12 @@ struct WalkListView: View {
         }
       }
     }
+  }
+  
+  // 散歩削除コールバック
+  private func handleWalkDeletion(_ walkId: UUID) {
+    // 削除された散歩をリストから除去
+    walks.removeAll { $0.id == walkId }
   }
 }
 
