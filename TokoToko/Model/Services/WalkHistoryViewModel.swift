@@ -1,5 +1,5 @@
 //
-//  WalkHistoryDetailViewModel.swift
+//  WalkHistoryViewModel.swift
 //  TokoToko
 //
 //  Created by Claude Code on 2025/07/12.
@@ -8,7 +8,7 @@
 import Combine
 import Foundation
 
-class WalkHistoryDetailViewModel: ObservableObject {
+class WalkHistoryViewModel: ObservableObject {
 
   // MARK: - Published Properties
   @Published var currentWalk: Walk
