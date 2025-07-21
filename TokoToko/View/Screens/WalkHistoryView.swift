@@ -13,6 +13,7 @@ import SwiftUI
 struct WalkHistoryView: View {
   @StateObject private var viewModel: WalkHistoryViewModel
   let onWalkDeleted: ((UUID) -> Void)?
+  @Environment(\.presentationMode) var presentationMode
 
   init(walks: [Walk], initialIndex: Int, onWalkDeleted: ((UUID) -> Void)? = nil) {
     // 入力値を安全にサニタイズしてViewModelを初期化
@@ -165,7 +166,7 @@ struct WalkHistoryView: View {
           viewModel.toggleStatsBar()
         },
         onWalkDeleted: { walkId in
-          onWalkDeleted?(walkId)
+          handleWalkDeletion(walkId: walkId)
         }
       )
       .transition(.move(edge: .leading).combined(with: .opacity))
@@ -234,6 +235,24 @@ struct WalkHistoryView: View {
       "https://picsum.photos/600/400",
       "https://picsum.photos/600/400"
     ]
+  }
+  
+  // MARK: - Private Methods
+  
+  /// 散歩削除処理
+  private func handleWalkDeletion(walkId: UUID) {
+    // ViewModelで削除処理を実行し、適切な次の散歩に遷移
+    let hasRemainingWalks = viewModel.removeWalk(withId: walkId)
+    
+    // 上位のコールバックを呼び出してDBからも削除
+    onWalkDeleted?(walkId)
+    
+    // 散歩が全て削除された場合は画面を閉じる
+    if !hasRemainingWalks {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        presentationMode.wrappedValue.dismiss()
+      }
+    }
   }
 }
 
