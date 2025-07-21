@@ -190,7 +190,10 @@ struct WalkHistoryView: View {
       Spacer()
       HStack {
         Spacer()
-        NavigationLink(destination: WalkListView(selectedTab: 1)) {
+        NavigationLink(destination: 
+          WalkListView(selectedTab: 1)
+            .navigationBarBackButtonHidden(false)
+        ) {
           Image(systemName: "person.2.fill")
             .font(.title)
             .frame(width: 60, height: 60)

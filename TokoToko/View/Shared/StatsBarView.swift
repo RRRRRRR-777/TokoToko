@@ -58,7 +58,10 @@ struct StatsBarView: View {
         
         // 散歩履歴一覧への切り替えボタン
          HStack {
-          NavigationLink(destination: WalkListView()) {
+          NavigationLink(destination: 
+            WalkListView()
+              .navigationBarBackButtonHidden(false)
+          ) {
             Image(systemName: "arrow.left.arrow.right")
               .font(.system(size: 18, weight: .medium))
               .foregroundColor(.black)
