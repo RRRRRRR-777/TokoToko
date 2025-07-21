@@ -43,7 +43,7 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと距離が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {})
+    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
 
     // When & Then
     let distanceText = try view.inspect().find(text: mockWalk.distanceString)
@@ -52,7 +52,7 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと時間が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {})
+    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
 
     // When & Then
     let durationText = try view.inspect().find(text: mockWalk.durationString)
@@ -61,7 +61,7 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと歩数が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {})
+    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
 
     // When & Then
     let stepsText = try view.inspect().find(text: "2000歩")

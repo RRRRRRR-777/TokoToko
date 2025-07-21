@@ -1,5 +1,5 @@
 //
-//  WalkHistoryViewTests.swift
+//  WalkListViewTests.swift
 //  TokoTokoTests
 //
 //  Created by Claude on 2025/06/21.
@@ -10,7 +10,7 @@ import SwiftUI
 import ViewInspector
 @testable import TokoToko
 
-final class WalkHistoryViewTests: XCTestCase {
+final class WalkListViewTests: XCTestCase {
     
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -22,12 +22,12 @@ final class WalkHistoryViewTests: XCTestCase {
     
     // MARK: - 初期化テスト
     
-    func testWalkHistoryViewInitialization() throws {
+    func testWalkListViewInitialization() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         XCTAssertNotNil(inspectedView)
@@ -38,10 +38,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testSegmentedControlExists() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         XCTAssertNoThrow(try inspectedView.find(ViewType.Picker.self))
@@ -51,10 +51,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testSegmentedControlOptions() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         let picker = try inspectedView.find(ViewType.Picker.self)
         
         // Then
@@ -69,10 +69,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testTabViewExists() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         XCTAssertNoThrow(try inspectedView.find(ViewType.TabView.self))
@@ -80,10 +80,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testTabViewHasTwoTabs() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         let tabView = try inspectedView.find(ViewType.TabView.self)
         
         // Then
@@ -96,10 +96,10 @@ final class WalkHistoryViewTests: XCTestCase {
     @available(iOS 16.0, *)
     func testNavigationTitle() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         // navigationTitle()のAPIが変更されたため、基本的な存在確認のみに変更
@@ -110,10 +110,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testEmptyWalkHistoryViewStructure() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         // 空の履歴表示が存在することを確認（初期状態では散歩履歴は空）
@@ -125,10 +125,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testFriendWalkHistoryComingSoon() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         // ViewInspectorの文字列検索が複雑なため、基本的な存在確認に変更
@@ -140,10 +140,10 @@ final class WalkHistoryViewTests: XCTestCase {
     
     func testLoadingStateDisplay() throws {
         // Given
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
-        let inspectedView = try walkHistoryView.inspect()
+        let inspectedView = try walkListView.inspect()
         
         // Then
         // ViewInspectorの検索が複雑なため、基本的な存在確認に変更
@@ -156,7 +156,7 @@ final class WalkHistoryViewTests: XCTestCase {
     func testLoadMyWalksCallsRepository() async throws {
         // Given
         let mockRepository = MockWalkRepository()
-        let walkHistoryView = WalkHistoryView()
+        let walkListView = WalkListView()
         
         // When
         // viewDidAppearのテストは実際のViewの動作確認が必要
