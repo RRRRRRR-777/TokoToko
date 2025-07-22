@@ -8,10 +8,48 @@
 import FirebaseAuth
 import SwiftUI
 
+/// アプリケーション設定とアカウント管理画面
+///
+/// `SettingsView`はユーザーアカウント情報の表示、ログアウト処理、
+/// アプリ設定項目へのアクセスを提供する設定画面です。
+/// UIテスト対応機能とFirebase認証との連携機能を統合しています。
+///
+/// ## Overview
+///
+/// - **アカウント情報**: メールアドレスとプロフィール画像の表示
+/// - **ログアウト機能**: 確認ダイアログ付きのログアウト処理
+/// - **設定項目**: 通知、プライバシー、位置情報設定へのナビゲーション
+/// - **UIテスト対応**: 各種テストシナリオ用のモックデータ制御
+///
+/// ## Topics
+///
+/// ### Properties
+/// - ``authManager``
+/// - ``showingLogoutAlert``
+/// - ``isLoading``
+/// - ``errorMessage``
+///
+/// ### Methods
+/// - ``logout()``
 struct SettingsView: View {
+  /// 認証状態管理オブジェクト
+  ///
+  /// ログアウト処理と認証状態の参照に使用されるAuthManagerのインスタンスです。
   @EnvironmentObject private var authManager: AuthManager
+  
+  /// ログアウト確認ダイアログの表示状態
+  ///
+  /// ログアウトボタンタップ時に表示される確認ダイアログの表示制御に使用されます。
   @State private var showingLogoutAlert: Bool
+  
+  /// ログアウト処理のローディング状態
+  ///
+  /// ログアウト処理中はtrueになり、ローディングインジケーターを表示します。
   @State private var isLoading: Bool
+  
+  /// エラーメッセージ
+  ///
+  /// ログアウト処理やその他のエラーが発生した場合のメッセージを保持します。
   @State private var errorMessage: String?
 
   // UIテスト用のフラグ
@@ -202,6 +240,16 @@ struct SettingsView: View {
     }
   }
 
+  /// ユーザーのログアウト処理を実行
+  ///
+  /// AuthManagerを通じてログアウト処理を実行します。
+  /// 処理中はローディング状態を表示し、完了後は自動的にログイン画面に遷移します。
+  ///
+  /// ## Process Flow
+  /// 1. ローディング状態をtrueに設定
+  /// 2. エラーメッセージをクリア
+  /// 3. AuthManager.logout()を呼び出し
+  /// 4. UI状態をリセット
   private func logout() {
     isLoading = true
     errorMessage = nil

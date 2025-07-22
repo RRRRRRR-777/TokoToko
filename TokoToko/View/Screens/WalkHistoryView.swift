@@ -10,11 +10,62 @@ import FirebaseAuth
 import Foundation
 import SwiftUI
 
+/// 散歩履歴の詳細表示とインタラクティブビュー
+///
+/// `WalkHistoryView`は個別の散歩データを詳細表示し、ユーザーが散歩履歴を
+/// ナビゲートできるインタラクティブな画面です。マップ表示、統計情報、
+/// 写真カルーセル、削除機能を統合しています。
+///
+/// ## Overview
+///
+/// - **フルスクリーンマップ**: 散歩ルートを背景全体に表示
+/// - **ナビゲーション**: 前後の散歩への切り替えとスワイプ対応
+/// - **統計表示**: 距離、時間、歩数等の詳細情報
+/// - **写真ビューア**: 散歩中の写真をカルーセル形式で表示
+/// - **削除機能**: 散歩データの削除と適切な画面遷移制御
+///
+/// ## Topics
+///
+/// ### Properties
+/// - ``viewModel``
+/// - ``onWalkDeleted``
+/// - ``presentationMode``
+///
+/// ### Initialization
+/// - ``init(walks:initialIndex:onWalkDeleted:)``
+///
+/// ### Methods
+/// - ``handleWalkDeletion(walkId:)``
 struct WalkHistoryView: View {
+  /// 散歩履歴の状態管理とナビゲーション制御を担当するViewModel
+  ///
+  /// 散歩データの管理、画面遷移、UI状態の制御を行います。
   @StateObject private var viewModel: WalkHistoryViewModel
+  
+  /// 散歩削除時のコールバック関数
+  ///
+  /// 散歩が削除された際に親ビューに通知するためのオプショナルコールバックです。
   let onWalkDeleted: ((UUID) -> Void)?
+  
+  /// プレゼンテーション制御用の環境変数
+  ///
+  /// 散歩が全て削除された場合の画面閉じる処理に使用されます。
   @Environment(\.presentationMode) var presentationMode
 
+  /// WalkHistoryViewの初期化メソッド
+  ///
+  /// 散歩データ配列と初期インデックスでビューを初期化します。
+  /// 不正な値に対する安全性処理とフォールバック機能を内蔵しています。
+  ///
+  /// ## Safety Features
+  /// - 空の配列に対するフォールバック処理
+  /// - インデックス範囲外値の自動補正
+  /// - ViewModel初期化失敗時の多段フォールバック
+  ///
+  /// - Parameters:
+  ///   - walks: 表示する散歩データの配列
+  ///   - initialIndex: 初期表示する散歩のインデックス
+  ///   - onWalkDeleted: 散歩削除時のコールバック（オプション）
   init(walks: [Walk], initialIndex: Int, onWalkDeleted: ((UUID) -> Void)? = nil) {
     // 入力値を安全にサニタイズしてViewModelを初期化
     let safeWalks = walks.isEmpty ? [Walk(title: "エラー", description: "データが見つかりません")] : walks
@@ -54,11 +105,19 @@ struct WalkHistoryView: View {
 
   // MARK: - View Components
 
+  /// 背景として表示されるフルスクリーンマップビュー
+  ///
+  /// 現在の散歩のルートを画面全体に表示します。
+  /// 散歩が変更されるたびにViewを再作成してデータの整合性を保証します。
   private var backgroundMapView: some View {
     FullScreenMapView(walk: viewModel.currentWalk)
       .id(viewModel.currentWalk.id)  // 散歩が変更されたら確実にViewを再作成
   }
 
+  /// ストーリー形式のナビゲーションオーバーレイ
+  ///
+  /// 画面下部に配置されるカルーセル形式のナビゲーション要素です。
+  /// 前後の散歩への移動と写真の表示・選択機能を提供します。
   private var storyNavigationOverlay: some View {
     VStack {
       Spacer()
@@ -77,6 +136,9 @@ struct WalkHistoryView: View {
     }
   }
 
+  /// メインコンテンツエリア
+  ///
+  /// ヘッダー情報と統計バーを配置するメインのコンテンツエリアです。
   private var mainContentView: some View {
     VStack {
       headerView
@@ -239,7 +301,17 @@ struct WalkHistoryView: View {
   
   // MARK: - Private Methods
   
-  /// 散歩削除処理
+  /// 散歩削除処理とナビゲーション制御
+  ///
+  /// 指定された散歩の削除処理を実行し、適切な画面遷移を制御します。
+  /// 散歩が全て削除された場合は自動的に画面を閉じます。
+  ///
+  /// ## Process Flow
+  /// 1. ViewModelで削除処理と次の散歩への遷移実行
+  /// 2. 親ビューのコールバックでデータベースからも削除
+  /// 3. 散歩が全て削除された場合は画面を閉じる
+  ///
+  /// - Parameter walkId: 削除する散歩のID
   private func handleWalkDeletion(walkId: UUID) {
     // ViewModelで削除処理を実行し、適切な次の散歩に遷移
     let hasRemainingWalks = viewModel.removeWalk(withId: walkId)
@@ -256,8 +328,15 @@ struct WalkHistoryView: View {
   }
 }
 
-// 安全な配列アクセス用の拡張
+/// 配列の安全なアクセス用拡張
+///
+/// インデックスが範囲外の場合にクラッシュを防ぐためのセーフアクセス機能を提供します。
+/// 範囲外アクセスの場合はnilを返します。
 extension Array {
+  /// インデックスが有効な範囲内の場合のみ要素を返すセーフアクセサ
+  ///
+  /// - Parameter index: アクセスしたいインデックス
+  /// - Returns: 有効なインデックスの場合は要素、範囲外の場合はnil
   subscript(safe index: Index) -> Element? {
     indices.contains(index) ? self[index] : nil
   }

@@ -8,11 +8,51 @@
 import SwiftUI
 import CoreLocation
 
+/// 散歩履歴のメイン画面とデータローディング制御
+///
+/// `WalkHistoryMainView`は散歩履歴の一覧表示を管理するメインビューです。
+/// データの読み込み状態に応じて適切なビュー（ローディング、空の状態、履歴一覧）を
+/// 表示し、WalkRepositoryからの散歩データ取得を制御します。
+///
+/// ## Overview
+///
+/// - **データ管理**: WalkRepositoryからの散歩データ取得とキャッシュ
+/// - **状態管理**: ローディング、エラー、空の状態の適切な表示制御
+/// - **フィルタリング**: 完了した散歩のみを表示し、日付降順でソート
+/// - **ナビゲーション**: 条件に応じて適切な子ビューへの遷移制御
+///
+/// ## Topics
+///
+/// ### Properties
+/// - ``walks``
+/// - ``isLoading``
+/// - ``hasError``
+/// - ``walkRepository``
+///
+/// ### Methods
+/// - ``loadWalks()``
 struct WalkHistoryMainView: View {
+  /// 表示する散歩データの配列
+  ///
+  /// WalkRepositoryから取得された散歩データを保持します。
+  /// 完了した散歩のみがフィルタリングされ、作成日時の降順でソートされます。
   @State private var walks: [Walk] = []
+  
+  /// データ読み込み中の状態
+  ///
+  /// trueの場合、ローディングビューが表示されます。
+  /// データ取得開始時にtrueに設定され、取得完了時にfalseになります。
   @State private var isLoading = true
+  
+  /// データ読み込みエラーの状態
+  ///
+  /// trueの場合、エラー状態として空の履歴ビューが表示されます。
+  /// WalkRepositoryからのデータ取得に失敗した場合にtrueに設定されます。
   @State private var hasError = false
   
+  /// 散歩データリポジトリ
+  ///
+  /// 散歩データの取得・保存を担当するWalkRepositoryのシングルトンインスタンスです。
   private let walkRepository = WalkRepository.shared
   
   var body: some View {
@@ -30,6 +70,18 @@ struct WalkHistoryMainView: View {
     }
   }
   
+  /// WalkRepositoryから散歩データを読み込む
+  ///
+  /// 散歩データの取得を開始し、取得結果に応じてUI状態を更新します。
+  /// 完了した散歩のみを抽出し、作成日時の降順でソートして表示用データを準備します。
+  ///
+  /// ## Process Flow
+  /// 1. ローディング状態をtrueに設定
+  /// 2. エラー状態をfalseにリセット
+  /// 3. WalkRepository.fetchWalks()を非同期実行
+  /// 4. 取得成功時: 完了した散歩をフィルタ・ソートして保持
+  /// 5. 取得失敗時: エラー状態をtrueに設定
+  /// 6. ローディング状態をfalseに設定
   private func loadWalks() {
     isLoading = true
     hasError = false
@@ -52,7 +104,18 @@ struct WalkHistoryMainView: View {
   }
 }
 
-// 空の散歩履歴表示用のビュー
+/// 散歩履歴が空の場合の表示ビュー
+///
+/// `EmptyWalkHistoryView`は散歩データが存在しない場合やデータ読み込みに
+/// 失敗した場合に表示されるビューです。ユーザーに散歩を開始するよう促すメッセージと
+/// アイコンを表示します。
+///
+/// ## Overview
+///
+/// - **視覚的フィードバック**: 大きなアイコンでシステム状態を表現
+/// - **ガイダンス**: 散歩を完了すれば履歴が表示されることを説明
+/// - **アクセシビリティ**: スクリーンリーダー用の適切な識別子を設定
+/// - **ナビゲーション**: 散歩履歴画面としてのタイトル表示
 private struct EmptyWalkHistoryView: View {
   var body: some View {
     VStack(spacing: 20) {

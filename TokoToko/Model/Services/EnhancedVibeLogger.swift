@@ -4,18 +4,84 @@ import CoreLocation
 
 // MARK: - Enhanced Vibe Logger Core Implementation
 
+/// 高度なログ管理機能を提供する統合ログシステム
+///
+/// `EnhancedVibeLogger`はTokoTokoアプリケーション専用に設計された包括的なログ管理システムです。
+/// デバッグ情報から本番環境での動作監視まで、アプリケーションの全ライフサイクルにわたって
+/// 詳細なログ記録と分析機能を提供します。
+///
+/// ## Overview
+///
+/// 主要な機能：
+/// - **階層化ログレベル**: debug, info, warning, error, criticalの5段階
+/// - **バッチ処理**: 高効率なログバッファリングと一括出力
+/// - **ファイル出力**: 永続化されたログファイルの生成と管理
+/// - **コンテキスト情報**: 豊富なメタデータとトレーサビリティ
+/// - **専門ログ**: 位置情報、Firebase同期、パフォーマンス分析
+/// - **デバッグ支援**: メソッド開始/終了、スタックトレース、異常検出
+///
+/// ## Topics
+///
+/// ### Singleton Instance
+/// - ``shared``
+///
+/// ### Basic Logging
+/// - ``debug(operation:message:context:source:humanNote:aiTodo:)``
+/// - ``info(operation:message:context:source:humanNote:aiTodo:)``
+/// - ``warning(operation:message:context:source:humanNote:aiTodo:)``
+/// - ``error(operation:message:context:source:humanNote:aiTodo:)``
+/// - ``critical(operation:message:context:source:humanNote:aiTodo:)``
 public class EnhancedVibeLogger {
+  /// EnhancedVibeLoggerのシングルトンインスタンス
+  ///
+  /// アプリケーション全体で統一されたログ管理を実現するため、
+  /// 単一のインスタンスを通してすべてのログ操作を行います。
   public static let shared = EnhancedVibeLogger()
 
+  /// ログ処理専用のシリアルキュー
+  ///
+  /// ログ出力の順序性を保証し、マルチスレッド環境でのデータ競合を防止します。
+  /// QoS.utilityで実行され、メインスレッドをブロックしません。
   private let logQueue = DispatchQueue(label: "com.tokotoko.logger", qos: .utility)
+  
+  /// 現在のログレベル設定
+  ///
+  /// DEBUG版では.debug、RELEASE版では.infoがデフォルト設定されます。
+  /// このレベル以上の重要度を持つログのみが出力されます。
   private var logLevel: LogLevel
+  
+  /// ファイル出力の有効/無効状態
+  ///
+  /// trueの場合、ログがファイルシステムに永続化されます。
+  /// DEBUG版ではtrue、RELEASE版ではfalseがデフォルトです。
   private var enableFileOutput: Bool
+  
+  /// ログファイルの保存ディレクトリパス
+  ///
+  /// ログファイルが保存されるディレクトリの絶対パスです。
+  /// アプリケーションのホームディレクトリ配下に自動作成されます。
   private let logDirectoryPath: String
   
-  // バッチログ機能
+  /// バッチ処理用のログバッファ
+  ///
+  /// 効率的なログ出力のため、一定数のログエントリをメモリにバッファリングします。
+  /// バッチサイズまたは時間間隔に達すると一括出力されます。
   private var logBuffer: [EnhancedVibeLogEntry] = []
+  
+  /// バッチ出力用のタイマー
+  ///
+  /// 定期的なバッファフラッシュを制御するタイマーです。
+  /// 一定時間経過後にバッファ内容を強制出力します。
   private var batchTimer: Timer?
+  
+  /// バッチ処理の最大エントリ数
+  ///
+  /// この数に達するとバッファが自動的にフラッシュされます。
   private let batchSize = 50
+  
+  /// バッチ処理の時間間隔（秒）
+  ///
+  /// この時間が経過するとバッファサイズに関係なくフラッシュされます。
   private let batchTimeInterval: TimeInterval = 30.0
 
   private init() {
