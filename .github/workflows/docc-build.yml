@@ -28,7 +28,17 @@ concurrency:
 
 jobs:
   build-deploy:
-    runs-on: macos-14  # Package.resolvedバージョン3との互換性確保（Xcode 15.3+対応）
+    runs-on: ${{ matrix.os }}  # Swift 6対応（Xcode 16+対応）でFirebase SDK互換性確保
+    
+    strategy:
+      matrix:
+        include:
+          # GitHub Hosted Runner（最新macOS）
+          - os: macos-15
+            runner-type: "github-hosted"
+          # Self-hosted fallback（必要に応じてコメントアウト解除）
+          # - os: [self-hosted, macOS, Xcode16]
+          #   runner-type: "self-hosted"
     
     steps:
       - name: Checkout repository
@@ -42,9 +52,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-homebrew-xcodegen-
       
-      - name: Install xcodegen
+      - name: Check Xcode version and install xcodegen
         run: |
-          set -e
+          set -ex
+          echo "=== Checking Xcode environment ==="
+          xcodebuild -version || echo "Xcode not found"
+          xcrun swift --version || echo "Swift not found"
+          
+          echo "=== Installing xcodegen ==="
           if ! command -v xcodegen &> /dev/null; then
             echo "Installing xcodegen..."
             brew install xcodegen
@@ -52,6 +67,10 @@ jobs:
             echo "xcodegen already installed"
           fi
           xcodegen --version
+          
+          echo "=== Final environment check ==="
+          xcodebuild -version
+          xcrun swift --version
       
       - name: Cache Xcode build
         uses: actions/cache@v4
