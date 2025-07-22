@@ -34,6 +34,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
+      - name: Cache Homebrew packages
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/Cellar/xcodegen
+          key: ${{ runner.os }}-homebrew-xcodegen-${{ hashFiles('.github/workflows/docc-build.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-xcodegen-
+      
+      - name: Install xcodegen
+        run: |
+          set -e
+          if ! command -v xcodegen &> /dev/null; then
+            echo "Installing xcodegen..."
+            brew install xcodegen
+          else
+            echo "xcodegen already installed"
+          fi
+          xcodegen --version
+      
       - name: Cache Xcode build
         uses: actions/cache@v4
         with:
@@ -42,27 +61,88 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-xcode-
       
-      - name: Generate Xcode project
+      - name: Generate Xcode project and verify
         env:
           DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
         run: |
-          set -e
+          set -ex
+          echo "=== Environment Info ==="
+          echo "DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM:0:10}..."
+          echo "Current directory: $(pwd)"
+          echo "Contents: $(ls -la)"
+          
+          echo "=== Generating Xcode project ==="
           xcodegen generate
+          
+          echo "=== Verifying project generation ==="
+          if [ -f "TokoToko.xcodeproj/project.pbxproj" ]; then
+            echo "✅ TokoToko.xcodeproj generated successfully"
+            ls -la TokoToko.xcodeproj/
+          else
+            echo "❌ TokoToko.xcodeproj generation failed"
+            exit 1
+          fi
+      
+      - name: Cache SwiftPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-swiftpm-
+      
+      - name: Resolve SwiftPM packages
+        run: |
+          set -ex
+          echo "=== Resolving SwiftPM dependencies ==="
+          xcodebuild -resolvePackageDependencies -scheme TokoToko
+          
+          echo "=== Package resolution completed ==="
+          if [ -f "TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
+            echo "✅ Package.resolved generated"
+          else
+            echo "⚠️  Package.resolved not found, continuing..."
+          fi
       
       - name: Build DocC
         run: |
-          set -e
+          set -ex
+          echo "=== Building DocC documentation ==="
           xcodebuild docbuild -scheme TokoToko \
             -sdk iphonesimulator \
             -derivedDataPath ./DerivedData
+          
+          echo "=== Verifying DocC archive generation ==="
+          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
+          if [ -d "$DOCC_ARCHIVE" ]; then
+            echo "✅ DocC archive generated at: $DOCC_ARCHIVE"
+            ls -la "$DOCC_ARCHIVE"
+          else
+            echo "❌ DocC archive not found"
+            echo "Available files in DerivedData:"
+            find ./DerivedData -name "*.doccarchive" -type d || echo "No .doccarchive found"
+            exit 1
+          fi
       
       - name: Convert to static site
         run: |
-          set -e
+          set -ex
+          echo "=== Converting DocC archive to static site ==="
+          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
           xcrun docc process-archive transform-for-static-hosting \
-            ./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive \
+            "$DOCC_ARCHIVE" \
             --output-path ./docs \
             --hosting-base-path TokoToko
+          
+          echo "=== Verifying static site generation ==="
+          if [ -f "./docs/index.html" ]; then
+            echo "✅ Static site generated successfully"
+            echo "Generated files:"
+            ls -la ./docs/
+          else
+            echo "❌ Static site generation failed"
+            exit 1
+          fi
       
       - name: Fix paths for GitHub Pages
         run: |
