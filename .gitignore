@@ -99,3 +99,6 @@ GoogleService-Info.plist
 .env
 tmp/*
 info.plist
+docs/
+docs_*/
+DerivedData/
