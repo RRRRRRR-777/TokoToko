@@ -3,6 +3,12 @@ name: DocC Build and Deploy
 on:
   workflow_dispatch:  # 手動実行のみ（コスト効率重視）
   
+  # テスト用: ticket/64ブランチでも実行可能
+  push:
+    branches: [ticket/64]
+    paths:
+      - '.github/workflows/docc-build.yml'
+  
   # 将来の自動化オプション（コメントアウト）
   # push:
   #   branches: [main]
