@@ -1,0 +1,74 @@
+name: DocC Build and Deploy
+
+on:
+  workflow_dispatch:  # 手動実行のみ（コスト効率重視）
+  
+  # 将来の自動化オプション（コメントアウト）
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'TokoToko/**/*.swift'
+  #     - 'Documentation.docc/**'
+  #     - 'project.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: macos-13  # 安定したmacOS環境（コスト効率とパフォーマンスのバランス）
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      
+      - name: Cache Xcode build
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: DerivedData
+          key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
+      
+      - name: Generate Xcode project
+        env:
+          DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+        run: |
+          set -e
+          xcodegen generate
+      
+      - name: Build DocC
+        run: |
+          set -e
+          xcodebuild docbuild -scheme TokoToko \
+            -sdk iphonesimulator \
+            -derivedDataPath ./DerivedData
+      
+      - name: Convert to static site
+        run: |
+          set -e
+          xcrun docc process-archive transform-for-static-hosting \
+            ./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive \
+            --output-path ./docs \
+            --hosting-base-path TokoToko
+      
+      - name: Fix paths for GitHub Pages
+        run: |
+          set -e
+          cd docs
+          sed -i '' 's|"/TokoToko/"|"./"|g' index.html
+          sed -i '' 's|var baseUrl = "/TokoToko/"|var baseUrl = "./"|g' index.html
+      
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: ./docs
+      
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
