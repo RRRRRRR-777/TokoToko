@@ -32,10 +32,10 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@v4
       
       - name: Cache Xcode build
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@v4
         with:
           path: DerivedData
           key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
@@ -72,9 +72,9 @@ jobs:
           sed -i '' 's|var baseUrl = "/TokoToko/"|var baseUrl = "./"|g' index.html
       
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs
       
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        uses: actions/deploy-pages@v4
