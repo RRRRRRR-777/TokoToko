@@ -8,13 +8,58 @@
 import SwiftUI
 import CoreLocation
 
+/// 散歩履歴のリスト表示とタブ管理画面
+///
+/// `WalkListView`は自分の散歩履歴とフレンドの履歴を切り替えて表示する
+/// タブ形式のビューです。現在は自分の履歴のみが実装されており、
+/// フレンドの履歴は将来実装予定の機能として表示されます。
+///
+/// ## Overview
+///
+/// - **タブインターフェース**: セグメントコントロールとTabViewによる切り替え
+/// - **散歩履歴表示**: 完了した散歩のリスト表示と詳細ナビゲーション
+/// - **データ更新**: プルトゥリフレッシュによる手動更新機能
+/// - **状態管理**: ローディング、空の状態、エラー状態の適切な表示
+///
+/// ## Topics
+///
+/// ### Properties
+/// - ``selectedTab``
+/// - ``walks``
+/// - ``isLoading``
+/// - ``walkRepository``
+///
+/// ### Methods
+/// - ``loadMyWalks()``
+/// - ``handleWalkDeletion(_:)``
 struct WalkListView: View {
+  /// 現在選択されているタブのインデックス
+  ///
+  /// 0: 自分の履歴タブ、1: フレンドの履歴タブ
+  /// セグメントコントロールとTabViewの両方で使用されます。
   @State private var selectedTab: Int
+  
+  /// 表示する散歩データの配列
+  ///
+  /// WalkRepositoryから取得した完了済み散歩データを保持します。
+  /// 作成日時の降順でソートされています。
   @State private var walks: [Walk] = []
+  
+  /// データ読み込み中の状態
+  ///
+  /// trueの場合、ローディングインジケーターが表示されます。
   @State private var isLoading = false
 
+  /// 散歩データリポジトリ
+  ///
+  /// 散歩データの取得を担当するWalkRepositoryのシングルトンインスタンスです。
   private let walkRepository = WalkRepository.shared
 
+  /// WalkListViewの初期化メソッド
+  ///
+  /// 指定されたタブを初期選択状態として設定します。
+  ///
+  /// - Parameter selectedTab: 初期選択タブのインデックス（デフォルト: 0）
   init(selectedTab: Int = 0) {
     self._selectedTab = State(initialValue: selectedTab)
   }
@@ -55,7 +100,9 @@ struct WalkListView: View {
     }
   }
 
-  // 自分の散歩履歴ビュー
+  /// 自分の散歩履歴を表示するビュー
+  ///
+  /// ローディング状態、空の状態、散歩リスト表示を適切に切り替えます。
   private var myWalkHistoryView: some View {
     Group {
       if isLoading {
@@ -73,7 +120,10 @@ struct WalkListView: View {
     }
   }
 
-  // フレンドの散歩履歴ビュー（近日公開予定）
+  /// フレンドの散歩履歴を表示するビュー（近日公開予定）
+  ///
+  /// 将来実装予定の機能として、友達の散歩履歴を表示する予定です。
+  /// 現在は準備中のメッセージとアイコンを表示します。
   private var friendWalkHistoryView: some View {
     VStack {
       Spacer()
@@ -98,7 +148,10 @@ struct WalkListView: View {
     }
   }
 
-  // 空の履歴表示
+  /// 散歩履歴が空の場合の表示ビュー
+  ///
+  /// 散歩データが存在しない場合に表示されるプレースホルダービューです。
+  /// ユーザーに散歩を開始するよう促すメッセージを表示します。
   private var emptyWalkHistoryView: some View {
     VStack(spacing: 16) {
       Spacer()
@@ -126,7 +179,10 @@ struct WalkListView: View {
   }
 
 
-  // 散歩履歴リスト
+  /// 散歩履歴をリスト形式で表示するビュー
+  ///
+  /// 完了した散歩データを一覧表示し、各項目をタップすると詳細画面に遷移します。
+  /// プルトゥリフレッシュによる手動更新にも対応しています。
   private var walkHistoryListView: some View {
     List {
       ForEach(Array(walks.enumerated()), id: \.element.id) { index, walk in
@@ -150,7 +206,17 @@ struct WalkListView: View {
     }
   }
 
-  // 散歩データの読み込み
+  /// WalkRepositoryから自分の散歩データを読み込む
+  ///
+  /// 散歩データの取得を開始し、取得結果に応じてUI状態を更新します。
+  /// 完了した散歩のみを抽出し、作成日時の降順でソートして表示用データを準備します。
+  ///
+  /// ## Process Flow
+  /// 1. ローディング状態をtrueに設定
+  /// 2. WalkRepository.fetchWalks()を非同期実行
+  /// 3. 取得成功時: 完了した散歩をフィルタ・ソートして保持
+  /// 4. 取得失敗時: エラーログを出力し空配列を設定
+  /// 5. ローディング状態をfalseに設定
   private func loadMyWalks() {
     isLoading = true
 
@@ -171,7 +237,12 @@ struct WalkListView: View {
     }
   }
   
-  // 散歩削除コールバック
+  /// 散歩削除時のコールバック処理
+  ///
+  /// WalkHistoryViewから散歩が削除された際に呼び出され、
+  /// 削除された散歩をローカルの散歩リストから除去します。
+  ///
+  /// - Parameter walkId: 削除された散歩のID
   private func handleWalkDeletion(_ walkId: UUID) {
     // 削除された散歩をリストから除去
     walks.removeAll { $0.id == walkId }

@@ -8,24 +8,117 @@
 import Combine
 import Foundation
 
+/// 散歩履歴表示とナビゲーションを管理するViewModel
+///
+/// `WalkHistoryViewModel`は散歩履歴一覧の表示、ナビゲーション、
+/// UI状態管理を統合するSwiftUI用のObservableObjectです。
+/// 複数の散歩データ間の切り替え、詳細表示、削除処理を担当します。
+///
+/// ## Overview
+///
+/// 主要な責務：
+/// - **散歩ナビゲーション**: 前後の散歩への切り替え
+/// - **UI状態管理**: 統計バーの表示/非表示、画像選択状態
+/// - **データ管理**: 散歩リストの維持と更新
+/// - **削除処理**: 散歩データの削除と適切な遷移制御
+/// - **バリデーション**: インデックス範囲やデータ整合性の確認
+///
+/// ## Topics
+///
+/// ### Properties
+/// - ``currentWalk``
+/// - ``isStatsBarVisible``
+/// - ``selectedImageIndex``
+/// - ``walkCount``
+///
+/// ### Navigation
+/// - ``selectNextWalk()``
+/// - ``selectPreviousWalk()``
+///
+/// ### UI State
+/// - ``toggleStatsBar()``
+/// - ``selectImage(at:)``
+/// - ``deselectImage()``
+///
+/// ### Data Management
+/// - ``removeWalk(withId:)``
 class WalkHistoryViewModel: ObservableObject {
 
   // MARK: - Published Properties
+  
+  /// 現在表示中の散歩データ
+  ///
+  /// 散歩履歴一覧でユーザーが現在閲覧している散歩のWalkオブジェクトです。
+  /// @Publishedにより、値が変更されるとUIに自動反映されます。
   @Published var currentWalk: Walk
+  
+  /// 統計バーの表示状態
+  ///
+  /// 散歩の統計情報（時間、距離、歩数など）を表示するバーの表示/非表示状態。
+  /// ユーザーの操作でトグル可能で、デフォルトではtrue（表示）です。
   @Published var isStatsBarVisible: Bool = true
+  
+  /// 現在選択されている画像のインデックス
+  ///
+  /// 散歩に関連付けられた画像の中で、現在選択されている画像のインデックス。
+  /// nilの場合はどの画像も選択されていない状態です。
   @Published var selectedImageIndex: Int? = nil
 
   // MARK: - Private Properties
+  
+  /// 散歩データの配列
+  ///
+  /// 表示対象となる全ての散歩データを保持します。
+  /// 作成日時の降順でソートされた状態で管理されます。
   @Published private var walks: [Walk]
+  
+  /// 現在表示中の散歩のインデックス
+  ///
+  /// walks配列内でのcurrentWalkの位置を示すインデックス値です。
+  /// ナビゲーション操作時に更新されます。
   private var currentIndex: Int
 
   // MARK: - Error Types
+  
+  /// WalkHistoryViewModel初期化時のバリデーションエラー
+  ///
+  /// ViewModelの初期化時に発生する可能性のあるエラーを定義します。
+  /// データの整合性チェックや適切なエラーハンドリングを可能にします。
+  ///
+  /// ## Topics
+  ///
+  /// ### Error Cases
+  /// - ``emptyWalksArray``
+  /// - ``invalidIndex``
   enum ValidationError: Error, Equatable {
+    /// 散歩データの配列が空の場合
+    ///
+    /// ViewModelに渡された散歩データが1件もない場合に発生します。
+    /// 散歩履歴が存在しないユーザーやデータ取得エラーの結果です。
     case emptyWalksArray
+    
+    /// 初期インデックスが範囲外の値
+    ///
+    /// 指定された初期インデックスが散歩データ配列の範囲を超えている場合に発生します。
+    /// 負の値や配列サイズ以上の値が原因です。
     case invalidIndex
   }
 
   // MARK: - Initializer
+  
+  /// WalkHistoryViewModelを初期化
+  ///
+  /// 散歩データの配列と初期表示インデックスでViewModelを初期化します。
+  /// データの整合性をチェックし、不正な値の場合はエラーをスローします。
+  ///
+  /// ## Validation
+  /// - walks配列が空でないことを確認
+  /// - initialIndexがwalk配列の有効な範囲内であることを確認
+  ///
+  /// - Parameters:
+  ///   - walks: 表示する散歩データの配列（空でないこと）
+  ///   - initialIndex: 初期表示する散歩のインデックス（0以上かつwalks.count未満）
+  /// - Throws: バリデーションエラー（ValidationError）
   init(walks: [Walk], initialIndex: Int) throws {
     guard !walks.isEmpty else {
       throw ValidationError.emptyWalksArray
@@ -42,29 +135,60 @@ class WalkHistoryViewModel: ObservableObject {
 
   // MARK: - Public Methods
 
+  /// 次の散歩へ遷移
+  ///
+  /// 現在表示中の散歩の1つ後の散歩へ遷移します。
+  /// 最後の散歩の場合は最初の散歩に戻ります（サイクリックナビゲーション）。
   func selectNextWalk() {
     currentIndex = (currentIndex + 1) % walks.count
     currentWalk = walks[currentIndex]
   }
 
+  /// 前の散歩へ遷移
+  ///
+  /// 現在表示中の散歩の1つ前の散歩へ遷移します。
+  /// 最初の散歩の場合は最後の散歩に移動します（サイクリックナビゲーション）。
   func selectPreviousWalk() {
     currentIndex = (currentIndex - 1 + walks.count) % walks.count
     currentWalk = walks[currentIndex]
   }
 
+  /// 統計バーの表示/非表示をトグル
+  ///
+  /// 散歩の統計情報を表示するバーの表示状態を切り替えます。
+  /// ユーザーがマップに集中したい時の非表示や、統計確認のための表示に使用します。
   func toggleStatsBar() {
     isStatsBarVisible.toggle()
   }
 
+  /// 指定されたインデックスの画像を選択
+  ///
+  /// 散歩に関連付けられた画像の中から特定の画像を選択状態にします。
+  /// 選択された画像はフルスクリーン表示や詳細表示に使用されます。
+  /// - Parameter index: 選択したい画像のインデックス
   func selectImage(at index: Int) {
     selectedImageIndex = index
   }
 
+  /// 画像の選択状態を解除
+  ///
+  /// 現在選択されている画像の選択を解除し、
+  /// 通常の散歩表示モードに戻します。
   func deselectImage() {
     selectedImageIndex = nil
   }
 
   /// 散歩を削除し、適切な次の散歩に遷移する
+  ///
+  /// 指定されたIDの散歩をリストから削除し、削除後の表示を適切に調整します。
+  /// 削除後に残った散歩がある場合は適切な次の散歩に自動遷移します。
+  ///
+  /// ## Behavior
+  /// 1. 削除対象の散歩をIDで検索
+  /// 2. 散歩を配列から削除
+  /// 3. 削除後の散歩リストが空でない場合は次の散歩を決定
+  /// 4. currentWalkとcurrentIndexを更新
+  ///
   /// - Parameter walkId: 削除する散歩のID
   /// - Returns: 削除成功時はtrue、散歩が全て削除された場合や失敗時はfalse
   func removeWalk(withId walkId: UUID) -> Bool {
@@ -89,6 +213,17 @@ class WalkHistoryViewModel: ObservableObject {
   }
   
   /// 削除後に表示する次の散歩のインデックスを決定
+  ///
+  /// 散歩が削除された後に表示すべき次の散歩のインデックスを決定します。
+  /// より新しい散歩（作成日時が後の散歩）を優先して選択します。
+  ///
+  /// ## Algorithm
+  /// 1. 削除されたインデックスが現在のインデックスより前の場合、現在のインデックスを調整
+  /// 2. 現在のインデックスが配列の範囲外になった場合の調整
+  /// 3. より新しい散歩（インデックスが小さい）を優先して選択
+  ///
+  /// - Parameter deletedIndex: 削除された散歩のインデックス
+  /// - Returns: 次に表示すべき散歩のインデックス
   private func determineNextIndex(deletedIndex: Int) -> Int {
     // 削除したインデックスが現在のインデックスより前の場合、
     // 現在のインデックスを調整
@@ -112,6 +247,11 @@ class WalkHistoryViewModel: ObservableObject {
   }
   
   /// 現在の散歩リストの数を取得
+  ///
+  /// ViewModelが管理している散歩データの総数を返します。
+  /// UI表示での散歩リストの件数表示やページング制御に使用されます。
+  ///
+  /// - Returns: 散歩データの総数
   var walkCount: Int {
     return walks.count
   }

@@ -10,6 +10,7 @@ options:
   tabWidth: 2
 
 fileGroups:
+  - README.md
   - project.yml
   - .swiftlint.yml
   - CLAUDE.md
@@ -46,6 +47,7 @@ targets:
       - path: TokoToko/Preview Content
       - path: TokoToko/Assets.xcassets
       - path: TokoToko/GoogleService-Info.plist
+      - path: Documentation.docc
     templates: [CommonSettings]
     dependencies:
       - package: Firebase
@@ -81,6 +83,9 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
+        DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TokoToko
+        DOCC_EXTRACT_OBJC_INFO_FOR_SWIFT_SYMBOLS: YES
+        DOCC_HOSTING_BASE_PATH: TokoToko
     info:
       path: Info.plist
       properties:

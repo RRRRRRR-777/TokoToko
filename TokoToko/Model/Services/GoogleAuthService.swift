@@ -12,20 +12,89 @@ import GoogleSignIn
 import GoogleSignInSwift
 import UIKit
 
-/// Google認証に関連する処理を担当するサービスクラス
+/// Google認証とFirebase Authenticationの統合を管理するサービスクラス
+///
+/// `GoogleAuthService`はGoogle Sign-In SDKとFirebase Authenticationを組み合わせ、
+/// ユーザーのGoogleアカウントでのサインイン機能を提供します。
+///
+/// ## Overview
+///
+/// 主要な機能：
+/// - **Google Sign-In統合**: Googleアカウントでの認証フロー
+/// - **Firebase連携**: Google認証情報でFirebaseにサインイン
+/// - **エラーハンドリング**: 包括的なエラー管理とユーザーフィードバック
+/// - **セキュリティ**: トークンと認証情報の安全な処理
+///
+/// ## Authentication Flow
+///
+/// 1. Firebase設定のClient ID取得
+/// 2. Google Sign-In設定とUIプレゼンテーション
+/// 3. Googleユーザー認証とトークン取得
+/// 4. Firebase認証情報の作成とサインイン
+///
+/// ## Topics
+///
+/// ### Authentication
+/// - ``signInWithGoogle(completion:)``
+///
+/// ### Result Types
+/// - ``AuthResult``
 class GoogleAuthService {
 
-  // ログ
+  /// ログ出力用のEnhancedVibeLoggerインスタンス
+  ///
+  /// Google認証フローの各段階での詳細ログ、エラー情報、デバッグ情報を記録します。
   private let logger = EnhancedVibeLogger.shared
 
-  /// Google認証の結果を表すenum
+  /// Google認証処理の結果を表す列挙型
+  ///
+  /// 認証の成功または失敗を表現し、失敗時はユーザー向けエラーメッセージを含みます。
+  ///
+  /// ## Topics
+  ///
+  /// ### Cases
+  /// - ``success``
+  /// - ``failure(_:)``
   enum AuthResult {
+    /// 認証が成功した場合
+    ///
+    /// GoogleサインインとFirebase認証の両方が成功し、ユーザーがログイン状態になったことを示します。
     case success
+    
+    /// 認証が失敗した場合
+    ///
+    /// GoogleサインインまたはFirebase認証でエラーが発生したことを示します。
+    /// - Parameter String: ユーザーに表示するエラーメッセージ
     case failure(String)
   }
 
-  /// Google認証を実行する
-  /// - Parameter completion: 認証結果を返すコールバック
+  /// Googleアカウントでのサインインを実行
+  ///
+  /// Google Sign-In SDKを使用してユーザーのGoogleアカウント認証を行い、
+  /// 取得した認証情報でFirebase Authenticationにサインインします。
+  ///
+  /// ## Process Flow
+  ///
+  /// 1. **設定検証**: Firebase Client IDの取得と検証
+  /// 2. **UI準備**: 現在のWindowとRootViewControllerの取得
+  /// 3. **Google認証**: Google Sign-Inフローの開始
+  /// 4. **トークン取得**: IDトークンとアクセストークンの取得
+  /// 5. **Firebase連携**: Firebase認証情報作成とサインイン
+  ///
+  /// ## Error Handling
+  ///
+  /// - Firebase設定エラー: GoogleService-Info.plistの不備や破損
+  /// - UIエラー: WindowシーンやRootViewControllerの取得失敗
+  /// - ネットワークエラー: インターネット接続の問題
+  /// - 認証エラー: GoogleまたはFirebase認証の失敗
+  ///
+  /// ## Security Notes
+  ///
+  /// - IDトークンとアクセストークンの安全な取り扱い
+  /// - Firebase認証情報の暗号化された传送
+  /// - ユーザー情報のプライバシー保護
+  ///
+  /// - Parameter completion: 認証結果を受け取るコールバック（成功またはエラーメッセージ）
   func signInWithGoogle(completion: @escaping (AuthResult) -> Void) {
     logger.logMethodStart()
 
