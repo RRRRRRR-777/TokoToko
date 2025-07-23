@@ -3,21 +3,23 @@ name: DocC Build and Deploy
 on:
   workflow_dispatch:  # 手動実行のみ（コスト効率重視）
 
-  # 開発ブランチでの自動実行
+#  開発ブランチでの自動実行
+#  push:
+#    branches: 
+#      - 'dev-*'  # 開発ブランチ
+#      - 'main'   # メインブランチ
+#    paths:
+#      - 'TokoToko/**/*.swift'
+#      - '.github/workflows/docc-build.yml'
+#      - 'project.yml'
+
+#  テスト用: ticket/64ブランチでも実行可能
   push:
-    branches: 
-      - 'dev-*'  # 開発ブランチ
-      - 'main'   # メインブランチ
+    branches: [ticket/64]
     paths:
       - 'TokoToko/**/*.swift'
       - '.github/workflows/docc-build.yml'
       - 'project.yml'
-
-#  テスト用: ticket/64ブランチでも実行可能
-#  push:
-#    branches: [ticket/64]
-#    paths:
-#      - '.github/workflows/docc-build.yml'
 
 permissions:
   contents: read
