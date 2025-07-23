@@ -2,20 +2,22 @@ name: DocC Build and Deploy
 
 on:
   workflow_dispatch:  # 手動実行のみ（コスト効率重視）
-  
+
+  # 開発ブランチでの自動実行
+  push:
+    branches: 
+      - 'dev-*'  # 開発ブランチ
+      - 'main'   # メインブランチ
+    paths:
+      - 'TokoToko/**/*.swift'
+      - '.github/workflows/docc-build.yml'
+      - 'project.yml'
+
   # テスト用: ticket/64ブランチでも実行可能
   push:
     branches: [ticket/64]
     paths:
       - '.github/workflows/docc-build.yml'
-  
-  # 将来の自動化オプション（コメントアウト）
-  # push:
-  #   branches: [main]
-  #   paths:
-  #     - 'TokoToko/**/*.swift'
-  #     - 'Documentation.docc/**'
-  #     - 'project.yml'
 
 permissions:
   contents: read
@@ -28,22 +30,11 @@ concurrency:
 
 jobs:
   build-deploy:
-    runs-on: ${{ matrix.os }}  # Swift 6対応（Xcode 16+対応）でFirebase SDK互換性確保
-    
-    strategy:
-      matrix:
-        include:
-          # GitHub Hosted Runner（最新macOS）
-          - os: macos-15
-            runner-type: "github-hosted"
-          # Self-hosted fallback（必要に応じてコメントアウト解除）
-          # - os: [self-hosted, macOS, Xcode16]
-          #   runner-type: "self-hosted"
-    
+    runs-on: macos-15  # Swift 6対応（Xcode 16+対応
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Cache Homebrew packages
         uses: actions/cache@v4
         with:
@@ -51,14 +42,14 @@ jobs:
           key: ${{ runner.os }}-homebrew-xcodegen-${{ hashFiles('.github/workflows/docc-build.yml') }}
           restore-keys: |
             ${{ runner.os }}-homebrew-xcodegen-
-      
+
       - name: Check Xcode version and install xcodegen
         run: |
           set -ex
           echo "=== Checking Xcode environment ==="
           xcodebuild -version || echo "Xcode not found"
           xcrun swift --version || echo "Swift not found"
-          
+
           echo "=== Installing xcodegen ==="
           if ! command -v xcodegen &> /dev/null; then
             echo "Installing xcodegen..."
@@ -67,11 +58,11 @@ jobs:
             echo "xcodegen already installed"
           fi
           xcodegen --version
-          
+
           echo "=== Final environment check ==="
           xcodebuild -version
           xcrun swift --version
-      
+
       - name: Cache Xcode build
         uses: actions/cache@v4
         with:
@@ -79,7 +70,7 @@ jobs:
           key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-xcode-
-      
+
       - name: Generate Xcode project and verify
         env:
           DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
@@ -89,10 +80,10 @@ jobs:
           echo "DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM:0:10}..."
           echo "Current directory: $(pwd)"
           echo "Contents: $(ls -la)"
-          
+
           echo "=== Generating Xcode project ==="
           xcodegen generate
-          
+
           echo "=== Verifying project generation ==="
           if [ -f "TokoToko.xcodeproj/project.pbxproj" ]; then
             echo "✅ TokoToko.xcodeproj generated successfully"
@@ -101,7 +92,7 @@ jobs:
             echo "❌ TokoToko.xcodeproj generation failed"
             exit 1
           fi
-      
+
       - name: Clean Package.resolved if incompatible
         run: |
           set -ex
@@ -117,7 +108,7 @@ jobs:
           else
             echo "📦 Package.resolved not found, will be generated during resolution"
           fi
-      
+
       - name: Cache SwiftPM packages
         uses: actions/cache@v4
         with:
@@ -125,20 +116,20 @@ jobs:
           key: ${{ runner.os }}-swiftpm-${{ hashFiles('project.yml') }}
           restore-keys: |
             ${{ runner.os }}-swiftpm-
-      
+
       - name: Resolve SwiftPM packages
         run: |
           set -ex
           echo "=== Resolving SwiftPM dependencies ==="
           xcodebuild -resolvePackageDependencies -scheme TokoToko
-          
+
           echo "=== Package resolution completed ==="
           if [ -f "TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
             echo "✅ Package.resolved generated"
           else
             echo "⚠️  Package.resolved not found, continuing..."
           fi
-      
+
       - name: Build DocC
         run: |
           set -ex
@@ -146,7 +137,7 @@ jobs:
           xcodebuild docbuild -scheme TokoToko \
             -sdk iphonesimulator \
             -derivedDataPath ./DerivedData
-          
+
           echo "=== Verifying DocC archive generation ==="
           DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
           if [ -d "$DOCC_ARCHIVE" ]; then
@@ -158,7 +149,7 @@ jobs:
             find ./DerivedData -name "*.doccarchive" -type d || echo "No .doccarchive found"
             exit 1
           fi
-      
+
       - name: Convert to static site
         run: |
           set -ex
@@ -168,7 +159,7 @@ jobs:
             "$DOCC_ARCHIVE" \
             --output-path ./docs \
             --hosting-base-path TokoToko
-          
+
           echo "=== Verifying static site generation ==="
           if [ -f "./docs/index.html" ]; then
             echo "✅ Static site generated successfully"
@@ -178,18 +169,18 @@ jobs:
             echo "❌ Static site generation failed"
             exit 1
           fi
-      
+
       - name: Fix paths for GitHub Pages
         run: |
           set -e
           cd docs
           sed -i '' 's|"/TokoToko/"|"./"|g' index.html
           sed -i '' 's|var baseUrl = "/TokoToko/"|var baseUrl = "./"|g' index.html
-      
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs
-      
+
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
