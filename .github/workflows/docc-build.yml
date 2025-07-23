@@ -13,11 +13,11 @@ on:
       - '.github/workflows/docc-build.yml'
       - 'project.yml'
 
-  # テスト用: ticket/64ブランチでも実行可能
-  push:
-    branches: [ticket/64]
-    paths:
-      - '.github/workflows/docc-build.yml'
+#  テスト用: ticket/64ブランチでも実行可能
+#  push:
+#    branches: [ticket/64]
+#    paths:
+#      - '.github/workflows/docc-build.yml'
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   build-deploy:
-    runs-on: macos-15  # Swift 6対応（Xcode 16+対応
+    runs-on: macos-15  # Swift 6対応（Xcode 16+対応）
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
