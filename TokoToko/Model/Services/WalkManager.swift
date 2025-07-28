@@ -902,41 +902,19 @@ extension WalkManager {
       return
     }
 
-    // 認証状態の詳細チェック
-    guard let currentUser = Auth.auth().currentUser else {
-      #if DEBUG
-        print("❌ サムネイル保存: currentUser が nil")
-      #endif
-      completion(.failure(ImageStorageError.authenticationRequired))
-      return
-    }
-    
-    let userId = currentUser.uid
-    
-    // 認証トークンの有効性確認
-    currentUser.getIDTokenResult { tokenResult, error in
-      if let error = error {
+    // Firebase認証ヘルパーを使用した認証確認
+    FirebaseAuthHelper.validateAuthenticationWithToken { result in
+      switch result {
+      case .success(let userId):
+        // 認証確認後にアップロード実行
+        self.performThumbnailUpload(imageData: imageData, userId: userId, walkId: walkId, completion: completion)
+        
+      case .failure(let authError):
         #if DEBUG
-          print("❌ サムネイル保存: 認証トークン取得エラー - \(error.localizedDescription)")
+          print("❌ [散歩履歴用] サムネイル保存: \(authError.localizedDescription)")
         #endif
         completion(.failure(ImageStorageError.authenticationFailed))
-        return
       }
-      
-      guard let token = tokenResult else {
-        #if DEBUG
-          print("❌ サムネイル保存: 認証トークンが無効")
-        #endif
-        completion(.failure(ImageStorageError.authenticationFailed))
-        return
-      }
-      
-      #if DEBUG
-        print("✅ 認証トークン確認済み - 有効期限: \(token.expirationDate)")
-      #endif
-      
-      // 認証確認後にアップロード実行
-      self.performThumbnailUpload(imageData: imageData, userId: userId, walkId: walkId, completion: completion)
     }
   }
   
@@ -944,25 +922,22 @@ extension WalkManager {
   private func performThumbnailUpload(
     imageData: Data, userId: String, walkId: UUID, completion: @escaping (Result<String, Error>) -> Void
   ) {
-    // Firebase Storage reference (ユーザーIDベースのパス構造)
+    // Firebase Storage reference (設定値を使用)
     let storage = Storage.storage()
     let storageRef = storage.reference()
-    let thumbnailsRef = storageRef.child("walk_thumbnails/\(userId)/\(walkId.uuidString).jpg")
+    let thumbnailPath = FirebaseStorageConfig.thumbnailPath(userId: userId, walkId: walkId.uuidString)
+    let thumbnailsRef = storageRef.child(thumbnailPath)
 
-    // メタデータ設定
+    // メタデータ設定（設定値を使用）
     let metadata = StorageMetadata()
     metadata.contentType = "image/jpeg"
-    metadata.customMetadata = [
-      "walkId": walkId.uuidString,
-      "uploadTime": ISO8601DateFormatter().string(from: Date()),
-      "userId": userId
-    ]
+    metadata.customMetadata = FirebaseStorageConfig.commonMetadata(walkId: walkId.uuidString, userId: userId)
 
     #if DEBUG
       print("📤 [散歩履歴用] サムネイル保存開始")
       print("   ユーザーID: \(userId)")
       print("   ウォークID: \(walkId.uuidString)")
-      print("   保存パス: walk_thumbnails/\(userId)/\(walkId.uuidString).jpg")
+      print("   保存パス: \(thumbnailPath)")
       print("   認証状態: \(Auth.auth().currentUser != nil ? "認証済み" : "未認証")")
       print("   ファイルサイズ: \(imageData.count) bytes")
       print("   用途: 散歩履歴一覧表示用")
@@ -989,8 +964,8 @@ extension WalkManager {
         print("✅ [散歩履歴用] サムネイル画像のアップロード成功、URL取得中...")
       #endif
 
-      // URL取得をリトライ付きで実行
-      self.downloadURLWithRetry(ref: thumbnailsRef, maxRetries: 3) { result in
+      // URL取得をリトライ付きで実行（設定値を使用）
+      self.downloadURLWithRetry(ref: thumbnailsRef, maxRetries: FirebaseStorageConfig.maxRetryCount) { result in
         completion(result)
       }
     }
@@ -1005,8 +980,7 @@ extension WalkManager {
   ) {
     ref.downloadURL { url, error in
       if let error = error {
-        let nsError = error as NSError
-        let isPermissionError = nsError.code == 403 || nsError.domain.contains("HTTPStatus")
+        let isPermissionError = FirebaseStorageConfig.isPermissionError(error)
         
         #if DEBUG
           print("❌ [散歩履歴用] サムネイル URL取得エラー (試行 \(currentRetry + 1)/\(maxRetries + 1)): \(error.localizedDescription)")
@@ -1018,7 +992,7 @@ extension WalkManager {
         
         // 権限エラーかつリトライ回数以内の場合はリトライ
         if isPermissionError && currentRetry < maxRetries {
-          let delay = Double(currentRetry + 1) * 1.0 // 1秒, 2秒, 3秒と段階的に遅延
+          let delay = FirebaseStorageConfig.retryDelay(for: currentRetry + 1)
           #if DEBUG
             print("🔄 \(delay)秒後にリトライします...")
           #endif

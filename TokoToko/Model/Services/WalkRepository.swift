@@ -966,10 +966,15 @@ class WalkRepository {
       "operation": "saveSharedImage",
     ])
     
-    guard let userId = getCurrentUserId() else {
+    // Firebase認証ヘルパーを使用した認証確認
+    switch FirebaseAuthHelper.requireAuthentication() {
+    case .success(let userId):
+      // 認証済み、処理続行
+      break
+    case .failure(let authError):
       logger.warning(
         operation: "saveSharedImage",
-        message: "認証されていないユーザーによる画像保存試行",
+        message: "認証エラー: \(authError.localizedDescription)",
         context: ["walk_id": walk.id.uuidString],
         humanNote: "ユーザーが認証されていません",
         aiTodo: "認証状態を確認してください"
@@ -978,8 +983,10 @@ class WalkRepository {
       return
     }
     
-    // 画像をJPEGデータに変換
-    guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+    let userId = FirebaseAuthHelper.getCurrentUserId()!
+    
+    // 画像をJPEGデータに変換（設定値を使用）
+    guard let imageData = image.jpegData(compressionQuality: FirebaseStorageConfig.jpegCompressionQuality) else {
       logger.warning(
         operation: "saveSharedImage",
         message: "画像のJPEGデータ変換に失敗",
@@ -991,22 +998,16 @@ class WalkRepository {
       return
     }
     
-    // Storage参照を作成
-    let imageRef = storage.reference()
-      .child("shared_images")
-      .child(userId)
-      .child(walk.id.uuidString)
-      .child("share_image.jpg")
+    // Storage参照を作成（設定値を使用）
+    let sharedImagePath = FirebaseStorageConfig.sharedImagePath(userId: userId, walkId: walk.id.uuidString)
+    let imageRef = storage.reference().child(sharedImagePath)
     
-    // メタデータを設定
+    // メタデータを設定（設定値を使用）
     let metadata = StorageMetadata()
     metadata.contentType = "image/jpeg"
-    metadata.customMetadata = [
-      "walk_id": walk.id.uuidString,
-      "walk_title": walk.title,
-      "created_at": ISO8601DateFormatter().string(from: Date()),
-      "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-    ]
+    var commonMetadata = FirebaseStorageConfig.commonMetadata(walkId: walk.id.uuidString, userId: userId)
+    commonMetadata["walk_title"] = walk.title
+    metadata.customMetadata = commonMetadata
     
     logger.info(
       operation: "saveSharedImage",
@@ -1015,7 +1016,7 @@ class WalkRepository {
         "walk_id": walk.id.uuidString,
         "user_id": userId,
         "file_size": String(imageData.count),
-        "storage_path": imageRef.fullPath,
+        "storage_path": sharedImagePath,
       ]
     )
     
