@@ -19,6 +19,7 @@ fileGroups:
   - firebase.json
   - firestore.indexes.json
   - firestore.rules
+  - storage.rules
   - Info.plist
   - ci_scripts
 
