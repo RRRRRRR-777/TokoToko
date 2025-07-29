@@ -186,13 +186,8 @@ struct WalkHistoryView: View {
         }) {
           Image(systemName: "square.and.arrow.up")
             .font(.system(size: 18, weight: .medium))
-            .foregroundColor(.white)
+            .foregroundColor(Color(red: 68/255, green: 136/255, blue: 77/255))
             .frame(width: 40, height: 40)
-            .background(
-              Circle()
-                .fill(Color.blue)
-                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-            )
         }
 
         // ユーザー情報表示
