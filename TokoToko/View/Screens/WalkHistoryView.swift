@@ -41,16 +41,20 @@ struct WalkHistoryView: View {
   ///
   /// 散歩データの管理、画面遷移、UI状態の制御を行います。
   @StateObject private var viewModel: WalkHistoryViewModel
-  
+
   /// 散歩削除時のコールバック関数
   ///
   /// 散歩が削除された際に親ビューに通知するためのオプショナルコールバックです。
   let onWalkDeleted: ((UUID) -> Void)?
-  
+
   /// プレゼンテーション制御用の環境変数
   ///
   /// 散歩が全て削除された場合の画面閉じる処理に使用されます。
-  @Environment(\.presentationMode) var presentationMode
+  @Environment(\.presentationMode)
+  var presentationMode
+
+  /// 共有シートの表示状態
+  @State private var showingShareSheet = false
 
   /// WalkHistoryViewの初期化メソッド
   ///
@@ -101,6 +105,7 @@ struct WalkHistoryView: View {
     .navigationBarHidden(true)
     .animation(.easeInOut(duration: 0.3), value: viewModel.isStatsBarVisible)
     .animation(.easeInOut(duration: 0.2), value: viewModel.selectedImageIndex)
+    .shareWalk(viewModel.currentWalk, isPresented: $showingShareSheet)
   }
 
   // MARK: - View Components
@@ -173,32 +178,50 @@ struct WalkHistoryView: View {
 
       Spacer()
 
-      // ユーザー情報表示
-      VStack(alignment: .trailing, spacing: 4) {
-        // ユーザーアイコン
-        if let user = Auth.auth().currentUser,
-           let photoURL = user.photoURL {
-          AsyncImage(url: photoURL) { image in
-            image
-              .resizable()
-              .aspectRatio(contentMode: .fill)
-          } placeholder: {
-            Image(systemName: "person.crop.circle.fill")
-              .foregroundColor(.gray)
-          }
-          .frame(width: 40, height: 40)
-          .clipShape(Circle())
-        } else {
-          Image(systemName: "person.crop.circle.fill")
-            .foregroundColor(.gray)
+      // 共有ボタンとユーザー情報表示
+      HStack(spacing: 12) {
+        // 共有ボタン
+        Button(action: {
+          showingShareSheet = true
+        }) {
+          Image(systemName: "square.and.arrow.up")
+            .font(.system(size: 18, weight: .medium))
+            .foregroundColor(.white)
             .frame(width: 40, height: 40)
+            .background(
+              Circle()
+                .fill(Color.blue)
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+            )
         }
 
-        // ユーザー名（コメントアウト - ユーザー名登録機能未実装のため）
-        // Text(user.displayName ?? "ユーザー")
-        //   .font(.caption)
-        //   .fontWeight(.medium)
-        //   .foregroundColor(.black)
+        // ユーザー情報表示
+        VStack(alignment: .trailing, spacing: 4) {
+          // ユーザーアイコン
+          if let user = Auth.auth().currentUser,
+             let photoURL = user.photoURL {
+            AsyncImage(url: photoURL) { image in
+              image
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+            } placeholder: {
+              Image(systemName: "person.crop.circle.fill")
+                .foregroundColor(.gray)
+            }
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
+          } else {
+            Image(systemName: "person.crop.circle.fill")
+              .foregroundColor(.gray)
+              .frame(width: 40, height: 40)
+          }
+
+          // ユーザー名（コメントアウト - ユーザー名登録機能未実装のため）
+          // Text(user.displayName ?? "ユーザー")
+          //   .font(.caption)
+          //   .fontWeight(.medium)
+          //   .foregroundColor(.black)
+        }
       }
     }
     .padding()
@@ -247,13 +270,12 @@ struct WalkHistoryView: View {
     }
   }
 
-
   private var friendHistoryButton: some View {
     VStack {
       Spacer()
       HStack {
         Spacer()
-        NavigationLink(destination: 
+        NavigationLink(destination:
           WalkListView(selectedTab: 1)
             .navigationBarBackButtonHidden(false)
         ) {
@@ -298,9 +320,8 @@ struct WalkHistoryView: View {
       "https://picsum.photos/600/400"
     ]
   }
-  
+
   // MARK: - Private Methods
-  
   /// 散歩削除処理とナビゲーション制御
   ///
   /// 指定された散歩の削除処理を実行し、適切な画面遷移を制御します。
@@ -315,10 +336,10 @@ struct WalkHistoryView: View {
   private func handleWalkDeletion(walkId: UUID) {
     // ViewModelで削除処理を実行し、適切な次の散歩に遷移
     let hasRemainingWalks = viewModel.removeWalk(withId: walkId)
-    
+
     // 上位のコールバックを呼び出してDBからも削除
     onWalkDeleted?(walkId)
-    
+
     // 散歩が全て削除された場合は画面を閉じる
     if !hasRemainingWalks {
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
