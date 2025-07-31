@@ -13,20 +13,13 @@ import SwiftUI
 struct ShareWalkModifier: ViewModifier {
     let walk: Walk
     @Binding var isPresented: Bool
-    @State private var isSharing = false
-    @State private var errorMessage: String?
 
     func body(content: Content) -> some View {
         content
             .overlay(
                 Group {
                     if isPresented {
-                        ShareWalkSheet(
-                            walk: walk,
-                            isPresented: $isPresented,
-                            isSharing: $isSharing,
-                            errorMessage: $errorMessage
-                        )
+                        ShareWalkSheet(walk: walk, isPresented: $isPresented)
                     }
                 }
             )
@@ -37,31 +30,26 @@ struct ShareWalkModifier: ViewModifier {
 private struct ShareWalkSheet: View {
     let walk: Walk
     @Binding var isPresented: Bool
-    @Binding var isSharing: Bool
-    @Binding var errorMessage: String?
 
+    @State private var isSharing = false
+    @State private var errorMessage: String?
     @State private var loadingMessage = "共有用画像を生成中..."
+    @State private var sharingManager: SharingProcessManager?
 
     var body: some View {
         ZStack {
-            backgroundOverlay
             loadingView
             errorView
         }
         .onAppear {
-            if shouldStartSharing {
+            // sharingManagerがnilの場合のみ開始（重複実行防止）
+            if sharingManager == nil {
                 startSharing()
             }
         }
-        .opacity(shouldShowOverlay ? 1 : 0)
     }
 
     // MARK: - View Components
-
-    private var backgroundOverlay: some View {
-        Color.black.opacity(0.4)
-            .ignoresSafeArea()
-    }
 
 @ViewBuilder
     private var loadingView: some View {
@@ -83,14 +71,6 @@ private struct ShareWalkSheet: View {
 
     // MARK: - Helper Properties
 
-    private var shouldStartSharing: Bool {
-        !isSharing && errorMessage == nil
-    }
-
-    private var shouldShowOverlay: Bool {
-        isSharing || errorMessage != nil
-    }
-
     // MARK: - Helper Methods
 
     private func retrySharing() {
@@ -100,23 +80,35 @@ private struct ShareWalkSheet: View {
     }
 
     private func startSharing() {
-        let sharingManager = SharingProcessManager(
+        let manager = SharingProcessManager(
             walk: walk,
-            onProgressUpdate: updateLoadingMessage,
-            onError: handleError,
-            onCompletion: handleCompletion,
-            onShareSheetPresented: handleShareSheetPresented
+            onProgressUpdate: { message in
+                Task { @MainActor in
+                    loadingMessage = message
+                }
+            },
+            onError: { error in
+                Task { @MainActor in
+                    handleError(error)
+                }
+            },
+            onCompletion: {
+                Task { @MainActor in
+                    handleCompletion()
+                }
+            },
+            onShareSheetPresented: {
+                Task { @MainActor in
+                    handleShareSheetPresented()
+                }
+            }
         )
-
+        
+        self.sharingManager = manager
         isSharing = true
-        sharingManager.startSharing()
+        manager.startSharing()
     }
 
-    private func updateLoadingMessage(_ message: String) {
-        Task { @MainActor in
-            loadingMessage = message
-        }
-    }
 
     private func handleError(_ error: Error) {
         Task { @MainActor in
@@ -132,10 +124,7 @@ private struct ShareWalkSheet: View {
     }
 
     private func handleCompletion() {
-        Task { @MainActor in
-            isPresented = false
-            isSharing = false
-        }
+        isPresented = false
     }
 }
 
@@ -205,12 +194,13 @@ private struct ErrorCard: View {
 
 // MARK: - Sharing Process Manager
 
-private class SharingProcessManager {
+private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerDelegate {
     private let walk: Walk
     private let onProgressUpdate: (String) -> Void
     private let onError: (Error) -> Void
     private let onCompletion: () -> Void
     private let onShareSheetPresented: () -> Void
+    private var hasCompleted = false
 
     init(
         walk: Walk,
@@ -308,10 +298,13 @@ private class SharingProcessManager {
             .openInIBooks
         ]
 
+        // Delegateを設定してシートの閉じを確実に検知
+        activityViewController.presentationController?.delegate = self
+
         return activityViewController
     }
 
-    /// 完了ハンドラーを設定します
+    /// 完了ハンドラーを設定します（ログ出力のみ）
     private func setupCompletionHandler(for activityViewController: UIActivityViewController) {
         activityViewController.completionWithItemsHandler = { [weak self] _, _, _, error in
             DispatchQueue.main.async {
@@ -320,7 +313,7 @@ private class SharingProcessManager {
                 } else {
                     print("✅ 共有処理完了")
                 }
-                self?.onCompletion()
+                // 状態リセットはpresentationControllerDidDismissで行う
             }
         }
     }
@@ -339,6 +332,25 @@ private class SharingProcessManager {
             height: 0
         )
         popover.permittedArrowDirections = []
+    }
+    
+    // MARK: - UIAdaptivePresentationControllerDelegate
+    
+    /// シートが閉じられた際に呼ばれるメソッド
+    /// completionWithItemsHandlerが呼ばれないケースでも確実に状態をリセット
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        triggerCompletion()
+    }
+    
+    /// 完了処理を一度だけ実行する
+    private func triggerCompletion() {
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        
+        DispatchQueue.main.async {
+            print("✅ 共有シート閉じ検知 - 状態リセット実行")
+            self.onCompletion()
+        }
     }
 }
 
