@@ -51,14 +51,14 @@ private struct ShareWalkSheet: View {
 
     // MARK: - View Components
 
-@ViewBuilder
+    @ViewBuilder
     private var loadingView: some View {
         if isSharing {
             LoadingCard(message: loadingMessage)
         }
     }
 
-@ViewBuilder
+    @ViewBuilder
     private var errorView: some View {
         if let errorMessage = errorMessage {
             ErrorCard(
@@ -103,28 +103,25 @@ private struct ShareWalkSheet: View {
                 }
             }
         )
-        
         self.sharingManager = manager
         isSharing = true
         manager.startSharing()
     }
 
-
     private func handleError(_ error: Error) {
-        Task { @MainActor in
-            errorMessage = error.localizedDescription
-            isSharing = false
-        }
+        errorMessage = error.localizedDescription
+        isSharing = false
+        sharingManager = nil
     }
 
     private func handleShareSheetPresented() {
-        Task { @MainActor in
-            isSharing = false
-        }
+        isSharing = false
     }
 
     private func handleCompletion() {
         isPresented = false
+        isSharing = false
+        sharingManager = nil
     }
 }
 
@@ -306,14 +303,13 @@ private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerD
 
     /// 完了ハンドラーを設定します（ログ出力のみ）
     private func setupCompletionHandler(for activityViewController: UIActivityViewController) {
-        activityViewController.completionWithItemsHandler = { [weak self] _, _, _, error in
+        activityViewController.completionWithItemsHandler = { _, _, _, error in
             DispatchQueue.main.async {
                 if let error = error {
                     print("❌ 共有エラー: \(error.localizedDescription)")
                 } else {
                     print("✅ 共有処理完了")
                 }
-                // 状態リセットはpresentationControllerDidDismissで行う
             }
         }
     }
@@ -333,20 +329,18 @@ private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerD
         )
         popover.permittedArrowDirections = []
     }
-    
     // MARK: - UIAdaptivePresentationControllerDelegate
-    
     /// シートが閉じられた際に呼ばれるメソッド
     /// completionWithItemsHandlerが呼ばれないケースでも確実に状態をリセット
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         triggerCompletion()
     }
-    
     /// 完了処理を一度だけ実行する
     private func triggerCompletion() {
-        guard !hasCompleted else { return }
+        guard !hasCompleted else {
+            return
+        }
         hasCompleted = true
-        
         DispatchQueue.main.async {
             print("✅ 共有シート閉じ検知 - 状態リセット実行")
             self.onCompletion()
