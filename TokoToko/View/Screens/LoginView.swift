@@ -8,7 +8,6 @@
 import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
-import GoogleSignInSwift
 import SwiftUI
 
 /// Google Sign-Inを使用したログイン画面
@@ -141,14 +140,33 @@ struct LoginView: View {
           .progressViewStyle(CircularProgressViewStyle())
           .scaleEffect(1.5)
       } else {
-        GoogleSignInButton(style: .wide, action: signInWithGoogle)
-          .padding(.horizontal)
+        // カスタムGoogleサインインボタン
+        // GoogleSignInButtonの代替実装（hiraginosans-w6フォントエラー回避のため）
+        // GoogleブランディングガイドラインとiOSヒューマンインターフェースガイドラインに準拠
+        Button(action: signInWithGoogle) {
+          HStack {
+            Image(systemName: "globe")
+              .foregroundColor(.white)
+              .font(.system(size: 16, weight: .medium))
+            Text("Googleでサインイン")
+              .foregroundColor(.white)
+              .font(.system(size: 16, weight: .medium))
+          }
+          .frame(maxWidth: .infinity)
+          .frame(height: 44) // iOS標準のボタン高さ
+          .background(Color(red: 0.26, green: 0.52, blue: 0.96)) // Google Blue #4285F4
+          .cornerRadius(6) // Googleガイドライン準拠の角丸
+          .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
+        }
+        .accessibilityIdentifier("googleSignInButton")
+        .padding(.horizontal)
       }
 
       if let errorMessage = errorMessage {
         Text(errorMessage)
           .foregroundColor(.red)
           .font(.caption)
+          .accessibilityIdentifier("loginErrorMessage")
       }
 
       Spacer()
