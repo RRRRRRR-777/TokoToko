@@ -327,10 +327,19 @@ class WalkImageGenerator {
     /// - Returns: 合成された最終画像
     /// - Throws: WalkImageGeneratorError
     private func createImageLayout(mapImage: UIImage, walk: Walk, size: CGSize) async throws -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: size)
+        // メモリ効率化のため、UIGraphicsImageRendererのフォーマットを最適化
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0 // デバイススケールを1.0に固定してメモリ使用量を削減
+        format.opaque = true // 不透明画像として処理してメモリ効率化
+        
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
         
         let image = renderer.image { context in
             let cgContext = context.cgContext
+            
+            // 背景色で塗りつぶし
+            cgContext.setFillColor(backgroundColor.cgColor)
+            cgContext.fill(CGRect(origin: .zero, size: size))
             
             // マップ画像を全画面に描画
             let mapRect = CGRect(x: 0, y: 0, width: size.width, height: size.height)
