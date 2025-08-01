@@ -480,8 +480,12 @@ class WalkImageGenerator {
             height: iconSize
         )
         
-        // Bundle拡張を使用してアプリアイコンを取得
-        if let appIcon = Bundle.main.appIcon {
+        // Info.plistからアプリアイコンを取得
+        if let iconName = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any],
+           let primaryIcon = iconName["CFBundlePrimaryIcon"] as? [String: Any],
+           let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+           let iconFileName = iconFiles.first,
+           let appIcon = UIImage(named: iconFileName) {
             // 角丸処理
             let renderer = UIGraphicsImageRenderer(size: iconRect.size)
             let roundedIcon = renderer.image { _ in

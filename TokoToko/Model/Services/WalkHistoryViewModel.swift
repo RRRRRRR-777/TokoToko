@@ -215,33 +215,31 @@ class WalkHistoryViewModel: ObservableObject {
   /// 削除後に表示する次の散歩のインデックスを決定
   ///
   /// 散歩が削除された後に表示すべき次の散歩のインデックスを決定します。
-  /// より新しい散歩（作成日時が後の散歩）を優先して選択します。
+  /// ユーザーの閲覧コンテキストを保持するため、現在位置に最も近い散歩を選択します。
   ///
   /// ## Algorithm
-  /// 1. 削除されたインデックスが現在のインデックスより前の場合、現在のインデックスを調整
-  /// 2. 現在のインデックスが配列の範囲外になった場合の調整
-  /// 3. より新しい散歩（インデックスが小さい）を優先して選択
+  /// 1. 削除されたインデックスが現在のインデックスより前：現在のインデックスを1つ前にシフト
+  /// 2. 削除されたインデックスが現在のインデックスと同じ：次のアイテムを選択（範囲チェック付き）
+  /// 3. 削除されたインデックスが現在のインデックスより後：現在のインデックスを維持
   ///
   /// - Parameter deletedIndex: 削除された散歩のインデックス
   /// - Returns: 次に表示すべき散歩のインデックス
   private func determineNextIndex(deletedIndex: Int) -> Int {
-    // 削除したインデックスが現在のインデックスより前の場合、
-    // 現在のインデックスを調整
     if deletedIndex < currentIndex {
-      currentIndex = max(0, currentIndex - 1)
-    }
-    
-    // 現在のインデックスが配列の範囲外になった場合の調整
-    if currentIndex >= walks.count {
-      currentIndex = walks.count - 1
-    }
-    
-    // 1つ後の履歴を優先（作成日時が後の履歴）
-    // 散歩は作成日時の降順でソートされているため、インデックスが小さいほど新しい
-    if currentIndex > 0 {
-      return currentIndex - 1 // より新しい散歩（1つ後の履歴）
+      // 削除されたインデックスが現在より前の場合、現在のインデックスを1つ前にシフト
+      return currentIndex - 1
+    } else if deletedIndex == currentIndex {
+      // 現在の散歩が削除された場合、より新しい散歩を優先
+      // インデックスが小さいほど新しい散歩
+      if currentIndex > 0 {
+        return currentIndex - 1 // より新しい散歩
+      } else if currentIndex < walks.count {
+        return currentIndex // 次のアイテム（削除により1つシフトされた）  
+      } else {
+        return walks.count - 1 // 最後のアイテム
+      }
     } else {
-      // 1つ後がない場合は現在のインデックス（または1つ前）
+      // 削除されたインデックスが現在より後の場合、現在のインデックスを維持
       return currentIndex
     }
   }
