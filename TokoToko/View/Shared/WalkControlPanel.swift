@@ -48,6 +48,16 @@ struct WalkControlPanel: View {
   /// 散歩終了ボタンタップ時に表示される確認ダイアログの表示制御に使用されます。
   @State private var showingStopAlert = false
   
+  /// 散歩完了後の共有シート表示状態
+  ///
+  /// 散歩完了時に表示される共有シートの表示制御に使用されます。
+  @State private var showingShareSheet = false
+  
+  /// 共有対象の散歩データ
+  ///
+  /// 共有シート表示時に使用される完了した散歩データを保持します。
+  @State private var walkToShare: Walk?
+  
   /// 散歩に設定するタイトル名
   ///
   /// 散歩開始時の確認ダイアログで入力されるタイトル文字列を保持します。
@@ -171,11 +181,26 @@ struct WalkControlPanel: View {
     }
     .alert("散歩を終了", isPresented: $showingStopAlert) {
       Button("終了", role: .destructive) {
+        if let currentWalk = walkManager.currentWalk {
+          walkToShare = currentWalk
+        }
         walkManager.stopWalk()
+        
+        // 散歩完了後に共有シートを表示
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+          if let walk = walkToShare {
+            showingShareSheet = true
+          }
+        }
       }
       Button("キャンセル", role: .cancel) {}
     } message: {
       Text("散歩を終了しますか？記録が保存されます。")
+    }
+    .sheet(isPresented: $showingShareSheet) {
+      if let walk = walkToShare {
+        WalkCompletionView(walk: walk, isPresented: $showingShareSheet)
+      }
     }
   }
 

@@ -23,7 +23,8 @@ struct StoryCarouselView: View {
           .font(.title)
           .frame(width: 50, height: 100)
           .contentShape(Rectangle())
-          .foregroundColor(.white)
+          .foregroundColor(Color(red: 0/255, green: 204/255, blue: 156/255))
+          .shadow(color: .black.opacity(0.5), radius: 2, x: 4, y: 4)
       }
 
       // 中央の画像ギャラリー
@@ -49,7 +50,8 @@ struct StoryCarouselView: View {
           .font(.title)
           .frame(width: 50, height: 100)
           .contentShape(Rectangle())
-          .foregroundColor(.white)
+          .foregroundColor(Color(red: 0/255, green: 204/255, blue: 156/255))
+          .shadow(color: .black.opacity(0.5), radius: 2, x: 4, y: 4)
       }
     }
     .frame(maxWidth: .infinity)

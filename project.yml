@@ -14,7 +14,14 @@ fileGroups:
   - project.yml
   - .swiftlint.yml
   - CLAUDE.md
-
+  - .gitignore
+  - buildServer.json
+  - firebase.json
+  - firestore.indexes.json
+  - firestore.rules
+  - storage.rules
+  - Info.plist
+  - ci_scripts
 
 targetTemplates:
   CommonSettings:

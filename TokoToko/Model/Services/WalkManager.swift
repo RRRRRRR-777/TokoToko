@@ -697,28 +697,28 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   ///
   /// - Parameter walk: サムネイルを生成する散歩データ
   private func generateAndSaveThumbnail(for walk: Walk) {
-    print("📸 サムネイル画像の生成を開始しました")
+    print("📸 [散歩履歴用] サムネイル画像の生成を開始しました")
 
     // 非同期でサムネイル画像を生成
     generateThumbnail(from: walk) { [weak self] thumbnailImage in
       guard let self = self, let thumbnailImage = thumbnailImage else {
-        print("⚠️ サムネイル画像の生成に失敗しました")
+        print("⚠️ [散歩履歴用] サムネイル画像の生成に失敗しました")
         return
       }
 
       #if DEBUG
-        print("✅ サムネイル画像生成完了: \(thumbnailImage.size)")
+        print("✅ [散歩履歴用] サムネイル画像生成完了: \(thumbnailImage.size)")
       #endif
 
       // ローカルに保存
       let localSaveSuccess = self.saveImageLocally(thumbnailImage, for: walk.id)
       if !localSaveSuccess {
-        print("⚠️ サムネイル画像のローカル保存に失敗しました")
+        print("⚠️ [散歩履歴用] サムネイル画像のローカル保存に失敗しました")
         return
       }
 
       #if DEBUG
-        print("✅ ローカル保存完了")
+        print("✅ [散歩履歴用] ローカル保存完了")
       #endif
 
       // Firebase Storageにアップロード（非同期）
@@ -730,10 +730,11 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
             var updatedWalk = walk
             updatedWalk.thumbnailImageUrl = url
             self.walkRepository.saveWalk(updatedWalk) { _ in }
-            print("✅ サムネイル画像のFirebase保存完了: \(url)")
+            print("✅ [散歩履歴用] サムネイル画像のFirebase保存完了: \(url)")
 
           case .failure(let error):
-            print("⚠️ サムネイル画像のFirebase保存に失敗: \(error)")
+            print("⚠️ [散歩履歴用] サムネイル画像のFirebase保存に失敗: \(error)")
+            print("   ℹ️ 散歩データは保存されており、共有機能は正常に動作します")
           }
         }
       }
@@ -892,7 +893,7 @@ extension WalkManager {
 
   // MARK: - Firebase Storage 操作
 
-  // Firebase Storage にアップロード
+  // Firebase Storage にアップロード（認証状態チェック強化版）
   private func uploadToFirebaseStorage(
     _ image: UIImage, for walkId: UUID, completion: @escaping (Result<String, Error>) -> Void
   ) {
@@ -901,53 +902,122 @@ extension WalkManager {
       return
     }
 
-    // Firebase Storage reference
+    // Firebase認証ヘルパーを使用した認証確認
+    FirebaseAuthHelper.validateAuthenticationWithToken { result in
+      switch result {
+      case .success(let userId):
+        // 認証確認後にアップロード実行
+        self.performThumbnailUpload(imageData: imageData, userId: userId, walkId: walkId, completion: completion)
+        
+      case .failure(let authError):
+        #if DEBUG
+          print("❌ [散歩履歴用] サムネイル保存: \(authError.localizedDescription)")
+        #endif
+        completion(.failure(ImageStorageError.authenticationFailed))
+      }
+    }
+  }
+  
+  // 実際のアップロード処理（認証確認後）
+  private func performThumbnailUpload(
+    imageData: Data, userId: String, walkId: UUID, completion: @escaping (Result<String, Error>) -> Void
+  ) {
+    // Firebase Storage reference (設定値を使用)
     let storage = Storage.storage()
     let storageRef = storage.reference()
-    let thumbnailsRef = storageRef.child("walk_thumbnails/\(walkId.uuidString).jpg")
+    let thumbnailPath = FirebaseStorageConfig.thumbnailPath(userId: userId, walkId: walkId.uuidString)
+    let thumbnailsRef = storageRef.child(thumbnailPath)
 
-    // メタデータ設定
+    // メタデータ設定（設定値を使用）
     let metadata = StorageMetadata()
     metadata.contentType = "image/jpeg"
-    metadata.customMetadata = [
-      "walkId": walkId.uuidString,
-      "uploadTime": ISO8601DateFormatter().string(from: Date()),
-    ]
+    metadata.customMetadata = FirebaseStorageConfig.commonMetadata(walkId: walkId.uuidString, userId: userId)
 
     #if DEBUG
-      print("📤 Firebase Storage アップロード開始: \(walkId.uuidString)")
+      print("📤 [散歩履歴用] サムネイル保存開始")
+      print("   ユーザーID: \(userId)")
+      print("   ウォークID: \(walkId.uuidString)")
+      print("   保存パス: \(thumbnailPath)")
+      print("   認証状態: \(Auth.auth().currentUser != nil ? "認証済み" : "未認証")")
+      print("   ファイルサイズ: \(imageData.count) bytes")
+      print("   用途: 散歩履歴一覧表示用")
     #endif
 
     // アップロード実行
     thumbnailsRef.putData(imageData, metadata: metadata) { _, error in
       if let error = error {
         #if DEBUG
-          print("❌ Firebase Storage アップロードエラー: \(error.localizedDescription)")
+          print("❌ [散歩履歴用] サムネイル画像のFirebase保存に失敗: \(error)")
+          if let storageError = error as NSError? {
+            print("   エラーコード: \(storageError.code)")
+            print("   エラードメイン: \(storageError.domain)")
+            print("   エラー詳細: \(storageError.userInfo)")
+          }
+          print("   ℹ️ これは散歩履歴表示用のサムネイルエラーです")
+          print("   ℹ️ 共有機能は別システムで動作するため影響ありません")
         #endif
         completion(.failure(error))
         return
       }
 
-      // ダウンロードURL取得
-      thumbnailsRef.downloadURL { url, error in
-        if let error = error {
-          #if DEBUG
-            print("❌ Firebase Storage URL取得エラー: \(error.localizedDescription)")
-          #endif
-          completion(.failure(error))
-          return
-        }
+      #if DEBUG
+        print("✅ [散歩履歴用] サムネイル画像のアップロード成功、URL取得中...")
+      #endif
 
-        guard let downloadURL = url else {
-          completion(.failure(ImageStorageError.uploadFailed))
-          return
-        }
-
-        #if DEBUG
-          print("✅ Firebase Storage アップロード完了: \(downloadURL.absoluteString)")
-        #endif
-        completion(.success(downloadURL.absoluteString))
+      // URL取得をリトライ付きで実行（設定値を使用）
+      self.downloadURLWithRetry(ref: thumbnailsRef, maxRetries: FirebaseStorageConfig.maxRetryCount) { result in
+        completion(result)
       }
+    }
+  }
+  
+  // URL取得のリトライ機能
+  private func downloadURLWithRetry(
+    ref: StorageReference, 
+    maxRetries: Int, 
+    currentRetry: Int = 0,
+    completion: @escaping (Result<String, Error>) -> Void
+  ) {
+    ref.downloadURL { url, error in
+      if let error = error {
+        let isPermissionError = FirebaseStorageConfig.isPermissionError(error)
+        
+        #if DEBUG
+          print("❌ [散歩履歴用] サムネイル URL取得エラー (試行 \(currentRetry + 1)/\(maxRetries + 1)): \(error.localizedDescription)")
+          if let storageError = error as NSError? {
+            print("   エラーコード: \(storageError.code)")
+            print("   エラードメイン: \(storageError.domain)")
+          }
+        #endif
+        
+        // 権限エラーかつリトライ回数以内の場合はリトライ
+        if isPermissionError && currentRetry < maxRetries {
+          let delay = FirebaseStorageConfig.retryDelay(for: currentRetry + 1)
+          #if DEBUG
+            print("🔄 \(delay)秒後にリトライします...")
+          #endif
+          
+          DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            self.downloadURLWithRetry(ref: ref, maxRetries: maxRetries, currentRetry: currentRetry + 1, completion: completion)
+          }
+        } else {
+          completion(.failure(error))
+        }
+        return
+      }
+      
+      guard let downloadURL = url else {
+        #if DEBUG
+          print("❌ ダウンロードURLが取得できませんでした")
+        #endif
+        completion(.failure(ImageStorageError.uploadFailed))
+        return
+      }
+      
+      #if DEBUG
+        print("✅ [散歩履歴用] サムネイル保存完了: \(downloadURL.absoluteString)")
+      #endif
+      completion(.success(downloadURL.absoluteString))
     }
   }
 
@@ -1412,6 +1482,7 @@ enum ImageStorageError: Error, LocalizedError {
   case fileNotFound
   case networkUnavailable
   case authenticationFailed
+  case authenticationRequired
   case storageLimitExceeded
   case invalidURL
 
@@ -1435,6 +1506,8 @@ enum ImageStorageError: Error, LocalizedError {
       return "Network unavailable"
     case .authenticationFailed:
       return "Authentication failed"
+    case .authenticationRequired:
+      return "User authentication required"
     case .storageLimitExceeded:
       return "Storage limit exceeded"
     case .invalidURL:

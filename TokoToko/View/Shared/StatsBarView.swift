@@ -162,6 +162,8 @@ struct StatsBarView: View {
       return "ネットワークエラーが発生しました"
     case .invalidData:
       return "データが破損しています"
+    case .storageError(let underlyingError):
+      return "ストレージエラーが発生しました: \(underlyingError.localizedDescription)"
     }
   }
 }

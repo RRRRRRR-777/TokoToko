@@ -1,5 +1,5 @@
 //
-//  WalkHistoryViewModelTests.swift
+//  WalkHistoryViewModelScreenTests.swift
 //  TokoTokoTests
 //
 //  Created by Claude Code on 2025/07/12.
@@ -10,7 +10,7 @@ import XCTest
 
 @testable import TokoToko
 
-final class WalkHistoryViewModelTests: XCTestCase {
+final class WalkHistoryViewModelScreenTests: XCTestCase {
 
   var sut: WalkHistoryViewModel!
   var mockWalks: [Walk]!
