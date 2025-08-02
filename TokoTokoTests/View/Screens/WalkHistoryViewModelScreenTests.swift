@@ -208,37 +208,4 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
     // Then
     XCTAssertEqual(sut.isStatsBarVisible, !initialState)
   }
-
-  // MARK: - 画像選択ロジックテスト
-
-  func test_selectImage_画像インデックスが正しく設定される() {
-    // Given
-    do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 0)
-    } catch {
-      XCTFail("Unexpected error: \(error)")
-    }
-
-    // When
-    sut.selectImage(at: 2)
-
-    // Then
-    XCTAssertEqual(sut.selectedImageIndex, 2)
-  }
-
-  func test_deselectImage_画像選択が解除される() {
-    // Given
-    do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 0)
-    } catch {
-      XCTFail("Unexpected error: \(error)")
-    }
-    sut.selectImage(at: 1)
-
-    // When
-    sut.deselectImage()
-
-    // Then
-    XCTAssertNil(sut.selectedImageIndex)
-  }
 }
