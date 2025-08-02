@@ -37,17 +37,24 @@ public struct LocationAnomalyDetector {
       aiRecommendation = "GPS精度が低下しています。屋外での使用を推奨します。"
     }
 
+    // デバッグ: バッテリーレベルをログ出力
+    #if DEBUG
+    print("🔋 [DEBUG] Current batteryLevel: \(batteryLevel) (シミュレーターでは通常-1.0または0.0)")
+    #endif
+    
     // バッテリー消費の異常検知
-    if batteryLevel < 0.2 {
+    // シミュレーターでは-1.0が返されるため、実機での有効なバッテリーレベルのみをチェック
+    let isValidBatteryLevel = batteryLevel >= 0
+    if isValidBatteryLevel && batteryLevel < 0.1 {
       anomalies.append(
         Anomaly(
           type: .batteryDrain,
           description: "バッテリーレベルが低下しています",
           value: Double(batteryLevel * 100),
-          threshold: 20.0,
+          threshold: 10.0,
           impact: "位置追跡の継続が困難"
         ))
-      severity = .high
+      severity = .medium
       aiRecommendation = "バッテリーレベルが低下しています。充電を推奨します。"
     }
 
