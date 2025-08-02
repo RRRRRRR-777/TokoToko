@@ -85,27 +85,10 @@ struct WalkRow: View {
         }
       }
 
-      // 完了した散歩で位置情報がある場合はサムネイル画像を表示
-      if walk.isCompleted && walk.hasLocation {
-        thumbnailView
-      }
     }
     .padding(.vertical, 4)
   }
 
-  // サムネイル画像のプレビュー
-  private var thumbnailView: some View {
-    Group {
-      // ローカル画像をまず試行、次にFirebase、最後にフォールバック
-      ThumbnailImageView(walkId: walk.id, thumbnailImageUrl: walk.thumbnailImageUrl)
-        .frame(height: 120)
-        .cornerRadius(8)
-        .overlay(
-          RoundedRectangle(cornerRadius: 8)
-            .stroke(Color(.systemGray4), lineWidth: 1)
-        )
-    }
-  }
 
   // 状態に応じたアイコン
   private var statusIcon: some View {

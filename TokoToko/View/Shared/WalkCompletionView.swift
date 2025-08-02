@@ -47,7 +47,6 @@ struct WalkCompletionView: View {
     /// エラーメッセージ
     @State private var errorMessage: String?
     
-    /// 画像生成サービス
     private let imageGenerator = WalkImageGenerator.shared
     
     var body: some View {
@@ -301,6 +300,7 @@ struct WalkCompletionView: View {
     private func generateShareImage() {
         isGeneratingImage = true
         errorMessage = nil
+        generatedImage = nil
         
         Task {
             do {
@@ -311,7 +311,7 @@ struct WalkCompletionView: View {
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = error.localizedDescription
+                    self.errorMessage = "画像生成に失敗しました: \(error.localizedDescription)"
                     self.isGeneratingImage = false
                 }
             }
