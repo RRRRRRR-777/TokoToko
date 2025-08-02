@@ -13,12 +13,6 @@ struct WalkRow: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
-        // 状態アイコン
-        statusIcon
-          .frame(width: 40, height: 40)
-          .background(statusColor.opacity(0.1))
-          .cornerRadius(8)
-
         // 散歩情報
         VStack(alignment: .leading, spacing: 4) {
           Text(walk.title)
@@ -56,14 +50,27 @@ struct WalkRow: View {
                   .fixedSize(horizontal: true, vertical: false)
                   .lineLimit(1)
               }
+
+              if walk.totalSteps > 0 {
+                HStack(spacing: 4) {
+                  Image(systemName: "figure.walk.motion")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                  Text("\(walk.totalSteps) 歩")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .lineLimit(1)
+                }
+              }
             } else {
               // 進行中または未開始の散歩
               Text(walk.status.displayName)
                 .font(.caption)
-                .foregroundColor(statusColor)
+                .foregroundColor(.orange)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(statusColor.opacity(0.1))
+                .background(Color.orange.opacity(0.1))
                 .cornerRadius(4)
             }
           }
@@ -77,54 +84,12 @@ struct WalkRow: View {
             .font(.caption)
             .foregroundColor(.secondary)
 
-          if walk.hasLocation {
-            Image(systemName: "location.fill")
-              .font(.caption)
-              .foregroundColor(.blue)
-          }
         }
       }
 
     }
     .padding(.vertical, 4)
   }
-
-
-  // 状態に応じたアイコン
-  private var statusIcon: some View {
-    Group {
-      switch walk.status {
-      case .notStarted:
-        Image(systemName: "circle")
-          .foregroundColor(statusColor)
-      case .inProgress:
-        Image(systemName: "play.circle.fill")
-          .foregroundColor(statusColor)
-      case .paused:
-        Image(systemName: "pause.circle.fill")
-          .foregroundColor(statusColor)
-      case .completed:
-        Image(systemName: "checkmark.circle.fill")
-          .foregroundColor(statusColor)
-      }
-    }
-    .font(.title2)
-  }
-
-  // 状態に応じた色
-  private var statusColor: Color {
-    switch walk.status {
-    case .notStarted:
-      return .gray
-    case .inProgress:
-      return .green
-    case .paused:
-      return .orange
-    case .completed:
-      return .blue
-    }
-  }
-
 
   // 日時文字列
   private var dateString: String {
@@ -150,6 +115,7 @@ struct WalkRow: View {
         startTime: Date().addingTimeInterval(-3600),
         endTime: Date().addingTimeInterval(-3000),
         totalDistance: 1200,
+        totalSteps: 1500,
         status: .completed
       ))
 
@@ -159,6 +125,7 @@ struct WalkRow: View {
         description: "商店街を歩きました",
         startTime: Date().addingTimeInterval(-1800),
         totalDistance: 800,
+        totalSteps: 950,
         status: .inProgress
       ))
 
