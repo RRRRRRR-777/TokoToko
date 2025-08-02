@@ -41,7 +41,7 @@ struct WalkRow: View {
               }
 
               HStack(spacing: 4) {
-                Image(systemName: "figure.walk")
+                Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                   .font(.caption)
                   .foregroundColor(.secondary)
                 Text(walk.distanceString)
@@ -53,7 +53,7 @@ struct WalkRow: View {
 
               if walk.totalSteps > 0 {
                 HStack(spacing: 4) {
-                  Image(systemName: "figure.walk.motion")
+                  Image(systemName: "figure.walk")
                     .font(.caption)
                     .foregroundColor(.secondary)
                   Text("\(walk.totalSteps) 歩")
