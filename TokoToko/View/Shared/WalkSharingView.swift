@@ -229,7 +229,8 @@ private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerD
     }
 
     private func generateImage() async throws -> UIImage {
-        try await WalkImageGenerator.shared.generateWalkImage(from: walk)
+        onProgressUpdate("共有画面を準備中...")
+        return try await WalkImageGenerator.shared.generateWalkImage(from: walk)
     }
 
     private func saveToDatabase(image: UIImage) async throws {
