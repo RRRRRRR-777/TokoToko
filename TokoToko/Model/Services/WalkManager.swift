@@ -697,7 +697,9 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   ///
   /// - Parameter walk: サムネイルを生成する散歩データ
   private func generateAndSaveThumbnail(for walk: Walk) {
-    print("📸 [散歩履歴用] サムネイル画像の生成を開始しました")
+    // Issue #65: 散歩リスト画像表示機能廃止により、サムネイル生成を無効化
+    print("📸 [散歩履歴用] サムネイル画像生成は廃止されました (Issue #65)")
+    return
 
     // 非同期でサムネイル画像を生成
     generateThumbnail(from: walk) { [weak self] thumbnailImage in
@@ -1083,11 +1085,10 @@ extension WalkManager {
 
   // 散歩データからサムネイル画像を生成（非同期版）
   private func generateThumbnail(from walk: Walk, completion: @escaping (UIImage?) -> Void) {
-    #if DEBUG
-      print("🗺️ サムネイル生成開始 - Walk ID: \(walk.id)")
-      print("  - Status: \(walk.status)")
-      print("  - Locations count: \(walk.locations.count)")
-    #endif
+    // Issue #65: 散歩リスト画像表示機能廃止により、サムネイル生成を無効化
+    print("🗺️ サムネイル生成は廃止されました (Issue #65)")
+    completion(nil)
+    return
 
     // 完了していない散歩はnilを返す
     guard walk.status == .completed else {
