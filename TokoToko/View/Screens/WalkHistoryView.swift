@@ -99,7 +99,6 @@ struct WalkHistoryView: View {
       backgroundMapView
       mainContentView
       storyNavigationOverlay
-      imagePopupView
       friendHistoryButton
     }
     .navigationBarHidden(true)
@@ -132,11 +131,8 @@ struct WalkHistoryView: View {
         },
         onNextTap: {
           viewModel.selectNextWalk()
-        },
-        photoURLs: mockPhotoURLs
-      ) { index in
-        viewModel.selectImage(at: index)
-      }
+        }
+      )
       .padding(.bottom, 50)
     }
   }
@@ -254,16 +250,6 @@ struct WalkHistoryView: View {
     .padding(.leading, 10)
   }
 
-  @ViewBuilder private var imagePopupView: some View {
-    if let selectedIndex = viewModel.selectedImageIndex {
-      ImagePopupView(
-        imageURL: mockPhotoURLs[safe: selectedIndex] ?? ""
-      ) {
-        viewModel.deselectImage()
-      }
-      .transition(.opacity)
-    }
-  }
 
   private var friendHistoryButton: some View {
     VStack {
@@ -300,21 +286,6 @@ struct WalkHistoryView: View {
     }
   }
 
-  // MARK: - Mock Data (将来的にはWalkデータから取得)
-  private var mockPhotoURLs: [String] {
-    [
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400",
-      "https://picsum.photos/600/400"
-    ]
-  }
 
   // MARK: - Private Methods
   /// 散歩削除処理とナビゲーション制御
