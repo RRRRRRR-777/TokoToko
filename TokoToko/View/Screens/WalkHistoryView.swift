@@ -103,7 +103,6 @@ struct WalkHistoryView: View {
     }
     .navigationBarHidden(true)
     .animation(.easeInOut(duration: 0.3), value: viewModel.isStatsBarVisible)
-    .animation(.easeInOut(duration: 0.2), value: viewModel.selectedImageIndex)
     .shareWalk(viewModel.currentWalk, isPresented: $showingShareSheet)
   }
 
