@@ -33,6 +33,7 @@ class WalkSharingService {
     /// 共有機能で発生する可能性があるエラー
     enum WalkSharingError: LocalizedError {
         case imageGenerationFailed
+        case imageGenerationNotSupported
         case noViewControllerPresent
         case sharingNotAvailable
 
@@ -40,6 +41,8 @@ class WalkSharingService {
             switch self {
             case .imageGenerationFailed:
                 return "共有用画像の生成に失敗しました"
+            case .imageGenerationNotSupported:
+                return "画像生成機能は廃止されました"
             case .noViewControllerPresent:
                 return "共有シートを表示するビューが見つかりません"
             case .sharingNotAvailable:
@@ -113,7 +116,7 @@ class WalkSharingService {
 
     /// 画像生成を行います
     private func generateImageForSharing(from walk: Walk) async throws -> UIImage {
-        try await imageGenerator.generateWalkImage(from: walk)
+        return try await imageGenerator.generateWalkImage(from: walk)
     }
 
     /// 共有画像をデータベースに保存します
