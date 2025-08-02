@@ -18,7 +18,7 @@ import Foundation
 ///
 /// 主要な責務：
 /// - **散歩ナビゲーション**: 前後の散歩への切り替え
-/// - **UI状態管理**: 統計バーの表示/非表示、画像選択状態
+/// - **UI状態管理**: 統計バーの表示/非表示
 /// - **データ管理**: 散歩リストの維持と更新
 /// - **削除処理**: 散歩データの削除と適切な遷移制御
 /// - **バリデーション**: インデックス範囲やデータ整合性の確認
@@ -28,7 +28,6 @@ import Foundation
 /// ### Properties
 /// - ``currentWalk``
 /// - ``isStatsBarVisible``
-/// - ``selectedImageIndex``
 /// - ``walkCount``
 ///
 /// ### Navigation
@@ -37,8 +36,6 @@ import Foundation
 ///
 /// ### UI State
 /// - ``toggleStatsBar()``
-/// - ``selectImage(at:)``
-/// - ``deselectImage()``
 ///
 /// ### Data Management
 /// - ``removeWalk(withId:)``
@@ -57,12 +54,6 @@ class WalkHistoryViewModel: ObservableObject {
   /// 散歩の統計情報（時間、距離、歩数など）を表示するバーの表示/非表示状態。
   /// ユーザーの操作でトグル可能で、デフォルトではtrue（表示）です。
   @Published var isStatsBarVisible: Bool = true
-  
-  /// 現在選択されている画像のインデックス
-  ///
-  /// 散歩に関連付けられた画像の中で、現在選択されている画像のインデックス。
-  /// nilの場合はどの画像も選択されていない状態です。
-  @Published var selectedImageIndex: Int? = nil
 
   // MARK: - Private Properties
   
@@ -159,23 +150,6 @@ class WalkHistoryViewModel: ObservableObject {
   /// ユーザーがマップに集中したい時の非表示や、統計確認のための表示に使用します。
   func toggleStatsBar() {
     isStatsBarVisible.toggle()
-  }
-
-  /// 指定されたインデックスの画像を選択
-  ///
-  /// 散歩に関連付けられた画像の中から特定の画像を選択状態にします。
-  /// 選択された画像はフルスクリーン表示や詳細表示に使用されます。
-  /// - Parameter index: 選択したい画像のインデックス
-  func selectImage(at index: Int) {
-    selectedImageIndex = index
-  }
-
-  /// 画像の選択状態を解除
-  ///
-  /// 現在選択されている画像の選択を解除し、
-  /// 通常の散歩表示モードに戻します。
-  func deselectImage() {
-    selectedImageIndex = nil
   }
 
   /// 散歩を削除し、適切な次の散歩に遷移する
