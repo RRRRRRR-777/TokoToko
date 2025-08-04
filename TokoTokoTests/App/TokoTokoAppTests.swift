@@ -7,10 +7,24 @@
 
 import XCTest
 import SwiftUI
+import ViewInspector
 @testable import TokoToko
 import FirebaseAuth
 
+@MainActor
 final class TokoTokoAppTests: XCTestCase {
+    
+    override func setUp() async throws {
+        try await super.setUp()
+        UserDefaults.standard.removeObject(forKey: "cached_policy")
+        UserDefaults.standard.removeObject(forKey: "policy_cache_timestamp")
+    }
+    
+    override func tearDown() async throws {
+        UserDefaults.standard.removeObject(forKey: "cached_policy")
+        UserDefaults.standard.removeObject(forKey: "policy_cache_timestamp")
+        try await super.tearDown()
+    }
 
     func testAuthManagerInitialization() {
         let authManager = AuthManager()
@@ -36,5 +50,46 @@ final class TokoTokoAppTests: XCTestCase {
     // TokoTokoAppのテスト
     func testTokoTokoAppStructure() {
         XCTAssertTrue(true, "このテストは実際の環境では@mainアノテーションの制約があります")
+    }
+    
+    // 初回同意フローのテスト
+    func testInitialConsentFlowRequired() async throws {
+        let policyService = PolicyService()
+        let hasConsent = await policyService.hasValidConsent()
+        XCTAssertFalse(hasConsent, "初期状態では同意が記録されていないはず")
+    }
+    
+    func testConsentFlowCompleteAllowsMainApp() async throws {
+        let policyService = PolicyService()
+        
+        let mockPolicy = Policy(
+            version: "1.0.0",
+            privacyPolicy: LocalizedContent(
+                ja: "プライバシーポリシー",
+                en: "Privacy Policy"
+            ),
+            termsOfService: LocalizedContent(
+                ja: "利用規約",
+                en: "Terms of Service"
+            ),
+            updatedAt: Date(),
+            effectiveDate: Date()
+        )
+        
+        try await policyService.recordConsent(
+            policyVersion: mockPolicy.version,
+            userID: "test_user",
+            consentType: .initial,
+            deviceInfo: nil
+        )
+        
+        let hasConsent = await policyService.hasValidConsent()
+        XCTAssertTrue(hasConsent)
+    }
+    
+    func testConsentManagerInitialization() async throws {
+        let consentManager = ConsentManager()
+        let needsConsent = await consentManager.needsInitialConsent()
+        XCTAssertTrue(needsConsent, "初期状態では同意が必要")
     }
 }
