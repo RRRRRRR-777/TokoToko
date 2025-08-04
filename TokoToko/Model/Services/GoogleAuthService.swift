@@ -9,7 +9,6 @@ import FirebaseAuth
 import FirebaseCore
 import Foundation
 import GoogleSignIn
-import GoogleSignInSwift
 import UIKit
 
 /// Google認証とFirebase Authenticationの統合を管理するサービスクラス
@@ -213,7 +212,7 @@ class GoogleAuthService {
             "user_id": user.userID ?? "unknown",
             "firebase_uid": authResult?.user.uid ?? "unknown",
             "user_email": user.profile?.email ?? "unknown",
-            "display_name": user.profile?.name ?? "unknown",
+            "display_name": user.profile?.name ?? "unknown"
           ]
         )
 
@@ -222,7 +221,7 @@ class GoogleAuthService {
           message: "Google認証プロセス完了",
           context: [
             "result": "success",
-            "firebase_uid": authResult?.user.uid ?? "unknown",
+            "firebase_uid": authResult?.user.uid ?? "unknown"
           ]
         )
 
