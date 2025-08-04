@@ -228,7 +228,7 @@ extension MKCoordinateRegion {
     polylineCoordinates: [
       CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
       CLLocationCoordinate2D(latitude: 35.6815, longitude: 139.7675),
-      CLLocationCoordinate2D(latitude: 35.6818, longitude: 139.7680),
+      CLLocationCoordinate2D(latitude: 35.6818, longitude: 139.7680)
     ]
   )
 }
