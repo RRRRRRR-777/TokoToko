@@ -38,13 +38,13 @@ struct WalkListView: View {
   /// 0: 自分の履歴タブ、1: フレンドの履歴タブ
   /// セグメントコントロールとTabViewの両方で使用されます。
   @State private var selectedTab: Int
-  
+
   /// 表示する散歩データの配列
   ///
   /// WalkRepositoryから取得した完了済み散歩データを保持します。
   /// 作成日時の降順でソートされています。
   @State private var walks: [Walk] = []
-  
+
   /// データ読み込み中の状態
   ///
   /// trueの場合、ローディングインジケーターが表示されます。
@@ -173,11 +173,9 @@ struct WalkListView: View {
         .padding(.horizontal)
         .accessibilityIdentifier("散歩を完了すると、ここに履歴が表示されます")
 
-
       Spacer()
     }
   }
-
 
   /// 散歩履歴をリスト形式で表示するビュー
   ///
@@ -186,9 +184,9 @@ struct WalkListView: View {
   private var walkHistoryListView: some View {
     List {
       ForEach(Array(walks.enumerated()), id: \.element.id) { index, walk in
-        NavigationLink(destination: 
+        NavigationLink(destination:
           WalkHistoryView(
-            walks: walks, 
+            walks: walks,
             initialIndex: index,
             onWalkDeleted: handleWalkDeletion
           )
@@ -236,7 +234,7 @@ struct WalkListView: View {
       }
     }
   }
-  
+
   /// 散歩削除時のコールバック処理
   ///
   /// WalkHistoryViewから散歩が削除された際に呼び出され、

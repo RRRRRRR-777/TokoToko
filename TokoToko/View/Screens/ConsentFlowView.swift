@@ -29,17 +29,17 @@ import SwiftUI
 struct ConsentFlowView: View {
     /// 同意状態管理オブジェクト
     @EnvironmentObject var consentManager: ConsentManager
-    
+
     /// ポリシー表示モーダルの表示状態
     @State private var showingPolicyView = false
-    
+
     /// 選択されたポリシータイプ
     @State private var selectedPolicyType: PolicyType = .privacyPolicy
-    
+
     var body: some View {
         VStack(spacing: 32) {
             headerSection
-            
+
             if let policy = consentManager.currentPolicy {
                 policySection(policy: policy)
                 consentSection
@@ -51,7 +51,7 @@ struct ConsentFlowView: View {
                 // ポリシーがない場合のデフォルト表示
                 emptyPolicySection
             }
-            
+
             Spacer()
         }
         .padding(.horizontal, 24)
@@ -74,9 +74,9 @@ struct ConsentFlowView: View {
         }
         .accessibilityLabel("同意画面")
     }
-    
+
     // MARK: - View Components
-    
+
     private var headerSection: some View {
         VStack(spacing: 16) {
             Image(systemName: "mappin.and.ellipse")
@@ -84,12 +84,12 @@ struct ConsentFlowView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 80)
                 .foregroundColor(.blue)
-            
+
             Text("TokoTokoへようこそ")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
-            
+
             Text("サービスをご利用いただく前に、プライバシーポリシーと利用規約をご確認ください。")
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -97,7 +97,7 @@ struct ConsentFlowView: View {
                 .lineLimit(nil)
         }
     }
-    
+
     private func policySection(policy: Policy) -> some View {
         VStack(spacing: 16) {
             policyButton(
@@ -105,7 +105,7 @@ struct ConsentFlowView: View {
                 subtitle: "個人情報の取り扱いについて",
                 policyType: .privacyPolicy
             )
-            
+
             policyButton(
                 title: "利用規約",
                 subtitle: "サービス利用のルールについて",
@@ -113,7 +113,7 @@ struct ConsentFlowView: View {
             )
         }
     }
-    
+
     private func policyButton(title: String, subtitle: String, policyType: PolicyType) -> some View {
         Button(action: {
             selectedPolicyType = policyType
@@ -124,14 +124,14 @@ struct ConsentFlowView: View {
                     Text(title)
                         .font(.headline)
                         .foregroundColor(.primary)
-                    
+
                     Text(subtitle)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .foregroundColor(.secondary)
             }
@@ -145,7 +145,7 @@ struct ConsentFlowView: View {
         .accessibilityIdentifier("\(title)ボタン")
         .accessibilityHint("\(title)を表示します")
     }
-    
+
     private var consentSection: some View {
         VStack(spacing: 16) {
             Button(action: {
@@ -170,7 +170,7 @@ struct ConsentFlowView: View {
             .buttonStyle(PlainButtonStyle())
             .accessibilityIdentifier("同意ボタン")
             .accessibilityHint("プライバシーポリシーと利用規約に同意してサービスを開始します")
-            
+
             Text("「同意してサービスを開始」をタップすることで、プライバシーポリシーと利用規約に同意したものとみなされます。")
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -178,7 +178,7 @@ struct ConsentFlowView: View {
                 .lineLimit(nil)
         }
     }
-    
+
     private func errorSection(error: Error) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
@@ -186,16 +186,16 @@ struct ConsentFlowView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 60, height: 60)
                 .foregroundColor(.orange)
-            
+
             Text("エラーが発生しました")
                 .font(.headline)
                 .foregroundColor(.primary)
-            
+
             Text(error.localizedDescription)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-            
+
             Button(action: {
                 Task {
                     await consentManager.refreshPolicy()
@@ -215,25 +215,25 @@ struct ConsentFlowView: View {
             .accessibilityIdentifier("再試行ボタン")
         }
     }
-    
+
     private var loadingSection: some View {
         VStack(spacing: 16) {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .blue))
                 .scaleEffect(1.5)
-            
+
             Text("ポリシー情報を読み込み中...")
                 .font(.body)
                 .foregroundColor(.secondary)
         }
     }
-    
+
     private var emptyPolicySection: some View {
         VStack(spacing: 16) {
             Text("利用規約とプライバシーポリシーの準備中です")
                 .font(.headline)
                 .foregroundColor(.primary)
-            
+
             Text("しばらくお待ちください")
                 .font(.body)
                 .foregroundColor(.secondary)

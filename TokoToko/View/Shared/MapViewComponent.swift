@@ -37,7 +37,7 @@ struct MapViewComponent: View {
   ///
   /// GPS位置情報の取得、権限管理、現在位置の監視を統合的に処理します。
   private let locationManager = LocationManager.shared
-  
+
   /// マップ表示領域の座標範囲
   ///
   /// 表示するマップの中心座標とズームレベルを定義するバインディングプロパティです。
@@ -367,8 +367,7 @@ extension MKCoordinateRegion {
   ///   - tolerance: 許容誤差（デフォルト: 0.0001）
   /// - Returns: 近似的に等しい場合true
   fileprivate func isApproximatelyEqual(to other: MKCoordinateRegion, tolerance: Double = 0.0001)
-    -> Bool
-  {
+    -> Bool {
     abs(center.latitude - other.center.latitude) < tolerance
       && abs(center.longitude - other.center.longitude) < tolerance
       && abs(span.latitudeDelta - other.span.latitudeDelta) < tolerance

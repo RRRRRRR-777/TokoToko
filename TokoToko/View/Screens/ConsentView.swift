@@ -4,16 +4,16 @@ struct ConsentView: View {
     let policy: Policy
     let onAgree: () -> Void
     let onDecline: () -> Void
-    
+
     @State private var hasViewedPrivacyPolicy = false
     @State private var hasViewedTermsOfService = false
     @State private var showingPrivacyPolicy = false
     @State private var showingTermsOfService = false
-    
+
     private var canAgree: Bool {
         hasViewedPrivacyPolicy && hasViewedTermsOfService
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -22,11 +22,11 @@ struct ConsentView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.horizontal)
-                    
+
                     Text("TokoTokoをご利用いただくには、プライバシーポリシーと利用規約への同意が必要です。以下のリンクから内容をご確認ください。")
                         .font(.body)
                         .padding(.horizontal)
-                    
+
                     // プライバシーポリシーボタン
                     Button(action: {
                         showingPrivacyPolicy = true
@@ -34,12 +34,12 @@ struct ConsentView: View {
                         HStack {
                             Image(systemName: hasViewedPrivacyPolicy ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(hasViewedPrivacyPolicy ? .green : .gray)
-                            
+
                             Text("プライバシーポリシーを確認")
                                 .foregroundColor(.primary)
-                            
+
                             Spacer()
-                            
+
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
                         }
@@ -48,7 +48,7 @@ struct ConsentView: View {
                         .cornerRadius(10)
                     }
                     .padding(.horizontal)
-                    
+
                     // 利用規約ボタン
                     Button(action: {
                         showingTermsOfService = true
@@ -56,12 +56,12 @@ struct ConsentView: View {
                         HStack {
                             Image(systemName: hasViewedTermsOfService ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(hasViewedTermsOfService ? .green : .gray)
-                            
+
                             Text("利用規約を確認")
                                 .foregroundColor(.primary)
-                            
+
                             Spacer()
-                            
+
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
                         }
@@ -70,7 +70,7 @@ struct ConsentView: View {
                         .cornerRadius(10)
                     }
                     .padding(.horizontal)
-                    
+
                     if canAgree {
                         Text("✓ すべての内容を確認しました")
                             .font(.caption)
@@ -80,7 +80,7 @@ struct ConsentView: View {
                 }
                 .padding(.vertical)
             }
-            
+
             // ボタンエリア
             HStack(spacing: 20) {
                 Button(action: onDecline) {
@@ -93,7 +93,7 @@ struct ConsentView: View {
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(10)
                 }
-                
+
                 Button(action: onAgree) {
                     Text("同意する")
                         .font(.body)

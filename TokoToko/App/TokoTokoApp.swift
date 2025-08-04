@@ -37,13 +37,13 @@ class AuthManager: ObservableObject {
   /// Firebaseで認証済みのユーザーが存在する場合はtrue、未認証の場合はfalseです。
   /// @Publishedにより、状態変化が自動的にUIに反映されます。
   @Published var isLoggedIn = false
-  
+
   /// 認証状態の初期化プロセス中かどうか
   ///
   /// アプリ起動時の認証状態確認中はtrue、確認完了後はfalseになります。
   /// スプラッシュ画面の表示制御に使用されます。
   @Published var isInitializing = true
-  
+
   /// Firebase認証状態変更リスナーのハンドル
   ///
   /// Firebase Authの認証状態変更を監視するリスナーのハンドルです。
@@ -148,13 +148,13 @@ struct TokoTokoApp: App {
   /// SwiftUI AppでUIApplicationDelegateを使用するためのアダプターです。
   /// Firebase初期化とURL処理を担当するAppDelegateを統合します。
   @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-  
+
   /// 認証状態管理オブジェクト
   ///
   /// アプリ全体の認証状態を管理するAuthManagerのインスタンスです。
   /// @StateObjectにより、アプリケーションライフサイクル中で単一のインスタンスが維持されます。
   @StateObject private var authManager = AuthManager()
-  
+
   /// 同意状態管理オブジェクト
   ///
   /// アプリ全体の同意状態を管理するConsentManagerのインスタンスです。
@@ -209,13 +209,13 @@ struct MainTabView: View {
   /// 親ビューから注入されるAuthManagerインスタンスです。
   /// ログアウト処理や認証状態の参照に使用されます。
   @EnvironmentObject var authManager: AuthManager
-  
+
   /// 同意状態管理オブジェクト
   ///
   /// 親ビューから注入されるConsentManagerインスタンスです。
   /// 再同意チェックなどに使用されます。
   @EnvironmentObject var consentManager: ConsentManager
-  
+
   /// 現在選択されているタブ
   ///
   /// タブの選択状態を管理し、表示するビューを決定します。
@@ -371,13 +371,13 @@ struct CustomTabBar: View {
 struct TabBarItem: View {
   /// このタブアイテムが表すタブ種別
   let tab: MainTabView.Tab
-  
+
   /// タブアイコンのSF Symbols名
   let icon: String
-  
+
   /// タブのタイトル文字列
   let title: String
-  
+
   /// 選択されているタブのバインディング
   @Binding var selectedTab: MainTabView.Tab
 

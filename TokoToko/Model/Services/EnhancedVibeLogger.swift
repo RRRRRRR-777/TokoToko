@@ -43,42 +43,42 @@ public class EnhancedVibeLogger {
   /// ログ出力の順序性を保証し、マルチスレッド環境でのデータ競合を防止します。
   /// QoS.utilityで実行され、メインスレッドをブロックしません。
   private let logQueue = DispatchQueue(label: "com.tokotoko.logger", qos: .utility)
-  
+
   /// 現在のログレベル設定
   ///
   /// DEBUG版では.debug、RELEASE版では.infoがデフォルト設定されます。
   /// このレベル以上の重要度を持つログのみが出力されます。
   private var logLevel: LogLevel
-  
+
   /// ファイル出力の有効/無効状態
   ///
   /// trueの場合、ログがファイルシステムに永続化されます。
   /// DEBUG版ではtrue、RELEASE版ではfalseがデフォルトです。
   private var enableFileOutput: Bool
-  
+
   /// ログファイルの保存ディレクトリパス
   ///
   /// ログファイルが保存されるディレクトリの絶対パスです。
   /// アプリケーションのホームディレクトリ配下に自動作成されます。
   private let logDirectoryPath: String
-  
+
   /// バッチ処理用のログバッファ
   ///
   /// 効率的なログ出力のため、一定数のログエントリをメモリにバッファリングします。
   /// バッチサイズまたは時間間隔に達すると一括出力されます。
   private var logBuffer: [EnhancedVibeLogEntry] = []
-  
+
   /// バッチ出力用のタイマー
   ///
   /// 定期的なバッファフラッシュを制御するタイマーです。
   /// 一定時間経過後にバッファ内容を強制出力します。
   private var batchTimer: Timer?
-  
+
   /// バッチ処理の最大エントリ数
   ///
   /// この数に達するとバッファが自動的にフラッシュされます。
   private let batchSize = 50
-  
+
   /// バッチ処理の時間間隔（秒）
   ///
   /// この時間が経過するとバッファサイズに関係なくフラッシュされます。
@@ -108,26 +108,26 @@ public class EnhancedVibeLogger {
   public func setLogLevel(_ level: LogLevel) {
     logLevel = level
   }
-  
+
   public func getLogLevel() -> LogLevel {
-    return logLevel
+    logLevel
   }
-  
+
   public func setFileOutput(_ enabled: Bool) {
     enableFileOutput = enabled
   }
-  
+
   public func getFileOutput() -> Bool {
-    return enableFileOutput
+    enableFileOutput
   }
-  
+
   public func resetToDefaultSettings() {
     logLevel = .debug
     enableFileOutput = true
   }
-  
+
   public func getLogDirectoryPath() -> String {
-    return logDirectoryPath
+    logDirectoryPath
   }
   #endif
 
@@ -318,9 +318,9 @@ public class EnhancedVibeLogger {
   public func startBatchMode(interval: TimeInterval = 30.0) {
     logQueue.async { [weak self] in
       guard let self = self else { return }
-      
+
       self.stopBatchMode()
-      
+
       DispatchQueue.main.async {
         self.batchTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
           self.flushLogBuffer()
@@ -332,22 +332,22 @@ public class EnhancedVibeLogger {
   public func stopBatchMode() {
     logQueue.async { [weak self] in
       guard let self = self else { return }
-      
+
       DispatchQueue.main.async {
         self.batchTimer?.invalidate()
         self.batchTimer = nil
       }
-      
+
       self.flushLogBuffer()
     }
   }
 
   private func flushLogBuffer() {
     guard !logBuffer.isEmpty else { return }
-    
+
     let currentBuffer = logBuffer
     logBuffer.removeAll()
-    
+
     for logEntry in currentBuffer {
       outputToFile(logEntry)
     }
@@ -431,7 +431,7 @@ public class EnhancedVibeLogger {
       message: "エラー発生: \(error.localizedDescription)",
       context: [
         "error_type": String(describing: type(of: error)),
-        "error_description": error.localizedDescription,
+        "error_description": error.localizedDescription
       ],
       source: SourceInfo(fileName: file, functionName: function, lineNumber: line),
       humanNote: humanNote,

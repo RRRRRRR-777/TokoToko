@@ -42,13 +42,13 @@ import Foundation
 class WalkHistoryViewModel: ObservableObject {
 
   // MARK: - Published Properties
-  
+
   /// 現在表示中の散歩データ
   ///
   /// 散歩履歴一覧でユーザーが現在閲覧している散歩のWalkオブジェクトです。
   /// @Publishedにより、値が変更されるとUIに自動反映されます。
   @Published var currentWalk: Walk
-  
+
   /// 統計バーの表示状態
   ///
   /// 散歩の統計情報（時間、距離、歩数など）を表示するバーの表示/非表示状態。
@@ -56,13 +56,13 @@ class WalkHistoryViewModel: ObservableObject {
   @Published var isStatsBarVisible: Bool = true
 
   // MARK: - Private Properties
-  
+
   /// 散歩データの配列
   ///
   /// 表示対象となる全ての散歩データを保持します。
   /// 作成日時の降順でソートされた状態で管理されます。
   @Published private var walks: [Walk]
-  
+
   /// 現在表示中の散歩のインデックス
   ///
   /// walks配列内でのcurrentWalkの位置を示すインデックス値です。
@@ -70,7 +70,7 @@ class WalkHistoryViewModel: ObservableObject {
   private var currentIndex: Int
 
   // MARK: - Error Types
-  
+
   /// WalkHistoryViewModel初期化時のバリデーションエラー
   ///
   /// ViewModelの初期化時に発生する可能性のあるエラーを定義します。
@@ -87,7 +87,7 @@ class WalkHistoryViewModel: ObservableObject {
     /// ViewModelに渡された散歩データが1件もない場合に発生します。
     /// 散歩履歴が存在しないユーザーやデータ取得エラーの結果です。
     case emptyWalksArray
-    
+
     /// 初期インデックスが範囲外の値
     ///
     /// 指定された初期インデックスが散歩データ配列の範囲を超えている場合に発生します。
@@ -96,7 +96,7 @@ class WalkHistoryViewModel: ObservableObject {
   }
 
   // MARK: - Initializer
-  
+
   /// WalkHistoryViewModelを初期化
   ///
   /// 散歩データの配列と初期表示インデックスでViewModelを初期化します。
@@ -169,23 +169,23 @@ class WalkHistoryViewModel: ObservableObject {
     guard let walkIndex = walks.firstIndex(where: { $0.id == walkId }) else {
       return false // 削除対象が見つからない
     }
-    
+
     // 散歩を配列から削除
     walks.remove(at: walkIndex)
-    
+
     // 削除後に散歩が残っていない場合
     if walks.isEmpty {
       return false // 画面を閉じる必要がある
     }
-    
+
     // 次に表示する散歩のインデックスを決定
     let nextIndex = determineNextIndex(deletedIndex: walkIndex)
     currentIndex = nextIndex
     currentWalk = walks[nextIndex]
-    
+
     return true // 削除成功、他の散歩が存在
   }
-  
+
   /// 削除後に表示する次の散歩のインデックスを決定
   ///
   /// 散歩が削除された後に表示すべき次の散歩のインデックスを決定します。
@@ -217,7 +217,7 @@ class WalkHistoryViewModel: ObservableObject {
       return currentIndex
     }
   }
-  
+
   /// 現在の散歩リストの数を取得
   ///
   /// ViewModelが管理している散歩データの総数を返します。
@@ -225,6 +225,6 @@ class WalkHistoryViewModel: ObservableObject {
   ///
   /// - Returns: 散歩データの総数
   var walkCount: Int {
-    return walks.count
+    walks.count
   }
 }

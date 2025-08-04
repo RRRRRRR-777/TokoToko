@@ -202,8 +202,7 @@ private struct iOS15StaticMapWithPolylineView: UIViewRepresentable {
 // MKCoordinateRegionの比較用拡張（再利用）
 extension MKCoordinateRegion {
   fileprivate func isApproximatelyEqual(to other: MKCoordinateRegion, tolerance: Double = 0.0001)
-    -> Bool
-  {
+    -> Bool {
     abs(center.latitude - other.center.latitude) < tolerance
       && abs(center.longitude - other.center.longitude) < tolerance
       && abs(span.latitudeDelta - other.span.latitudeDelta) < tolerance

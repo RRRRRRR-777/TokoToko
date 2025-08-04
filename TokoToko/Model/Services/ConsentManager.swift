@@ -38,36 +38,36 @@ import SwiftUI
 class ConsentManager: ObservableObject {
     /// ポリシー読み込み中かどうか
     @Published var isLoading = false
-    
+
     /// 現在のポリシー情報
     @Published var currentPolicy: Policy?
-    
+
     /// エラー情報
     @Published var error: Error?
-    
+
     /// 有効な同意があるかどうか
     @Published var hasValidConsent = false
-    
+
     /// PolicyServiceのインスタンス
     private let policyService = PolicyService()
-    
+
     init() {
         Task {
             await loadInitialState()
         }
     }
-    
+
     /// 定期的な再同意チェック
     ///
     /// アプリがアクティブになった際などに呼び出して、
     /// ポリシーの更新による再同意の必要性をチェックします。
     func checkForReConsentNeeded() async {
         guard !isLoading else { return }
-        
+
         // 最新ポリシーを取得
         do {
             let latestPolicy = try await policyService.fetchPolicy()
-            
+
             // 現在のポリシーと比較
             if let currentPolicy = currentPolicy,
                latestPolicy.version != currentPolicy.version {
@@ -79,7 +79,7 @@ class ConsentManager: ObservableObject {
             // エラーは無視（ネットワークエラー等）
         }
     }
-    
+
     /// 初期状態の読み込み
     ///
     /// アプリ起動時に現在のポリシーと同意状態を確認します。
@@ -87,14 +87,14 @@ class ConsentManager: ObservableObject {
     func loadInitialState() async {
         isLoading = true
         error = nil
-        
+
         do {
             // 現在のポリシーを取得
             currentPolicy = try await policyService.fetchPolicy()
-            
+
             // 同意状態を確認
             hasValidConsent = await policyService.hasValidConsent()
-            
+
         } catch {
             // DEBUGビルドでは、エラーをログに記録するがアプリは継続
             #if DEBUG
@@ -118,7 +118,7 @@ class ConsentManager: ObservableObject {
             #else
             // 本番環境ではエラーを保持
             self.error = error
-            
+
             // エラーの場合はキャッシュされたポリシーを試行
             if let cachedPolicy = try? await policyService.getCachedPolicy() {
                 currentPolicy = cachedPolicy
@@ -126,31 +126,31 @@ class ConsentManager: ObservableObject {
             }
             #endif
         }
-        
+
         isLoading = false
     }
-    
+
     /// 初回同意が必要かどうか
     ///
     /// - Returns: 初回同意が必要な場合はtrue
     func needsInitialConsent() async -> Bool {
-        return !hasValidConsent
+        !hasValidConsent
     }
-    
+
     /// 再同意が必要かどうか
     ///
     /// ポリシーのバージョンが更新されている場合に再同意が必要になります。
     /// - Returns: 再同意が必要な場合はtrue
     func needsReConsent() async -> Bool {
         guard let policy = currentPolicy else { return false }
-        
+
         let hasConsent = await policyService.hasValidConsent()
         if !hasConsent { return false }
-        
+
         // 現在の同意がポリシーバージョンと一致しているかチェック
         return await policyService.needsReConsent(for: policy.version)
     }
-    
+
     /// 同意を記録する
     ///
     /// - Parameter consentType: 同意の種類（プライバシーポリシーのみ、利用規約のみ、または両方）
@@ -158,13 +158,13 @@ class ConsentManager: ObservableObject {
         guard let policy = currentPolicy else {
             throw ConsentError.noPolicyAvailable
         }
-        
+
         let deviceInfo = DeviceInfo(
             platform: "iOS",
             osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
         )
-        
+
         #if DEBUG
         // テスト環境では同意を記録
         UserDefaults.standard.set(true, forKey: "test_has_consent")
@@ -173,7 +173,7 @@ class ConsentManager: ObservableObject {
         guard let userID = getCurrentUserID() else {
             throw ConsentError.consentRecordingFailed
         }
-        
+
         try await policyService.recordConsent(
             policyVersion: policy.version,
             userID: userID,
@@ -181,11 +181,11 @@ class ConsentManager: ObservableObject {
             deviceInfo: deviceInfo
         )
         #endif
-        
+
         // 同意状態を更新
         hasValidConsent = await policyService.hasValidConsent()
     }
-    
+
     /// 現在のユーザーIDを取得
     private func getCurrentUserID() -> String? {
         #if DEBUG
@@ -195,7 +195,7 @@ class ConsentManager: ObservableObject {
         return "temp_user" // TODO: Firebase Auth統合時に実装
         #endif
     }
-    
+
     /// ポリシーを再読み込みする
     ///
     /// 手動でポリシーの最新版を取得したい場合に使用します。
@@ -209,7 +209,7 @@ enum ConsentError: LocalizedError {
     case noPolicyAvailable
     case networkError(Error)
     case consentRecordingFailed
-    
+
     var errorDescription: String? {
         switch self {
         case .noPolicyAvailable:

@@ -36,17 +36,17 @@ struct SettingsView: View {
   ///
   /// ログアウト処理と認証状態の参照に使用されるAuthManagerのインスタンスです。
   @EnvironmentObject private var authManager: AuthManager
-  
+
   /// ログアウト確認ダイアログの表示状態
   ///
   /// ログアウトボタンタップ時に表示される確認ダイアログの表示制御に使用されます。
   @State private var showingLogoutAlert: Bool
-  
+
   /// ログアウト処理のローディング状態
   ///
   /// ログアウト処理中はtrueになり、ローディングインジケーターを表示します。
   @State private var isLoading: Bool
-  
+
   /// エラーメッセージ
   ///
   /// ログアウト処理やその他のエラーが発生した場合のメッセージを保持します。

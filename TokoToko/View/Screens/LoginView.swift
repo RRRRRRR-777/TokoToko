@@ -39,12 +39,12 @@ struct LoginView: View {
   /// アプリ全体の認証状態を管理するAuthManagerのインスタンスです。
   /// 認証成功時にログイン状態が自動更新されます。
   @EnvironmentObject private var authManager: AuthManager
-  
+
   /// ログイン処理のローディング状態
   ///
   /// Google Sign-In処理中はtrueになり、ローディングインジケーターを表示します。
   @State private var isLoading: Bool
-  
+
   /// 認証エラーメッセージ
   ///
   /// 認証に失敗した場合のエラーメッセージを保持し、ユーザーに表示します。

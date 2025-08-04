@@ -13,13 +13,13 @@ import Foundation
 /// WalkManagerとWalkRepositoryで重複していた認証チェック処理を統合し、
 /// 一貫性のある認証処理を提供します。
 class FirebaseAuthHelper {
-    
+
     /// 認証エラーの種類
     enum AuthError: LocalizedError {
         case userNotAuthenticated
         case tokenRetrievalFailed(Error)
         case tokenInvalid
-        
+
         var errorDescription: String? {
             switch self {
             case .userNotAuthenticated:
@@ -31,14 +31,14 @@ class FirebaseAuthHelper {
             }
         }
     }
-    
+
     /// 現在の認証済みユーザーIDを取得
     ///
     /// - Returns: ユーザーID、または未認証の場合はnil
     static func getCurrentUserId() -> String? {
-        return Auth.auth().currentUser?.uid
+        Auth.auth().currentUser?.uid
     }
-    
+
     /// 認証状態と有効な認証トークンを確認
     ///
     /// - Parameter completion: 認証結果のコールバック（ユーザーIDまたはエラー）
@@ -50,9 +50,9 @@ class FirebaseAuthHelper {
             completion(.failure(.userNotAuthenticated))
             return
         }
-        
+
         let userId = currentUser.uid
-        
+
         // 認証トークンの有効性確認
         currentUser.getIDTokenResult { tokenResult, error in
             if let error = error {
@@ -62,7 +62,7 @@ class FirebaseAuthHelper {
                 completion(.failure(.tokenRetrievalFailed(error)))
                 return
             }
-            
+
             guard let token = tokenResult else {
                 #if DEBUG
                     print("❌ Firebase認証: 認証トークンが無効")
@@ -70,17 +70,17 @@ class FirebaseAuthHelper {
                 completion(.failure(.tokenInvalid))
                 return
             }
-            
+
             #if DEBUG
                 print("✅ Firebase認証: トークン確認済み")
                 print("   ユーザーID: \(userId)")
                 print("   有効期限: \(token.expirationDate)")
             #endif
-            
+
             completion(.success(userId))
         }
     }
-    
+
     /// 認証状態のシンプルチェック（トークン検証なし）
     ///
     /// - Returns: 認証済みの場合はユーザーID、未認証の場合はエラー

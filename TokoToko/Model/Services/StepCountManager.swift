@@ -32,14 +32,14 @@ enum StepCountSource {
   /// 最も信頼性が高く、リアルタイムで更新されます。
   /// - Parameter steps: 計測された歩数
   case coremotion(steps: Int)
-  
+
   /// 距離・時間情報から推定された歩数値
   ///
   /// CoreMotionが利用できない場合の代替手段として、
   /// 移動距離と時間から統計的に推定された歩数です。
   /// - Parameter steps: 推定された歩数
   case estimated(steps: Int)
-  
+
   /// 歩数計測が利用不可能な状態
   ///
   /// センサーが利用できない、権限が拒否された、
@@ -93,7 +93,7 @@ protocol StepCountDelegate: AnyObject {
   /// メインスレッドで呼び出されるため、安全にUI更新を行うことができます。
   /// - Parameter stepCount: 更新された歩数データ
   func stepCountDidUpdate(_ stepCount: StepCountSource)
-  
+
   /// 歩数計測でエラーが発生した時に呼び出される
   ///
   /// センサーの利用不可、権限拒否、またはその他のエラーが発生した時に呼び出されます。
@@ -122,18 +122,18 @@ enum StepCountError: Error, LocalizedError {
   /// デバイスにモーションセンサーが搭載されていない、
   /// またはセンサーが物理的に利用できない状態です。
   case notAvailable
-  
+
   /// 歩数計測の権限が拒否されている
   ///
   /// ユーザーがアプリのモーションアクティビティアクセス権限を拒否した状態です。
   case notAuthorized
-  
+
   /// 歩数センサーが一時的に利用不可
   ///
   /// センサーの一時的な障害やシステムリソースの制約で、
   /// 歩数計測が一時的に利用できない状態です。
   case sensorUnavailable
-  
+
   /// バックグラウンドでの歩数計測が制限されている
   ///
   /// アプリがバックグラウンドでのモーションデータアクセスを制限されている状態です。
@@ -203,7 +203,7 @@ enum StepCountError: Error, LocalizedError {
 class StepCountManager: ObservableObject, CustomDebugStringConvertible {
 
   // MARK: - Properties
-  
+
   /// StepCountManagerのシングルトンインスタンス
   ///
   /// アプリ全体で単一の歩数管理インスタンスを使用し、
@@ -221,7 +221,7 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   /// 最新の歩数情報とそのソースを保持します。
   /// @Publishedにより、値が変更されるとUIに自動反映されます。
   @Published var currentStepCount: StepCountSource = .unavailable
-  
+
   /// 歩数トラッキングの状態
   ///
   /// CoreMotionによる歩数計測がアクティブかどうかを表します。
@@ -496,7 +496,7 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
 
   /// デバッグ用の状態情報
   var debugDescription: String {
-    return """
+    """
       StepCountManager Debug Info:
       - isTracking: \(isTracking)
       - isStepCountingAvailable: \(isStepCountingAvailable())

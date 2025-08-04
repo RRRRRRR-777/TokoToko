@@ -16,7 +16,7 @@ protocol LocationUpdateDelegate: AnyObject {
   /// 位置情報が更新された時に呼び出されます
   /// - Parameter location: 更新された位置情報
   func didUpdateLocation(_ location: CLLocation)
-  
+
   /// 位置情報の取得でエラーが発生した時に呼び出されます
   /// - Parameter error: 発生したエラー
   func didFailWithError(_ error: Error)
@@ -78,7 +78,7 @@ class LocationManager: NSObject, ObservableObject {
   /// 最後に受信したGPS位置情報。位置情報が取得されていない場合はnilです。
   /// @Publishedにより、値が変更されるとUI側に自動的に反映されます。
   @Published var currentLocation: CLLocation?
-  
+
   /// 位置情報アクセスの許可状態
   ///
   /// アプリの位置情報使用許可の現在の状態を表します。
@@ -95,7 +95,7 @@ class LocationManager: NSObject, ObservableObject {
   ///
   /// 位置情報関連のデバッグ情報、エラー、動作状況を記録するために使用します。
   private let logger = EnhancedVibeLogger.shared
-  
+
   /// UIテスト支援ヘルパー
   ///
   /// UIテスト実行時のモック位置情報や状態管理に使用されます。
@@ -109,7 +109,7 @@ class LocationManager: NSObject, ObservableObject {
   override private init() {
     super.init()
     setupLocationManager()
-    
+
     // UIテストモードの場合は初期化時にモック状態を設定
     if testingHelper.isUITesting {
       setupMockLocationForTesting()
@@ -174,7 +174,7 @@ class LocationManager: NSObject, ObservableObject {
       context: [
         "authorization_status": authorizationStatus.rawValue.description,
         "desired_accuracy": String(locationManager.desiredAccuracy),
-        "distance_filter": String(locationManager.distanceFilter),
+        "distance_filter": String(locationManager.distanceFilter)
       ]
     )
   }
@@ -197,7 +197,7 @@ class LocationManager: NSObject, ObservableObject {
             context: [
               "authorization_status": "authorizedAlways",
               "background_modes": backgroundModes.joined(separator: ","),
-              "background_indicator": "false",
+              "background_indicator": "false"
             ]
           )
         }
@@ -245,7 +245,7 @@ class LocationManager: NSObject, ObservableObject {
     }
     return locationManager.authorizationStatus
   }
-    
+
   /// UIテスト用のモック位置情報設定
   ///
   /// UIテスト実行時に使用する固定の位置情報とアクセス許可状態を設定します。
@@ -259,7 +259,7 @@ class LocationManager: NSObject, ObservableObject {
     let mockLocation = CLLocation(latitude: 35.6812, longitude: 139.7671)
     currentLocation = mockLocation
     authorizationStatus = .authorizedWhenInUse
-  
+
     logger.info(
       operation: "setupMockLocationForTesting",
       message: "UIテスト用のモック位置情報を設定しました",
@@ -322,7 +322,7 @@ extension LocationManager: CLLocationManagerDelegate {
         "locations_count": String(locations.count),
         "speed": String(location.speed),
         "altitude": String(location.altitude),
-        "course": String(location.course),
+        "course": String(location.course)
       ]
     )
 
@@ -362,7 +362,7 @@ extension LocationManager: CLLocationManagerDelegate {
       message: "位置情報の許可状態が変更されました",
       context: [
         "previous_status": previousStatus.rawValue.description,
-        "new_status": authorizationStatus.rawValue.description,
+        "new_status": authorizationStatus.rawValue.description
       ]
     )
 

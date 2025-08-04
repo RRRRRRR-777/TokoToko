@@ -60,7 +60,7 @@ class GoogleAuthService {
     ///
     /// GoogleサインインとFirebase認証の両方が成功し、ユーザーがログイン状態になったことを示します。
     case success
-    
+
     /// 認証が失敗した場合
     ///
     /// GoogleサインインまたはFirebase認証でエラーが発生したことを示します。
@@ -174,7 +174,7 @@ class GoogleAuthService {
           "user_id": user.userID ?? "unknown",
           "user_email": user.profile?.email ?? "unknown",
           "has_id_token": "true",
-          "has_access_token": "true",
+          "has_access_token": "true"
         ]
       )
 
@@ -188,7 +188,7 @@ class GoogleAuthService {
         message: "Firebase認証開始",
         context: [
           "user_id": user.userID ?? "unknown",
-          "credential_type": "google",
+          "credential_type": "google"
         ]
       )
 

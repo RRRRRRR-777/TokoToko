@@ -82,22 +82,22 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   ///
   /// 散歩が開始されている場合のWalkインスタンス。散歩が行われていない場合はnil。
   @Published var currentWalk: Walk?
-  
+
   /// 散歩の経過時間（秒）
   ///
   /// 一時停止時間を除いた実際の散歩時間。リアルタイムで更新されます。
   @Published var elapsedTime: TimeInterval = 0
-  
+
   /// 現在の総距離（メートル）
   ///
   /// GPS位置情報から計算された散歩の総距離。位置情報が更新される度に再計算されます。
   @Published var distance: Double = 0
-  
+
   /// 現在のGPS位置情報
   ///
   /// LocationManagerから取得した最新の位置情報。位置情報が利用できない場合はnil。
   @Published var currentLocation: CLLocation?
-  
+
   /// 現在の歩数カウントソース
   ///
   /// CoreMotionからの実際の歩数、1歩あたりの距離からの推定、または利用不可状態。
@@ -330,7 +330,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "title": finalTitle,
         "user_id": userId,
-        "has_location": String(currentLocation != nil),
+        "has_location": String(currentLocation != nil)
       ]
     )
 
@@ -354,7 +354,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         operation: "pauseWalk",
         message: "一時停止可能な散歩が存在しません",
         context: [
-          "is_recording": String(isRecording), "current_walk": currentWalk?.id.uuidString ?? "none",
+          "is_recording": String(isRecording), "current_walk": currentWalk?.id.uuidString ?? "none"
         ]
       )
       return
@@ -380,7 +380,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "walk_id": walk.id.uuidString,
         "elapsed_time": String(elapsedTime),
-        "distance": String(distance),
+        "distance": String(distance)
       ]
     )
 
@@ -406,7 +406,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         context: [
           "is_recording": String(isRecording),
           "current_walk": currentWalk?.id.uuidString ?? "none",
-          "walk_status": currentWalk?.status.rawValue ?? "none",
+          "walk_status": currentWalk?.status.rawValue ?? "none"
         ]
       )
       return
@@ -432,7 +432,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "walk_id": walk.id.uuidString,
         "elapsed_time": String(elapsedTime),
-        "distance": String(distance),
+        "distance": String(distance)
       ]
     )
 
@@ -493,7 +493,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         "final_distance": String(walk.totalDistance),
         "final_duration": String(walk.duration),
         "final_steps": String(walk.totalSteps),
-        "locations_count": String(walk.locations.count),
+        "locations_count": String(walk.locations.count)
       ]
     )
 
@@ -504,7 +504,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         "walk_id": walk.id.uuidString,
         "distance": walk.distanceString,
         "duration": walk.durationString,
-        "steps": String(walk.totalSteps),
+        "steps": String(walk.totalSteps)
       ]
     )
   }
@@ -910,7 +910,7 @@ extension WalkManager {
       case .success(let userId):
         // 認証確認後にアップロード実行
         self.performThumbnailUpload(imageData: imageData, userId: userId, walkId: walkId, completion: completion)
-        
+
       case .failure(let authError):
         #if DEBUG
           print("❌ [散歩履歴用] サムネイル保存: \(authError.localizedDescription)")
@@ -919,7 +919,7 @@ extension WalkManager {
       }
     }
   }
-  
+
   // 実際のアップロード処理（認証確認後）
   private func performThumbnailUpload(
     imageData: Data, userId: String, walkId: UUID, completion: @escaping (Result<String, Error>) -> Void
@@ -972,18 +972,18 @@ extension WalkManager {
       }
     }
   }
-  
+
   // URL取得のリトライ機能
   private func downloadURLWithRetry(
-    ref: StorageReference, 
-    maxRetries: Int, 
+    ref: StorageReference,
+    maxRetries: Int,
     currentRetry: Int = 0,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
     ref.downloadURL { url, error in
       if let error = error {
         let isPermissionError = FirebaseStorageConfig.isPermissionError(error)
-        
+
         #if DEBUG
           print("❌ [散歩履歴用] サムネイル URL取得エラー (試行 \(currentRetry + 1)/\(maxRetries + 1)): \(error.localizedDescription)")
           if let storageError = error as NSError? {
@@ -991,14 +991,14 @@ extension WalkManager {
             print("   エラードメイン: \(storageError.domain)")
           }
         #endif
-        
+
         // 権限エラーかつリトライ回数以内の場合はリトライ
         if isPermissionError && currentRetry < maxRetries {
           let delay = FirebaseStorageConfig.retryDelay(for: currentRetry + 1)
           #if DEBUG
             print("🔄 \(delay)秒後にリトライします...")
           #endif
-          
+
           DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             self.downloadURLWithRetry(ref: ref, maxRetries: maxRetries, currentRetry: currentRetry + 1, completion: completion)
           }
@@ -1007,7 +1007,7 @@ extension WalkManager {
         }
         return
       }
-      
+
       guard let downloadURL = url else {
         #if DEBUG
           print("❌ ダウンロードURLが取得できませんでした")
@@ -1015,7 +1015,7 @@ extension WalkManager {
         completion(.failure(ImageStorageError.uploadFailed))
         return
       }
-      
+
       #if DEBUG
         print("✅ [散歩履歴用] サムネイル保存完了: \(downloadURL.absoluteString)")
       #endif
@@ -1344,7 +1344,7 @@ extension WalkManager {
     let attributes: [NSAttributedString.Key: Any] = [
       .foregroundColor: UIColor.label,
       .font: UIFont.systemFont(ofSize: 10, weight: .medium),
-      .backgroundColor: UIColor.systemBackground.withAlphaComponent(0.8),
+      .backgroundColor: UIColor.systemBackground.withAlphaComponent(0.8)
     ]
 
     let textSize = infoText.size(withAttributes: attributes)
@@ -1455,7 +1455,7 @@ extension WalkManager {
     let text = "Map unavailable"
     let attributes: [NSAttributedString.Key: Any] = [
       .foregroundColor: UIColor.secondaryLabel,
-      .font: UIFont.systemFont(ofSize: 10, weight: .medium),
+      .font: UIFont.systemFont(ofSize: 10, weight: .medium)
     ]
 
     let textSize = text.size(withAttributes: attributes)

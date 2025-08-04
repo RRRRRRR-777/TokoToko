@@ -27,13 +27,13 @@ import Foundation
 enum WalkStatus: String, CaseIterable, Codable {
   /// 散歩が開始される前の状態
   case notStarted = "not_started"
-  
+
   /// 散歩が進行中の状態
   case inProgress = "in_progress"
-  
+
   /// 散歩が一時停止された状態
   case paused = "paused"
-  
+
   /// 散歩が終了した状態
   case completed = "completed"
 
@@ -184,7 +184,7 @@ struct Walk: Identifiable, Codable {
   ///
   /// 散歩レコードが最初に作成された日時。
   var createdAt: Date
-  
+
   /// 散歩データの最終更新日時
   ///
   /// 散歩データが最後に更新された日時。位置情報追加や状態変更時に自動更新されます。

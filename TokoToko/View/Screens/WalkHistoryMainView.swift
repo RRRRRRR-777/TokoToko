@@ -37,24 +37,24 @@ struct WalkHistoryMainView: View {
   /// WalkRepositoryから取得された散歩データを保持します。
   /// 完了した散歩のみがフィルタリングされ、作成日時の降順でソートされます。
   @State private var walks: [Walk] = []
-  
+
   /// データ読み込み中の状態
   ///
   /// trueの場合、ローディングビューが表示されます。
   /// データ取得開始時にtrueに設定され、取得完了時にfalseになります。
   @State private var isLoading = true
-  
+
   /// データ読み込みエラーの状態
   ///
   /// trueの場合、エラー状態として空の履歴ビューが表示されます。
   /// WalkRepositoryからのデータ取得に失敗した場合にtrueに設定されます。
   @State private var hasError = false
-  
+
   /// 散歩データリポジトリ
   ///
   /// 散歩データの取得・保存を担当するWalkRepositoryのシングルトンインスタンスです。
   private let walkRepository = WalkRepository.shared
-  
+
   var body: some View {
     Group {
       if isLoading {
@@ -69,7 +69,7 @@ struct WalkHistoryMainView: View {
       loadWalks()
     }
   }
-  
+
   /// WalkRepositoryから散歩データを読み込む
   ///
   /// 散歩データの取得を開始し、取得結果に応じてUI状態を更新します。
@@ -85,7 +85,7 @@ struct WalkHistoryMainView: View {
   private func loadWalks() {
     isLoading = true
     hasError = false
-    
+
     walkRepository.fetchWalks { result in
       DispatchQueue.main.async {
         isLoading = false
@@ -94,7 +94,7 @@ struct WalkHistoryMainView: View {
           // 完了した散歩のみを表示し、作成日時の降順でソート
           let completedWalks = fetchedWalks.filter { $0.isCompleted }
           self.walks = completedWalks.sorted { $0.createdAt > $1.createdAt }
-          
+
         case .failure(let error):
           print("❌ 散歩履歴の読み込みに失敗しました: \(error)")
           self.hasError = true
@@ -120,24 +120,24 @@ private struct EmptyWalkHistoryView: View {
   var body: some View {
     VStack(spacing: 20) {
       Spacer()
-      
+
       Image(systemName: "figure.walk.circle")
         .font(.system(size: 80))
         .foregroundColor(.gray)
         .accessibilityIdentifier("空の散歩履歴アイコン")
-      
+
       Text("散歩履歴がありません")
         .font(.title)
         .fontWeight(.bold)
         .accessibilityIdentifier("散歩履歴がありません")
-      
+
       Text("散歩を完了すると\nここに履歴が表示されます")
         .font(.body)
         .foregroundColor(.gray)
         .multilineTextAlignment(.center)
         .padding(.horizontal, 40)
         .accessibilityIdentifier("散歩を完了すると、ここに履歴が表示されます")
-      
+
       Spacer()
     }
     .navigationTitle("おさんぽ")

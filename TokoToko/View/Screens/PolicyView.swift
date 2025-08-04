@@ -3,7 +3,7 @@ import SwiftUI
 enum PolicyType {
     case privacyPolicy
     case termsOfService
-    
+
     var title: String {
         switch self {
         case .privacyPolicy:
@@ -17,7 +17,7 @@ enum PolicyType {
 struct PolicyView: View {
     let policy: Policy
     let policyType: PolicyType
-    
+
     private var policyText: String {
         switch policyType {
         case .privacyPolicy:
@@ -26,19 +26,19 @@ struct PolicyView: View {
             return policy.termsOfService.ja
         }
     }
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text(policyText)
                     .font(.body)
                     .padding(.horizontal)
-                
+
                 Text("最終更新日: \(policy.updatedAt, formatter: dateFormatter)")
                     .font(.caption)
                     .foregroundColor(.gray)
                     .padding(.horizontal)
-                
+
                 Text("バージョン: \(policy.version)")
                     .font(.caption)
                     .foregroundColor(.gray)
@@ -50,7 +50,7 @@ struct PolicyView: View {
         .navigationTitle(policyType.title)
         .navigationBarTitleDisplayMode(.large)
     }
-    
+
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ja_JP")

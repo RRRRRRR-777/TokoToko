@@ -118,9 +118,9 @@ class WalkSharingService {
     /// 画像生成を行います
     /// Issue #65: 散歩リスト画像表示機能廃止に伴い、共有用画像生成のみ継続
     private func generateImageForSharing(from walk: Walk) async throws -> UIImage {
-        return try await imageGenerator.generateWalkImage(from: walk)
+        try await imageGenerator.generateWalkImage(from: walk)
     }
-    
+
     /// サムネイル画像生成（廃止された機能）
     /// Issue #65: 散歩リスト画像表示機能廃止により無効化
     @available(*, deprecated, message: "Issue #65: 散歩リスト画像表示機能は廃止されました")
