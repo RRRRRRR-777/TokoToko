@@ -154,15 +154,25 @@ struct TokoTokoApp: App {
   /// アプリ全体の認証状態を管理するAuthManagerのインスタンスです。
   /// @StateObjectにより、アプリケーションライフサイクル中で単一のインスタンスが維持されます。
   @StateObject private var authManager = AuthManager()
+  
+  /// 同意状態管理オブジェクト
+  ///
+  /// アプリ全体の同意状態を管理するConsentManagerのインスタンスです。
+  /// 初回同意フローと再同意フローを制御します。
+  @StateObject private var consentManager = ConsentManager()
 
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        if authManager.isInitializing {
+        if authManager.isInitializing || consentManager.isLoading {
           SplashView()
+        } else if !consentManager.hasValidConsent {
+          ConsentFlowView()
+            .environmentObject(consentManager)
         } else if authManager.isLoggedIn {
           MainTabView()
             .environmentObject(authManager)
+            .environmentObject(consentManager)
         } else {
           LoginView()
             .environmentObject(authManager)
@@ -199,6 +209,12 @@ struct MainTabView: View {
   /// 親ビューから注入されるAuthManagerインスタンスです。
   /// ログアウト処理や認証状態の参照に使用されます。
   @EnvironmentObject var authManager: AuthManager
+  
+  /// 同意状態管理オブジェクト
+  ///
+  /// 親ビューから注入されるConsentManagerインスタンスです。
+  /// 再同意チェックなどに使用されます。
+  @EnvironmentObject var consentManager: ConsentManager
   
   /// 現在選択されているタブ
   ///
@@ -281,6 +297,11 @@ struct MainTabView: View {
       }
     }
     .ignoresSafeArea(.all, edges: .bottom)
+    .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+      Task {
+        await consentManager.checkForReConsentNeeded()
+      }
+    }
   }
 }
 
