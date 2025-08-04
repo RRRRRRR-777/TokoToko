@@ -52,6 +52,15 @@ struct SettingsView: View {
   /// ログアウト処理やその他のエラーが発生した場合のメッセージを保持します。
   @State private var errorMessage: String?
 
+  /// ポリシー表示モーダルの表示状態
+  @State private var showingPolicyView = false
+
+  /// 選択されたポリシータイプ
+  @State private var selectedPolicyType: PolicyType = .privacyPolicy
+
+  /// キャッシュされたポリシー
+  @State private var cachedPolicy: Policy?
+
   // UIテスト用のフラグ
   private var isUITesting: Bool {
     ProcessInfo.processInfo.arguments.contains("--uitesting")
@@ -208,7 +217,28 @@ struct SettingsView: View {
 
       Section(header: Text("アプリ設定")) {
         Text("通知")
-        Text("プライバシー")
+
+        Button(action: {
+          Task {
+            await loadCachedPolicy()
+          }
+          showingPolicyView = true
+          selectedPolicyType = .privacyPolicy
+        }) {
+          Text("プライバシーポリシー")
+            .foregroundColor(.primary)
+        }
+
+        Button(action: {
+          Task {
+            await loadCachedPolicy()
+          }
+          showingPolicyView = true
+          selectedPolicyType = .termsOfService
+        }) {
+          Text("利用規約")
+            .foregroundColor(.primary)
+        }
       }
 
       Section(header: Text("位置情報")) {
@@ -238,6 +268,43 @@ struct SettingsView: View {
     } message: {
       Text("アカウントからログアウトします。再度ログインする必要があります。")
     }
+    .sheet(isPresented: $showingPolicyView) {
+      NavigationView {
+        if let policy = cachedPolicy {
+          PolicyView(policy: policy, policyType: selectedPolicyType)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+              ToolbarItem(placement: .navigationBarTrailing) {
+                Button("閉じる") {
+                  showingPolicyView = false
+                }
+              }
+            }
+        } else {
+          VStack {
+            ProgressView("ポリシーを読み込み中...")
+              .padding()
+            Text("ポリシー情報を読み込めませんでした")
+              .padding()
+              .onAppear {
+                print("SettingsView: モーダル表示時にcachedPolicyがnil")
+                print("SettingsView: cachedPolicy = \(String(describing: cachedPolicy))")
+              }
+          }
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+              Button("閉じる") {
+                showingPolicyView = false
+              }
+            }
+          }
+        }
+      }
+    }
+    .task {
+      await loadCachedPolicy()
+    }
   }
 
   /// ユーザーのログアウト処理を実行
@@ -260,6 +327,22 @@ struct SettingsView: View {
     // UIの更新
     DispatchQueue.main.async {
       isLoading = false
+    }
+  }
+
+  /// キャッシュされたポリシーを読み込む
+  private func loadCachedPolicy() async {
+    let policyService = PolicyService()
+    do {
+      cachedPolicy = try await policyService.fetchPolicy()
+      print("SettingsView: ポリシー読み込み成功: \(cachedPolicy?.version ?? "不明")")
+    } catch {
+      // エラーの場合は無視（ポリシーが表示できない旨のメッセージを表示）
+      print("SettingsView: ポリシー読み込みエラー: \(error)")
+      print("SettingsView: エラーの詳細: \(error.localizedDescription)")
+      if let policyError = error as? PolicyServiceError {
+        print("SettingsView: PolicyServiceError: \(policyError.errorDescription ?? "不明なエラー")")
+      }
     }
   }
 }
