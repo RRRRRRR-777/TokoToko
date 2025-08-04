@@ -62,6 +62,12 @@ service cloud.firestore {
         && request.auth.uid == request.resource.data.user_id;
     }
     
+    // Policies collection - 全ユーザーが読み取り可能（利用規約・プライバシーポリシー用）
+    match /policies/{document} {
+      allow read: if true;  // 認証不要で全ユーザーが読み取り可能
+      allow write: if false; // 書き込みは管理者のみ（Firebaseコンソールから）
+    }
+    
     // デフォルトルール - 他のすべてのパスはアクセス拒否
     match /{document=**} {
       allow read, write: if false;
