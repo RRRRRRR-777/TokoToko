@@ -1,4 +1,5 @@
 import Foundation
+import FirebaseAuth
 import FirebaseFirestore
 
 enum PolicyServiceError: LocalizedError {
@@ -31,8 +32,9 @@ class PolicyService {
     // MARK: - Public Methods
 
     func fetchPolicy() async throws -> Policy {
-        #if DEBUG
-        // DEBUGビルドではテスト用のポリシーを返す
+        print("PolicyService.fetchPolicy() が呼び出されました")
+        // 一時的に常にテストポリシーを返す（開発用）
+        print("PolicyService: テストポリシーを返します")
         return Policy(
             version: "1.0.0",
             privacyPolicy: LocalizedContent(
@@ -73,7 +75,11 @@ class PolicyService {
             updatedAt: Date(),
             effectiveDate: Date()
         )
+        
+        // 以下は将来のFirestore連携用コード（現在は未使用）
+        /*
         #else
+        print("PolicyService: 本番モードでFirestoreから取得します")
         do {
             // Firestoreから取得を試みる
             let document = try await firestore
@@ -109,6 +115,7 @@ class PolicyService {
             }
         }
         #endif
+        */
     }
 
     func cachePolicy(_ policy: Policy) async throws {
@@ -151,7 +158,9 @@ class PolicyService {
         #if DEBUG
         let encoder = JSONEncoder()
         let data = try encoder.encode(consent)
-        UserDefaults.standard.set(data, forKey: "TokoTokoConsentCache_\(userID)")
+        let key = "TokoTokoConsentCache_\(userID)"
+        UserDefaults.standard.set(data, forKey: key)
+        print("DEBUG: Consent saved to UserDefaults with key: \(key)")
         #else
         try await firestore
             .collection("users")
@@ -164,9 +173,12 @@ class PolicyService {
     func getLatestConsent(userID: String) async throws -> Consent? {
         #if DEBUG
         // テスト環境ではUserDefaultsから取得
-        guard let data = UserDefaults.standard.data(forKey: "TokoTokoConsentCache_\(userID)") else {
+        let key = "TokoTokoConsentCache_\(userID)"
+        guard let data = UserDefaults.standard.data(forKey: key) else {
+            print("DEBUG: No consent data found for key: \(key)")
             return nil
         }
+        print("DEBUG: Consent data found for key: \(key)")
         let decoder = JSONDecoder()
         return try decoder.decode(Consent.self, from: data)
         #else
@@ -217,7 +229,7 @@ class PolicyService {
         // テスト環境では特別なキーをチェック
         return UserDefaults.standard.bool(forKey: "test_has_consent")
         #else
-        guard let policy = getCachedPolicy(),
+        guard let policy = try? await getCachedPolicy(),
               let userID = getCurrentUserID() else {
             return false
         }
@@ -306,5 +318,9 @@ class PolicyService {
             consentType: consentType,
             deviceInfo: deviceInfo
         )
+    }
+    
+    private func getCurrentUserID() -> String? {
+        return FirebaseAuth.Auth.auth().currentUser?.uid
     }
 }
