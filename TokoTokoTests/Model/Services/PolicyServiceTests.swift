@@ -5,17 +5,13 @@ import FirebaseFirestore
 final class PolicyServiceTests: XCTestCase {
     private var sut: PolicyService!
     
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         sut = PolicyService()
-        // テスト前にキャッシュをクリア
-        Task {
-            try? await sut.clearCache()
-            // 同意キャッシュもクリア
-            for key in UserDefaults.standard.dictionaryRepresentation().keys {
-                if key.hasPrefix("TokoTokoConsentCache_") {
-                    UserDefaults.standard.removeObject(forKey: key)
-                }
+        // 同意キャッシュをクリア（同期的に実行）
+        for key in UserDefaults.standard.dictionaryRepresentation().keys {
+            if key.hasPrefix("TokoTokoConsentCache_") {
+                UserDefaults.standard.removeObject(forKey: key)
             }
         }
     }
@@ -126,15 +122,23 @@ final class PolicyServiceTests: XCTestCase {
         let policyVersion = "2.0.0"
         let userID = "testUser123"
         
+        print("TEST: Starting recordConsent test with userID: \(userID)")
+        
         // When
         try await sut.recordConsent(policyVersion: policyVersion, userID: userID, consentType: .update, deviceInfo: nil)
         
+        print("TEST: recordConsent completed")
+        
         // Then
         let consent = try await sut.getLatestConsent(userID: userID)
+        print("TEST: Retrieved consent: \(String(describing: consent))")
+        
         XCTAssertNotNil(consent)
         XCTAssertEqual(consent?.policyVersion, policyVersion)
         XCTAssertEqual(consent?.consentType, .update)
         XCTAssertNil(consent?.deviceInfo)
+        
+        print("TEST: Test completed")
     }
     
     func test_hasValidConsent_同意済み() async throws {

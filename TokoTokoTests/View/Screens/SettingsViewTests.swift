@@ -130,4 +130,22 @@ final class SettingsViewTests: XCTestCase {
         let sut = SettingsView().environmentObject(mockAuthManager)
         XCTAssertNotNil(sut, "SettingsViewのインスタンスが正しく作成されていません")
     }
+    
+    // プライバシーポリシーリンクの表示テスト
+    func testPrivacyPolicyLinkIsDisplayed() throws {
+        let sut = SettingsView()
+            .environmentObject(authManager)
+        
+        let privacyButton = try sut.inspect().find(text: "プライバシーポリシー")
+        XCTAssertEqual(try privacyButton.string(), "プライバシーポリシー")
+    }
+    
+    // 利用規約リンクの表示テスト
+    func testTermsOfServiceLinkIsDisplayed() throws {
+        let sut = SettingsView()
+            .environmentObject(authManager)
+        
+        let termsButton = try sut.inspect().find(text: "利用規約")
+        XCTAssertEqual(try termsButton.string(), "利用規約")
+    }
 }
