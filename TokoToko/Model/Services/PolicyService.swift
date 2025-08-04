@@ -33,8 +33,10 @@ class PolicyService {
 
     func fetchPolicy() async throws -> Policy {
         print("PolicyService.fetchPolicy() が呼び出されました")
-        // 一時的に常にテストポリシーを返す（開発用）
-        print("PolicyService: テストポリシーを返します")
+        
+        #if DEBUG
+        // デバッグモードではテストポリシーを返す
+        print("PolicyService: デバッグモード - テストポリシーを返します")
         return Policy(
             version: "1.0.0",
             privacyPolicy: LocalizedContent(
@@ -75,11 +77,9 @@ class PolicyService {
             updatedAt: Date(),
             effectiveDate: Date()
         )
-        
-        // 以下は将来のFirestore連携用コード（現在は未使用）
-        /*
         #else
-        print("PolicyService: 本番モードでFirestoreから取得します")
+        // 本番モードではFirestoreから取得
+        print("PolicyService: 本番モード - Firestoreから取得します")
         do {
             // Firestoreから取得を試みる
             let document = try await firestore
@@ -115,7 +115,6 @@ class PolicyService {
             }
         }
         #endif
-        */
     }
 
     func cachePolicy(_ policy: Policy) async throws {
@@ -154,7 +153,7 @@ class PolicyService {
 
         let consentData = try convertConsentToFirestore(consent)
 
-        // MockのためのテストデータはUserDefaultsに保存
+        // デバッグモードではUserDefaultsに保存
         #if DEBUG
         let encoder = JSONEncoder()
         let data = try encoder.encode(consent)
@@ -172,7 +171,7 @@ class PolicyService {
 
     func getLatestConsent(userID: String) async throws -> Consent? {
         #if DEBUG
-        // テスト環境ではUserDefaultsから取得
+        // デバッグモードではUserDefaultsから取得
         let key = "TokoTokoConsentCache_\(userID)"
         guard let data = UserDefaults.standard.data(forKey: key) else {
             print("DEBUG: No consent data found for key: \(key)")
@@ -210,7 +209,7 @@ class PolicyService {
     /// 指定バージョンで再同意が必要かどうかを確認
     func needsReConsent(for policyVersion: String) async -> Bool {
         #if DEBUG
-        // テスト環境では常にfalseを返す
+        // デバッグモードでは常にfalseを返す（テスト用）
         return false
         #else
         guard let userID = getCurrentUserID() else { return false }
@@ -226,7 +225,7 @@ class PolicyService {
     /// 同期版の有効な同意確認（ConsentManagerで使用）
     func hasValidConsent() async -> Bool {
         #if DEBUG
-        // テスト環境では特別なキーをチェック
+        // デバッグモードでは特別なキーをチェック
         return UserDefaults.standard.bool(forKey: "test_has_consent")
         #else
         guard let policy = try? await getCachedPolicy(),
