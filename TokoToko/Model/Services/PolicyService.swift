@@ -25,8 +25,9 @@ class PolicyService {
     private let cacheExpirationKey = "TokoTokoPolicyCacheExpiration"
     private let cacheExpirationHours: TimeInterval = 24
 
-    init(firestore: Firestore = Firestore.firestore()) {
-        self.firestore = firestore
+    init(firestore: Firestore? = nil) {
+        // WalkRepositoryの設定済みFirestoreインスタンスを使用
+        self.firestore = firestore ?? WalkRepository.shared.sharedFirestore
     }
 
     // MARK: - Public Methods
