@@ -166,16 +166,19 @@ struct TokoTokoApp: App {
       NavigationView {
         if authManager.isInitializing || consentManager.isLoading {
           SplashView()
+        } else if !authManager.isLoggedIn {
+          // ログインしていない場合は、まずログイン画面を表示
+          LoginView()
+            .environmentObject(authManager)
         } else if !consentManager.hasValidConsent {
+          // ログイン済みだが同意がない場合は、同意画面を表示
           ConsentFlowView()
             .environmentObject(consentManager)
-        } else if authManager.isLoggedIn {
+        } else {
+          // ログイン済みかつ同意済みの場合は、メインタブを表示
           MainTabView()
             .environmentObject(authManager)
             .environmentObject(consentManager)
-        } else {
-          LoginView()
-            .environmentObject(authManager)
         }
       }
     }

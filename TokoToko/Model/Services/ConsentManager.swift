@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import FirebaseAuth
 
 /// アプリ全体の同意状態を管理するObservableObjectクラス
 ///
@@ -192,7 +193,7 @@ class ConsentManager: ObservableObject {
         return "test_user"
         #else
         // 本番環境ではFirebase Authから取得
-        return "temp_user" // TODO: Firebase Auth統合時に実装
+        return FirebaseAuth.Auth.auth().currentUser?.uid
         #endif
     }
 

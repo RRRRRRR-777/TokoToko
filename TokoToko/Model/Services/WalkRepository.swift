@@ -120,7 +120,14 @@ class WalkRepository {
   /// Firebase Firestoreのデータベース参照
   ///
   /// 散歩データの保存と取得に使用するFirestoreインスタンスです。
-  private let db = Firestore.firestore()
+  private let db: Firestore
+  
+  /// 設定済みFirestoreインスタンスを他のサービスで共有するためのアクセサ
+  ///
+  /// アプリ全体で同一の設定を持つFirestoreインスタンスを使用するために提供されます。
+  var sharedFirestore: Firestore {
+    return db
+  }
 
   /// Firebase Storageの参照
   ///
@@ -149,23 +156,33 @@ class WalkRepository {
   /// 初期化時にFirestoreの設定とオフライン永続化の設定を行います。
   private init() {
     // Firestoreの設定
-    configureFirestore()
+    self.db = Self.configureFirestore()
+    
+    // 初期化完了後にネットワーク設定
+    setupNetworkConfiguration()
   }
 
-  /// Firestoreの初期設定を実行
+  /// Firestoreの初期設定を実行（スタティックメソッド）
   ///
-  /// オフライン永続化、キャッシュ設定、ネットワーク接続の設定を行います。
-  /// アプリのオフライン体験とパフォーマンスを最適化します。
-  private func configureFirestore() {
-    logger.logMethodStart()
-
-    // オフライン永続化を有効にする
+  /// オフライン永続化、キャッシュ設定を行います。
+  /// 初期化中のため、loggerは使用せずに設定のみ行います。
+  private static func configureFirestore() -> Firestore {
+    // Firestoreの設定を先に行う
     let settings = FirestoreSettings()
-    let newSettings = Firestore.firestore().settings
-    newSettings.cacheSettings = PersistentCacheSettings()
-    db.settings = newSettings
-
-    // Firestore設定完了（deepLinkURLSchemeは必要に応じてAppDelegate等で設定）
+    settings.cacheSettings = PersistentCacheSettings()
+    
+    // Firestoreインスタンスを取得して設定を適用
+    let firestore = Firestore.firestore()
+    firestore.settings = settings
+    
+    return firestore
+  }
+  
+  /// ネットワーク設定のセットアップ
+  ///
+  /// Firestoreのネットワーク接続設定とログ記録を行います。
+  private func setupNetworkConfiguration() {
+    logger.logMethodStart()
 
     // オフライン時の自動再試行設定
     db.enableNetwork { [weak self] error in
@@ -186,7 +203,7 @@ class WalkRepository {
     }
 
     logger.info(
-      operation: "configureFirestore",
+      operation: "setupNetworkConfiguration",
       message: "Firestore設定完了",
       context: [
         "persistence_enabled": "true",  // PersistentCacheSettings.unlimited を使用しているため常にtrue
