@@ -282,8 +282,6 @@ struct SettingsView: View {
             }
         } else {
           VStack {
-            ProgressView("ポリシーを読み込み中...")
-              .padding()
             Text("ポリシー情報を読み込めませんでした")
               .padding()
               .onAppear {
