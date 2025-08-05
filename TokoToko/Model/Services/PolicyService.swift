@@ -33,7 +33,8 @@ class PolicyService {
     // MARK: - Public Methods
 
     func fetchPolicy() async throws -> Policy {
-        print("PolicyService.fetchPolicy() が呼び出されました")
+        print("PolicyService.fetchPolicy() が呼び出されました - スレッド: \(Thread.current)")
+        print("PolicyService: 現在のビルド設定確認")
         
         #if DEBUG
         // デバッグモードではテストポリシーを返す
@@ -80,38 +81,58 @@ class PolicyService {
         )
         #else
         // 本番モードではFirestoreから取得
-        print("PolicyService: 本番モード - Firestoreから取得します")
+        print("PolicyService: 本番モード(RELEASE) - Firestoreから取得を開始")
+        print("PolicyService: Firestoreインスタンス: \(firestore)")
+        
         do {
-            // Firestoreから取得を試みる
+            print("PolicyService: policies/current ドキュメント取得開始")
             let document = try await firestore
                 .collection("policies")
                 .document("current")
                 .getDocument()
 
+            print("PolicyService: ドキュメント取得完了 - exists: \(document.exists)")
+            
             guard document.exists, let data = document.data() else {
+                print("PolicyService: ドキュメントが存在しないまたはデータがnull")
                 // ドキュメントが存在しない場合は、キャッシュを確認
+                print("PolicyService: キャッシュから取得を試行")
                 if let cachedPolicy = try? await getCachedPolicy() {
+                    print("PolicyService: キャッシュから取得成功")
                     return cachedPolicy
                 }
+                print("PolicyService: キャッシュからも取得できず - noPolicyFoundエラーをスロー")
                 throw PolicyServiceError.noPolicyFound
             }
 
+            print("PolicyService: Firestoreデータ取得成功 - パース開始")
             let policy = try parsePolicyFromFirestore(data)
+            print("PolicyService: パース成功 - version: \(policy.version)")
 
             // キャッシュに保存
+            print("PolicyService: キャッシュに保存開始")
             try await cachePolicy(policy)
+            print("PolicyService: キャッシュ保存完了")
 
             return policy
         } catch {
+            print("PolicyService: エラー発生: \(error)")
+            print("PolicyService: エラータイプ: \(type(of: error))")
+            
             // エラーの場合、キャッシュから取得を試みる
+            print("PolicyService: エラー時キャッシュ取得を試行")
             if let cachedPolicy = try? await getCachedPolicy() {
+                print("PolicyService: エラー時キャッシュ取得成功")
                 return cachedPolicy
             }
+            print("PolicyService: エラー時キャッシュ取得も失敗")
 
             // 元のエラーを再スロー
             if error is PolicyServiceError {
+                print("PolicyService: PolicyServiceErrorを再スロー")
                 throw error
             } else {
+                print("PolicyService: NetworkErrorとして再スロー")
                 throw PolicyServiceError.networkError
             }
         }
@@ -127,14 +148,35 @@ class PolicyService {
     }
 
     func getCachedPolicy() async throws -> Policy? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey),
-              let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date,
-              expirationDate > Date() else {
+        print("PolicyService: キャッシュ取得開始")
+        
+        guard let data = UserDefaults.standard.data(forKey: cacheKey) else {
+            print("PolicyService: キャッシュデータが存在しない (key: \(cacheKey))")
             return nil
         }
+        print("PolicyService: キャッシュデータ存在確認OK")
+        
+        guard let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date else {
+            print("PolicyService: キャッシュ有効期限データが存在しない (key: \(cacheExpirationKey))")
+            return nil
+        }
+        print("PolicyService: キャッシュ有効期限: \(expirationDate), 現在: \(Date())")
+        
+        guard expirationDate > Date() else {
+            print("PolicyService: キャッシュが期限切れ")
+            return nil
+        }
+        print("PolicyService: キャッシュは有効")
 
         let decoder = JSONDecoder()
-        return try decoder.decode(Policy.self, from: data)
+        do {
+            let policy = try decoder.decode(Policy.self, from: data)
+            print("PolicyService: キャッシュデコード成功 - version: \(policy.version)")
+            return policy
+        } catch {
+            print("PolicyService: キャッシュデコードエラー: \(error)")
+            throw error
+        }
     }
 
     func clearCache() async throws {
