@@ -60,6 +60,9 @@ struct SettingsView: View {
 
   /// キャッシュされたポリシー
   @State private var cachedPolicy: Policy?
+  
+  /// ポリシー読み込み状態
+  @State private var isPolicyLoading = false
 
   // UIテスト用のフラグ
   private var isUITesting: Bool {
@@ -280,6 +283,20 @@ struct SettingsView: View {
                 }
               }
             }
+        } else if isPolicyLoading {
+          VStack {
+            ProgressView()
+            Text("ポリシー情報を読み込み中...")
+              .padding()
+          }
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+              Button("閉じる") {
+                showingPolicyView = false
+              }
+            }
+          }
         } else {
           VStack {
             Text("ポリシー情報を読み込めませんでした")
@@ -330,6 +347,7 @@ struct SettingsView: View {
 
   /// キャッシュされたポリシーを読み込む
   private func loadCachedPolicy() async {
+    isPolicyLoading = true
     let policyService = PolicyService()
     do {
       cachedPolicy = try await policyService.fetchPolicy()
@@ -342,6 +360,7 @@ struct SettingsView: View {
         print("SettingsView: PolicyServiceError: \(policyError.errorDescription ?? "不明なエラー")")
       }
     }
+    isPolicyLoading = false
   }
 }
 

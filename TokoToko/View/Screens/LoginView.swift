@@ -58,6 +58,9 @@ struct LoginView: View {
 
   /// キャッシュされたポリシー
   @State private var cachedPolicy: Policy?
+  
+  /// ポリシー読み込み状態
+  @State private var isPolicyLoading = false
 
   /// Google認証サービス
   ///
@@ -226,6 +229,20 @@ struct LoginView: View {
                 }
               }
             }
+        } else if isPolicyLoading {
+          VStack {
+            ProgressView()
+            Text("ポリシー情報を読み込み中...")
+              .padding()
+          }
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+              Button("閉じる") {
+                showingPolicyView = false
+              }
+            }
+          }
         } else {
           VStack {
             Text("ポリシー情報を読み込めませんでした")
@@ -282,6 +299,7 @@ struct LoginView: View {
 
   /// キャッシュされたポリシーを読み込む
   private func loadCachedPolicy() async {
+    isPolicyLoading = true
     let policyService = PolicyService()
     do {
       cachedPolicy = try await policyService.fetchPolicy()
@@ -294,6 +312,7 @@ struct LoginView: View {
         print("LoginView: PolicyServiceError: \(policyError.errorDescription ?? "不明なエラー")")
       }
     }
+    isPolicyLoading = false
   }
 }
 
