@@ -224,6 +224,16 @@ struct MainTabView: View {
   /// タブの選択状態を管理し、表示するビューを決定します。
   @State private var selectedTab: Tab
 
+  /// オンボーディングモーダルの表示状態
+  ///
+  /// オンボーディングモーダルを表示するかどうかを制御します。
+  @State private var showOnboardingModal = false
+
+  /// オンボーディングマネージャー
+  ///
+  /// オンボーディングの表示判定とコンテンツ管理を担当します。
+  @StateObject private var onboardingManager = OnboardingManager()
+
   /// UIテストヘルパーへの参照
   ///
   /// UIテスト実行時のディープリンクやモック状態制御に使用されます。
@@ -305,6 +315,35 @@ struct MainTabView: View {
         await consentManager.checkForReConsentNeeded()
       }
     }
+    .onAppear {
+      checkForOnboarding()
+    }
+    .sheet(isPresented: $showOnboardingModal) {
+      if let content = onboardingManager.getOnboardingContent(for: .firstLaunch) {
+        OnboardingModalView(
+          content: content,
+          isPresented: $showOnboardingModal
+        ) {
+          onboardingManager.markOnboardingAsShown(for: .firstLaunch)
+          showOnboardingModal = false
+        }
+      }
+    }
+  }
+
+  // MARK: - Private Methods
+
+  /// オンボーディング表示の必要性をチェックし、必要に応じて表示
+  ///
+  /// 初回起動時やバージョンアップ時にオンボーディングを表示するかどうかを判定し、
+  /// 必要な場合はモーダル表示フラグをtrueに設定します。
+  private func checkForOnboarding() {
+    // 初回起動のオンボーディング判定
+    if onboardingManager.shouldShowOnboarding(for: .firstLaunch) {
+      showOnboardingModal = true
+    }
+    // 将来的にはバージョンアップのオンボーディングも判定可能
+    // TODO: アプリバージョンが更新された場合のオンボーディング判定を追加
   }
 }
 
