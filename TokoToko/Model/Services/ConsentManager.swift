@@ -52,6 +52,9 @@ class ConsentManager: ObservableObject {
     /// PolicyServiceのインスタンス
     private let policyService = PolicyService()
 
+    /// UIテストヘルパーへの参照
+    private let testingHelper = UITestingHelper.shared
+
     init() {
         Task {
             await loadInitialState()
@@ -64,6 +67,11 @@ class ConsentManager: ObservableObject {
     /// ポリシーの更新による再同意の必要性をチェックします。
     func checkForReConsentNeeded() async {
         guard !isLoading else { return }
+        
+        // UIテストモードの場合は何もしない
+        if testingHelper.isUITesting {
+            return
+        }
 
         // 最新ポリシーを取得
         do {
@@ -88,6 +96,27 @@ class ConsentManager: ObservableObject {
     func loadInitialState() async {
         isLoading = true
         error = nil
+
+        // UIテストモードの場合は即座に同意済み状態にする
+        if testingHelper.isUITesting {
+            // テスト用のデフォルトポリシーを設定
+            currentPolicy = Policy(
+                version: "1.0.0",
+                privacyPolicy: LocalizedContent(
+                    ja: "UIテスト用プライバシーポリシー",
+                    en: "UI Test Privacy Policy"
+                ),
+                termsOfService: LocalizedContent(
+                    ja: "UIテスト用利用規約",
+                    en: "UI Test Terms of Service"
+                ),
+                updatedAt: Date(),
+                effectiveDate: Date()
+            )
+            hasValidConsent = true
+            isLoading = false
+            return
+        }
 
         do {
             // 現在のポリシーを取得
