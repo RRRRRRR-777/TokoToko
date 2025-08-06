@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 struct StatsBarView: View {
   let walk: Walk
   @Binding var isExpanded: Bool
@@ -55,10 +54,10 @@ struct StatsBarView: View {
             .font(.system(size: 12))
             .fontWeight(.semibold)
         }
-        
+
         // 散歩履歴一覧への切り替えボタン
          HStack {
-          NavigationLink(destination: 
+          NavigationLink(destination:
             WalkListView()
               .navigationBarBackButtonHidden(false)
           ) {
@@ -75,7 +74,7 @@ struct StatsBarView: View {
               .shadow(color: .black.opacity(0.1), radius: 0.5, x: 4, y: 4)
           }
           .accessibilityIdentifier("散歩削除メニュー")
-        }
+         }
       }
     }
     .padding(.all, 16)
@@ -113,11 +112,11 @@ struct StatsBarView: View {
     }
     .accessibilityLabel("統計情報を表示")
   }
-  
+
   private func deleteWalk() {
     performWalkDeletion()
   }
-  
+
   private func performWalkDeletion() {
     let walkRepository = WalkRepository.shared
     walkRepository.deleteWalk(withID: walk.id) { result in
@@ -126,7 +125,7 @@ struct StatsBarView: View {
       }
     }
   }
-  
+
   private func handleDeletionResult(_ result: Result<Bool, WalkRepositoryError>) {
     switch result {
     case .success:
@@ -135,21 +134,21 @@ struct StatsBarView: View {
       handleDeletionFailure(error)
     }
   }
-  
+
   private func handleDeletionSuccess() {
     onWalkDeleted?(walk.id)
     dismissView()
   }
-  
+
   private func handleDeletionFailure(_ error: WalkRepositoryError) {
     errorMessage = localizedErrorMessage(for: error)
     showingErrorAlert = true
   }
-  
+
   private func dismissView() {
     presentationMode.wrappedValue.dismiss()
   }
-  
+
   private func localizedErrorMessage(for error: WalkRepositoryError) -> String {
     switch error {
     case .authenticationRequired:

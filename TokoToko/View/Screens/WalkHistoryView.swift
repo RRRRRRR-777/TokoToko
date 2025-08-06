@@ -181,7 +181,7 @@ struct WalkHistoryView: View {
         }) {
           Image(systemName: "square.and.arrow.up")
             .font(.system(size: 18, weight: .medium))
-            .foregroundColor(Color(red: 68/255, green: 136/255, blue: 77/255))
+            .foregroundColor(Color(red: 68 / 255, green: 136 / 255, blue: 77 / 255))
             .frame(width: 40, height: 40)
         }
 
@@ -249,7 +249,6 @@ struct WalkHistoryView: View {
     .padding(.leading, 10)
   }
 
-
   private var friendHistoryButton: some View {
     VStack {
       Spacer()
@@ -284,7 +283,6 @@ struct WalkHistoryView: View {
       }
     }
   }
-
 
   // MARK: - Private Methods
   /// 散歩削除処理とナビゲーション制御

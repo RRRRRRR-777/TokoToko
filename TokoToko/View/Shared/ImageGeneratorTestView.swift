@@ -11,27 +11,27 @@ import CoreLocation
 /// 画像生成機能のテスト用ビュー
 struct ImageGeneratorTestView: View {
     @StateObject private var viewModel = ImageGeneratorTestViewModel()
-    
+
     private let testCases = TestWalkFactory.allTestCases
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
                 HeaderView()
-                
+
                 GeneratedImageView(
                     image: viewModel.generatedImage,
                     showingPreview: $viewModel.showingImagePreview
                 )
-                
+
                 ErrorView(errorMessage: viewModel.errorMessage)
-                
+
                 TestButtonsView(
                     testCases: testCases,
                     isGenerating: viewModel.isGenerating,
                     onGenerate: viewModel.generateImage
                 )
-                
+
                 Spacer()
             }
             .navigationTitle("画像生成テスト")
@@ -52,13 +52,13 @@ final class ImageGeneratorTestViewModel: ObservableObject {
     @Published var isGenerating = false
     @Published var errorMessage: String?
     @Published var showingImagePreview = false
-    
+
     private let imageGenerator = WalkImageGenerator.shared
-    
+
     func generateImage(from walk: Walk) {
         isGenerating = true
         errorMessage = nil
-        
+
         Task {
             do {
                 let image = try await imageGenerator.generateWalkImage(from: walk)
@@ -85,13 +85,13 @@ private struct HeaderView: View {
 private struct GeneratedImageView: View {
     let image: UIImage?
     @Binding var showingPreview: Bool
-    
+
     var body: some View {
         if let image = image {
             VStack {
                 Text("生成された画像:")
                     .font(.headline)
-                
+
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -100,7 +100,7 @@ private struct GeneratedImageView: View {
                     .onTapGesture {
                         showingPreview = true
                     }
-                
+
                 Text("タップして拡大表示")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -111,7 +111,7 @@ private struct GeneratedImageView: View {
 
 private struct ErrorView: View {
     let errorMessage: String?
-    
+
     var body: some View {
         if let errorMessage = errorMessage {
             Text("エラー: \(errorMessage)")
@@ -127,7 +127,7 @@ private struct TestButtonsView: View {
     let testCases: [TestWalkData]
     let isGenerating: Bool
     let onGenerate: (Walk) -> Void
-    
+
     var body: some View {
         VStack(spacing: 16) {
             ForEach(testCases, id: \.title) { testCase in
@@ -146,7 +146,7 @@ private struct TestButton: View {
     let testCase: TestWalkData
     let isGenerating: Bool
     let onGenerate: (Walk) -> Void
-    
+
     var body: some View {
         Button(action: { onGenerate(testCase.walk) }) {
             HStack {
@@ -195,12 +195,12 @@ struct TestWalkFactory {
             walk: createSinglePointWalk()
         )
     ]
-    
+
     /// 短距離散歩データを作成
     static func createShortWalk() -> Walk {
         let startTime = Date().addingTimeInterval(-3600) // 1時間前
         let endTime = Date().addingTimeInterval(-300) // 5分前
-        
+
         // 東京駅周辺の座標
         let baseLocation = CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671)
         let locations: [CLLocation] = [
@@ -211,7 +211,7 @@ struct TestWalkFactory {
             CLLocation(latitude: baseLocation.latitude + 0.001, longitude: baseLocation.longitude + 0.003),
             CLLocation(latitude: baseLocation.latitude, longitude: baseLocation.longitude + 0.003)
         ]
-        
+
         var walk = Walk(
             title: "東京駅周辺の散歩",
             description: "お昼休みの短い散歩です",
@@ -220,20 +220,20 @@ struct TestWalkFactory {
             totalSteps: 1250,
             status: .completed
         )
-        
+
         // 位置情報を追加
         for location in locations {
             walk.addLocation(location)
         }
-        
+
         return walk
     }
-    
+
     /// 長距離散歩データを作成
     static func createLongWalk() -> Walk {
         let startTime = Date().addingTimeInterval(-7200) // 2時間前
         let endTime = Date().addingTimeInterval(-600) // 10分前
-        
+
         // 皇居周辺の長距離ルート
         let locations: [CLLocation] = [
             CLLocation(latitude: 35.6812, longitude: 139.7671), // 東京駅
@@ -246,7 +246,7 @@ struct TestWalkFactory {
             CLLocation(latitude: 35.6763, longitude: 139.7648), // 銀座
             CLLocation(latitude: 35.6812, longitude: 139.7671)  // 東京駅に戻る
         ]
-        
+
         var walk = Walk(
             title: "皇居ランニングコース",
             description: "皇居周辺の定番ランニングコースです",
@@ -255,23 +255,23 @@ struct TestWalkFactory {
             totalSteps: 8500,
             status: .completed
         )
-        
+
         // 位置情報を追加
         for location in locations {
             walk.addLocation(location)
         }
-        
+
         return walk
     }
-    
+
     /// 単一点散歩データを作成
     static func createSinglePointWalk() -> Walk {
         let startTime = Date().addingTimeInterval(-1800) // 30分前
         let endTime = Date().addingTimeInterval(-300) // 5分前
-        
+
         // 単一点（渋谷スクランブル交差点）
         let location = CLLocation(latitude: 35.6598, longitude: 139.7006)
-        
+
         var walk = Walk(
             title: "カフェでのんびり",
             description: "渋谷のカフェで休憩",
@@ -280,9 +280,9 @@ struct TestWalkFactory {
             totalSteps: 0,
             status: .completed
         )
-        
+
         walk.addLocation(location)
-        
+
         return walk
     }
 }
@@ -293,10 +293,10 @@ struct ImagePreviewView: View {
     @Binding var isPresented: Bool
     @State private var scale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
-    
+
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
+            GeometryReader { _ in
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

@@ -39,16 +39,28 @@ struct LoginView: View {
   /// アプリ全体の認証状態を管理するAuthManagerのインスタンスです。
   /// 認証成功時にログイン状態が自動更新されます。
   @EnvironmentObject private var authManager: AuthManager
-  
+
   /// ログイン処理のローディング状態
   ///
   /// Google Sign-In処理中はtrueになり、ローディングインジケーターを表示します。
   @State private var isLoading: Bool
-  
+
   /// 認証エラーメッセージ
   ///
   /// 認証に失敗した場合のエラーメッセージを保持し、ユーザーに表示します。
   @State private var errorMessage: String?
+
+  /// ポリシー表示モーダルの表示状態
+  @State private var showingPolicyView = false
+
+  /// 選択されたポリシータイプ
+  @State private var selectedPolicyType: PolicyType = .privacyPolicy
+
+  /// キャッシュされたポリシー
+  @State private var cachedPolicy: Policy?
+  
+  /// ポリシー読み込み状態
+  @State private var isPolicyLoading = false
 
   /// Google認証サービス
   ///
@@ -170,9 +182,90 @@ struct LoginView: View {
       }
 
       Spacer()
+
+      // プライバシーポリシーと利用規約へのリンク
+      HStack(spacing: 16) {
+        Button(action: {
+          Task {
+            await loadCachedPolicy()
+          }
+          showingPolicyView = true
+          selectedPolicyType = .privacyPolicy
+        }) {
+          Text("プライバシーポリシー")
+            .font(.caption)
+            .foregroundColor(.blue)
+        }
+
+        Text("・")
+          .font(.caption)
+          .foregroundColor(.secondary)
+
+        Button(action: {
+          Task {
+            await loadCachedPolicy()
+          }
+          showingPolicyView = true
+          selectedPolicyType = .termsOfService
+        }) {
+          Text("利用規約")
+            .font(.caption)
+            .foregroundColor(.blue)
+        }
+      }
+      .padding(.bottom, 20)
     }
     .padding()
     // アプリレベルでログイン状態を管理するため、onAppearでの処理は不要
+    .sheet(isPresented: $showingPolicyView) {
+      NavigationView {
+        if let policy = cachedPolicy {
+          PolicyView(policy: policy, policyType: selectedPolicyType)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+              ToolbarItem(placement: .navigationBarTrailing) {
+                Button("閉じる") {
+                  showingPolicyView = false
+                }
+              }
+            }
+        } else if isPolicyLoading {
+          VStack {
+            ProgressView()
+            Text("ポリシー情報を読み込み中...")
+              .padding()
+          }
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+              Button("閉じる") {
+                showingPolicyView = false
+              }
+            }
+          }
+        } else {
+          VStack {
+            Text("ポリシー情報を読み込めませんでした")
+              .padding()
+              .onAppear {
+                print("LoginView: モーダル表示時にcachedPolicyがnil")
+                print("LoginView: cachedPolicy = \(String(describing: cachedPolicy))")
+              }
+          }
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+              Button("閉じる") {
+                showingPolicyView = false
+              }
+            }
+          }
+        }
+      }
+    }
+    .task {
+      await loadCachedPolicy()
+    }
   }
 
   /// Google Sign-Inによる認証処理を実行
@@ -202,6 +295,24 @@ struct LoginView: View {
         }
       }
     }
+  }
+
+  /// キャッシュされたポリシーを読み込む
+  private func loadCachedPolicy() async {
+    isPolicyLoading = true
+    let policyService = PolicyService()
+    do {
+      cachedPolicy = try await policyService.fetchPolicy()
+      print("LoginView: ポリシー読み込み成功: \(cachedPolicy?.version ?? "不明")")
+    } catch {
+      // エラーの場合は無視（ポリシーが表示できない旨のメッセージを表示）
+      print("LoginView: ポリシー読み込みエラー: \(error)")
+      print("LoginView: エラーの詳細: \(error.localizedDescription)")
+      if let policyError = error as? PolicyServiceError {
+        print("LoginView: PolicyServiceError: \(policyError.errorDescription ?? "不明なエラー")")
+      }
+    }
+    isPolicyLoading = false
   }
 }
 

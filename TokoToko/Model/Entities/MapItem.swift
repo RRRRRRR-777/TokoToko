@@ -36,17 +36,17 @@ struct MapItem: Identifiable {
   ///
   /// マップアイテムを識別するための固有のUUID。作成時に自動生成されます。
   let id: UUID
-  
+
   /// 地理座標（緯度・経度）
   ///
   /// アイテムがマップ上で表示される正確な位置。CoreLocationの座標系を使用します。
   let coordinate: CLLocationCoordinate2D
-  
+
   /// マップ上に表示されるタイトル
   ///
   /// ユーザーに表示される説明テキスト。ピンをタップした際に表示されます。
   let title: String
-  
+
   /// アイコン画像名
   ///
   /// SF Symbolsまたはカスタム画像の名前。マップ上での視覚的な表示に使用されます。

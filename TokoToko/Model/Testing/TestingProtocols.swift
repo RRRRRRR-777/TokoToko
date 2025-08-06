@@ -73,13 +73,13 @@ public protocol UITestingProvider {
 public class ProductionUITestingProvider: UITestingProvider {
   /// 常にfalseを返すUIテストモード判定
   public var isUITesting: Bool { false }
-  
+
   /// 常にfalseを返すモックログイン状態
   public var isMockLoggedIn: Bool { false }
-  
+
   /// 常にfalseを返すディープリンク存在判定
   public var hasDeepLink: Bool { false }
-  
+
   /// 常にnilを返すディープリンク遷移先
   public var deepLinkDestination: String? { nil }
 
@@ -113,7 +113,7 @@ public class ProductionUITestingProvider: UITestingProvider {
 public class UITestUITestingProvider: UITestingProvider {
   /// 常にtrueを返すUIテストモード判定
   public var isUITesting: Bool { true }
-  
+
   /// プロセス引数に基づくモックログイン状態判定
   ///
   /// `--logged-in` または `MOCK_LOGGED_IN` 引数の存在をチェックして
@@ -122,7 +122,7 @@ public class UITestUITestingProvider: UITestingProvider {
     let args = ProcessInfo.processInfo.arguments
     return args.contains("--logged-in") || args.contains("MOCK_LOGGED_IN")
   }
-  
+
   /// プロセス引数に基づくディープリンク存在判定
   ///
   /// 複数の引数形式をサポートしてディープリンク設定の存在をチェックします。
@@ -132,7 +132,7 @@ public class UITestUITestingProvider: UITestingProvider {
   public var hasDeepLink: Bool {
     let args = ProcessInfo.processInfo.arguments
     return args.contains("--deep-link") || args.contains("--destination")
-      || args.contains(where: { $0.hasPrefix("DEEP_LINK_DESTINATION_") })
+      || args.contains { $0.hasPrefix("DEEP_LINK_DESTINATION_") }
   }
 
   /// プロセス引数からディープリンク遷移先を抽出

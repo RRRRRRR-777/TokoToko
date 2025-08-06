@@ -41,7 +41,7 @@ public struct LocationAnomalyDetector {
     #if DEBUG
     print("🔋 [DEBUG] Current batteryLevel: \(batteryLevel) (シミュレーターでは通常-1.0または0.0)")
     #endif
-    
+
     // バッテリー消費の異常検知
     // シミュレーターでは-1.0が返されるため、実機での有効なバッテリーレベルのみをチェック
     let isValidBatteryLevel = batteryLevel >= 0

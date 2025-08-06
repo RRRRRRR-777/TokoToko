@@ -31,43 +31,43 @@ import SwiftUI
 struct WalkCompletionView: View {
     /// 完了した散歩データ
     let walk: Walk
-    
+
     /// ビューの表示状態
     @Binding var isPresented: Bool
-    
+
     /// 生成された共有用画像
     @State private var generatedImage: UIImage?
-    
+
     /// 画像生成中の状態
     @State private var isGeneratingImage = false
-    
+
     /// 共有シートの表示状態
     @State private var showingShareSheet = false
-    
+
     /// エラーメッセージ
     @State private var errorMessage: String?
-    
+
     private let imageGenerator = WalkImageGenerator.shared
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
                     // 祝福ヘッダー
                     congratulationsHeader
-                    
+
                     // 散歩結果サマリー
                     walkSummary
-                    
+
                     // 画像プレビュー（生成後に表示）
                     imagePreviewSection
-                    
+
                     // エラーメッセージ
                     errorSection
-                    
+
                     // アクションボタン
                     actionButtons
-                    
+
                     Spacer(minLength: 20)
                 }
                 .padding()
@@ -88,9 +88,9 @@ struct WalkCompletionView: View {
         }
         .shareWalk(walk, isPresented: $showingShareSheet)
     }
-    
+
     // MARK: - View Components
-    
+
     /// 祝福ヘッダー
     private var congratulationsHeader: some View {
         VStack(spacing: 16) {
@@ -100,14 +100,14 @@ struct WalkCompletionView: View {
                 .foregroundColor(.orange)
                 .scaleEffect(1.0)
                 .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: UUID())
-            
+
             // 祝福メッセージ
             VStack(spacing: 8) {
                 Text("おつかれさまでした！")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
-                
+
                 Text("素晴らしい散歩でした")
                     .font(.headline)
                     .foregroundColor(.secondary)
@@ -120,7 +120,7 @@ struct WalkCompletionView: View {
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         )
     }
-    
+
     /// 散歩結果サマリー
     private var walkSummary: some View {
         VStack(spacing: 16) {
@@ -133,9 +133,9 @@ struct WalkCompletionView: View {
                     .fontWeight(.semibold)
                 Spacer()
             }
-            
+
             Divider()
-            
+
             // 統計情報
             HStack(spacing: 0) {
                 // 距離
@@ -151,7 +151,7 @@ struct WalkCompletionView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                
+
                 // 時間
                 VStack(spacing: 4) {
                     Image(systemName: "clock")
@@ -165,7 +165,7 @@ struct WalkCompletionView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                
+
                 // 歩数
                 VStack(spacing: 4) {
                     Image(systemName: "figure.walk")
@@ -188,7 +188,7 @@ struct WalkCompletionView: View {
                 .fill(Color(.secondarySystemBackground))
         )
     }
-    
+
     /// 画像プレビューセクション
     private var imagePreviewSection: some View {
         VStack(spacing: 12) {
@@ -211,7 +211,7 @@ struct WalkCompletionView: View {
                     Text("共有用画像")
                         .font(.headline)
                         .foregroundColor(.primary)
-                    
+
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -222,7 +222,7 @@ struct WalkCompletionView: View {
             }
         }
     }
-    
+
     /// エラーセクション
     private var errorSection: some View {
         Group {
@@ -242,7 +242,7 @@ struct WalkCompletionView: View {
             }
         }
     }
-    
+
     /// アクションボタン
     private var actionButtons: some View {
         VStack(spacing: 12) {
@@ -272,7 +272,7 @@ struct WalkCompletionView: View {
                 .foregroundColor(.white)
             }
             .disabled(isGeneratingImage)
-            
+
             // 再生成ボタン（エラー時のみ表示）
             if errorMessage != nil {
                 Button(action: {
@@ -293,15 +293,15 @@ struct WalkCompletionView: View {
             }
         }
     }
-    
+
     // MARK: - Private Methods
-    
+
     /// 共有用画像を生成
     private func generateShareImage() {
         isGeneratingImage = true
         errorMessage = nil
         generatedImage = nil
-        
+
         Task {
             do {
                 let image = try await imageGenerator.generateWalkImage(from: walk)
@@ -332,7 +332,7 @@ extension Walk {
     static var previewWalk: Walk {
         let startTime = Date().addingTimeInterval(-3600)
         let endTime = Date().addingTimeInterval(-300)
-        
+
         return Walk(
             title: "朝の散歩",
             description: "爽やかな朝の散歩コース",

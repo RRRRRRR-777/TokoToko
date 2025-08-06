@@ -42,12 +42,12 @@ struct HomeView: View {
   /// 散歩の開始・停止、統計情報の管理、位置情報の記録を担当するシングルトンインスタンスです。
   /// @StateObjectにより、このビューのライフサイクル全体で状態が管理されます。
   @StateObject private var walkManager = WalkManager.shared
-  
+
   /// ローディング状態を管理するフラグ
   ///
   /// 非同期処理（位置情報取得、散歩開始処理等）の実行中に表示するローディングインジケーターの制御に使用されます。
   @State private var isLoading = false
-  
+
   /// マップ表示領域の座標範囲
   ///
   /// 表示するマップの中心座標とズームレベルを定義します。
@@ -59,7 +59,7 @@ struct HomeView: View {
   /// CoreLocationをラップしたカスタムマネージャーで、位置情報の取得、権限管理、
   /// バックグラウンド追跡を統合的に管理します。
   @StateObject private var locationManager = LocationManager.shared
-  
+
   /// 現在取得している位置情報
   ///
   /// 最新のGPS位置情報を保持し、マップの中心位置調整や散歩開始地点の記録に使用されます。
@@ -122,7 +122,7 @@ struct HomeView: View {
                   LinearGradient(
                     gradient: Gradient(colors: [
                       Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
-                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing
@@ -173,7 +173,6 @@ struct HomeView: View {
     }
     .loadingOverlay(isLoading: isLoading)
   }
-
 
   // マップセクション
   private var mapSection: some View {
@@ -304,8 +303,7 @@ struct HomeView: View {
     currentLocation = locationManager.currentLocation
 
     if locationManager.authorizationStatus == .authorizedWhenInUse
-      || locationManager.authorizationStatus == .authorizedAlways
-    {
+      || locationManager.authorizationStatus == .authorizedAlways {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {

@@ -33,22 +33,22 @@ public enum LogLevel: String, Codable, CaseIterable {
   ///
   /// 詳細なデバッグ情報や開発時の動作確認用ログです。
   case debug = "DEBUG"
-  
+
   /// 情報レベルのログ
   ///
   /// 一般的な情報メッセージや正常な動作の記録です。
   case info = "INFO"
-  
+
   /// 警告レベルのログ
   ///
   /// 注意が必要な状況や潜在的な問題の通知です。
   case warning = "WARNING"
-  
+
   /// エラーレベルのログ
   ///
   /// 処理に失敗したエラー情報や例外の記録です。
   case error = "ERROR"
-  
+
   /// 重大エラーレベルのログ（最高優先度）
   ///
   /// アプリケーションの継続に重大な影響を与える問題です。
@@ -108,13 +108,13 @@ public enum LogLevel: String, Codable, CaseIterable {
 public struct SourceInfo: Codable {
   /// ソースファイル名（拡張子含む）
   let fileName: String
-  
+
   /// 関数名またはメソッド名
   let functionName: String
-  
+
   /// ソースコードの行番号
   let lineNumber: Int
-  
+
   /// モジュール名
   let moduleName: String
 
@@ -187,7 +187,7 @@ public struct EnvironmentHelper {
       "memory_pressure": String(processInfo.physicalMemory),
       "is_debug": String(isDebugBuild()),
       "battery_level": String(device.batteryLevel),
-      "battery_state": batteryStateString(device.batteryState),
+      "battery_state": batteryStateString(device.batteryState)
     ]
   }
 
@@ -221,6 +221,6 @@ extension Date {
   ///
   /// - Returns: ISO8601形式の日付文字列
   var iso8601: String {
-    return ISO8601DateFormatter().string(from: self)
+    ISO8601DateFormatter().string(from: self)
   }
 }

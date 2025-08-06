@@ -78,23 +78,17 @@ final class LoginViewUITests: XCTestCase {
         // ログイン画面が表示されることを確認
         XCTAssertTrue(app.staticTexts["TokoTokoへようこそ"].waitForExistence(timeout: 5), "ウェルカムテキストが表示されていません")
 
-        // Googleログインボタンをタップ
-        let googleSignInButton = app.buttons["googleSignInButton"]
-        if googleSignInButton.exists {
-            googleSignInButton.tap()
-        } else {
-            // ボタンが見つからない場合は、最初のボタンをタップ
-            if app.buttons.count > 0 {
-                app.buttons.element(boundBy: 0).tap()
-            }
-        }
-
         // ローディングインジケータが表示されることを確認
         let loadingIndicator = app.activityIndicators.firstMatch
         XCTAssertTrue(loadingIndicator.waitForExistence(timeout: 5), "ローディングインジケータが表示されていません")
 
-        // Googleログインボタンが非表示になることを確認
-        XCTAssertFalse(googleSignInButton.exists || app.buttons.count > 0, "Googleログインボタンが非表示になっていません")
+        // Googleログインボタンが非表示になることを確認（具体的にGoogleログインボタンのみをチェック）
+        let googleSignInButton = app.buttons["googleSignInButton"]
+        XCTAssertFalse(googleSignInButton.exists, "Googleログインボタンが非表示になっていません")
+        
+        // ポリシーリンクボタンは表示されたままであることを確認
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'プライバシーポリシー'")).count > 0, "プライバシーポリシーリンクが表示されていません")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS '利用規約'")).count > 0, "利用規約リンクが表示されていません")
     }
 
     // バックグラウンド/フォアグラウンド遷移テスト

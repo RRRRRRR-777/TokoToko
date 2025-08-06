@@ -40,78 +40,78 @@ import Foundation
 /// - ``anomalyDetection``
 public struct EnhancedVibeLogEntry: Codable {
   // MARK: - 基本ログ情報
-  
+
   /// ログエントリのタイムスタンプ（ISO8601形式）
   let timestamp: String
-  
+
   /// ログレベル（debug, info, warning, error, critical）
   let level: LogLevel
-  
+
   /// ログエントリの相関ID（UUIDベース）
   ///
   /// 関連するログエントリを追跡するためのユニークな識別子です。
   let correlationId: String
-  
+
   /// ログエントリの操作名または機能名
   let operation: String
-  
+
   /// ログメッセージの内容
   let message: String
-  
+
   /// 追加のコンテキスト情報
   ///
   /// ログに関連する付加情報をキー・バリュー形式で保存します。
   let context: [String: String]
-  
+
   /// 実行環境の情報
   ///
   /// アプリケーション実行時の環境詳細をキー・バリュー形式で保存します。
   let environment: [String: String]
 
   // MARK: - AI協働フィールド
-  
+
   /// ログ発生元のソース情報
   ///
   /// ファイル名、関数名、行番号等のソースコード位置情報です。
   let source: SourceInfo?
-  
+
   /// 実行時のスタックトレース情報
   ///
   /// エラー発生時やデバッグ時のコールスタック情報を保存します。
   let stackTrace: String?
-  
+
   /// 人間（開発者）からのメモやコメント
   ///
   /// 開発者が後で参照するためのメモや分析コメントです。
   let humanNote: String?
-  
+
   /// AI用のTodoやタスク情報
   ///
   /// AIエージェントが処理すべきタスクやアクションアイテムです。
   let aiTodo: String?
 
   // MARK: - バグ排除強化フィールド
-  
+
   /// パフォーマンス関連のメトリクス情報
   ///
   /// 実行時間、メモリ使用量、スレッド情報等のパフォーマンス指標です。
   let performanceMetrics: PerformanceMetrics?
-  
+
   /// エラーの連鎖情報
   ///
   /// エラーの原因となった他のエラーや関連するエラー情報です。
   let errorChain: ErrorChain?
-  
+
   /// 状態遷移の情報
   ///
   /// アプリケーション状態の変化やデータの状態遷移情報です。
   let stateTransition: StateTransition?
-  
+
   /// バグ再現に必要な情報
   ///
   /// バグの再現手順や再現に必要な条件・データです。
   let bugReproduction: BugReproductionInfo?
-  
+
   /// 異常検出関連の情報
   ///
   /// システムの異常や予期しない動作の検出結果です。
