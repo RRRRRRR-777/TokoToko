@@ -18,11 +18,13 @@ final class TokoTokoAppTests: XCTestCase {
         try await super.setUp()
         UserDefaults.standard.removeObject(forKey: "cached_policy")
         UserDefaults.standard.removeObject(forKey: "policy_cache_timestamp")
+        UserDefaults.standard.removeObject(forKey: "test_has_consent")
     }
     
     override func tearDown() async throws {
         UserDefaults.standard.removeObject(forKey: "cached_policy")
         UserDefaults.standard.removeObject(forKey: "policy_cache_timestamp")
+        UserDefaults.standard.removeObject(forKey: "test_has_consent")
         try await super.tearDown()
     }
 
@@ -82,6 +84,9 @@ final class TokoTokoAppTests: XCTestCase {
             consentType: .initial,
             deviceInfo: nil
         )
+        
+        // デバッグモード用のキーを設定
+        UserDefaults.standard.set(true, forKey: "test_has_consent")
         
         let hasConsent = await policyService.hasValidConsent()
         XCTAssertTrue(hasConsent)
