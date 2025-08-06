@@ -39,7 +39,7 @@ packages:
     from: 8.0.0
   ViewInspector:
     url: https://github.com/nalexn/ViewInspector.git
-    from: 0.10.0
+    from: 0.10.2
 targets:
   TokoToko:
     type: application
