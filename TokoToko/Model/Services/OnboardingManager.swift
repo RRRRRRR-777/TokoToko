@@ -23,7 +23,7 @@ struct OnboardingContent {
     let pages: [OnboardingPage]
 }
 
-class OnboardingManager {
+class OnboardingManager: ObservableObject {
     private let userDefaults: UserDefaults
     private let firstLaunchKey = "onboarding_first_launch_shown"
     private let versionUpdateKeyPrefix = "onboarding_version_update_"
