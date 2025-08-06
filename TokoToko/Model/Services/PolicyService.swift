@@ -34,10 +34,7 @@ class PolicyService {
 
     func fetchPolicy() async throws -> Policy {
         #if DEBUG
-        print("PolicyService.fetchPolicy() が呼び出されました - スレッド: \(Thread.current)")
-        print("PolicyService: 現在のビルド設定確認")
         // デバッグモードではテストポリシーを返す
-        print("PolicyService: デバッグモード - テストポリシーを返します")
         return Policy(
             version: "1.0.0",
             privacyPolicy: LocalizedContent(
@@ -125,51 +122,23 @@ class PolicyService {
     }
 
     func getCachedPolicy() async throws -> Policy? {
-        #if DEBUG
-        print("PolicyService: キャッシュ取得開始")
-        #endif
-        
         guard let data = UserDefaults.standard.data(forKey: cacheKey) else {
-            #if DEBUG
-            print("PolicyService: キャッシュデータが存在しない (key: \(cacheKey))")
-            #endif
             return nil
         }
-        #if DEBUG
-        print("PolicyService: キャッシュデータ存在確認OK")
-        #endif
         
         guard let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date else {
-            #if DEBUG
-            print("PolicyService: キャッシュ有効期限データが存在しない (key: \(cacheExpirationKey))")
-            #endif
             return nil
         }
-        #if DEBUG
-        print("PolicyService: キャッシュ有効期限: \(expirationDate), 現在: \(Date())")
-        #endif
         
         guard expirationDate > Date() else {
-            #if DEBUG
-            print("PolicyService: キャッシュが期限切れ")
-            #endif
             return nil
         }
-        #if DEBUG
-        print("PolicyService: キャッシュは有効")
-        #endif
 
         let decoder = JSONDecoder()
         do {
             let policy = try decoder.decode(Policy.self, from: data)
-            #if DEBUG
-            print("PolicyService: キャッシュデコード成功 - version: \(policy.version)")
-            #endif
             return policy
         } catch {
-            #if DEBUG
-            print("PolicyService: キャッシュデコードエラー: \(error)")
-            #endif
             throw error
         }
     }
@@ -197,7 +166,6 @@ class PolicyService {
         let data = try encoder.encode(consent)
         let key = "TokoTokoConsentCache_\(userID)"
         UserDefaults.standard.set(data, forKey: key)
-        print("DEBUG: Consent saved to UserDefaults with key: \(key)")
         #else
         try await firestore
             .collection("users")
@@ -212,10 +180,8 @@ class PolicyService {
         // デバッグモードではUserDefaultsから取得
         let key = "TokoTokoConsentCache_\(userID)"
         guard let data = UserDefaults.standard.data(forKey: key) else {
-            print("DEBUG: No consent data found for key: \(key)")
             return nil
         }
-        print("DEBUG: Consent data found for key: \(key)")
         let decoder = JSONDecoder()
         return try decoder.decode(Consent.self, from: data)
         #else
