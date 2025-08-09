@@ -14,14 +14,27 @@ struct OnboardingModalView: View {
 
     @State private var currentPageIndex = 0
     var body: some View {
-        VStack(spacing: 24) {
-            headerView
-            contentView
-            Spacer()
-            navigationView
+        ZStack {
+            // 背景オーバーレイ
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    onDismiss()
+                    isPresented = false
+                }
+            
+            // カード型モーダル
+            VStack(spacing: 24) {
+                headerView
+                contentView
+                navigationView
+            }
+            .padding(24)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
+            .padding(.horizontal, 20)
         }
-        .padding(.top, 20)
-        .background(Color(UIColor.systemBackground))
         .accessibilityIdentifier("OnboardingModalView")
     }
     // MARK: - Private Properties
@@ -33,58 +46,71 @@ struct OnboardingModalView: View {
     private var headerView: some View {
         HStack {
             Spacer()
-            Button("閉じる") {
+            Button {
                 onDismiss()
                 isPresented = false
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+                    .frame(width: 24, height: 24)
             }
             .accessibilityIdentifier("OnboardingCloseButton")
         }
-        .padding(.horizontal)
     }
 
     private var contentView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "photo")
-                .font(.system(size: 120))
-                .foregroundColor(.gray)
-                .frame(height: 200)
+        VStack(spacing: 16) {
+            // 画像プレースホルダーをカードスタイルに変更
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.gray.opacity(0.1))
+                .frame(width: 160, height: 120)
+                .overlay(
+                    Image(systemName: "photo")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray.opacity(0.6))
+                )
 
             Text(currentPage.title)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.system(size: 20, weight: .bold))
                 .multilineTextAlignment(.center)
+                .foregroundColor(.primary)
 
             Text(currentPage.description)
-                .font(.body)
+                .font(.system(size: 14))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
-                .padding(.horizontal, 20)
+                .lineSpacing(2)
+                .padding(.horizontal, 12)
         }
+        .padding(.vertical, 8)
     }
 
     private var navigationView: some View {
         HStack(spacing: 20) {
             Button { previousPage() } label: {
                 Image(systemName: "chevron.left")
-                    .font(.title2)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(currentPageIndex == 0 ? .gray.opacity(0.3) : .blue)
             }
             .disabled(currentPageIndex == 0)
 
             HStack(spacing: 8) {
                 ForEach(0..<content.pages.count, id: \.self) { index in
                     Circle()
-                        .fill(index == currentPageIndex ? Color.accentColor : Color.gray.opacity(0.3))
+                        .fill(index == currentPageIndex ? Color.blue : Color.gray.opacity(0.3))
                         .frame(width: 8, height: 8)
                 }
             }
 
             Button { nextPage() } label: {
                 Image(systemName: "chevron.right")
-                    .font(.title2)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(currentPageIndex == content.pages.count - 1 ? .gray.opacity(0.3) : .blue)
             }
             .disabled(currentPageIndex == content.pages.count - 1)
         }
-        .padding(.bottom, 40)
+        .padding(.top, 16)
     }
 
     // MARK: - Private Methods
