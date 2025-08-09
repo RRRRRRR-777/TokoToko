@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 enum OnboardingType: Equatable {
     case firstLaunch
@@ -24,6 +25,8 @@ struct OnboardingContent {
 }
 
 class OnboardingManager: ObservableObject {
+    @Published private var notificationTrigger = false
+
     private let userDefaults: UserDefaults
     private let firstLaunchKey = "onboarding_first_launch_shown"
     private let versionUpdateKeyPrefix = "onboarding_version_update_"
@@ -50,6 +53,8 @@ class OnboardingManager: ObservableObject {
             let key = versionUpdateKeyPrefix + version
             userDefaults.set(true, forKey: key)
         }
+        // ObservableObject通知のトリガー
+        notificationTrigger.toggle()
     }
 
     func getOnboardingContent(for type: OnboardingType) -> OnboardingContent? {
