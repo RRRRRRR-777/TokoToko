@@ -284,7 +284,8 @@ struct MainTabView: View {
           switch selectedTab {
           case .outing:
             NavigationView {
-              HomeView()
+              HomeView(showOnboarding: $showOnboardingModal)
+                .environmentObject(onboardingManager)
             }
           case .walk:
             NavigationView {
@@ -318,15 +319,10 @@ struct MainTabView: View {
     .onAppear {
       checkForOnboarding()
     }
-    .sheet(isPresented: $showOnboardingModal) {
-      if let content = onboardingManager.getOnboardingContent(for: .firstLaunch) {
-        OnboardingModalView(
-          content: content,
-          isPresented: $showOnboardingModal
-        ) {
-          onboardingManager.markOnboardingAsShown(for: .firstLaunch)
-          showOnboardingModal = false
-        }
+    .onChange(of: selectedTab) { newTab in
+      if showOnboardingModal && newTab != .outing {
+        onboardingManager.markOnboardingAsShown(for: .firstLaunch)
+        showOnboardingModal = false
       }
     }
   }
