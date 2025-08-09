@@ -7,6 +7,7 @@
 
 import XCTest
 import Foundation
+import Combine
 @testable import TokoToko
 
 final class OnboardingManagerTests: XCTestCase {
@@ -102,5 +103,92 @@ final class OnboardingManagerTests: XCTestCase {
         XCTAssertNotNil(content, "バージョンアップ用のオンボーディングコンテンツが取得できること")
         XCTAssertEqual(content?.type, .versionUpdate(version: version), "コンテンツタイプが正しいこと")
         XCTAssertFalse(content?.pages.isEmpty ?? true, "ページが含まれていること")
+    }
+
+    // MARK: - Integration Tests (Phase 4)
+
+    func testOnboardingManagerIntegrationWithMainTabView() {
+        // TDD Red: MainTabViewとの統合テスト（失敗するテストを先に書く）
+        // Given: 初回起動状況（UserDefaultsクリア状態）
+        mockUserDefaults.removeObject(forKey: "onboarding_first_launch_shown")
+
+        // When: MainTabViewが表示される際のオンボーディング判定
+        let shouldShowFirstLaunch = sut.shouldShowOnboarding(for: .firstLaunch)
+
+        // Then: 初回起動時はオンボーディングが表示されること
+        XCTAssertTrue(shouldShowFirstLaunch, "MainTabView表示時に初回起動オンボーディングが判定されること")
+
+        // When: オンボーディング表示後にマークされる
+        sut.markOnboardingAsShown(for: .firstLaunch)
+
+        // Then: 次回起動時は表示されないこと
+        let shouldShowSecond = sut.shouldShowOnboarding(for: .firstLaunch)
+        XCTAssertFalse(shouldShowSecond, "オンボーディング表示後は二回目以降表示されないこと")
+    }
+
+    func testOnboardingManagerObservableObjectIntegration() {
+        // TDD Green: ObservableObject統合テスト（テストが通るよう修正）
+        // Given: OnboardingManagerがObservableObjectとして動作する
+        let expectation = self.expectation(description: "ObservableObject通知")
+        var notificationReceived = false
+
+        // When: プロパティが変更される
+        let cancellable = sut.objectWillChange.sink {
+            notificationReceived = true
+            expectation.fulfill()
+        }
+
+        // @Published notificationTriggerの変更をトリガー
+        sut.markOnboardingAsShown(for: .firstLaunch)
+
+        // Then: 変更通知が発生すること
+        waitForExpectations(timeout: 1.0) { _ in
+            XCTAssertTrue(notificationReceived, "ObservableObjectとしての変更通知が発生すること")
+        }
+
+        cancellable.cancel()
+    }
+
+    func testVersionUpdateOnboardingIntegration() {
+        // TDD Red: バージョンアップデート統合テスト
+        // Given: 異なるバージョンでの複数回実行
+        let version1 = "1.0.0"
+        let version2 = "1.1.0"
+
+        // When: 最初のバージョンでオンボーディング表示
+        let shouldShowV1First = sut.shouldShowOnboarding(for: .versionUpdate(version: version1))
+        XCTAssertTrue(shouldShowV1First, "新バージョン初回は表示されること")
+
+        sut.markOnboardingAsShown(for: .versionUpdate(version: version1))
+        let shouldShowV1Second = sut.shouldShowOnboarding(for: .versionUpdate(version: version1))
+        XCTAssertFalse(shouldShowV1Second, "同バージョン2回目は表示されないこと")
+
+        // When: 新しいバージョンに更新
+        let shouldShowV2First = sut.shouldShowOnboarding(for: .versionUpdate(version: version2))
+
+        // Then: 新バージョンでは再び表示されること
+        XCTAssertTrue(shouldShowV2First, "新バージョン更新時は再度表示されること")
+    }
+
+    func testOnboardingContentConsistency() {
+        // TDD Red: コンテンツ整合性テスト
+        // Given: 初回起動とバージョンアップの両方のコンテンツを取得
+        let firstLaunchContent = sut.getOnboardingContent(for: .firstLaunch)
+        let versionUpdateContent = sut.getOnboardingContent(for: .versionUpdate(version: "1.1.0"))
+
+        // Then: 両方のコンテンツが適切に生成されること
+        XCTAssertNotNil(firstLaunchContent, "初回起動コンテンツが生成されること")
+        XCTAssertNotNil(versionUpdateContent, "バージョンアップコンテンツが生成されること")
+
+        // コンテンツの構造が正しいこと
+        XCTAssertEqual(firstLaunchContent?.pages.count, 2, "初回起動コンテンツは2ページであること")
+        XCTAssertEqual(versionUpdateContent?.pages.count, 1, "バージョンアップコンテンツは1ページであること")
+
+        // ページ内容が空でないこと
+        if let firstPage = firstLaunchContent?.pages.first {
+            XCTAssertFalse(firstPage.title.isEmpty, "タイトルが空でないこと")
+            XCTAssertFalse(firstPage.description.isEmpty, "説明文が空でないこと")
+            XCTAssertFalse(firstPage.imageName.isEmpty, "画像名が空でないこと")
+        }
     }
 }
