@@ -1,0 +1,29 @@
+onboarding:
+  first_launch:
+    pages:
+      - title: "TokoTokoへようこそ"
+        description: "散歩を記録して、素敵な思い出を作りましょう"
+        image_name: "first_launch_1"
+      - title: "簡単操作"
+        description: "ボタン一つで散歩の開始・終了ができます"
+        image_name: "first_launch_2"
+      - title: "写真で記録"
+        description: "散歩中に撮った写真を散歩ルートと一緒に保存できます"
+        image_name: "first_launch_3"
+  version_updates:
+    "1.0":
+      pages:
+        - title: "新機能追加"
+          description: "バージョン1.0では新しい機能を追加しました"
+          image_name: "version_1_0_1"
+        - title: "改善点"
+          description: "ユーザー体験を向上させました"
+          image_name: "version_1_0_2"
+    "2.0":
+      pages:
+        - title: "大幅アップデート"
+          description: "バージョン2.0では大幅な改善を行いました"
+          image_name: "version_2_0_1"
+        - title: "新しいUI"
+          description: "より使いやすいデザインに変更しました"
+          image_name: "version_2_0_2"
