@@ -317,14 +317,19 @@ struct MainTabView: View {
       }
     }
     .onAppear {
+      #if DEBUG
       // UIテスト時のオンボーディング状態リセット
-      if testingHelper.shouldResetOnboarding {
+      if testingHelper.isUITesting && testingHelper.shouldResetOnboarding {
         onboardingManager.resetOnboardingState()
         // リセット後はオンボーディングを表示する
         showOnboardingModal = true
       } else {
         checkForOnboarding()
       }
+      #else
+      // 本番環境では常に通常のチェックを実行
+      checkForOnboarding()
+      #endif
     }
     .onChange(of: selectedTab) { newTab in
       if showOnboardingModal && newTab != .outing {
