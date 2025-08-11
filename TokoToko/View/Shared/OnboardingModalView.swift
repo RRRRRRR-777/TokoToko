@@ -19,6 +19,7 @@ struct OnboardingModalView: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
+                    // onDismissで状態管理を一元化
                     onDismiss()
                     isPresented = false
                 }
@@ -47,6 +48,7 @@ struct OnboardingModalView: View {
         HStack {
             Spacer()
             Button {
+                // onDismissで状態管理を一元化
                 onDismiss()
                 isPresented = false
             } label: {
