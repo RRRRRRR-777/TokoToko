@@ -170,8 +170,6 @@ class GoogleAuthService {
         operation: "signInWithGoogle:googleSignIn",
         message: "Google Sign In成功",
         context: [
-          "user_id": user.userID ?? "unknown",
-          "user_email": user.profile?.email ?? "unknown",
           "has_id_token": "true",
           "has_access_token": "true"
         ]
@@ -186,7 +184,6 @@ class GoogleAuthService {
         operation: "signInWithGoogle:firebaseAuth",
         message: "Firebase認証開始",
         context: [
-          "user_id": user.userID ?? "unknown",
           "credential_type": "google"
         ]
       )
@@ -209,9 +206,6 @@ class GoogleAuthService {
           operation: "signInWithGoogle:firebaseAuth",
           message: "Firebase認証成功",
           context: [
-            "user_id": user.userID ?? "unknown",
-            "firebase_uid": authResult?.user.uid ?? "unknown",
-            "user_email": user.profile?.email ?? "unknown",
             "display_name": user.profile?.name ?? "unknown"
           ]
         )
@@ -221,7 +215,6 @@ class GoogleAuthService {
           message: "Google認証プロセス完了",
           context: [
             "result": "success",
-            "firebase_uid": authResult?.user.uid ?? "unknown"
           ]
         )
 
