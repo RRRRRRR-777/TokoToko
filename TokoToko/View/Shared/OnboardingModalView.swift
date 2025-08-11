@@ -22,7 +22,7 @@ struct OnboardingModalView: View {
                     onDismiss()
                     isPresented = false
                 }
-            
+
             // カード型モーダル
             VStack(spacing: 24) {
                 headerView
@@ -34,8 +34,9 @@ struct OnboardingModalView: View {
             .cornerRadius(20)
             .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
             .padding(.horizontal, 20)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("OnboardingModalView")
         }
-        .accessibilityIdentifier("OnboardingModalView")
     }
     // MARK: - Private Properties
 
@@ -84,6 +85,18 @@ struct OnboardingModalView: View {
                 .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
+        .gesture(
+            DragGesture()
+                .onEnded { value in
+                    if value.translation.width > 50 {
+                        // 右スワイプ: 前のページ
+                        previousPage()
+                    } else if value.translation.width < -50 {
+                        // 左スワイプ: 次のページ
+                        nextPage()
+                    }
+                }
+        )
     }
 
     private var navigationView: some View {
@@ -94,6 +107,7 @@ struct OnboardingModalView: View {
                     .foregroundColor(currentPageIndex == 0 ? .gray.opacity(0.3) : .blue)
             }
             .disabled(currentPageIndex == 0)
+            .accessibilityIdentifier("OnboardingPrevButton")
 
             HStack(spacing: 8) {
                 ForEach(0..<content.pages.count, id: \.self) { index in
@@ -102,6 +116,8 @@ struct OnboardingModalView: View {
                         .frame(width: 8, height: 8)
                 }
             }
+            .accessibilityIdentifier("OnboardingPageIndicator")
+            .accessibilityValue("page \(currentPageIndex + 1) of \(content.pages.count)")
 
             Button { nextPage() } label: {
                 Image(systemName: "chevron.right")
@@ -109,6 +125,7 @@ struct OnboardingModalView: View {
                     .foregroundColor(currentPageIndex == content.pages.count - 1 ? .gray.opacity(0.3) : .blue)
             }
             .disabled(currentPageIndex == content.pages.count - 1)
+            .accessibilityIdentifier("OnboardingNextButton")
         }
         .padding(.top, 16)
     }

@@ -170,6 +170,7 @@ struct HomeView: View {
         }
       }
     }
+    .accessibilityIdentifier("HomeView")
     .navigationBarHidden(true)
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
@@ -186,22 +187,17 @@ struct HomeView: View {
       }
     }
     .loadingOverlay(isLoading: isLoading)
-    .overlay(
-      Group {
-        if showOnboarding &&
-           (locationManager.authorizationStatus == .authorizedWhenInUse ||
-            locationManager.authorizationStatus == .authorizedAlways),
-           let content = onboardingManager.getOnboardingContent(for: .firstLaunch) {
-          OnboardingModalView(
-            content: content,
-            isPresented: $showOnboarding
-          ) {
+    .sheet(isPresented: $showOnboarding) {
+      if let content = onboardingManager.currentContent {
+        OnboardingModalView(
+          content: content,
+          isPresented: $showOnboarding,
+          onDismiss: {
             onboardingManager.markOnboardingAsShown(for: .firstLaunch)
-            showOnboarding = false
           }
-        }
+        )
       }
-    )
+    }
   }
 
   // マップセクション

@@ -317,6 +317,10 @@ struct MainTabView: View {
       }
     }
     .onAppear {
+      // UIテスト時のオンボーディング状態リセット
+      if testingHelper.shouldResetOnboarding {
+        onboardingManager.resetOnboardingState()
+      }
       checkForOnboarding()
     }
     .onChange(of: selectedTab) { newTab in
