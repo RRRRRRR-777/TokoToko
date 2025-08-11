@@ -177,6 +177,7 @@ struct HomeView: View {
       setupLocationManager()
       
       // UIテスト時のオンボーディング表示制御
+      // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
       if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
         print("HomeView: --show-onboarding 引数が検出されました")
         DispatchQueue.main.async {
@@ -228,6 +229,10 @@ struct HomeView: View {
           annotations: createMapAnnotations(),
           polylineCoordinates: createPolylineCoordinates()
         )
+        .accessibilityIdentifier("TestMapView")
+        .onAppear {
+          print("UIテストモード: MapViewComponentを表示しています")
+        }
       } else {
         // 位置情報の許可状態に応じて表示を切り替え
         switch locationManager.authorizationStatus {
