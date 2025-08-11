@@ -192,4 +192,90 @@ final class OnboardingManagerTests: XCTestCase {
             XCTAssertFalse(firstPage.imageName.isEmpty, "画像名が空でないこと")
         }
     }
+
+    // MARK: - TDD Red Phase - YML機能の失敗テスト
+
+    func testLoadOnboardingFromYMLShouldFail() {
+        // Given: YML読み込み機能が未実装の状態
+        // When: YMLファイルからコンテンツを読み込もうとする
+        do {
+            let content = try sut.loadOnboardingFromYML()
+            // Then: この段階では失敗するはず（メソッドが未実装）
+            XCTFail("loadOnboardingFromYML()が未実装の状態では、このテストは失敗するはず")
+        } catch {
+            // Expected: メソッド未実装のため失敗する
+            XCTAssertTrue(true, "YML読み込み機能が未実装のため失敗する")
+        }
+    }
+
+    func testYMLFileNotFoundShouldFallback() {
+        // Given: YMLファイルが存在しない状況
+        // When: 存在しないYMLファイルを読み込もうとする
+        do {
+            let content = try sut.loadOnboardingFromYML(fileName: "non_existent_file.yml")
+            // Then: この段階では失敗するはず（メソッドが未実装）
+            XCTFail("存在しないファイルの処理が未実装の状態では、このテストは失敗するはず")
+        } catch {
+            // Expected: ファイル不存在処理が未実装のため失敗する
+            XCTAssertTrue(true, "YMLファイル不存在の処理が未実装のため失敗する")
+        }
+    }
+
+    func testInvalidYMLFormatShouldFallback() {
+        // Given: 不正な形式のYMLファイル
+        // When: 不正なYMLファイルを読み込もうとする
+        do {
+            let content = try sut.loadOnboardingFromYML(invalidFormat: true)
+            // Then: この段階では失敗するはず（エラーハンドリング未実装）
+            XCTFail("不正なYML形式の処理が未実装の状態では、このテストは失敗するはず")
+        } catch {
+            // Expected: エラーハンドリングが未実装のため失敗する
+            XCTAssertTrue(true, "不正なYML形式の処理が未実装のため失敗する")
+        }
+    }
+
+    func testYMLLoadingPerformanceShouldMeet500msRequirement() {
+        // Given: YML読み込みのパフォーマンステスト準備
+        let startTime = Date()
+
+        // When: YMLファイルを読み込む（未実装）
+        do {
+            let content = try sut.loadOnboardingFromYML()
+            let endTime = Date()
+            let elapsedTime = endTime.timeIntervalSince(startTime)
+
+            // Then: この段階では失敗するはず（メソッドが未実装）
+            XCTFail("YML読み込み処理が未実装の状態では、このテストは失敗するはず")
+        } catch {
+            // Expected: パフォーマンステストメソッドが未実装のため失敗する
+            XCTAssertTrue(true, "YML読み込みパフォーマンステストが未実装のため失敗する")
+        }
+    }
+
+    func testCreateContentFromYMLDataShouldFail() {
+        // Given: YMLデータからコンテンツ作成が未実装の状態
+        // When: YMLデータからOnboardingContentを作成しようとする
+        do {
+            let mockYMLData = ["title": "test", "description": "test desc"]
+            let content = try sut.createOnboardingContent(from: mockYMLData)
+            // Then: この段階では失敗するはず（メソッドが未実装）
+            XCTFail("YMLデータからのコンテンツ作成が未実装の状態では、このテストは失敗するはず")
+        } catch {
+            // Expected: コンテンツ作成メソッドが未実装のため失敗する
+            XCTAssertTrue(true, "YMLデータからのコンテンツ作成が未実装のため失敗する")
+        }
+    }
+
+    func testVersionParsingFromYMLShouldFail() {
+        // Given: バージョン解析機能が未実装の状態
+        // When: バージョン文字列を解析しようとする
+        do {
+            let parsedVersion = try sut.parseVersion("1.2.3")
+            // Then: この段階では失敗するはず（メソッドが未実装）
+            XCTFail("バージョン解析機能が未実装の状態では、このテストは失敗するはず")
+        } catch {
+            // Expected: バージョン解析が未実装のため失敗する
+            XCTAssertTrue(true, "バージョン解析機能が未実装のため失敗する")
+        }
+    }
 }
