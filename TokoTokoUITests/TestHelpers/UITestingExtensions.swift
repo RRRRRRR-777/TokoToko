@@ -26,13 +26,17 @@ public class UITestingExtensions {
 
         /// オンボーディング状態をリセットする
         public var resetOnboarding: Bool = false
+        
+        /// オンボーディングを強制表示する
+        public var showOnboarding: Bool = false
 
-        public init(isUITesting: Bool = true, isLoggedIn: Bool = false, useDeepLink: Bool = false, destination: String? = nil, resetOnboarding: Bool = false) {
+        public init(isUITesting: Bool = true, isLoggedIn: Bool = false, useDeepLink: Bool = false, destination: String? = nil, resetOnboarding: Bool = false, showOnboarding: Bool = false) {
             self.isUITesting = isUITesting
             self.isLoggedIn = isLoggedIn
             self.useDeepLink = useDeepLink
             self.destination = destination
             self.resetOnboarding = resetOnboarding
+            self.showOnboarding = showOnboarding
         }
     }
 
@@ -67,6 +71,11 @@ public class UITestingExtensions {
         // オンボーディング状態をリセット
         if options.resetOnboarding {
             app.launchArguments.append("--reset-onboarding")
+        }
+        
+        // オンボーディングを強制表示
+        if options.showOnboarding {
+            app.launchArguments.append("--show-onboarding")
         }
 
         // アプリを起動
@@ -107,7 +116,8 @@ public class UITestingExtensions {
         launchApp(app, options: LaunchOptions(
             isUITesting: true,
             isLoggedIn: isLoggedIn,
-            resetOnboarding: true
+            resetOnboarding: true,
+            showOnboarding: true
         ))
     }
 }
