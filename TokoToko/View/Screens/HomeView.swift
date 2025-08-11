@@ -179,15 +179,21 @@ struct HomeView: View {
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
       if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
+        #if DEBUG
         print("HomeView: --show-onboarding 引数が検出されました")
+        #endif
         DispatchQueue.main.async {
+          #if DEBUG
           print("HomeView: オンボーディング表示を true に設定")
+          #endif
           self.showOnboarding = true
         }
       }
     }
     .onChange(of: locationManager.authorizationStatus) { status in
+      #if DEBUG
       print("位置情報許可状態が変更されました: \(status)")
+      #endif
       setupLocationManager()
       
       // UIテスト時以外は位置情報許可が決定された後にオンボーディングを表示
@@ -231,7 +237,9 @@ struct HomeView: View {
         )
         .accessibilityIdentifier("TestMapView")
         .onAppear {
+          #if DEBUG
           print("UIテストモード: MapViewComponentを表示しています")
+          #endif
         }
       } else {
         // 位置情報の許可状態に応じて表示を切り替え
