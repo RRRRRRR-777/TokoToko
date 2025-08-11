@@ -37,6 +37,16 @@ import SwiftUI
 /// ### Initialization
 /// - ``init()``
 struct HomeView: View {
+  /// オンボーディングモーダルの表示状態
+  ///
+  /// MainTabViewから渡されるバインディングで、オンボーディングの表示/非表示を制御します。
+  @Binding var showOnboarding: Bool
+  
+  /// オンボーディングマネージャー
+  ///
+  /// オンボーディングコンテンツの管理と表示状態の制御を行います。
+  @EnvironmentObject var onboardingManager: OnboardingManager
+  
   /// 散歩管理の中央コントローラー
   ///
   /// 散歩の開始・停止、統計情報の管理、位置情報の記録を担当するシングルトンインスタンスです。
@@ -67,13 +77,17 @@ struct HomeView: View {
 
   /// HomeViewの初期化メソッド
   ///
+  /// オンボーディング表示状態のバインディングを受け取り、
   /// マップ表示領域の初期値を東京駅周辺に設定します。
   /// 実際のアプリ使用時は、位置情報取得後に現在位置に更新されます。
+  ///
+  /// - Parameter showOnboarding: オンボーディング表示状態のバインディング
   ///
   /// ## Default Location
   /// - 中心座標: 東京駅（35.6812, 139.7671）
   /// - ズームレベル: 0.01度（約1km四方の表示範囲）
-  init() {
+  init(showOnboarding: Binding<Bool>) {
+    self._showOnboarding = showOnboarding
     // 東京駅をデフォルト位置に
     _region = State(
       initialValue: MKCoordinateRegion(
@@ -156,6 +170,7 @@ struct HomeView: View {
         }
       }
     }
+    .accessibilityIdentifier("HomeView")
     .navigationBarHidden(true)
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
@@ -172,6 +187,17 @@ struct HomeView: View {
       }
     }
     .loadingOverlay(isLoading: isLoading)
+    .sheet(isPresented: $showOnboarding) {
+      if let content = onboardingManager.currentContent {
+        OnboardingModalView(
+          content: content,
+          isPresented: $showOnboarding,
+          onDismiss: {
+            onboardingManager.markOnboardingAsShown(for: .firstLaunch)
+          }
+        )
+      }
+    }
   }
 
   // マップセクション
@@ -390,6 +416,6 @@ struct RoundedCorner: Shape {
 }
 
 #Preview {
-  MainTabView()
-    .environmentObject(AuthManager())
+  HomeView(showOnboarding: .constant(false))
+    .environmentObject(OnboardingManager())
 }

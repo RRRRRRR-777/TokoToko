@@ -73,7 +73,6 @@ class FirebaseAuthHelper {
 
             #if DEBUG
                 print("✅ Firebase認証: トークン確認済み")
-                print("   ユーザーID: \(userId)")
                 print("   有効期限: \(token.expirationDate)")
             #endif
 

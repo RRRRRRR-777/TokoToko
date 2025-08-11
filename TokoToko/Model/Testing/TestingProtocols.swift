@@ -49,6 +49,12 @@ public protocol UITestingProvider {
   /// UIテスト時の直接ナビゲーション先を示す文字列です。
   /// 設定されていない場合はnilを返します。
   var deepLinkDestination: String? { get }
+
+  /// オンボーディング状態のリセット要求
+  ///
+  /// UIテスト時にオンボーディング状態をリセットするかの判定です。
+  /// プロダクション環境では常にfalseを返します。
+  var shouldResetOnboarding: Bool { get }
 }
 
 /// 本番環境用のUITestingProvider実装
@@ -82,6 +88,9 @@ public class ProductionUITestingProvider: UITestingProvider {
 
   /// 常にnilを返すディープリンク遷移先
   public var deepLinkDestination: String? { nil }
+
+  /// 常にfalseを返すオンボーディング状態リセット要求
+  public var shouldResetOnboarding: Bool { false }
 
   /// ProductionUITestingProviderの初期化メソッド
   public init() {}
@@ -153,6 +162,15 @@ public class UITestUITestingProvider: UITestingProvider {
       return String(deepLinkArg.dropFirst("DEEP_LINK_DESTINATION_".count))
     }
     return nil
+  }
+
+  /// プロセス引数に基づくオンボーディング状態リセット要求判定
+  ///
+  /// `--reset-onboarding` 引数の存在をチェックして
+  /// オンボーディング状態リセットの必要性を決定します。
+  public var shouldResetOnboarding: Bool {
+    let args = ProcessInfo.processInfo.arguments
+    return args.contains("--reset-onboarding")
   }
 
   /// UITestUITestingProviderの初期化メソッド

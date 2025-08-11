@@ -122,7 +122,6 @@ final class PolicyServiceTests: XCTestCase {
         let policyVersion = "2.0.0"
         let userID = "testUser123"
         
-        print("TEST: Starting recordConsent test with userID: \(userID)")
         
         // When
         try await sut.recordConsent(policyVersion: policyVersion, userID: userID, consentType: .update, deviceInfo: nil)

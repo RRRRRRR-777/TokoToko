@@ -30,6 +30,7 @@ import Foundation
 /// - ``isMockLoggedIn``
 /// - ``hasDeepLink``
 /// - ``deepLinkDestination``
+/// - ``shouldResetOnboarding``
 ///
 /// ### Testing Support
 /// - ``init(provider:)``
@@ -102,5 +103,13 @@ public class UITestingHelper {
   /// ディープリンクが設定されていない場合はnilを返します。
   public var deepLinkDestination: String? {
     provider.deepLinkDestination
+  }
+
+  /// オンボーディング状態のリセットが要求されているかどうか
+  ///
+  /// UIテスト時にオンボーディング状態をリセットするかの判定です。
+  /// プロダクションモードでは常にfalseを返します。
+  public var shouldResetOnboarding: Bool {
+    provider.shouldResetOnboarding
   }
 }
