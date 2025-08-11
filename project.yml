@@ -144,5 +144,3 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
     dependencies:
       - target: TokoToko
-      - package: ViewInspector
-        product: ViewInspector
