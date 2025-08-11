@@ -24,13 +24,9 @@ final class OnboardingModalViewTests: XCTestCase {
         // Given: 初回起動でオンボーディングを表示する設定
         UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
         
-        // Then: オンボーディングモーダルが表示されること
-        let modal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(modal.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
-        
-        // 閉じるボタンが存在すること
+        // Then: オンボーディングモーダルが表示されること（閉じるボタンの存在で確認）
         let closeButton = app.buttons["OnboardingCloseButton"]
-        XCTAssertTrue(closeButton.exists, "閉じるボタンが存在すること")
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
         
         // ナビゲーションボタンが存在すること
         let prevButton = app.buttons["OnboardingPrevButton"]
@@ -74,18 +70,17 @@ final class OnboardingModalViewTests: XCTestCase {
         closeButton.tap()
         
         // Then: オンボーディングモーダルが非表示になること
-        let modal = app.otherElements["OnboardingModalView"]
-        XCTAssertFalse(modal.waitForExistence(timeout: 2), "オンボーディングモーダルが閉じられること")
+        let closeButtonAfterDismiss = app.buttons["OnboardingCloseButton"]
+        XCTAssertFalse(closeButtonAfterDismiss.waitForExistence(timeout: 2), "オンボーディングモーダルが閉じられること")
     }
     
     func testOnboardingModalViewNotShownForExistingUser() throws {
         // Given: まず初回起動でオンボーディングを表示し、完了させる
         UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
         
-        let modal = app.otherElements["OnboardingModalView"]
-        if modal.waitForExistence(timeout: 5) {
+        let closeButton = app.buttons["OnboardingCloseButton"]
+        if closeButton.waitForExistence(timeout: 5) {
             // オンボーディングを閉じる
-            let closeButton = app.buttons["OnboardingCloseButton"]
             closeButton.tap()
         }
         
@@ -94,7 +89,8 @@ final class OnboardingModalViewTests: XCTestCase {
         UITestingExtensions.launchAppLoggedIn(app)
         
         // Then: 2回目の起動ではオンボーディングモーダルが表示されないこと
-        XCTAssertFalse(modal.waitForExistence(timeout: 2), "既存ユーザーにはオンボーディングが表示されないこと")
+        let closeButtonAfterRestart = app.buttons["OnboardingCloseButton"]
+        XCTAssertFalse(closeButtonAfterRestart.waitForExistence(timeout: 2), "既存ユーザーにはオンボーディングが表示されないこと")
     }
     
     func testOnboardingModalViewAccessibility() throws {
@@ -102,11 +98,10 @@ final class OnboardingModalViewTests: XCTestCase {
         UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
         
         // Then: アクセシビリティ要素が適切に設定されていること
-        let modal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(modal.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
+        let closeButton = app.buttons["OnboardingCloseButton"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
         
         // VoiceOver対応の確認
-        let closeButton = app.buttons["OnboardingCloseButton"]
         XCTAssertNotNil(closeButton.label, "閉じるボタンにアクセシビリティラベルが設定されていること")
         
         let nextButton = app.buttons["OnboardingNextButton"]
@@ -120,11 +115,12 @@ final class OnboardingModalViewTests: XCTestCase {
         // Given: 初回起動でオンボーディングを表示
         UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
         
-        let modal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(modal.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
+        let closeButton = app.buttons["OnboardingCloseButton"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
         
-        // When: 左スワイプで次ページへ
-        modal.swipeLeft()
+        // When: 左スワイプで次ページへ（コンテンツ領域でスワイプ）
+        let contentArea = app.otherElements.element(boundBy: 0)
+        contentArea.swipeLeft()
         
         // Then: ページが切り替わること
         let pageIndicator = app.pageIndicators["OnboardingPageIndicator"]
@@ -135,8 +131,8 @@ final class OnboardingModalViewTests: XCTestCase {
             XCTAssertNotEqual(currentPage, "page 1 of 3", "スワイプで次ページに移動すること")
         }
         
-        // When: 右スワイプで前ページへ
-        modal.swipeRight()
+        // When: 右スワイプで前ページへ（コンテンツ領域でスワイプ）
+        contentArea.swipeRight()
         
         // Then: 前のページに戻ること
         if pageIndicator.exists {

@@ -89,7 +89,7 @@ class OnboardingManager: ObservableObject {
 
         // リセット後に初回起動コンテンツを設定
         currentContent = getOnboardingContent(for: .firstLaunch)
-        
+
         // ObservableObject通知のトリガー
         notificationTrigger.toggle()
     }
