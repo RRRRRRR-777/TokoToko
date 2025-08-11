@@ -546,7 +546,6 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       return
     }
 
-    print("散歩を保存しています: \(walk.title), userID: \(walk.userId ?? "nil")")
 
     walkRepository.saveWalk(walk) { result in
       DispatchQueue.main.async {
@@ -937,9 +936,6 @@ extension WalkManager {
 
     #if DEBUG
       print("📤 [散歩履歴用] サムネイル保存開始")
-      print("   ユーザーID: \(userId)")
-      print("   ウォークID: \(walkId.uuidString)")
-      print("   保存パス: \(thumbnailPath)")
       print("   認証状態: \(Auth.auth().currentUser != nil ? "認証済み" : "未認証")")
       print("   ファイルサイズ: \(imageData.count) bytes")
       print("   用途: 散歩履歴一覧表示用")
