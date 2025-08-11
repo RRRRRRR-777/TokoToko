@@ -27,11 +27,13 @@ final class OnboardingConfigTests: XCTestCase {
     // When: YMLをデコードしようとする
     do {
       let config = try YAMLDecoder().decode(OnboardingConfig.self, from: ymlString)
-      // Then: この時点ではOnboardingConfigが未実装なので失敗する
-      XCTFail("OnboardingConfigが実装されていない状態では、このテストは失敗するはず")
+      // Then: TDD Green Phase - 正常にデコードできること
+      XCTAssertNotNil(config, "OnboardingConfigが正常にデコードできること")
+      XCTAssertNotNil(config.onboarding.firstLaunch, "firstLaunchセクションが存在すること")
+      XCTAssertEqual(config.onboarding.firstLaunch?.pages.count, 1, "1つのページが含まれること")
+      XCTAssertEqual(config.onboarding.firstLaunch?.pages.first?.title, "テストタイトル", "タイトルが正しくデコードされること")
     } catch {
-      // Expected: データモデルが未実装の場合、デコードは失敗する
-      XCTAssertTrue(true, "OnboardingConfigが未実装のためデコードが失敗する")
+      XCTFail("OnboardingConfigが実装済みの場合、デコードは成功するべき: \(error)")
     }
   }
 
@@ -52,11 +54,13 @@ final class OnboardingConfigTests: XCTestCase {
     // When: OnboardingDataをデコードしようとする
     do {
       let config = try YAMLDecoder().decode(OnboardingConfig.self, from: ymlString)
-      // Then: この段階では失敗するはず
-      XCTFail("OnboardingDataが未実装の状態では、このテストは失敗するはず")
+      // Then: TDD Green Phase - 正常にデコードできること
+      XCTAssertNotNil(config.onboarding.firstLaunch, "firstLaunchセクションが存在すること")
+      XCTAssertEqual(config.onboarding.firstLaunch?.pages.count, 2, "2つのページが含まれること")
+      XCTAssertEqual(config.onboarding.firstLaunch?.pages[0].title, "ようこそ", "1つ目のページタイトルが正しいこと")
+      XCTAssertEqual(config.onboarding.firstLaunch?.pages[1].title, "使い方", "2つ目のページタイトルが正しいこと")
     } catch {
-      // Expected: データモデル未実装のため失敗
-      XCTAssertTrue(true, "OnboardingDataが未実装のためデコードが失敗する")
+      XCTFail("OnboardingDataが実装済みの場合、デコードは成功するべき: \(error)")
     }
   }
 
@@ -75,11 +79,12 @@ final class OnboardingConfigTests: XCTestCase {
     // When: OnboardingSectionをデコードしようとする
     do {
       let section = try YAMLDecoder().decode(OnboardingSection.self, from: ymlString)
-      // Then: この段階では失敗するはず
-      XCTFail("OnboardingSectionが未実装の状態では、このテストは失敗するはず")
+      // Then: TDD Green Phase - 正常にデコードできること
+      XCTAssertEqual(section.pages.count, 2, "2つのページが含まれること")
+      XCTAssertEqual(section.pages[0].title, "タイトル1", "1つ目のページタイトルが正しいこと")
+      XCTAssertEqual(section.pages[1].title, "タイトル2", "2つ目のページタイトルが正しいこと")
     } catch {
-      // Expected: データモデル未実装のため失敗
-      XCTAssertTrue(true, "OnboardingSectionが未実装のためデコードが失敗する")
+      XCTFail("OnboardingSectionが実装済みの場合、デコードは成功するべき: \(error)")
     }
   }
 
@@ -94,11 +99,12 @@ final class OnboardingConfigTests: XCTestCase {
     // When: OnboardingPageDataをデコードしようとする
     do {
       let page = try YAMLDecoder().decode(OnboardingPageData.self, from: ymlString)
-      // Then: この段階では失敗するはず
-      XCTFail("OnboardingPageDataが未実装の状態では、このテストは失敗するはず")
+      // Then: TDD Green Phase - 正常にデコードでき、CodingKeysが動作すること
+      XCTAssertEqual(page.title, "ページタイトル", "タイトルが正しくデコードされること")
+      XCTAssertEqual(page.description, "ページ説明", "説明が正しくデコードされること")
+      XCTAssertEqual(page.imageName, "page_image", "snake_caseのimage_nameがcamelCaseのimageNameに変換されること")
     } catch {
-      // Expected: データモデル未実装のため失敗
-      XCTAssertTrue(true, "OnboardingPageDataが未実装のためデコードが失敗する")
+      XCTFail("OnboardingPageDataが実装済みの場合、デコードは成功するべき: \(error)")
     }
   }
 
@@ -122,11 +128,14 @@ final class OnboardingConfigTests: XCTestCase {
     // When: version_updatesをデコードしようとする
     do {
       let config = try YAMLDecoder().decode(OnboardingConfig.self, from: ymlString)
-      // Then: この段階では失敗するはず
-      XCTFail("version_updatesのデコードが未実装の状態では、このテストは失敗するはず")
+      // Then: TDD Green Phase - version_updatesが正常にデコードできること
+      XCTAssertNotNil(config.onboarding.versionUpdates, "version_updatesセクションが存在すること")
+      XCTAssertEqual(config.onboarding.versionUpdates?.count, 2, "2つのバージョンが含まれること")
+      XCTAssertNotNil(config.onboarding.versionUpdates?["1.0"], "バージョン1.0のセクションが存在すること")
+      XCTAssertNotNil(config.onboarding.versionUpdates?["2.0"], "バージョン2.0のセクションが存在すること")
+      XCTAssertEqual(config.onboarding.versionUpdates?["1.0"]?.pages.first?.title, "バージョン1.0", "バージョン1.0のタイトルが正しいこと")
     } catch {
-      // Expected: データモデル未実装のため失敗
-      XCTAssertTrue(true, "version_updatesのデコードが未実装のため失敗する")
+      XCTFail("version_updatesが実装済みの場合、デコードは成功するべき: \(error)")
     }
   }
 
