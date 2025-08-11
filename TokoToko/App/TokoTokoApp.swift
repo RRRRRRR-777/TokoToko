@@ -318,11 +318,17 @@ struct MainTabView: View {
     }
     .onAppear {
       #if DEBUG
-      // UIテスト時のオンボーディング状態リセット
-      if testingHelper.isUITesting && testingHelper.shouldResetOnboarding {
-        onboardingManager.resetOnboardingState()
-        // リセット後はオンボーディングを表示する
-        showOnboardingModal = true
+      // UIテスト時のオンボーディング制御
+      if testingHelper.isUITesting {
+        if testingHelper.shouldResetOnboarding {
+          onboardingManager.resetOnboardingState()
+          // リセット後はオンボーディングを表示する
+          showOnboardingModal = true
+        } else if testingHelper.shouldShowOnboarding {
+          // オンボーディングを強制表示
+          onboardingManager.forceShowOnboarding()
+          showOnboardingModal = true
+        }
       } else {
         checkForOnboarding()
       }
@@ -345,11 +351,15 @@ struct MainTabView: View {
   ///
   /// 初回起動時やバージョンアップ時にオンボーディングを表示するかどうかを判定し、
   /// 必要な場合はモーダル表示フラグをtrueに設定します。
+  /// 
+  /// **注意**: 位置情報許可フローの変更により、初回起動時のオンボーディングは
+  /// HomeViewで位置情報許可後に表示されるようになりました。
   private func checkForOnboarding() {
-    // 初回起動のオンボーディング判定
-    if onboardingManager.shouldShowOnboarding(for: .firstLaunch) {
-      showOnboardingModal = true
-    }
+    // 初回起動のオンボーディング判定は HomeView で位置情報許可後に行う
+    // if onboardingManager.shouldShowOnboarding(for: .firstLaunch) {
+    //   showOnboardingModal = true
+    // }
+    
     // 将来的にはバージョンアップのオンボーディングも判定可能
     // TODO: アプリバージョンが更新された場合のオンボーディング判定を追加
   }

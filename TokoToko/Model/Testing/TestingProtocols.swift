@@ -55,6 +55,12 @@ public protocol UITestingProvider {
   /// UIテスト時にオンボーディング状態をリセットするかの判定です。
   /// プロダクション環境では常にfalseを返します。
   var shouldResetOnboarding: Bool { get }
+  
+  /// オンボーディング強制表示要求
+  ///
+  /// UIテスト時にオンボーディングを強制的に表示するかの判定です。
+  /// プロダクション環境では常にfalseを返します。
+  var shouldShowOnboarding: Bool { get }
 }
 
 /// 本番環境用のUITestingProvider実装
@@ -91,6 +97,9 @@ public class ProductionUITestingProvider: UITestingProvider {
 
   /// 常にfalseを返すオンボーディング状態リセット要求
   public var shouldResetOnboarding: Bool { false }
+  
+  /// 常にfalseを返すオンボーディング強制表示要求
+  public var shouldShowOnboarding: Bool { false }
 
   /// ProductionUITestingProviderの初期化メソッド
   public init() {}
@@ -171,6 +180,15 @@ public class UITestUITestingProvider: UITestingProvider {
   public var shouldResetOnboarding: Bool {
     let args = ProcessInfo.processInfo.arguments
     return args.contains("--reset-onboarding")
+  }
+  
+  /// プロセス引数に基づくオンボーディング強制表示要求判定
+  ///
+  /// `--show-onboarding` 引数の存在をチェックして
+  /// オンボーディング強制表示の必要性を決定します。
+  public var shouldShowOnboarding: Bool {
+    let args = ProcessInfo.processInfo.arguments
+    return args.contains("--show-onboarding")
   }
 
   /// UITestUITestingProviderの初期化メソッド

@@ -175,10 +175,31 @@ struct HomeView: View {
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
       setupLocationManager()
+      
+      // UIテスト時のオンボーディング表示制御
+      // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
+      if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
+        #if DEBUG
+        print("HomeView: --show-onboarding 引数が検出されました")
+        #endif
+        DispatchQueue.main.async {
+          #if DEBUG
+          print("HomeView: オンボーディング表示を true に設定")
+          #endif
+          self.showOnboarding = true
+        }
+      }
     }
     .onChange(of: locationManager.authorizationStatus) { status in
+      #if DEBUG
       print("位置情報許可状態が変更されました: \(status)")
+      #endif
       setupLocationManager()
+      
+      // UIテスト時以外は位置情報許可が決定された後にオンボーディングを表示
+      if !ProcessInfo.processInfo.arguments.contains("--uitesting") {
+        handleLocationPermissionChange(status)
+      }
     }
     .onChange(of: locationManager.currentLocation) { location in
       if let location = location {
@@ -187,40 +208,59 @@ struct HomeView: View {
       }
     }
     .loadingOverlay(isLoading: isLoading)
-    .sheet(isPresented: $showOnboarding) {
-      if let content = onboardingManager.currentContent {
-        OnboardingModalView(
-          content: content,
-          isPresented: $showOnboarding,
-          onDismiss: {
-            onboardingManager.markOnboardingAsShown(for: .firstLaunch)
-          }
-        )
+    .overlay(
+      // オンボーディングモーダルを背景透明でオーバーレイ表示
+      Group {
+        if showOnboarding, let content = onboardingManager.currentContent {
+          OnboardingModalView(
+            content: content,
+            isPresented: $showOnboarding,
+            onDismiss: {
+              onboardingManager.markOnboardingAsShown(for: .firstLaunch)
+            }
+          )
+          .animation(.easeInOut(duration: 0.3), value: showOnboarding)
+        }
       }
-    }
+    )
   }
 
   // マップセクション
   private var mapSection: some View {
     ZStack {
-      // 位置情報の許可状態に応じて表示を切り替え
-      switch locationManager.authorizationStatus {
-      case .notDetermined:
-        requestPermissionView
-
-      case .restricted, .denied:
-        permissionDeniedView
-
-      case .authorizedWhenInUse, .authorizedAlways:
+      // UIテスト時は位置情報許可に関係なくマップビューを表示
+      if ProcessInfo.processInfo.arguments.contains("--uitesting") {
         MapViewComponent(
           region: $region,
           annotations: createMapAnnotations(),
           polylineCoordinates: createPolylineCoordinates()
         )
+        .accessibilityIdentifier("TestMapView")
+        .onAppear {
+          #if DEBUG
+          print("UIテストモード: MapViewComponentを表示しています")
+          #endif
+        }
+      } else {
+        // 位置情報の許可状態に応じて表示を切り替え
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+          requestPermissionView
 
-      @unknown default:
-        Text("位置情報の許可状態が不明です")
-          .foregroundColor(.secondary)
+        case .restricted, .denied:
+          permissionDeniedView
+
+        case .authorizedWhenInUse, .authorizedAlways:
+          MapViewComponent(
+            region: $region,
+            annotations: createMapAnnotations(),
+            polylineCoordinates: createPolylineCoordinates()
+          )
+
+        @unknown default:
+          Text("位置情報の許可状態が不明です")
+            .foregroundColor(.secondary)
+        }
       }
 
       // 散歩中のオーバーレイ
@@ -334,6 +374,35 @@ struct HomeView: View {
 
       if let location = locationManager.currentLocation {
         region = locationManager.region(for: location)
+      }
+    }
+  }
+
+  /// 位置情報許可状態の変更を処理し、オンボーディング表示を制御
+  ///
+  /// 位置情報の許可または拒否が決定された際に、初回起動時のオンボーディングを表示します。
+  /// 許可/拒否どちらの場合でもオンボーディングを表示することで、アプリの使い方を案内します。
+  ///
+  /// - Parameter status: 変更後の位置情報許可状態
+  private func handleLocationPermissionChange(_ status: CLAuthorizationStatus) {
+    // 初回起動時のオンボーディングが必要な場合のみ処理
+    guard onboardingManager.shouldShowOnboarding(for: .firstLaunch) else {
+      return
+    }
+    
+    switch status {
+    case .authorizedWhenInUse, .authorizedAlways, .denied, .restricted:
+      // 位置情報の許可/拒否が決定されたらオンボーディングを表示
+      DispatchQueue.main.async {
+        self.showOnboarding = true
+      }
+    case .notDetermined:
+      // まだ決定されていない場合は何もしない
+      break
+    @unknown default:
+      // 新しい許可状態に対しても安全にオンボーディングを表示
+      DispatchQueue.main.async {
+        self.showOnboarding = true
       }
     }
   }

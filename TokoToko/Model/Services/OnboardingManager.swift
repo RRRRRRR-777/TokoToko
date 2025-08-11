@@ -93,6 +93,14 @@ class OnboardingManager: ObservableObject {
         // ObservableObject通知のトリガー
         notificationTrigger.toggle()
     }
+    
+    /// UIテスト用: オンボーディングを強制表示
+    ///
+    /// UIテスト実行時にオンボーディングモーダルを確実に表示するために使用します。
+    func forceShowOnboarding() {
+        currentContent = getOnboardingContent(for: .firstLaunch)
+        notificationTrigger.toggle()
+    }
 
     // MARK: - Private Methods
 

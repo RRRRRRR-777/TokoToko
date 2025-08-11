@@ -121,6 +121,7 @@ struct MapViewComponent: View {
       }
     }
     .accessibilityIdentifier("MapView")
+    .accessibilityElement(children: .contain)
   }
 }
 
@@ -207,6 +208,7 @@ private struct iOS17MapView: View {
         cameraPosition = .userLocation(followsHeading: true, fallback: .region(region))
       }
     }
+    .accessibilityIdentifier("MapView")
   }
 }
 
@@ -275,6 +277,7 @@ private struct iOS15MapView: View {
         region = locationManager.region(for: location)
       }
     }
+    .accessibilityElement(children: .contain)
   }
 }
 
