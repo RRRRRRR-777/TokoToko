@@ -112,4 +112,12 @@ public class UITestingHelper {
   public var shouldResetOnboarding: Bool {
     provider.shouldResetOnboarding
   }
+  
+  /// オンボーディングの強制表示が要求されているかどうか
+  ///
+  /// UIテスト時にオンボーディングを強制的に表示するかの判定です。
+  /// プロダクションモードでは常にfalseを返します。
+  public var shouldShowOnboarding: Bool {
+    provider.shouldShowOnboarding
+  }
 }
