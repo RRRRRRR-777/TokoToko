@@ -22,14 +22,16 @@ final class OnboardingIntegrationUITests: XCTestCase {
     // MARK: - TDD Red Phase: End-to-Endテスト
 
     func testOnboardingModalDisplayOnFirstLaunch() throws {
-        // TDD Red: 初回起動時のオンボーディングモーダル表示テスト（失敗するはず）
+        // TDD Red: 初回起動時のオンボーディングモーダル表示テスト（位置情報許可後に表示）
         // Given: アプリが初回起動状態
         
-        // When: アプリが起動してMainTabViewが表示される
+        // When: アプリが起動してHomeViewが表示される（位置情報許可は自動的に設定される）
+        let homeView = app.otherElements["HomeView"]
+        XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "HomeViewが表示されること")
         
-        // Then: オンボーディングモーダルが表示されること
+        // Then: 位置情報許可後にオンボーディングモーダルが表示されること
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 5.0), "初回起動時にオンボーディングモーダルが表示されること")
+        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 8.0), "位置情報許可後にオンボーディングモーダルが表示されること")
         
         // オンボーディングのタイトルが表示されること
         let titleText = app.staticTexts["TokoTokoへようこそ"]
@@ -37,10 +39,13 @@ final class OnboardingIntegrationUITests: XCTestCase {
     }
     
     func testOnboardingModalNavigation() throws {
-        // TDD Red: オンボーディングページナビゲーションテスト（失敗するはず）
-        // Given: オンボーディングモーダルが表示されている
+        // TDD Red: オンボーディングページナビゲーションテスト（位置情報許可後に表示）
+        // Given: HomeViewが表示された後、オンボーディングモーダルが表示されている
+        let homeView = app.otherElements["HomeView"]
+        XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "HomeViewが表示されること")
+        
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 8.0), "位置情報許可後にオンボーディングモーダルが表示されること")
         
         // When: 次ページボタンをタップ
         let nextButton = app.buttons["OnboardingNextButton"]
@@ -62,10 +67,13 @@ final class OnboardingIntegrationUITests: XCTestCase {
     }
     
     func testOnboardingModalDismissal() throws {
-        // TDD Red: オンボーディングモーダル閉じるテスト（失敗するはず）
-        // Given: オンボーディングモーダルが表示されている
+        // TDD Red: オンボーディングモーダル閉じるテスト（位置情報許可後に表示）
+        // Given: HomeViewが表示された後、オンボーディングモーダルが表示されている
+        let homeView = app.otherElements["HomeView"]
+        XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "HomeViewが表示されること")
+        
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 8.0), "位置情報許可後にオンボーディングモーダルが表示されること")
         
         // When: 閉じるボタンをタップ
         let closeButton = app.buttons["OnboardingCloseButton"]
@@ -76,15 +84,17 @@ final class OnboardingIntegrationUITests: XCTestCase {
         XCTAssertFalse(onboardingModal.waitForExistence(timeout: 2.0), "閉じるボタンタップ後にモーダルが非表示になること")
         
         // HomeViewが表示されること
-        let homeView = app.otherElements["HomeView"]
         XCTAssertTrue(homeView.waitForExistence(timeout: 3.0), "モーダル閉じる後にHomeViewが表示されること")
     }
     
     func testOnboardingNotDisplayedOnSecondLaunch() throws {
-        // TDD Red: 2回目起動時にオンボーディングが表示されないテスト（失敗するはず）
+        // TDD Red: 2回目起動時にオンボーディングが表示されないテスト（位置情報許可後の動作確認）
         // Given: 1回目の起動でオンボーディングを表示済み
+        let homeView = app.otherElements["HomeView"]
+        XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "HomeViewが表示されること")
+        
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        if onboardingModal.waitForExistence(timeout: 5.0) {
+        if onboardingModal.waitForExistence(timeout: 8.0) {
             let closeButton = app.buttons["OnboardingCloseButton"]
             closeButton.tap()
         }
@@ -97,8 +107,8 @@ final class OnboardingIntegrationUITests: XCTestCase {
         XCTAssertFalse(onboardingModal.waitForExistence(timeout: 3.0), "2回目起動時はオンボーディングが表示されないこと")
         
         // HomeViewが直接表示されること
-        let homeView = app.otherElements["HomeView"]
-        XCTAssertTrue(homeView.waitForExistence(timeout: 5.0), "2回目起動時は直接HomeViewが表示されること")
+        let homeViewAfterRelaunch = app.otherElements["HomeView"]
+        XCTAssertTrue(homeViewAfterRelaunch.waitForExistence(timeout: 5.0), "2回目起動時は直接HomeViewが表示されること")
     }
 
 }
