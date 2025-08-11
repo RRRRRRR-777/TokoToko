@@ -9,6 +9,49 @@ import XCTest
 
 /// UIテスト用の拡張機能を提供するクラス
 public class UITestingExtensions {
+    
+    /// UIテスト用のタイムアウト設定
+    public struct TimeoutSettings {
+        /// 標準のタイムアウト時間（要素の存在確認用）
+        public static let standard: TimeInterval = 5.0
+        
+        /// 長いタイムアウト時間（複雑な画面遷移用）
+        public static let long: TimeInterval = 10.0
+        
+        /// オンボーディング用のタイムアウト時間（アニメーション込み）
+        public static let onboarding: TimeInterval = 15.0
+        
+        /// 短いタイムアウト時間（高速な操作用）
+        public static let short: TimeInterval = 2.0
+        
+        /// CI環境での調整倍率
+        public static let ciMultiplier: TimeInterval = {
+            if ProcessInfo.processInfo.environment["CI"] == "true" {
+                return 2.0  // CI環境では2倍の時間を確保
+            }
+            return 1.0
+        }()
+        
+        /// 環境を考慮した標準タイムアウト
+        public static var adjustedStandard: TimeInterval {
+            return standard * ciMultiplier
+        }
+        
+        /// 環境を考慮した長いタイムアウト
+        public static var adjustedLong: TimeInterval {
+            return long * ciMultiplier
+        }
+        
+        /// 環境を考慮したオンボーディングタイムアウト
+        public static var adjustedOnboarding: TimeInterval {
+            return onboarding * ciMultiplier
+        }
+        
+        /// 環境を考慮した短いタイムアウト
+        public static var adjustedShort: TimeInterval {
+            return short * ciMultiplier
+        }
+    }
 
     /// アプリを起動する際のオプション
     public struct LaunchOptions {
