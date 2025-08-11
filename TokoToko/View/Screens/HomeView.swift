@@ -175,13 +175,24 @@ struct HomeView: View {
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
       setupLocationManager()
+      
+      // UIテスト時のオンボーディング表示制御
+      if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
+        print("HomeView: --show-onboarding 引数が検出されました")
+        DispatchQueue.main.async {
+          print("HomeView: オンボーディング表示を true に設定")
+          self.showOnboarding = true
+        }
+      }
     }
     .onChange(of: locationManager.authorizationStatus) { status in
       print("位置情報許可状態が変更されました: \(status)")
       setupLocationManager()
       
-      // 位置情報許可が決定された後にオンボーディングを表示
-      handleLocationPermissionChange(status)
+      // UIテスト時以外は位置情報許可が決定された後にオンボーディングを表示
+      if !ProcessInfo.processInfo.arguments.contains("--uitesting") {
+        handleLocationPermissionChange(status)
+      }
     }
     .onChange(of: locationManager.currentLocation) { location in
       if let location = location {
@@ -210,24 +221,33 @@ struct HomeView: View {
   // マップセクション
   private var mapSection: some View {
     ZStack {
-      // 位置情報の許可状態に応じて表示を切り替え
-      switch locationManager.authorizationStatus {
-      case .notDetermined:
-        requestPermissionView
-
-      case .restricted, .denied:
-        permissionDeniedView
-
-      case .authorizedWhenInUse, .authorizedAlways:
+      // UIテスト時は位置情報許可に関係なくマップビューを表示
+      if ProcessInfo.processInfo.arguments.contains("--uitesting") {
         MapViewComponent(
           region: $region,
           annotations: createMapAnnotations(),
           polylineCoordinates: createPolylineCoordinates()
         )
+      } else {
+        // 位置情報の許可状態に応じて表示を切り替え
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+          requestPermissionView
 
-      @unknown default:
-        Text("位置情報の許可状態が不明です")
-          .foregroundColor(.secondary)
+        case .restricted, .denied:
+          permissionDeniedView
+
+        case .authorizedWhenInUse, .authorizedAlways:
+          MapViewComponent(
+            region: $region,
+            annotations: createMapAnnotations(),
+            polylineCoordinates: createPolylineCoordinates()
+          )
+
+        @unknown default:
+          Text("位置情報の許可状態が不明です")
+            .foregroundColor(.secondary)
+        }
       }
 
       // 散歩中のオーバーレイ
