@@ -13,12 +13,6 @@ struct WalkRow: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
-        // 状態アイコン
-        statusIcon
-          .frame(width: 40, height: 40)
-          .background(statusColor.opacity(0.1))
-          .cornerRadius(8)
-
         // 散歩情報
         VStack(alignment: .leading, spacing: 4) {
           Text(walk.title)
@@ -47,7 +41,7 @@ struct WalkRow: View {
               }
 
               HStack(spacing: 4) {
-                Image(systemName: "figure.walk")
+                Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                   .font(.caption)
                   .foregroundColor(.secondary)
                 Text(walk.distanceString)
@@ -56,14 +50,27 @@ struct WalkRow: View {
                   .fixedSize(horizontal: true, vertical: false)
                   .lineLimit(1)
               }
+
+              if walk.totalSteps > 0 {
+                HStack(spacing: 4) {
+                  Image(systemName: "figure.walk")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                  Text("\(walk.totalSteps) 歩")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .lineLimit(1)
+                }
+              }
             } else {
               // 進行中または未開始の散歩
               Text(walk.status.displayName)
                 .font(.caption)
-                .foregroundColor(statusColor)
+                .foregroundColor(.orange)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(statusColor.opacity(0.1))
+                .background(Color.orange.opacity(0.1))
                 .cornerRadius(4)
             }
           }
@@ -77,71 +84,12 @@ struct WalkRow: View {
             .font(.caption)
             .foregroundColor(.secondary)
 
-          if walk.hasLocation {
-            Image(systemName: "location.fill")
-              .font(.caption)
-              .foregroundColor(.blue)
-          }
         }
       }
 
-      // 完了した散歩で位置情報がある場合はサムネイル画像を表示
-      if walk.isCompleted && walk.hasLocation {
-        thumbnailView
-      }
     }
     .padding(.vertical, 4)
   }
-
-  // サムネイル画像のプレビュー
-  private var thumbnailView: some View {
-    Group {
-      // ローカル画像をまず試行、次にFirebase、最後にフォールバック
-      ThumbnailImageView(walkId: walk.id, thumbnailImageUrl: walk.thumbnailImageUrl)
-        .frame(height: 120)
-        .cornerRadius(8)
-        .overlay(
-          RoundedRectangle(cornerRadius: 8)
-            .stroke(Color(.systemGray4), lineWidth: 1)
-        )
-    }
-  }
-
-  // 状態に応じたアイコン
-  private var statusIcon: some View {
-    Group {
-      switch walk.status {
-      case .notStarted:
-        Image(systemName: "circle")
-          .foregroundColor(statusColor)
-      case .inProgress:
-        Image(systemName: "play.circle.fill")
-          .foregroundColor(statusColor)
-      case .paused:
-        Image(systemName: "pause.circle.fill")
-          .foregroundColor(statusColor)
-      case .completed:
-        Image(systemName: "checkmark.circle.fill")
-          .foregroundColor(statusColor)
-      }
-    }
-    .font(.title2)
-  }
-
-  // 状態に応じた色
-  private var statusColor: Color {
-    switch walk.status {
-    case .notStarted:
-      return .gray
-    case .inProgress:
-      return .green
-    case .paused:
-      return .orange
-    case .completed:
-      return .blue
-    }
-  }
-
 
   // 日時文字列
   private var dateString: String {
@@ -167,6 +115,7 @@ struct WalkRow: View {
         startTime: Date().addingTimeInterval(-3600),
         endTime: Date().addingTimeInterval(-3000),
         totalDistance: 1200,
+        totalSteps: 1500,
         status: .completed
       ))
 
@@ -176,6 +125,7 @@ struct WalkRow: View {
         description: "商店街を歩きました",
         startTime: Date().addingTimeInterval(-1800),
         totalDistance: 800,
+        totalSteps: 950,
         status: .inProgress
       ))
 
@@ -183,6 +133,9 @@ struct WalkRow: View {
       walk: Walk(
         title: "お昼の散歩",
         description: "",
+        startTime: Date().addingTimeInterval(-900),
+        totalDistance: 300,
+        totalSteps: 400,
         status: .paused
       ))
 
@@ -191,6 +144,39 @@ struct WalkRow: View {
         title: "新しい散歩",
         description: "まだ開始していません",
         status: .notStarted
+      ))
+
+    WalkRow(
+      walk: Walk(
+        title: "長距離ウォーキング",
+        description: "健康のために長い距離を歩きました。とても気持ちよかったです。",
+        startTime: Date().addingTimeInterval(-7200),
+        endTime: Date().addingTimeInterval(-5400),
+        totalDistance: 5500,
+        totalSteps: 7500,
+        status: .completed
+      ))
+
+    WalkRow(
+      walk: Walk(
+        title: "歩数ゼロの散歩",
+        description: "歩数計測なし",
+        startTime: Date().addingTimeInterval(-3600),
+        endTime: Date().addingTimeInterval(-3000),
+        totalDistance: 800,
+        totalSteps: 0,
+        status: .completed
+      ))
+
+    WalkRow(
+      walk: Walk(
+        title: "短時間散歩",
+        description: "5分間の軽い散歩",
+        startTime: Date().addingTimeInterval(-300),
+        endTime: Date().addingTimeInterval(-0),
+        totalDistance: 200,
+        totalSteps: 250,
+        status: .completed
       ))
   }
 }

@@ -124,7 +124,7 @@ struct FullScreenMapView: View {
         CLLocation(latitude: 35.6815, longitude: 139.7675),
         CLLocation(latitude: 35.6820, longitude: 139.7680),
         CLLocation(latitude: 35.6825, longitude: 139.7690),
-        CLLocation(latitude: 35.6830, longitude: 139.7700),
+        CLLocation(latitude: 35.6830, longitude: 139.7700)
       ]
     )
   )

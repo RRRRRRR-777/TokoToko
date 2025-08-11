@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // デバッグ用: walk_thumbnails パスを完全に開放（一時的）
+    match /walk_thumbnails/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 共有画像の保存パス: shared_images/{userId}/{walkId}/share_image.jpg
+    match /shared_images/{userId}/{walkId}/{fileName} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && fileName.matches('.*\\.(jpg|jpeg|png)$')
+        && request.resource.size < 5 * 1024 * 1024;
+
+      allow read: if fileName == 'share_image.jpg';
+    }
+
+    // その他のパス
+    match /profile_images/{userId}/{fileName} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && fileName.matches('.*\\.(jpg|jpeg|png)$')
+        && request.resource.size < 2 * 1024 * 1024;
+    }
+
+    match /walk_photos/{userId}/{walkId}/{fileName} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && fileName.matches('.*\\.(jpg|jpeg|png)$')
+        && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // デフォルトルール
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

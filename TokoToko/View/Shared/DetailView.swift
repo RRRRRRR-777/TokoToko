@@ -130,7 +130,7 @@ struct DetailView: View {
       LazyVGrid(
         columns: [
           GridItem(.flexible()),
-          GridItem(.flexible()),
+          GridItem(.flexible())
         ], spacing: 16
       ) {
         StatisticCard(
@@ -425,7 +425,7 @@ struct StatisticCard: View {
         locations: [
           CLLocation(latitude: 35.6812, longitude: 139.7671),
           CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6818, longitude: 139.7680),
+          CLLocation(latitude: 35.6818, longitude: 139.7680)
         ]
       ))
   }

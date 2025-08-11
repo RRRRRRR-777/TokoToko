@@ -10,16 +10,84 @@ import CoreMotion
 import MapKit
 import SwiftUI
 
+/// TokoTokoアプリのメイン画面を表示するSwiftUIビュー
+///
+/// `HomeView`は散歩アプリケーションの中核となる画面で、以下の主要機能を提供します：
+/// - インタラクティブなマップ表示と現在位置の追跡
+/// - 散歩の開始・一時停止・再開・終了のコントロール
+/// - リアルタイムの散歩統計情報表示（時間、距離、歩数）
+/// - 散歩履歴へのナビゲーション
+/// - 設定画面への遷移
+///
+/// ## Overview
+///
+/// このビューは全画面マップをベースレイヤーとし、その上にオーバーレイ形式で
+/// 各種コントロールと情報表示パネルを配置する構成となっています。
+/// 位置情報の取得とマップの表示は`LocationManager`と`WalkManager`により管理されます。
+///
+/// ## Topics
+///
+/// ### Properties
+/// - ``walkManager``
+/// - ``locationManager``
+/// - ``isLoading``
+/// - ``region``
+/// - ``currentLocation``
+///
+/// ### Initialization
+/// - ``init()``
 struct HomeView: View {
+  /// オンボーディングモーダルの表示状態
+  ///
+  /// MainTabViewから渡されるバインディングで、オンボーディングの表示/非表示を制御します。
+  @Binding var showOnboarding: Bool
+  
+  /// オンボーディングマネージャー
+  ///
+  /// オンボーディングコンテンツの管理と表示状態の制御を行います。
+  @EnvironmentObject var onboardingManager: OnboardingManager
+  
+  /// 散歩管理の中央コントローラー
+  ///
+  /// 散歩の開始・停止、統計情報の管理、位置情報の記録を担当するシングルトンインスタンスです。
+  /// @StateObjectにより、このビューのライフサイクル全体で状態が管理されます。
   @StateObject private var walkManager = WalkManager.shared
+
+  /// ローディング状態を管理するフラグ
+  ///
+  /// 非同期処理（位置情報取得、散歩開始処理等）の実行中に表示するローディングインジケーターの制御に使用されます。
   @State private var isLoading = false
+
+  /// マップ表示領域の座標範囲
+  ///
+  /// 表示するマップの中心座標とズームレベルを定義します。
+  /// 初期値は東京駅周辺に設定され、位置情報取得後は現在位置中心に更新されます。
   @State private var region: MKCoordinateRegion
 
-  // 位置情報マネージャー
+  /// GPS位置情報の取得と管理を行うマネージャー
+  ///
+  /// CoreLocationをラップしたカスタムマネージャーで、位置情報の取得、権限管理、
+  /// バックグラウンド追跡を統合的に管理します。
   @StateObject private var locationManager = LocationManager.shared
+
+  /// 現在取得している位置情報
+  ///
+  /// 最新のGPS位置情報を保持し、マップの中心位置調整や散歩開始地点の記録に使用されます。
   @State private var currentLocation: CLLocation?
 
-  init() {
+  /// HomeViewの初期化メソッド
+  ///
+  /// オンボーディング表示状態のバインディングを受け取り、
+  /// マップ表示領域の初期値を東京駅周辺に設定します。
+  /// 実際のアプリ使用時は、位置情報取得後に現在位置に更新されます。
+  ///
+  /// - Parameter showOnboarding: オンボーディング表示状態のバインディング
+  ///
+  /// ## Default Location
+  /// - 中心座標: 東京駅（35.6812, 139.7671）
+  /// - ズームレベル: 0.01度（約1km四方の表示範囲）
+  init(showOnboarding: Binding<Bool>) {
+    self._showOnboarding = showOnboarding
     // 東京駅をデフォルト位置に
     _region = State(
       initialValue: MKCoordinateRegion(
@@ -68,7 +136,7 @@ struct HomeView: View {
                   LinearGradient(
                     gradient: Gradient(colors: [
                       Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
-                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing
@@ -102,6 +170,7 @@ struct HomeView: View {
         }
       }
     }
+    .accessibilityIdentifier("HomeView")
     .navigationBarHidden(true)
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
@@ -118,8 +187,18 @@ struct HomeView: View {
       }
     }
     .loadingOverlay(isLoading: isLoading)
+    .sheet(isPresented: $showOnboarding) {
+      if let content = onboardingManager.currentContent {
+        OnboardingModalView(
+          content: content,
+          isPresented: $showOnboarding,
+          onDismiss: {
+            onboardingManager.markOnboardingAsShown(for: .firstLaunch)
+          }
+        )
+      }
+    }
   }
-
 
   // マップセクション
   private var mapSection: some View {
@@ -250,8 +329,7 @@ struct HomeView: View {
     currentLocation = locationManager.currentLocation
 
     if locationManager.authorizationStatus == .authorizedWhenInUse
-      || locationManager.authorizationStatus == .authorizedAlways
-    {
+      || locationManager.authorizationStatus == .authorizedAlways {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
@@ -338,6 +416,6 @@ struct RoundedCorner: Shape {
 }
 
 #Preview {
-  MainTabView()
-    .environmentObject(AuthManager())
+  HomeView(showOnboarding: .constant(false))
+    .environmentObject(OnboardingManager())
 }

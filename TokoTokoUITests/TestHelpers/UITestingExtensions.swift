@@ -24,11 +24,15 @@ public class UITestingExtensions {
         /// ディープリンク先
         public var destination: String? = nil
 
-        public init(isUITesting: Bool = true, isLoggedIn: Bool = false, useDeepLink: Bool = false, destination: String? = nil) {
+        /// オンボーディング状態をリセットする
+        public var resetOnboarding: Bool = false
+
+        public init(isUITesting: Bool = true, isLoggedIn: Bool = false, useDeepLink: Bool = false, destination: String? = nil, resetOnboarding: Bool = false) {
             self.isUITesting = isUITesting
             self.isLoggedIn = isLoggedIn
             self.useDeepLink = useDeepLink
             self.destination = destination
+            self.resetOnboarding = resetOnboarding
         }
     }
 
@@ -60,6 +64,11 @@ public class UITestingExtensions {
             }
         }
 
+        // オンボーディング状態をリセット
+        if options.resetOnboarding {
+            app.launchArguments.append("--reset-onboarding")
+        }
+
         // アプリを起動
         app.launch()
     }
@@ -87,6 +96,18 @@ public class UITestingExtensions {
             isLoggedIn: isLoggedIn,
             useDeepLink: true,
             destination: destination
+        ))
+    }
+
+    /// オンボーディング状態をリセットしてアプリを起動する
+    /// - Parameters:
+    ///   - app: XCUIApplicationインスタンス
+    ///   - isLoggedIn: ログイン状態
+    public static func launchAppWithResetOnboarding(_ app: XCUIApplication, isLoggedIn: Bool = true) {
+        launchApp(app, options: LaunchOptions(
+            isUITesting: true,
+            isLoggedIn: isLoggedIn,
+            resetOnboarding: true
         ))
     }
 }
