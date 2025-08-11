@@ -130,20 +130,21 @@ final class OnboardingManagerTests: XCTestCase {
         // TDD Green: ObservableObject統合テスト（テストが通るよう修正）
         // Given: OnboardingManagerがObservableObjectとして動作する
         let expectation = self.expectation(description: "ObservableObject通知")
-        var notificationReceived = false
+        expectation.expectedFulfillmentCount = 2 // currentContentとnotificationTriggerの2つの変更を期待
+        var notificationCount = 0
 
         // When: プロパティが変更される
         let cancellable = sut.objectWillChange.sink {
-            notificationReceived = true
+            notificationCount += 1
             expectation.fulfill()
         }
 
-        // @Published notificationTriggerの変更をトリガー
+        // @Published プロパティの変更をトリガー
         sut.markOnboardingAsShown(for: .firstLaunch)
 
         // Then: 変更通知が発生すること
         waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertTrue(notificationReceived, "ObservableObjectとしての変更通知が発生すること")
+            XCTAssertEqual(notificationCount, 2, "ObservableObjectとして2回の変更通知が発生すること（currentContent + notificationTrigger）")
         }
 
         cancellable.cancel()

@@ -26,6 +26,7 @@ struct OnboardingContent {
 
 class OnboardingManager: ObservableObject {
     @Published private var notificationTrigger = false
+    @Published var currentContent: OnboardingContent?
 
     private let userDefaults: UserDefaults
     private let firstLaunchKey = "onboarding_first_launch_shown"
@@ -33,6 +34,10 @@ class OnboardingManager: ObservableObject {
 
     init(userDefaults: UserDefaults = UserDefaults.standard) {
         self.userDefaults = userDefaults
+        // 初回起動時のコンテンツを自動的に設定
+        if shouldShowOnboarding(for: .firstLaunch) {
+            currentContent = getOnboardingContent(for: .firstLaunch)
+        }
     }
 
     func shouldShowOnboarding(for type: OnboardingType) -> Bool {
@@ -53,6 +58,8 @@ class OnboardingManager: ObservableObject {
             let key = versionUpdateKeyPrefix + version
             userDefaults.set(true, forKey: key)
         }
+        // currentContentをクリア
+        currentContent = nil
         // ObservableObject通知のトリガー
         notificationTrigger.toggle()
     }
@@ -64,6 +71,27 @@ class OnboardingManager: ObservableObject {
         case .versionUpdate(let version):
             return createVersionUpdateContent(type: type, version: version)
         }
+    }
+
+    /// UIテスト用: オンボーディング状態をリセット
+    ///
+    /// 全てのオンボーディング表示履歴を削除し、初回起動時と同じ状態に戻します。
+    /// UIテストでのオンボーディングテスト実行時にのみ使用します。
+    func resetOnboardingState() {
+        userDefaults.removeObject(forKey: firstLaunchKey)
+
+        // バージョンアップデート系のキーもクリア（将来の機能拡張用）
+        let keys = userDefaults.dictionaryRepresentation().keys
+        let versionUpdateKeys = keys.filter { $0.hasPrefix(versionUpdateKeyPrefix) }
+        for key in versionUpdateKeys {
+            userDefaults.removeObject(forKey: key)
+        }
+
+        // リセット後に初回起動コンテンツを設定
+        currentContent = getOnboardingContent(for: .firstLaunch)
+        
+        // ObservableObject通知のトリガー
+        notificationTrigger.toggle()
     }
 
     // MARK: - Private Methods
