@@ -5,15 +5,162 @@
 ## 最重要ルール
 **🚨 絶対遵守 - 違反は許可されません 🚨**
 
-###  新しいルールの追加プロセス
+Claude は CLAUDE.md を毎回読み込み、以下のルールに従って動作する：
+- セクション指定による参照：特定セクションに関連する場合はそのセクションのみを参照
+- セクションをまたぐ、または不明瞭なプロンプトの場合は、関連候補セクションをすべて読み込む
+- 不明点や曖昧な要求がある場合、Claude は自発的にユーザーへ質問を投げて確認を取る
+- Claude はユーザーの意図を推定して、必要なセクションを柔軟に選択して参照する
+
+### 新しいルールの追加プロセス
 * ユーザーから今回限りではなく常に対応が必要だと思われる指示を受けた場合
   1. 「これを標準のルールにしますか？」と質問する
   2. YESの回答を得た場合、CLAUDE.mdに追加ルールとして記載する
   3. 以降は標準ルールとして常に適用する
 * このプロセスにより、プロジェクトのルールを継続的に改善していきます。
 
+## アーキテクチャ
+
+### ディレクトリ構造
+```
+TokoToko/
+├── Model/
+│   ├── Entities/          # データ構造
+│   ├── Services/          # ビジネスロジック・サービス層
+│   ├── Network/           # API通信（将来実装予定）
+│   └── Testing/           # テスト用のプロトコルとヘルパー
+├── View/
+│   ├── Screens/           # 画面固有のビュー
+│   └── Shared/            # 再利用可能なコンポーネント
+├── Assets.xcassets/       # アプリアイコン、カラーパレット
+├── Preview Content/       # SwiftUIプレビュー用のアセット
+└── App/                   # エントリーポイント（TokoTokoApp.swift）
+```
+
+### コアコンポーネント
+
+#### 認証・ユーザー管理
+- **GoogleAuthService**: Google Sign-In統合を含むFirebaseベースの認証
+- **FirebaseAuthHelper**: Firebase認証のヘルパー関数
+- **ConsentManager**: ユーザー同意管理（プライバシーポリシー、利用規約）
+- **PolicyService**: ポリシー文書の管理とバージョン管理
+- **OnboardingManager**: 新規ユーザーのオンボーディング状態管理
+
+#### 散歩機能
+- **WalkManager**: 散歩記録、位置追跡、散歩状態を管理するシングルトン
+- **LocationManager**: GPS追跡のためのCoreLocationラッパー
+- **StepCountManager**: 歩数計測を管理するコンポーネント
+- **WalkRepository**: 散歩記録のデータ永続化層
+- **WalkHistoryViewModel**: 散歩履歴画面のビューモデル
+- **WalkSharingService**: 散歩データの共有機能
+- **WalkImageGenerator**: 散歩サマリー画像の生成
+
+#### システム・ユーティリティ
+- **EnhancedVibeLogger**: 拡張ログシステム
+- **AnomalyDetection**: 異常検知システム
+- **TokoTokoAnalyzers**: アプリケーション分析ツール
+- **PerformanceMetrics**: パフォーマンス計測
+- **FirebaseStorageConfig**: Firebaseストレージ設定
+
+### メインビュー構造
+
+#### 画面（Screens）
+- **SplashView**: 初期ローディング画面
+- **LoginView**: ログイン画面
+- **HomeView**: 散歩履歴とメインダッシュボード
+- **WalkHistoryView**: 散歩履歴の詳細表示
+- **WalkHistoryMainView**: 散歩履歴メイン画面
+- **WalkListView**: 散歩リスト一覧画面
+- **SettingsView**: ユーザー設定とログアウト
+- **ConsentView**: 同意画面（プライバシーポリシー、利用規約）
+- **ConsentFlowView**: 同意フロー管理画面
+- **PolicyView**: ポリシー表示画面
+
+#### 共有コンポーネント（Shared）
+- **MapViewComponent**: ルート可視化とマッピング
+- **StaticMapView**: 静的マップ表示
+- **FullScreenMapView**: フルスクリーンマップ表示
+- **DetailView**: 詳細情報表示用の汎用コンポーネント
+- **LoadingView**: ローディング表示
+- **WalkControlPanel**: 散歩コントロールパネル
+- **WalkRow**: 散歩リスト行表示
+- **WalkCompletionView**: 散歩完了画面
+- **WalkSharingView**: 散歩共有画面
+- **StatsBarView**: 統計情報バー
+- **StoryCarouselView**: ストーリーカルーセル表示
+- **OnboardingModalView**: オンボーディングモーダル
+- **ImageGeneratorTestView**: 画像生成テストビュー
+
+### データモデル（ERD）
+- **Walk**: 散歩セッションを表すコアエンティティ:
+  - 位置追跡（CLLocationの配列）
+  - 状態管理（notStarted, inProgress, paused, completed）
+  - 距離計算と時間追跡
+  - ルート可視化のためのポリラインデータ
+- **MapItem**: マップ上のアイテム（散歩ルート、写真位置等）
+- **User**: ユーザー情報（email, display_name, photo_url, auth_provider）
+- **Photo**: 散歩に関連付けられた写真（最大10枚/散歩、位置座標付き）
+- **SharedLink**: 共有URL生成用（永続的なリンク）
+- **Policy**: ポリシー文書（プライバシーポリシー、利用規約）
+- **Consent**: ユーザー同意記録（同意日時、バージョン管理）
+
+### 技術スタック
+
+#### iOS クライアント
+- **SwiftUI**（プライマリUIフレームワーク）
+- **CoreLocation**（位置追跡）
+- **MapKit**（マップ表示）
+- **PhotoPicker (iOS 14+)**（写真選択）
+
+#### バックエンド（Firebase）
+| サービス | 用途 |
+|---------|------|
+| Firebase Authentication | アカウント管理（email/Googleログイン） |
+| Firestore | ルート、写真、ユーザー情報メタデータ |
+| Firebase Storage | 写真ファイルストレージ |
+| Firebase Hosting + Firestore | 公開共有リンク |
+| Cloud Functions | 削除処理（将来機能） |
+
+#### 主要な依存関係
+- Firebase（Analytics, Auth, Firestore, Core）
+- GoogleSignIn
+- ViewInspector（テスト用）
+
+
+## プロダクト概要
+
+TokoTokoは、ユーザーが散歩を記録し、友人や家族と散歩体験を共有できるiOS散歩・SNSアプリ（「とことこ - おさんぽSNS」）です。「散歩」×「記録」×「共有」を組み合わせ、日常の中で見つけた小さな発見を散歩を通じて共有することをコンセプトとしています。
+
+### 主要機能（初期リリース）
+- **散歩記録**: ボタンタップで開始・停止、バックグラウンド位置追跡
+- **写真連携**: 散歩あたり最大10枚の写真（カメラロールから選択）、位置座標と連動
+- **ルート可視化**: 散歩ルート（ポリライン）とマップ上の写真表示
+- **共有システム**: 散歩完了後の自動URL生成、SNS/LINE/メール共有、画像生成
+- **ユーザー認証**: Firebase Authentication（メール・Googleログイン）
+- **オンボーディング**: 初回起動時のユーザーガイド、機能説明
+- **同意管理**: プライバシーポリシー、利用規約への同意管理
+- **パフォーマンス監視**: アプリパフォーマンスと異常検知
+
+### 画面設計仕様
+- **ホーム画面**: 新しい散歩開始、現在位置マップ表示
+- **散歩中画面**: 進行状況表示（距離、時間、歩数）、散歩終了ボタン
+- **散歩後画面**: ルート確認、写真レビュー・削除、保存・共有機能
+- **設定画面**: プロフィール設定、通知設定、アカウント設定
+- **共有リンク表示画面**: 散歩ルートと写真の公開ビュー
+
+### アプリケーションフロー
+1. **ログインフロー**: アプリ起動 → ログイン状態確認 → ホーム画面
+2. **散歩記録フロー**: 散歩開始 → 位置追跡 → 散歩終了 → 確認・保存 → 共有リンク生成
+3. **履歴フロー**: 履歴タブ → 散歩リスト取得 → 詳細表示
+
+### 制限事項
+- 無料プラン: 散歩あたり最大10枚の写真
+- プレミアムプラン（将来）: 散歩あたり最大100枚の写真
+
+## 開発ワークフロー
+
 ### TDD TODOリスト（t-wada流）
 **🔴 最重要・強制実行・例外なし**: 以下のルールは100%遵守すること
+
 #### 基本方針
 - 🔴 Red: 失敗するテストを書く
 - 🟢 Green: テストを通す最小限の実装
@@ -24,8 +171,8 @@
 - 明白な実装が分かる場合は直接実装してもOK
 - テストリストを常に更新する
 - 不安なところからテストを書く
-#### TDD実践のコツ
 
+#### TDD実践のコツ
 1. **最初のテスト**: まず失敗するテストを書く（コンパイルエラーもOK）
 2. **仮実装**: テストを通すためにベタ書きでもOK（例：`return 42`）
 3. **三角測量**: 2つ目、3つ目のテストケースで一般化する
@@ -34,37 +181,24 @@
 6. **1つずつ**: 複数のテストを同時に書かない
 7. **コミット**: テストが通ったらすぐコミット
 
-#### テスト種類と配置
-- **単体テスト**: `TokoTokoTests/` - ビジネスロジック、データモデル、サービス層
-- **UIテスト**: `TokoTokoUITests/` - 画面遷移、ユーザーインタラクション
-- **統合テスト**: Firebase連携、位置情報サービス等の外部システム連携
+#### TDD各フェーズの完了条件
+**Red Phase完了**:
+- [ ] 失敗するテストが書けている
+- [ ] テストが実際に失敗することを確認済み
 
-#### テストツール
-- **XCTest**: iOS標準テストフレームワーク
-- **ViewInspector**: SwiftUIコンポーネントのテスト
-- **UITestingHelper**: UIテスト用のモック状態管理
+**Green Phase完了**:
+- [ ] テストが通る最小限の実装完了
+- [ ] 全てのテストがパス
 
-#### テスト実行コマンド
-```bash
-# 全体テスト実行
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16'
+**Refactor Phase完了**:
+- [ ] コードが整理・最適化済み
+- [ ] 全テストが継続してパス
+- [ ] SwiftLintエラー0件
 
-# 変更したファイルに関連する単体テストのみ実行（推奨）
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoTests/WalkManagerTests
-
-# UIテスト実行
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:TokoTokoUITests
-```
-
-### リンティングとフォーマッティング
-**🔴 品質確保・必須実行**: コード変更後は必ず実行
-```bash
-# SwiftLint設定が存在（.swiftlint.yml）
-swiftlint lint
-
-# Swift Format設定が存在（.swift-format）
-swift-format lint --configuration .swift-format [file]
-```
+#### TDD実践時のコミット順序
+1. `test: [機能名] のテストケース追加 (#[チケット番号])` (Red)
+2. `feat: [機能名] の実装 (#[チケット番号])` (Green)
+3. `refactor: [機能名] のコード整理 (#[チケット番号])` (Refactor)
 
 ### Gitワークフロー
 - `main`: 本番ブランチ
@@ -72,6 +206,7 @@ swift-format lint --configuration .swift-format [file]
 - `ticket/*`: 機能ブランチ（例: ticket/1）
 
 #### コミット規約
+
 ##### コミット粒度の原則
 - **1つの論理的変更 = 1つのコミット**: 関連する変更はまとめ、無関係な変更は分ける
 - **原子性を保つ**: そのコミットだけで完結する変更にする（壊れた状態でコミットしない）
@@ -98,19 +233,148 @@ swift-format lint --configuration .swift-format [file]
 - `style`: コードスタイルの修正
 - `chore`: その他の雑務
 
-#### TDD実践時のコミット順序
-1. `test: [機能名] のテストケース追加 (#[チケット番号])` (Red)
-2. `feat: [機能名] の実装 (#[チケット番号])` (Green)
-3. `refactor: [機能名] のコード整理 (#[チケット番号])` (Refactor)
-
 #### コミット実行・Push規則
 **🔴 絶対遵守・例外なし**:
 - **コミット粒度の徹底**: 論理的に分割可能な変更は、できるだけ細かく分けてコミットする
 - **事前差分確認**: コミット実行前に必ず`git diff`でステージングされた差分を確認する
 - **コミットメッセージ確認**: 差分確認後、提案するコミットメッセージをユーザーに提示し承認を得る
-- **🚨 必須確認**: コミット実行前に必ずユーザーに「コミットしますか？」と確認する
-- **🚨 出力**: 直接コミットすることは禁止しているのでコマンドだけ出力してください。また、EOFは使用しないようにしてください。
+- **出力**: 直接コミットすることは禁止しているのでコマンドだけ出力してください。また、EOFは使用しないようにしてください。
 
+### タスク完了時の自動処理ルール
+**🔴 絶対遵守・自動実行**: 「完了です」と報告する際に必ず自動実行すること
+
+1. **自動コミット処理**:
+   - タスク完了報告と同時にコミット処理を自動実行
+   - CLAUDE.md内のコミット規約に従った適切なコミットメッセージを生成
+   - `git diff`で差分確認後、ユーザーに承認を求めてからコミット実行
+   - コミット粒度の原則に従い、論理的に分割可能な変更は適切に分けてコミット
+
+2. **自動リファクタリング処理**:
+   - 完了報告と同時に「試行錯誤したので余計なコードをリファクタしてください」を自動実行
+   - 不要なコード、重複コード、試行錯誤の痕跡を自動的に整理
+   - コード品質向上のための標準処理として位置づけ
+   - リファクタリング後は再度テストを実行し、品質を確認
+
+3. **処理順序**:
+   - 完了報告 → 自動リファクタリング → コミット処理の順で実行
+   - 各段階でユーザーの承認を適切に取得
+
+## 品質管理
+
+### テスト種類と配置
+- **単体テスト**: `TokoTokoTests/` - ビジネスロジック、データモデル、サービス層
+- **UIテスト**: `TokoTokoUITests/` - 画面遷移、ユーザーインタラクション
+- **統合テスト**: Firebase連携、位置情報サービス等の外部システム連携
+
+### テストツール
+- **XCTest**: iOS標準テストフレームワーク
+- **ViewInspector**: SwiftUIコンポーネントのテスト
+- **UITestingHelper**: UIテスト用のモック状態管理
+
+### テスト実行コマンド
+```bash
+# 全体テスト実行
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+
+# 特定テストクラス実行（推奨）
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:TokoTokoTests/[TestClassName]
+
+# UIテスト実行
+xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:TokoTokoUITests
+```
+
+### リンティングとフォーマッティング
+**🔴 品質確保・必須実行**: コード変更後は必ず実行
+```bash
+# SwiftLint設定が存在（.swiftlint.yml）
+swiftlint lint
+
+# Swift Format設定が存在（.swift-format）
+# - インデント: 2スペース
+# - 行長制限: 100文字
+# - 最大空行: 1行
+swift-format lint --configuration .swift-format [file]
+```
+
+## 開発環境
+
+### 必要なツール
+```bash
+# xcodegen のインストール（プロジェクト生成に必要）
+brew install xcodegen
+
+# Xcodeプロジェクトファイルの生成
+set -a && source .env && set +a && xcodegen generate
+```
+
+### 開発環境セットアップ
+- VS Code開発にはSweetPad拡張機能を使用
+- SweetPad経由で必要ツールをインストール: SwiftLint, xcbeautify, xcode-build-server
+- VS Codeの「実行とデバッグ」パネルから実行（launch.jsonに設定）
+- プロジェクトはiOS 15.0+をデプロイメントターゲットとして使用
+
+### ビルド
+プロジェクトはproject.yml設定でXcodeGenを使用。依存関係変更後は常にプロジェクトを再生成:
+```bash
+set -a && source .env && set +a && xcodegen generate
+```
+
+## 開発ガイドライン
+
+### コード構成規則
+- 新規ファイル作成よりも既存ファイル編集を優先
+- MVアーキテクチャパターンに従う
+- エンティティモデルは`Model/Entities/`に配置
+- ビジネスロジックは`Model/Services/`に配置
+- UIコンポーネントは`View/Screens/`または`View/Shared/`に配置
+
+### SwiftLint詳細設定 (.swiftlint.yml)
+- **行長**: warning=300, error=500
+- **identifier_name最小長**: 1文字（r,g,b等を許可）
+- **無効化ルール**: `multiple_closures_with_trailing_closure`
+- **opt_inルール**: `force_unwrapping`, `missing_docs`, `implicit_return`
+- **セミコロン**: 使用禁止
+- **アクセシビリティ**: UI要素に識別子必須
+
+### DocCドキュメンテーション
+- **トリプルスラッシュ**: `///` コメント使用
+- **日本語ドキュメント**: 全SwiftファイルにDocCコメント
+
+## Firebase連携
+
+### 新規Firebaseプロジェクト作成タスク
+* Firebase DatabaseとAuthentication連携の初期セットアップを進める
+* Firebase Project ID: TokoToko-iOS
+* プロジェクトの初期セットアップを行う
+
+## AI協業システム
+
+### Gemini CLI 連携ガイド
+
+#### 目的
+ユーザーが **「Geminiと相談しながら進めて」** （または類似表現）と指示した場合、
+Claude は **Gemini CLI** を随時呼び出しながら、複数ターンにわたる協業を行う。
+
+#### トリガー
+- 正規表現: `/Gemini.*相談しながら/`
+- 一度トリガーした後は、ユーザーが明示的に終了を指示するまで **協業モード** を維持する。
+
+#### 協業ワークフロー (ループ可)
+| # | 処理 | 詳細 |
+|---|------|------|
+| 1 | **PROMPT 準備** | 最新のユーザー要件 + これまでの議論要約を `$PROMPT` に格納 |
+| 2 | **Gemini 呼び出し** | ```bash\ngemini <<EOF\n$PROMPT\nEOF\n```<br>必要に応じ `--max_output_tokens` 等を追加 |
+| 3 | **出力貼り付け** | `Gemini ➜` セクションに全文、長い場合は要約＋原文リンク |
+| 4 | **Claude コメント** | `Claude ➜` セクションで Gemini の提案を分析・統合し、次アクションを提示 |
+| 5 | **継続判定** | ユーザー入力 or プラン継続で 1〜4 を繰り返す。<br>「Geminiコラボ終了」「ひとまずOK」等で通常モード復帰 |
+
+#### 形式テンプレート
+```md
+**Gemini ➜**
+<Gemini からの応答>
+**Claude ➜**
+<統合コメント & 次アクション>
+```
 
 ### 処理完了時の自動ログ記録
 **🔴 必須実行・例外なし**:
@@ -165,106 +429,6 @@ swift-format lint --configuration .swift-format [file]
    - **統合後の処理**: 個別ファイルは削除し、統合ファイルに集約
    - **統合タイミング**: 関連する新しいログ作成時に自動実行
 
-## Gemini CLI 連携ガイド
-
-### 目的
-ユーザーが **「Geminiと相談しながら進めて」** （または類似表現）と指示した場合、
-Claude は **Gemini CLI** を随時呼び出しながら、複数ターンにわたる協業を行う。
-
----
-
-### トリガー
-- 正規表現: `/Gemini.*相談しながら/`
-- 一度トリガーした後は、ユーザーが明示的に終了を指示するまで **協業モード** を維持する。
-
----
-
-### 協業ワークフロー (ループ可)
-| # | 処理 | 詳細 |
-|---|------|------|
-| 1 | **PROMPT 準備** | 最新のユーザー要件 + これまでの議論要約を `$PROMPT` に格納 |
-| 2 | **Gemini 呼び出し** | ```bash\ngemini <<EOF\n$PROMPT\nEOF\n```<br>必要に応じ `--max_output_tokens` 等を追加 |
-| 3 | **出力貼り付け** | `Gemini ➜` セクションに全文、長い場合は要約＋原文リンク |
-| 4 | **Claude コメント** | `Claude ➜` セクションで Gemini の提案を分析・統合し、次アクションを提示 |
-| 5 | **継続判定** | ユーザー入力 or プラン継続で 1〜4 を繰り返す。<br>「Geminiコラボ終了」「ひとまずOK」等で通常モード復帰 |
----
-### 形式テンプレート
-```md
-**Gemini ➜**
-<Gemini からの応答>
-**Claude ➜**
-<統合コメント & 次アクション>
-
-## プロジェクト概要
-* TokoTokoは、ユーザーが散歩を記録し、友人や家族と散歩体験を共有できるiOS散歩・SNSアプリ（「とことこ - おさんぽSNS」）です。「散歩」×「記録」×「共有」を組み合わせ、日常の中で見つけた小さな発見を散歩を通じて共有することをコンセプトとしています。
-
-### 主要機能（初期リリース）
-- **散歩記録**: ボタンタップで開始・停止、バックグラウンド位置追跡
-- **写真連携**: 散歩あたり最大10枚の写真（カメラロールから選択）、位置座標と連動
-- **ルート可視化**: 散歩ルート（ポリライン）とマップ上の写真表示
-- **共有システム**: 散歩完了後の自動URL生成、SNS/LINE/メール共有
-- **ユーザー認証**: Firebase Authentication（メール・Googleログイン）
-
-### 開発環境セットアップ
-#### 必要なツール
-```bash
-# xcodegen のインストール（プロジェクト生成に必要）
-brew install xcodegen
-
-# Xcodeプロジェクトファイルの生成
-set -a && source .env && set +a && xcodegen generate
-```
-
-#### 開発環境
-- VS Code開発にはSweetPad拡張機能を使用
-- SweetPad経由で必要ツールをインストール: SwiftLint, xcbeautify, xcode-build-server
-- VS Codeの「実行とデバッグ」パネルから実行（launch.jsonに設定）
-- プロジェクトはiOS 15.0+をデプロイメントターゲットとして使用
-
-### アーキテクチャ
-#### ディレクトリ構造
-```
-TokoToko/
-├── Model/
-│   ├── Entities/          # データ構造（Walk.swift, MapItem.swift）
-│   ├── Services/          # データ操作の抽象化（WalkRepository.swift, GoogleAuthService.swift, LocationManager.swift, StepCountManager.swift, WalkManager.swift）
-│   ├── Network/           # API通信（将来実装予定）
-│   └── Testing/           # テスト用のプロトコルとヘルパー（TestingProtocols.swift, UITestingHelper.swift）
-├── View/
-│   ├── Screens/           # 画面固有のファイル（HomeView.swift, LoginView.swift, SettingsView.swift, SplashView.swift, WalkHistoryView.swift）
-│   └── Shared/            # 再利用可能なコンポーネント（DetailView.swift, LoadingView.swift, MapViewComponent.swift, ThumbnailImageView.swift, WalkControlPanel.swift, WalkRow.swift）
-├── Assets.xcassets/       # アプリアイコン、カラーパレット
-├── Preview Content/       # SwiftUIプレビュー用のアセット
-└── App/                   # エントリーポイント（TokoTokoApp.swift）
-```
-
-#### コアコンポーネント
-- **GoogleAuthService**: Google Sign-In統合を含むFirebaseベースの認証
-- **WalkManager**: 散歩記録、位置追跡、散歩状態を管理するシングルトン
-- **LocationManager**: GPS追跡のためのCoreLocationラッパー
-- **StepCountManager**: 歩数計測を管理するコンポーネント
-- **WalkRepository**: 散歩記録のデータ永続化層
-
-#### メインビュー構造
-- **SplashView**: 初期ローディング画面
-- **LoginView**: ログイン画面
-- **HomeView**: 散歩履歴とメインダッシュボード
-- **WalkHistoryView**: 散歩履歴の詳細表示
-- **MapViewComponent**: ルート可視化とマッピング
-- **SettingsView**: ユーザー設定とログアウト
-- **DetailView**: 詳細情報表示用の汎用コンポーネント
-
-#### データモデル（ERD）
-- **Walk**: 散歩セッションを表すコアエンティティ:
-  - 位置追跡（CLLocationの配列）
-  - 状態管理（notStarted, inProgress, paused, completed）
-  - 距離計算と時間追跡
-  - ルート可視化のためのポリラインデータ
-- **MapItem**: マップ上のアイテム（散歩ルート、写真位置等）
-- **User**: ユーザー情報（email, display_name, photo_url, auth_provider）
-- **Photo**: 散歩に関連付けられた写真（最大10枚/散歩、位置座標付き）
-- **SharedLink**: 共有URL生成用（永続的なリンク）
-
 ### 技術スタック
 
 #### iOS クライアント
@@ -287,59 +451,3 @@ TokoToko/
 - GoogleSignIn
 - ViewInspector（テスト用）
 
-## 開発ガイドライン
-
-### タスク完了時の自動処理ルール
-**🔴 絶対遵守・自動実行**: 「完了です」と報告する際に必ず自動実行すること
-
-1. **自動コミット処理**:
-   - タスク完了報告と同時にコミット処理を自動実行
-   - CLAUDE.md内のコミット規約に従った適切なコミットメッセージを生成
-   - `git diff`で差分確認後、ユーザーに承認を求めてからコミット実行
-   - コミット粒度の原則に従い、論理的に分割可能な変更は適切に分けてコミット
-
-2. **自動リファクタリング処理**:
-   - 完了報告と同時に「試行錯誤したので余計なコードをリファクタしてください」を自動実行
-   - 不要なコード、重複コード、試行錯誤の痕跡を自動的に整理
-   - コード品質向上のための標準処理として位置づけ
-   - リファクタリング後は再度テストを実行し、品質を確認
-
-3. **処理順序**:
-   - 完了報告 → 自動リファクタリング → コミット処理の順で実行
-   - 各段階でユーザーの承認を適切に取得
-
-### コード構成規則
-- 新規ファイル作成よりも既存ファイル編集を優先
-- MVアーキテクチャパターンに従う
-- エンティティモデルは`Model/Entities/`に配置
-- ビジネスロジックは`Model/Services/`に配置
-- UIコンポーネントは`View/Screens/`または`View/Shared/`に配置
-
-### 画面設計仕様
-- **ホーム画面**: 新しい散歩開始、現在位置マップ表示
-- **散歩中画面**: 進行状況表示（距離、時間、歩数）、散歩終了ボタン
-- **散歩後画面**: ルート確認、写真レビュー・削除、保存・共有機能
-- **設定画面**: プロフィール設定、通知設定、アカウント設定
-- **共有リンク表示画面**: 散歩ルートと写真の公開ビュー
-
-### アプリケーションフロー
-1. **ログインフロー**: アプリ起動 → ログイン状態確認 → ホーム画面
-2. **散歩記録フロー**: 散歩開始 → 位置追跡 → 散歩終了 → 確認・保存 → 共有リンク生成
-3. **履歴フロー**: 履歴タブ → 散歩リスト取得 → 詳細表示
-
-### 制限事項
-- 無料プラン: 散歩あたり最大10枚の写真
-- プレミアムプラン（将来）: 散歩あたり最大100枚の写真
-
-## ビルド
-プロジェクトはproject.yml設定でXcodeGenを使用。依存関係変更後は常にプロジェクトを再生成:
-```bash
-set -a && source .env && set +a && xcodegen generate
-```
-
-## Firebase連携
-
-### 新規Firebaseプロジェクト作成タスク
-* Firebase DatabaseとAuthentication連携の初期セットアップを進める
-* Firebase Project ID: TokoToko-iOS
-* プロジェクトの初期セットアップを行う
