@@ -14,27 +14,18 @@ struct OnboardingModalView: View {
 
     @State private var currentPageIndex = 0
     var body: some View {
-        ZStack {
-            // 背景オーバーレイ
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    onDismiss()
-                }
-
-            // カード型モーダル
-            VStack(spacing: 24) {
-                headerView
-                contentView
-                navigationView
-            }
-            .padding(24)
-            .background(Color.white)
-            .cornerRadius(20)
-            .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
-            .padding(.horizontal, 20)
-            .accessibilityElement(children: .contain)
+        // カード型モーダル（背景オーバーレイを削除、ZStackも不要）
+        VStack(spacing: 24) {
+            headerView
+            contentView
+            navigationView
         }
+        .padding(24)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
+        .padding(.horizontal, 20)
+        .accessibilityElement(children: .contain)
     }
     // MARK: - Private Properties
 
