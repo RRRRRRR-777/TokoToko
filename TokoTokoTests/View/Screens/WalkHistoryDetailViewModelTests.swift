@@ -1,5 +1,5 @@
 //
-//  WalkHistoryViewModelScreenTests.swift
+//  WalkHistoryDetailViewModelTests.swift
 //  TokoTokoTests
 //
 //  Created by Claude Code on 2025/07/12.
@@ -10,9 +10,9 @@ import XCTest
 
 @testable import TokoToko
 
-final class WalkHistoryViewModelScreenTests: XCTestCase {
+final class WalkHistoryDetailViewModelTests: XCTestCase {
 
-  var sut: WalkHistoryViewModel!
+  var sut: WalkHistoryDetailViewModel!
   var mockWalks: [Walk]!
 
   override func setUp() {
@@ -72,7 +72,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
 
     // When
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: initialIndex)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: initialIndex)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -87,9 +87,9 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
     let emptyWalks: [Walk] = []
 
     // When & Then
-    XCTAssertThrowsError(try WalkHistoryViewModel(walks: emptyWalks, initialIndex: 0)) {
+    XCTAssertThrowsError(try WalkHistoryDetailViewModel(walks: emptyWalks, initialIndex: 0)) {
       error in
-      if let validationError = error as? WalkHistoryViewModel.ValidationError {
+      if let validationError = error as? WalkHistoryDetailViewModel.ValidationError {
         XCTAssertEqual(validationError, .emptyWalksArray)
       } else {
         XCTFail("Expected ValidationError, got \(error)")
@@ -103,9 +103,9 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
 
     // When & Then
     XCTAssertThrowsError(
-      try WalkHistoryViewModel(walks: mockWalks, initialIndex: invalidIndex)
+      try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: invalidIndex)
     ) { error in
-      if let validationError = error as? WalkHistoryViewModel.ValidationError {
+      if let validationError = error as? WalkHistoryDetailViewModel.ValidationError {
         XCTAssertEqual(validationError, .invalidIndex)
       } else {
         XCTFail("Expected ValidationError, got \(error)")
@@ -118,7 +118,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
   func test_selectNextWalk_次の散歩に切り替わる() {
     // Given
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 0)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 0)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -134,7 +134,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
   func test_selectNextWalk_最後の散歩で呼ぶと最初の散歩に戻る() {
     // Given
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 1)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 1)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -150,7 +150,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
   func test_selectPreviousWalk_前の散歩に切り替わる() {
     // Given
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 1)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 1)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -166,7 +166,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
   func test_selectPreviousWalk_最初の散歩で呼ぶと最後の散歩に戻る() {
     // Given
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 0)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 0)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -184,7 +184,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
   func test_toggleStatsBar_初期値はtrue() {
     // Given
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 0)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 0)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -196,7 +196,7 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
   func test_toggleStatsBar_呼ぶと表示状態が反転する() {
     // Given
     do {
-      sut = try WalkHistoryViewModel(walks: mockWalks, initialIndex: 0)
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 0)
     } catch {
       XCTFail("Unexpected error: \(error)")
     }
@@ -207,5 +207,38 @@ final class WalkHistoryViewModelScreenTests: XCTestCase {
 
     // Then
     XCTAssertEqual(sut.isStatsBarVisible, !initialState)
+  }
+
+  // MARK: - 画像選択ロジックテスト
+
+  func test_selectImage_画像インデックスが正しく設定される() {
+    // Given
+    do {
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 0)
+    } catch {
+      XCTFail("Unexpected error: \(error)")
+    }
+
+    // When
+    sut.selectImage(at: 2)
+
+    // Then
+    XCTAssertEqual(sut.selectedImageIndex, 2)
+  }
+
+  func test_deselectImage_画像選択が解除される() {
+    // Given
+    do {
+      sut = try WalkHistoryDetailViewModel(walks: mockWalks, initialIndex: 0)
+    } catch {
+      XCTFail("Unexpected error: \(error)")
+    }
+    sut.selectImage(at: 1)
+
+    // When
+    sut.deselectImage()
+
+    // Then
+    XCTAssertNil(sut.selectedImageIndex)
   }
 }

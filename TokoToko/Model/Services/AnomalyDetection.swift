@@ -32,6 +32,20 @@ public struct Anomaly: Codable {
   let value: Double
   let threshold: Double
   let impact: String
+
+  init(
+    type: AnomalyType,
+    description: String,
+    value: Double,
+    threshold: Double,
+    impact: String
+  ) {
+    self.type = type
+    self.description = description
+    self.value = value
+    self.threshold = threshold
+    self.impact = impact
+  }
 }
 
 public enum AnomalyType: String, Codable {

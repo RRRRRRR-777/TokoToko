@@ -1,22 +1,10 @@
 ## TokoToko
 * 「とことこ - おさんぽSNS」のリポジトリ
 * このアプリは、「日常の散歩体験を、友人や家族と手軽に共有する」ことを目的としたSNS的な機能を持つサービスです。
-* ただ歩くだけの時間を"楽しい体験"に変え、その記録を共有することで、新たな発見や会話が生まれることを目指します。
+* ただ歩くだけの時間を“楽しい体験”に変え、その記録を共有することで、新たな発見や会話が生まれることを目指します。
 
-
-## ドキュメント
-### 📚 [**APIドキュメント**](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/)
-> **全SwiftファイルのAPI仕様書をWebサイト形式で確認できます**  
-> Apple公式DocCによる美しいドキュメントサイト
-
-
-**詳細情報**:
-* 全Swiftファイルの日本語DocCコメントを自動生成
-* GitHub Actionsで自動更新（Swift 6 + Xcode 16対応）
-* 主要コンポーネント: [Walk](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/walk/), [WalkManager](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/walkmanager/), [LocationManager](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/locationmanager/)
-
-### 📖 技術ドキュメント
-* **[TokoTokoDocs](https://github.com/RRRRRRR-777/TokoTokoDocs)** - 設計・仕様・議事録などの技術ドキュメント管理リポジトリ
+## ドキュメント用リポジトリ 「[TokoTokoDocs](https://github.com/RRRRRRR-777/TokoTokoDocs)」
+* TokoTokoプロジェクトの設計・仕様・議事録などの技術ドキュメントを管理するためリポジトリ
 
 ## 実行方法
 ### `brew`コマンドをインストールする

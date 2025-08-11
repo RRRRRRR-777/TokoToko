@@ -37,12 +37,6 @@ service cloud.firestore {
       allow update: if request.auth != null 
         && request.auth.uid == userId
         && validateUserData(request.resource.data);
-      
-      // Consents subcollection - ユーザーは自分の同意記録のみアクセス可能
-      match /consents/{consentId} {
-        allow read, write: if request.auth != null 
-          && request.auth.uid == userId;
-      }
     }
     
     // Photos collection - 散歩に関連付けられた写真の管理
@@ -66,12 +60,6 @@ service cloud.firestore {
       
       allow create: if request.auth != null 
         && request.auth.uid == request.resource.data.user_id;
-    }
-    
-    // Policies collection - 全ユーザーが読み取り可能（利用規約・プライバシーポリシー用）
-    match /policies/{document} {
-      allow read: if true;  // 認証不要で全ユーザーが読み取り可能
-      allow write: if false; // 書き込みは管理者のみ（Firebaseコンソールから）
     }
     
     // デフォルトルール - 他のすべてのパスはアクセス拒否

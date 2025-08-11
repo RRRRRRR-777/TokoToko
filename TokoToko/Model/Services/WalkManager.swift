@@ -14,110 +14,23 @@ import Foundation
 import MapKit
 import UIKit
 
-/// 散歩セッションを管理するメインコントローラー
-///
-/// `WalkManager`は散歩の開始から終了までの全ライフサイクルを管理するシングルトンクラスです。
-/// GPS位置情報の追跡、歩数カウント、時間計測、サムネイル生成などの機能を統合的に提供します。
-///
-/// ## Overview
-///
-/// このクラスは以下の主要な機能を提供します：
-/// - **散歩制御**: 開始、一時停止、再開、終了の状態管理
-/// - **位置情報追跡**: GPSデータの収集と距離計算
-/// - **歩数計測**: CoreMotionを使った歩数カウント
-/// - **データ永続化**: ローカルストレージとFirebase連携
-/// - **サムネイル生成**: 散歩ルートのマップスナップショット
-///
-/// ## Architecture
-///
-/// WalkManagerは以下のコンポーネントと連携します：
-/// - ``LocationManager``: GPS位置情報の取得と管理
-/// - ``StepCountManager``: 歩数計測とCoreMotion連携
-/// - ``WalkRepository``: 散歩データの永続化層
-/// - ``EnhancedVibeLogger``: ログライティングとデバッグ
-///
-/// ## Topics
-///
-/// ### Creating WalkManager
-/// - ``shared``
-///
-/// ### Walk State Management
-/// - ``startWalk(title:description:)``
-/// - ``pauseWalk()``
-/// - ``resumeWalk()``
-/// - ``stopWalk()``
-/// - ``cancelWalk()``
-///
-/// ### Current Walk Information
-/// - ``currentWalk``
-/// - ``isWalking``
-/// - ``isRecording``
-/// - ``elapsedTime``
-/// - ``distance``
-/// - ``totalSteps``
-///
-/// ### Location and Steps
-/// - ``currentLocation``
-/// - ``currentStepCount``
-///
-/// ### Display Formatters
-/// - ``elapsedTimeString``
-/// - ``distanceString``
-///
-/// ### Thumbnail Generation
-/// - ``generateAndSaveThumbnail(for:)``
-/// - ``saveImageLocally(_:for:)``
-/// - ``loadImageLocally(for:)``
-///
-/// ### Delegates
-/// - ``LocationManagerDelegate``
-/// - ``StepCountDelegate``
 class WalkManager: NSObject, ObservableObject, StepCountDelegate {
-  /// WalkManagerのシングルトンインスタンス
-  ///
-  /// アプリ全体で単一のWalkManagerインスタンスを使用し、散歩状態の一貫性を保証します。
+  // シングルトンインスタンス
   static let shared = WalkManager()
 
-  /// 現在進行中の散歩セッション
-  ///
-  /// 散歩が開始されている場合のWalkインスタンス。散歩が行われていない場合はnil。
+  // 現在の散歩
   @Published var currentWalk: Walk?
-
-  /// 散歩の経過時間（秒）
-  ///
-  /// 一時停止時間を除いた実際の散歩時間。リアルタイムで更新されます。
   @Published var elapsedTime: TimeInterval = 0
-
-  /// 現在の総距離（メートル）
-  ///
-  /// GPS位置情報から計算された散歩の総距離。位置情報が更新される度に再計算されます。
   @Published var distance: Double = 0
-
-  /// 現在のGPS位置情報
-  ///
-  /// LocationManagerから取得した最新の位置情報。位置情報が利用できない場合はnil。
   @Published var currentLocation: CLLocation?
-
-  /// 現在の歩数カウントソース
-  ///
-  /// CoreMotionからの実際の歩数、1歩あたりの距離からの推定、または利用不可状態。
   @Published var currentStepCount: StepCountSource = .unavailable
 
-  /// 散歩セッションがアクティブかどうか
-  ///
-  /// 散歩が進行中または一時停止中の場合にtrue。散歩が未開始または終了している場合はfalse。
-  ///
-  /// - Returns: 散歩セッションがアクティブな場合true
+  // 散歩中かどうか（一時停止中も含む）
   var isWalking: Bool {
     currentWalk?.status == .inProgress || currentWalk?.status == .paused
   }
 
-  /// 散歩のデータ記録がアクティブかどうか
-  ///
-  /// 散歩が現在進行中で、GPSデータや歩数が記録されている状態かどうか。
-  /// 一時停止中は記録停止とみなされます。
-  ///
-  /// - Returns: データ記録中の場合true、一時停止中や未開始の場合false
+  // 実際に記録中かどうか（一時停止中は含まない）
   var isRecording: Bool {
     currentWalk?.status == .inProgress
   }
@@ -199,19 +112,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
   }
 
-  /// 新しい散歩セッションを開始します
-  ///
-  /// 散歩を開始し、GPS位置情報の追跡、歩数カウント、時間計測を開始します。
-  /// 既に散歩が開始されている場合や、ユーザーが認証されていない場合は操作が無視されます。
-  ///
-  /// ## 位置情報権限について
-  ///
-  /// バックグラウンドでの位置情報追跡のため、「常に」権限が必要です。
-  /// 権限が不十分な場合は権限要求が表示され、許可後に散歩が開始されます。
-  ///
-  /// - Parameters:
-  ///   - title: 散歩のタイトル（空の場合はデフォルトタイトルを使用）
-  ///   - description: 散歩の説明・メモ
+  // 散歩を開始
   func startWalk(title: String = "", description: String = "") {
     logger.logMethodStart(context: ["title": title, "description": description])
 
@@ -330,7 +231,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "title": finalTitle,
         "user_id": userId,
-        "has_location": String(currentLocation != nil)
+        "has_location": String(currentLocation != nil),
       ]
     )
 
@@ -341,11 +242,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     )
   }
 
-  /// 現在の散歩セッションを一時停止します
-  ///
-  /// GPS位置情報の追跡、歩数カウント、時間計測を一時停止します。
-  /// 一時停止時間は記録され、最終的な散歩時間から除外されます。
-  /// 散歩が進行中でない場合は操作が無視されます。
+  // 散歩を一時停止
   func pauseWalk() {
     logger.logMethodStart()
 
@@ -354,7 +251,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         operation: "pauseWalk",
         message: "一時停止可能な散歩が存在しません",
         context: [
-          "is_recording": String(isRecording), "current_walk": currentWalk?.id.uuidString ?? "none"
+          "is_recording": String(isRecording), "current_walk": currentWalk?.id.uuidString ?? "none",
         ]
       )
       return
@@ -380,7 +277,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "walk_id": walk.id.uuidString,
         "elapsed_time": String(elapsedTime),
-        "distance": String(distance)
+        "distance": String(distance),
       ]
     )
 
@@ -391,11 +288,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     )
   }
 
-  /// 一時停止中の散歩セッションを再開します
-  ///
-  /// GPS位置情報の追跡、歩数カウント、時間計測を再開します。
-  /// 一時停止時間は累積時間に加算され、一時停止状態がクリアされます。
-  /// 散歩が一時停止中でない場合は操作が無視されます。
+  // 散歩を再開
   func resumeWalk() {
     logger.logMethodStart()
 
@@ -406,7 +299,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         context: [
           "is_recording": String(isRecording),
           "current_walk": currentWalk?.id.uuidString ?? "none",
-          "walk_status": currentWalk?.status.rawValue ?? "none"
+          "walk_status": currentWalk?.status.rawValue ?? "none",
         ]
       )
       return
@@ -432,7 +325,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       context: [
         "walk_id": walk.id.uuidString,
         "elapsed_time": String(elapsedTime),
-        "distance": String(distance)
+        "distance": String(distance),
       ]
     )
 
@@ -443,12 +336,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     )
   }
 
-  /// 現在の散歩セッションを終了します
-  ///
-  /// 散歩を完了状態にし、全ての追跡を停止し、データを保存します。
-  /// サムネイル画像の生成、ローカルストレージへの保存、
-  /// Firebaseへのアップロードなどが自動的に実行されます。
-  /// 散歩が開始されていない場合は操作が無視されます。
+  // 散歩を終了
   func stopWalk() {
     logger.logMethodStart()
 
@@ -493,7 +381,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         "final_distance": String(walk.totalDistance),
         "final_duration": String(walk.duration),
         "final_steps": String(walk.totalSteps),
-        "locations_count": String(walk.locations.count)
+        "locations_count": String(walk.locations.count),
       ]
     )
 
@@ -504,15 +392,12 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         "walk_id": walk.id.uuidString,
         "distance": walk.distanceString,
         "duration": walk.durationString,
-        "steps": String(walk.totalSteps)
+        "steps": String(walk.totalSteps),
       ]
     )
   }
 
-  /// 現在の散歩セッションをキャンセルします
-  ///
-  /// 散歩を中止し、全てのデータを破棄します。保存やサムネイル生成は行われません。
-  /// 位置情報追跡、歩数カウント、時間計測を停止し、状態をリセットします。
+  // 散歩をキャンセル
   func cancelWalk() {
     currentWalk = nil
     elapsedTime = 0
@@ -546,6 +431,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       return
     }
 
+    print("散歩を保存しています: \(walk.title), userID: \(walk.userId ?? "nil")")
 
     walkRepository.saveWalk(walk) { result in
       DispatchQueue.main.async {
@@ -598,12 +484,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
   }
 
-  /// 散歩経過時間のフォーマット済み文字列
-  ///
-  /// 経過時間を"HH:MM:SS"または"MM:SS"形式で返します。
-  /// 1時間未満の場合は"MM:SS"、1時間以上の場合は"H:MM:SS"形式で表示します。
-  ///
-  /// - Returns: フォーマットされた時間文字列
+  // 経過時間を文字列で取得
   var elapsedTimeString: String {
     let hours = Int(elapsedTime) / 3600
     let minutes = Int(elapsedTime) % 3600 / 60
@@ -616,12 +497,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
   }
 
-  /// 現在の総歩数
-  ///
-  /// CoreMotionからの実際の歩数、または距離・時間からの推定歩数を返します。
-  /// CoreMotionが利用できない場合は、歩行速度から自動的に推定します。
-  ///
-  /// - Returns: 現在の総歩数
+  // 歩数の取得
   var totalSteps: Int {
     // StepCountManagerから歩数を取得、フォールバックで推定歩数を使用
     if let steps = currentStepCount.steps {
@@ -634,12 +510,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     return estimatedStepCount.steps ?? 0
   }
 
-  /// 距離のフォーマット済み文字列
-  ///
-  /// 総距離を適切な単位（メートルまたはキロメートル）で返します。
-  /// 1000m未満の場合はメートル、以上の場合はキロメートルで表示されます。
-  ///
-  /// - Returns: フォーマットされた距離文字列（例: "1.23 km"、"500 m"）
+  // 距離を文字列で取得
   var distanceString: String {
     if distance >= 1000 {
       return String(format: "%.2f km", distance / 1000)
@@ -648,12 +519,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
   }
 
-  /// デフォルトの散歩タイトルを生成します
-  ///
-  /// ユーザーがタイトルを指定しなかった場合に使用する、
-  /// 日付ベースのデフォルトタイトルを生成します。
-  ///
-  /// - Returns: "M月d日の散歩"形式のタイトル文字列
+  // デフォルトの散歩タイトルを生成
   private func defaultWalkTitle() -> String {
     let formatter = DateFormatter()
     formatter.dateFormat = "M月d日"
@@ -688,38 +554,29 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   // MARK: - サムネイル生成機能
 
   // 散歩完了時にサムネイル画像を生成して保存
-  /// 散歩ルートのサムネイル画像を生成し保存します
-  ///
-  /// 散歩のGPSデータからマップスナップショットを生成し、
-  /// ローカルストレージとFirebase Storageに保存します。
-  /// 処理は非同期で実行され、UIのブロックを防いでます。
-  ///
-  /// - Parameter walk: サムネイルを生成する散歩データ
   private func generateAndSaveThumbnail(for walk: Walk) {
-    // Issue #65: 散歩リスト画像表示機能廃止により、サムネイル生成を無効化
-    print("📸 [散歩履歴用] サムネイル画像生成は廃止されました (Issue #65)")
-    return
+    print("📸 サムネイル画像の生成を開始しました")
 
     // 非同期でサムネイル画像を生成
     generateThumbnail(from: walk) { [weak self] thumbnailImage in
       guard let self = self, let thumbnailImage = thumbnailImage else {
-        print("⚠️ [散歩履歴用] サムネイル画像の生成に失敗しました")
+        print("⚠️ サムネイル画像の生成に失敗しました")
         return
       }
 
       #if DEBUG
-        print("✅ [散歩履歴用] サムネイル画像生成完了: \(thumbnailImage.size)")
+        print("✅ サムネイル画像生成完了: \(thumbnailImage.size)")
       #endif
 
       // ローカルに保存
       let localSaveSuccess = self.saveImageLocally(thumbnailImage, for: walk.id)
       if !localSaveSuccess {
-        print("⚠️ [散歩履歴用] サムネイル画像のローカル保存に失敗しました")
+        print("⚠️ サムネイル画像のローカル保存に失敗しました")
         return
       }
 
       #if DEBUG
-        print("✅ [散歩履歴用] ローカル保存完了")
+        print("✅ ローカル保存完了")
       #endif
 
       // Firebase Storageにアップロード（非同期）
@@ -731,11 +588,10 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
             var updatedWalk = walk
             updatedWalk.thumbnailImageUrl = url
             self.walkRepository.saveWalk(updatedWalk) { _ in }
-            print("✅ [散歩履歴用] サムネイル画像のFirebase保存完了: \(url)")
+            print("✅ サムネイル画像のFirebase保存完了: \(url)")
 
           case .failure(let error):
-            print("⚠️ [散歩履歴用] サムネイル画像のFirebase保存に失敗: \(error)")
-            print("   ℹ️ 散歩データは保存されており、共有機能は正常に動作します")
+            print("⚠️ サムネイル画像のFirebase保存に失敗: \(error)")
           }
         }
       }
@@ -744,39 +600,18 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 }
 
 // MARK: - LocationUpdateDelegate
-
-/// LocationManagerからの位置情報更新を処理する拡張
 extension WalkManager: LocationUpdateDelegate {
-  /// 位置情報が更新された時に呼び出されます
-  ///
-  /// 位置情報の更新は`$currentLocation`のCombine監視で処理されるため、
-  /// このメソッドでは直接的な処理は行いません。
-  ///
-  /// - Parameter location: 更新されたGPS位置情報
   func didUpdateLocation(_ location: CLLocation) {
     // 位置情報の更新は$currentLocationの監視で処理
   }
 
-  /// 位置情報の取得エラーが発生した時に呼び出されます
-  ///
-  /// GPSシグナルの取得失敗、権限エラーなどの位置情報関連エラーをログ出力します。
-  ///
-  /// - Parameter error: 発生したエラー
   func didFailWithError(_ error: Error) {
     print("位置情報の取得に失敗しました: \(error.localizedDescription)")
   }
 }
 
 // MARK: - StepCountDelegate
-
-/// StepCountManagerからの歩数更新を処理する拡張
 extension WalkManager {
-  /// 歩数カウントが更新された時に呼び出されます
-  ///
-  /// CoreMotionからの実際の歩数、または距離・時間からの推定歩数を受け取り、
-  /// UI更新のためにメインスレッドで`currentStepCount`を更新します。
-  ///
-  /// - Parameter stepCount: 更新された歩数データ
   func stepCountDidUpdate(_ stepCount: StepCountSource) {
     DispatchQueue.main.async { [weak self] in
       self?.currentStepCount = stepCount
@@ -894,7 +729,7 @@ extension WalkManager {
 
   // MARK: - Firebase Storage 操作
 
-  // Firebase Storage にアップロード（認証状態チェック強化版）
+  // Firebase Storage にアップロード
   private func uploadToFirebaseStorage(
     _ image: UIImage, for walkId: UUID, completion: @escaping (Result<String, Error>) -> Void
   ) {
@@ -903,119 +738,53 @@ extension WalkManager {
       return
     }
 
-    // Firebase認証ヘルパーを使用した認証確認
-    FirebaseAuthHelper.validateAuthenticationWithToken { result in
-      switch result {
-      case .success(let userId):
-        // 認証確認後にアップロード実行
-        self.performThumbnailUpload(imageData: imageData, userId: userId, walkId: walkId, completion: completion)
-
-      case .failure(let authError):
-        #if DEBUG
-          print("❌ [散歩履歴用] サムネイル保存: \(authError.localizedDescription)")
-        #endif
-        completion(.failure(ImageStorageError.authenticationFailed))
-      }
-    }
-  }
-
-  // 実際のアップロード処理（認証確認後）
-  private func performThumbnailUpload(
-    imageData: Data, userId: String, walkId: UUID, completion: @escaping (Result<String, Error>) -> Void
-  ) {
-    // Firebase Storage reference (設定値を使用)
+    // Firebase Storage reference
     let storage = Storage.storage()
     let storageRef = storage.reference()
-    let thumbnailPath = FirebaseStorageConfig.thumbnailPath(userId: userId, walkId: walkId.uuidString)
-    let thumbnailsRef = storageRef.child(thumbnailPath)
+    let thumbnailsRef = storageRef.child("walk_thumbnails/\(walkId.uuidString).jpg")
 
-    // メタデータ設定（設定値を使用）
+    // メタデータ設定
     let metadata = StorageMetadata()
     metadata.contentType = "image/jpeg"
-    metadata.customMetadata = FirebaseStorageConfig.commonMetadata(walkId: walkId.uuidString, userId: userId)
+    metadata.customMetadata = [
+      "walkId": walkId.uuidString,
+      "uploadTime": ISO8601DateFormatter().string(from: Date()),
+    ]
 
     #if DEBUG
-      print("📤 [散歩履歴用] サムネイル保存開始")
-      print("   認証状態: \(Auth.auth().currentUser != nil ? "認証済み" : "未認証")")
-      print("   ファイルサイズ: \(imageData.count) bytes")
-      print("   用途: 散歩履歴一覧表示用")
+      print("📤 Firebase Storage アップロード開始: \(walkId.uuidString)")
     #endif
 
     // アップロード実行
     thumbnailsRef.putData(imageData, metadata: metadata) { _, error in
       if let error = error {
         #if DEBUG
-          print("❌ [散歩履歴用] サムネイル画像のFirebase保存に失敗: \(error)")
-          if let storageError = error as NSError? {
-            print("   エラーコード: \(storageError.code)")
-            print("   エラードメイン: \(storageError.domain)")
-            print("   エラー詳細: \(storageError.userInfo)")
-          }
-          print("   ℹ️ これは散歩履歴表示用のサムネイルエラーです")
-          print("   ℹ️ 共有機能は別システムで動作するため影響ありません")
+          print("❌ Firebase Storage アップロードエラー: \(error.localizedDescription)")
         #endif
         completion(.failure(error))
         return
       }
 
-      #if DEBUG
-        print("✅ [散歩履歴用] サムネイル画像のアップロード成功、URL取得中...")
-      #endif
-
-      // URL取得をリトライ付きで実行（設定値を使用）
-      self.downloadURLWithRetry(ref: thumbnailsRef, maxRetries: FirebaseStorageConfig.maxRetryCount) { result in
-        completion(result)
-      }
-    }
-  }
-
-  // URL取得のリトライ機能
-  private func downloadURLWithRetry(
-    ref: StorageReference,
-    maxRetries: Int,
-    currentRetry: Int = 0,
-    completion: @escaping (Result<String, Error>) -> Void
-  ) {
-    ref.downloadURL { url, error in
-      if let error = error {
-        let isPermissionError = FirebaseStorageConfig.isPermissionError(error)
-
-        #if DEBUG
-          print("❌ [散歩履歴用] サムネイル URL取得エラー (試行 \(currentRetry + 1)/\(maxRetries + 1)): \(error.localizedDescription)")
-          if let storageError = error as NSError? {
-            print("   エラーコード: \(storageError.code)")
-            print("   エラードメイン: \(storageError.domain)")
-          }
-        #endif
-
-        // 権限エラーかつリトライ回数以内の場合はリトライ
-        if isPermissionError && currentRetry < maxRetries {
-          let delay = FirebaseStorageConfig.retryDelay(for: currentRetry + 1)
+      // ダウンロードURL取得
+      thumbnailsRef.downloadURL { url, error in
+        if let error = error {
           #if DEBUG
-            print("🔄 \(delay)秒後にリトライします...")
+            print("❌ Firebase Storage URL取得エラー: \(error.localizedDescription)")
           #endif
-
-          DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            self.downloadURLWithRetry(ref: ref, maxRetries: maxRetries, currentRetry: currentRetry + 1, completion: completion)
-          }
-        } else {
           completion(.failure(error))
+          return
         }
-        return
-      }
 
-      guard let downloadURL = url else {
+        guard let downloadURL = url else {
+          completion(.failure(ImageStorageError.uploadFailed))
+          return
+        }
+
         #if DEBUG
-          print("❌ ダウンロードURLが取得できませんでした")
+          print("✅ Firebase Storage アップロード完了: \(downloadURL.absoluteString)")
         #endif
-        completion(.failure(ImageStorageError.uploadFailed))
-        return
+        completion(.success(downloadURL.absoluteString))
       }
-
-      #if DEBUG
-        print("✅ [散歩履歴用] サムネイル保存完了: \(downloadURL.absoluteString)")
-      #endif
-      completion(.success(downloadURL.absoluteString))
     }
   }
 
@@ -1081,10 +850,11 @@ extension WalkManager {
 
   // 散歩データからサムネイル画像を生成（非同期版）
   private func generateThumbnail(from walk: Walk, completion: @escaping (UIImage?) -> Void) {
-    // Issue #65: 散歩リスト画像表示機能廃止により、サムネイル生成を無効化
-    print("🗺️ サムネイル生成は廃止されました (Issue #65)")
-    completion(nil)
-    return
+    #if DEBUG
+      print("🗺️ サムネイル生成開始 - Walk ID: \(walk.id)")
+      print("  - Status: \(walk.status)")
+      print("  - Locations count: \(walk.locations.count)")
+    #endif
 
     // 完了していない散歩はnilを返す
     guard walk.status == .completed else {
@@ -1340,7 +1110,7 @@ extension WalkManager {
     let attributes: [NSAttributedString.Key: Any] = [
       .foregroundColor: UIColor.label,
       .font: UIFont.systemFont(ofSize: 10, weight: .medium),
-      .backgroundColor: UIColor.systemBackground.withAlphaComponent(0.8)
+      .backgroundColor: UIColor.systemBackground.withAlphaComponent(0.8),
     ]
 
     let textSize = infoText.size(withAttributes: attributes)
@@ -1451,7 +1221,7 @@ extension WalkManager {
     let text = "Map unavailable"
     let attributes: [NSAttributedString.Key: Any] = [
       .foregroundColor: UIColor.secondaryLabel,
-      .font: UIFont.systemFont(ofSize: 10, weight: .medium)
+      .font: UIFont.systemFont(ofSize: 10, weight: .medium),
     ]
 
     let textSize = text.size(withAttributes: attributes)
@@ -1479,7 +1249,6 @@ enum ImageStorageError: Error, LocalizedError {
   case fileNotFound
   case networkUnavailable
   case authenticationFailed
-  case authenticationRequired
   case storageLimitExceeded
   case invalidURL
 
@@ -1503,8 +1272,6 @@ enum ImageStorageError: Error, LocalizedError {
       return "Network unavailable"
     case .authenticationFailed:
       return "Authentication failed"
-    case .authenticationRequired:
-      return "User authentication required"
     case .storageLimitExceeded:
       return "Storage limit exceeded"
     case .invalidURL:

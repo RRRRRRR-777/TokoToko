@@ -8,59 +8,17 @@
 import CoreLocation
 import FirebaseAuth
 import FirebaseFirestore
-import FirebaseStorage
 import Foundation
-import UIKit
 
-/// WalkRepository操作で発生するエラータイプ
-///
-/// Firestoreとのデータ同期、認証、ネットワーク通信で発生する
-/// 各種エラー状況を表現します。適切なエラーハンドリングとユーザー通知を可能にします。
-///
-/// ## Topics
-///
-/// ### Error Cases
-/// - ``notFound``
-/// - ``firestoreError(_:)``
-/// - ``networkError``
-/// - ``authenticationRequired``
-/// - ``invalidData``
+// エラー型を定義
 enum WalkRepositoryError: Error, Equatable {
-  /// 指定されたWalkが見つからない
-  ///
-  /// リクエストされたWalkIDが存在しない、または現在のユーザーがアクセス権限を持たない場合に発生します。
   case notFound
-
-  /// Firestoreでの操作エラー
-  ///
-  /// Firebase Firestoreとの通信やデータ操作で発生したエラーです。
-  /// - Parameter Error: 発生した具体的なFirestoreエラー
   case firestoreError(Error)
-
-  /// ネットワーク接続エラー
-  ///
-  /// インターネット接続の問題やタイムアウトで発生するエラーです。
   case networkError
-
-  /// 認証が必要
-  ///
-  /// Firebase Authenticationでの認証が必要な操作でユーザーが未認証の場合に発生します。
   case authenticationRequired
-
-  /// 無効なデータ
-  ///
-  /// データの変換やバリデーションに失敗した場合に発生するエラーです。
   case invalidData
 
-  /// ストレージエラー
-  ///
-  /// Firebase Storageでの画像アップロードやダウンロードで発生するエラーです。
-  case storageError(Error)
-
-  /// Equatableプロトコルの実装
-  ///
-  /// エラータイプ同士の等価比較を行います。Errorプロトコルの制約により、
-  /// firestoreErrorの場合はエラー内容ではなくタイプのみを比較します。
+  // Equatable実装
   static func == (lhs: WalkRepositoryError, rhs: WalkRepositoryError) -> Bool {
     switch (lhs, rhs) {
     case (.notFound, .notFound),
@@ -68,8 +26,7 @@ enum WalkRepositoryError: Error, Equatable {
       (.authenticationRequired, .authenticationRequired),
       (.invalidData, .invalidData):
       return true
-    case (.firestoreError, .firestoreError),
-         (.storageError, .storageError):
+    case (.firestoreError, .firestoreError):
       // Errorは等価比較が困難なため、同じタイプであることのみチェック
       return true
     default:
@@ -78,111 +35,35 @@ enum WalkRepositoryError: Error, Equatable {
   }
 }
 
-/// 散歩データの永続化とFirestore連携を管理するリポジトリクラス
-///
-/// `WalkRepository`はWalkデータのCRUD操作、Firestoreとの同期、
-/// オフライン対応、認証管理を統合的に提供するデータ層のコアクラスです。
-///
-/// ## Overview
-///
-/// 主要な責務：
-/// - **データ永続化**: Firebase Firestoreへの散歩データ保存
-/// - **オフライン対応**: ローカルキャッシュとオフライン永続化
-/// - **認証連携**: Firebase Authenticationとの統合
-/// - **エラーハンドリング**: 包括的なエラー管理と分類
-/// - **パフォーマンス**: バッチ処理とタイムアウト制御
-///
-/// ## Topics
-///
-/// ### Singleton Instance
-/// - ``shared``
-///
-/// ### Data Operations
-/// - ``fetchWalks(completion:)``
-/// - ``fetchWalk(withID:completion:)``
-/// - ``createWalk(title:description:location:completion:)``
-/// - ``saveWalk(_:completion:)``
-/// - ``updateWalk(_:completion:)``
-/// - ``deleteWalk(withID:completion:)``
-///
-/// ### Firestore Integration
-/// - ``saveWalkToFirestore(_:completion:)``
-/// - ``fetchWalksFromFirestore(userId:completion:)``
-/// - ``updateWalkInFirestore(_:completion:)``
-/// - ``deleteWalkFromFirestore(walkId:userId:completion:)``
 class WalkRepository {
-  /// WalkRepositoryのシングルトンインスタンス
-  ///
-  /// アプリ全体で単一のリポジトリインスタンスを使用し、
-  /// キャッシュとFirestore接続状態の一貫性を保証します。
+  // シングルトンインスタンス
   static let shared = WalkRepository()
 
-  /// Firebase Firestoreのデータベース参照
-  ///
-  /// 散歩データの保存と取得に使用するFirestoreインスタンスです。
-  private let db: Firestore
-  
-  /// 設定済みFirestoreインスタンスを他のサービスで共有するためのアクセサ
-  ///
-  /// アプリ全体で同一の設定を持つFirestoreインスタンスを使用するために提供されます。
-  var sharedFirestore: Firestore {
-    return db
-  }
-
-  /// Firebase Storageの参照
-  ///
-  /// 共有画像の保存に使用するFirebase Storageインスタンスです。
-  private let storage = Storage.storage()
-
-  /// Firestoreコレクション名
-  ///
-  /// 散歩データが格納されるFirestoreコレクションの名前です。
+  // Firestore参照
+  private let db = Firestore.firestore()
   private let collectionName = "walks"
 
-  /// オフライン対応用のローカルキャッシュ
-  ///
-  /// ネットワーク接続がない場合の読み取りパフォーマンス向上と
-  /// オフライン機能を提供するためのメモリ内キャッシュです。
+  // オフライン対応用の内部データストレージ
   private var cachedWalks: [Walk] = []
 
-  /// ログ出力用のEnhancedVibeLoggerインスタンス
-  ///
-  /// データ操作、Firestore通信、エラー状況の詳細ログ記録に使用します。
+  // ログ
   private let logger = EnhancedVibeLogger.shared
 
-  /// WalkRepositoryのプライベート初期化メソッド
-  ///
-  /// シングルトンパターンによりプライベート初期化子を定義します。
-  /// 初期化時にFirestoreの設定とオフライン永続化の設定を行います。
   private init() {
     // Firestoreの設定
-    self.db = Self.configureFirestore()
-    
-    // 初期化完了後にネットワーク設定
-    setupNetworkConfiguration()
+    configureFirestore()
   }
 
-  /// Firestoreの初期設定を実行（スタティックメソッド）
-  ///
-  /// オフライン永続化、キャッシュ設定を行います。
-  /// 初期化中のため、loggerは使用せずに設定のみ行います。
-  private static func configureFirestore() -> Firestore {
-    // Firestoreの設定を先に行う
-    let settings = FirestoreSettings()
-    settings.cacheSettings = PersistentCacheSettings()
-    
-    // Firestoreインスタンスを取得して設定を適用
-    let firestore = Firestore.firestore()
-    firestore.settings = settings
-    
-    return firestore
-  }
-  
-  /// ネットワーク設定のセットアップ
-  ///
-  /// Firestoreのネットワーク接続設定とログ記録を行います。
-  private func setupNetworkConfiguration() {
+  private func configureFirestore() {
     logger.logMethodStart()
+
+    // オフライン永続化を有効にする
+    let settings = FirestoreSettings()
+    let newSettings = Firestore.firestore().settings
+    newSettings.cacheSettings = PersistentCacheSettings()
+    db.settings = newSettings
+
+    // Firestore設定完了（deepLinkURLSchemeは必要に応じてAppDelegate等で設定）
 
     // オフライン時の自動再試行設定
     db.enableNetwork { [weak self] error in
@@ -203,28 +84,18 @@ class WalkRepository {
     }
 
     logger.info(
-      operation: "setupNetworkConfiguration",
+      operation: "configureFirestore",
       message: "Firestore設定完了",
       context: [
         "persistence_enabled": "true",  // PersistentCacheSettings.unlimited を使用しているため常にtrue
-        "cache_size_bytes": "unlimited"  // PersistentCacheSettings.unlimited を使用しているため
+        "cache_size_bytes": "unlimited",  // PersistentCacheSettings.unlimited を使用しているため
       ]
     )
   }
 
   // MARK: - Public Methods (既存のインターフェース互換性を保持)
 
-  /// 現在の認証済みユーザーのWalkリストを取得
-  ///
-  /// Firebase Authenticationで認証済みのユーザーの散歩データをすべて取得します。
-  /// 作成日時の降順でソートされた結果を返します。
-  ///
-  /// ## Behavior
-  /// - UIテストモード時は空のリストを返す
-  /// - 認証されていない場合はauthenticationRequiredエラー
-  /// - Firestoreからデータを取得しローカルキャッシュを更新
-  ///
-  /// - Parameter completion: 取得結果のコールバック（Walk配列またはエラー）
+  // すべてのWalkを取得（現在のユーザーのみ）
   func fetchWalks(completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void) {
     logger.logMethodStart()
 
@@ -260,18 +131,9 @@ class WalkRepository {
     fetchWalksFromFirestore(userId: userId, completion: completion)
   }
 
-  /// 指定されたIDのWalkを取得
-  ///
-  /// 特定のWalkIDで散歩データを取得します。ユーザー認証と所有権の確認を行います。
-  ///
-  /// ## Security
-  /// - 認証済みユーザーのみアクセス可能
-  /// - 独自のWalkのみ取得可能（他人のデータはアクセス不可）
-  ///
-  /// - Parameters:
-  ///   - id: 取得したいWalkのUUID
-  ///   - completion: 取得結果のコールバック（Walkオブジェクトまたはエラー）
-  func fetchWalk(withID id: UUID, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
+  // IDでWalkを取得
+  func fetchWalk(withID id: UUID, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void)
+  {
     logger.logMethodStart(context: ["walk_id": id.uuidString])
 
     guard let userId = getCurrentUserId() else {
@@ -323,7 +185,7 @@ class WalkRepository {
                 "walk_id": id.uuidString,
                 "user_id": userId,
                 "walk_title": walk.title,
-                "walk_status": walk.status.rawValue
+                "walk_status": walk.status.rawValue,
               ]
             )
             completion(.success(walk))
@@ -334,7 +196,7 @@ class WalkRepository {
               context: [
                 "walk_id": id.uuidString,
                 "requested_user_id": userId,
-                "walk_owner_id": walk.userId ?? "unknown"
+                "walk_owner_id": walk.userId ?? "unknown",
               ],
               humanNote: "権限のないWalkへのアクセス",
               aiTodo: "ユーザー権限を確認してください"
@@ -353,20 +215,7 @@ class WalkRepository {
       }
   }
 
-  /// 新しいWalkを作成してFirestoreに保存
-  ///
-  /// 指定されたパラメーターで新しい散歩セッションを作成し、Firestoreに保存します。
-  /// 開始位置情報が指定されている場合は、初期位置として追加します。
-  ///
-  /// ## Parameters Detail
-  /// - タイトルと説明は必須で、空文字列でも可能
-  /// - 位置情報はオプションで、指定すると散歩の開始地点として記録
-  ///
-  /// - Parameters:
-  ///   - title: 散歩のタイトル
-  ///   - description: 散歩の説明
-  ///   - location: 開始位置（オプション）
-  ///   - completion: 作成結果のコールバック（作成されたWalkまたはエラー）
+  // 新しいWalkを追加
   func createWalk(
     title: String, description: String, location: CLLocationCoordinate2D? = nil,
     completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
@@ -374,7 +223,7 @@ class WalkRepository {
     logger.logMethodStart(context: [
       "title": title,
       "description": description,
-      "has_location": location != nil ? "true" : "false"
+      "has_location": location != nil ? "true" : "false",
     ])
 
     guard let userId = getCurrentUserId() else {
@@ -400,7 +249,7 @@ class WalkRepository {
         message: "開始地点の位置情報を追加",
         context: [
           "latitude": String(location.latitude),
-          "longitude": String(location.longitude)
+          "longitude": String(location.longitude),
         ]
       )
     }
@@ -412,26 +261,14 @@ class WalkRepository {
         "walk_id": newWalk.id.uuidString,
         "user_id": userId,
         "title": title,
-        "has_description": !description.isEmpty ? "true" : "false"
+        "has_description": !description.isEmpty ? "true" : "false",
       ]
     )
 
     saveWalkToFirestore(newWalk, completion: completion)
   }
 
-  /// 完全なWalkオブジェクトをFirestoreに保存
-  ///
-  /// WalkManagerから呼び出されるメインの保存メソッドです。
-  /// 既に完全に構成されたWalkオブジェクトを受け取り、Firestoreに保存します。
-  ///
-  /// ## Usage
-  /// - 散歩終了時のデータ保存
-  /// - 一時停止や再開時の中間保存
-  /// - 散歩中の定期バックアップ
-  ///
-  /// - Parameters:
-  ///   - walk: 保存するWalkオブジェクト
-  ///   - completion: 保存結果のコールバック（保存済みWalkまたはエラー）
+  // 完全なWalkオブジェクトを追加（WalkManagerから使用）
   func saveWalk(
     _ walk: Walk,
     completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
@@ -439,7 +276,7 @@ class WalkRepository {
     logger.logMethodStart(context: [
       "walk_id": walk.id.uuidString,
       "title": walk.title,
-      "status": walk.status.rawValue
+      "status": walk.status.rawValue,
     ])
 
     logger.info(
@@ -450,29 +287,19 @@ class WalkRepository {
         "user_id": walk.userId ?? "unknown",
         "title": walk.title,
         "status": walk.status.rawValue,
-        "locations_count": String(walk.locations.count)
+        "locations_count": String(walk.locations.count),
       ]
     )
 
     saveWalkToFirestore(walk, completion: completion)
   }
 
-  /// 既存のWalkデータを更新
-  ///
-  /// Firestore上の既存Walkドキュメントを更新します。
-  /// マージ更新を使用し、変更されたフィールドのみを更新します。
-  ///
-  /// ## Security Note
-  /// ユーザー認証と所有権の確認を行い、本人のWalkのみ更新可能です。
-  ///
-  /// - Parameters:
-  ///   - walk: 更新するWalkオブジェクト
-  ///   - completion: 更新結果のコールバック（更新済みWalkまたはエラー）
+  // Walkを更新
   func updateWalk(_ walk: Walk, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void) {
     logger.logMethodStart(context: [
       "walk_id": walk.id.uuidString,
       "title": walk.title,
-      "status": walk.status.rawValue
+      "status": walk.status.rawValue,
     ])
 
     logger.info(
@@ -483,26 +310,14 @@ class WalkRepository {
         "user_id": walk.userId ?? "unknown",
         "title": walk.title,
         "status": walk.status.rawValue,
-        "locations_count": String(walk.locations.count)
+        "locations_count": String(walk.locations.count),
       ]
     )
 
     updateWalkInFirestore(walk, completion: completion)
   }
 
-  /// 指定されたIDのWalkを削除
-  ///
-  /// FirebaseからWalkドキュメントを完全に削除します。
-  /// 削除前に所有権の確認を行い、ローカルキャッシュからも削除します。
-  ///
-  /// ## Security
-  /// - 認証済みユーザーのみ削除可能
-  /// - 本人所有のWalkのみ削除可能
-  /// - 削除前に存在確認と権限チェックを実行
-  ///
-  /// - Parameters:
-  ///   - id: 削除するWalkのUUID
-  ///   - completion: 削除結果のコールバック（成功フラグまたはエラー）
+  // Walkを削除
   func deleteWalk(
     withID id: UUID, completion: @escaping (Result<Bool, WalkRepositoryError>) -> Void
   ) {
@@ -525,7 +340,7 @@ class WalkRepository {
       message: "Walk削除開始",
       context: [
         "walk_id": id.uuidString,
-        "user_id": userId
+        "user_id": userId,
       ]
     )
 
@@ -537,7 +352,7 @@ class WalkRepository {
           message: "Walk削除成功",
           context: [
             "walk_id": id.uuidString,
-            "user_id": userId
+            "user_id": userId,
           ]
         )
         completion(.success(true))
@@ -555,26 +370,13 @@ class WalkRepository {
 
   // MARK: - Firestore Integration Methods
 
-  /// WalkデータをFirestoreに保存する内部メソッド
-  ///
-  /// WalkオブジェクトをFirebase Firestoreにシリアライズして保存します。
-  /// タイムアウト制御、エラーハンドリング、ローカルキャッシュ更新を含みます。
-  ///
-  /// ## Implementation Details
-  /// - 10秒のタイムアウト設定
-  /// - カスタムCodable実装でCLLocationをシリアライズ
-  /// - 成功時はローカルキャッシュを更新
-  /// - 詳細なログ記録とFirebase同期バグ予防ログ
-  ///
-  /// - Parameters:
-  ///   - walk: 保存するWalkオブジェクト
-  ///   - completion: 保存結果のコールバック
+  // FirestoreにWalkを保存
   func saveWalkToFirestore(
     _ walk: Walk, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
   ) {
     logger.logMethodStart(context: [
       "walk_id": walk.id.uuidString,
-      "operation": "saveWalkToFirestore"
+      "operation": "saveWalkToFirestore",
     ])
 
     logger.logFirebaseSyncBugPrevention(
@@ -584,7 +386,7 @@ class WalkRepository {
       context: [
         "walk_id": walk.id.uuidString,
         "collection": collectionName,
-        "user_id": walk.userId ?? "unknown"
+        "user_id": walk.userId ?? "unknown",
       ]
     )
 
@@ -626,7 +428,7 @@ class WalkRepository {
               "walk_id": walk.id.uuidString,
               "collection": self?.collectionName ?? "",
               "user_id": walk.userId ?? "unknown",
-              "cached": "true"
+              "cached": "true",
             ]
           )
           completion(.success(walk))
@@ -643,26 +445,13 @@ class WalkRepository {
     }
   }
 
-  /// 指定ユーザーのWalkデータをFirestoreから取得する内部メソッド
-  ///
-  /// 特定ユーザーの散歩データをFirestoreからクエリで取得します。
-  /// 作成日時の降順でソートし、ローカルキャッシュを更新します。
-  ///
-  /// ## Query Details
-  /// - `user_id`フィールドでフィルタリング
-  /// - `created_at`で降順ソート
-  /// - 15秒のタイムアウト設定
-  /// - データ解析エラーのハンドリング
-  ///
-  /// - Parameters:
-  ///   - userId: 取得対象のユーザーID
-  ///   - completion: 取得結果のコールバック
+  // FirestoreからユーザーのWalkを取得
   func fetchWalksFromFirestore(
     userId: String, completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void
   ) {
     logger.logMethodStart(context: [
       "user_id": userId,
-      "operation": "fetchWalksFromFirestore"
+      "operation": "fetchWalksFromFirestore",
     ])
 
     logger.logFirebaseSyncBugPrevention(
@@ -671,7 +460,7 @@ class WalkRepository {
       lastSync: Date(),  // 仮定
       context: [
         "user_id": userId,
-        "collection": collectionName
+        "collection": collectionName,
       ]
     )
 
@@ -741,7 +530,7 @@ class WalkRepository {
             "user_id": userId,
             "documents_count": String(documents.count),
             "parsed_count": String(parseResult.count),
-            "cached": "true"
+            "cached": "true",
           ]
         )
 
@@ -749,25 +538,13 @@ class WalkRepository {
       }
   }
 
-  /// WalkデータをFirestoreで更新する内部メソッド
-  ///
-  /// 既存のWalkドキュメントをFirestore上で更新します。
-  /// マージ更新を使用して、変更されたフィールドのみを更新します。
-  ///
-  /// ## Security & Validation
-  /// - ユーザー認証と所有権の事前チェック
-  /// - カスタムCodableで安全なデータシリアライゼーション
-  /// - 成功時はローカルキャッシュを更新
-  ///
-  /// - Parameters:
-  ///   - walk: 更新するWalkオブジェクト
-  ///   - completion: 更新結果のコールバック
+  // FirestoreでWalkを更新
   func updateWalkInFirestore(
     _ walk: Walk, completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
   ) {
     logger.logMethodStart(context: [
       "walk_id": walk.id.uuidString,
-      "operation": "updateWalkInFirestore"
+      "operation": "updateWalkInFirestore",
     ])
 
     guard walk.userId == getCurrentUserId() else {
@@ -777,7 +554,7 @@ class WalkRepository {
         context: [
           "walk_id": walk.id.uuidString,
           "walk_user_id": walk.userId ?? "unknown",
-          "current_user_id": getCurrentUserId() ?? "nil"
+          "current_user_id": getCurrentUserId() ?? "nil",
         ],
         humanNote: "権限のないWalk更新試行",
         aiTodo: "ユーザー権限を確認してください"
@@ -793,7 +570,7 @@ class WalkRepository {
       context: [
         "walk_id": walk.id.uuidString,
         "collection": collectionName,
-        "user_id": walk.userId ?? "unknown"
+        "user_id": walk.userId ?? "unknown",
       ]
     )
 
@@ -819,7 +596,7 @@ class WalkRepository {
               "walk_id": walk.id.uuidString,
               "collection": self?.collectionName ?? "",
               "user_id": walk.userId ?? "unknown",
-              "cached": "true"
+              "cached": "true",
             ]
           )
           completion(.success(walk))
@@ -836,28 +613,14 @@ class WalkRepository {
     }
   }
 
-  /// WalkデータをFirestoreから削除する内部メソッド
-  ///
-  /// 削除前に所有権と存在確認を行い、安全にFirestoreから削除します。
-  /// 削除成功時はローカルキャッシュからも削除します。
-  ///
-  /// ## Security Process
-  /// 1. 対象Walkの存在確認
-  /// 2. 所有者ユーザーIDの照合確認
-  /// 3. 権限チェック後に削除実行
-  /// 4. ローカルキャッシュからも削除
-  ///
-  /// - Parameters:
-  ///   - walkId: 削除するWalkのUUID
-  ///   - userId: 削除を要求するユーザーID
-  ///   - completion: 削除結果のコールバック
+  // FirestoreからWalkを削除
   func deleteWalkFromFirestore(
     walkId: UUID, userId: String, completion: @escaping (Result<Bool, WalkRepositoryError>) -> Void
   ) {
     logger.logMethodStart(context: [
       "walk_id": walkId.uuidString,
       "user_id": userId,
-      "operation": "deleteWalkFromFirestore"
+      "operation": "deleteWalkFromFirestore",
     ])
 
     logger.logFirebaseSyncBugPrevention(
@@ -867,7 +630,7 @@ class WalkRepository {
       context: [
         "walk_id": walkId.uuidString,
         "collection": collectionName,
-        "user_id": userId
+        "user_id": userId,
       ]
     )
 
@@ -892,7 +655,7 @@ class WalkRepository {
             message: "削除対象のWalkが見つかりません",
             context: [
               "walk_id": walkId.uuidString,
-              "user_id": userId
+              "user_id": userId,
             ],
             humanNote: "存在しないWalkの削除試行",
             aiTodo: "IDの正確性を確認してください"
@@ -910,7 +673,7 @@ class WalkRepository {
               context: [
                 "walk_id": walkId.uuidString,
                 "requested_user_id": userId,
-                "walk_owner_id": walk.userId ?? "unknown"
+                "walk_owner_id": walk.userId ?? "unknown",
               ],
               humanNote: "権限のないWalk削除試行",
               aiTodo: "ユーザー権限を確認してください"
@@ -939,7 +702,7 @@ class WalkRepository {
                   "walk_id": walkId.uuidString,
                   "user_id": userId,
                   "collection": self?.collectionName ?? "",
-                  "cached": "removed"
+                  "cached": "removed",
                 ]
               )
               completion(.success(true))
@@ -956,205 +719,14 @@ class WalkRepository {
         }
       }
   }
-  // MARK: - Shared Image Storage
-
-  /// 散歩の共有画像をFirebase Storageに保存
-  ///
-  /// 生成された共有画像をFirebase Storageにアップロードし、
-  /// ダウンロードURLをWalkデータに保存します。
-  ///
-  /// ## Storage Structure
-  /// - パス: `shared_images/{userId}/{walkId}/share_image.jpg`
-  /// - 形式: JPEG（品質: 0.8）
-  /// - メタデータ: content-type, custom metadata
-  ///
-  /// - Parameters:
-  ///   - image: アップロードする画像
-  ///   - walk: 関連する散歩データ
-  ///   - completion: アップロード結果のコールバック（ダウンロードURLまたはエラー）
-  func saveSharedImage(
-    _ image: UIImage,
-    for walk: Walk,
-    completion: @escaping (Result<String, WalkRepositoryError>) -> Void
-  ) {
-    logger.logMethodStart(context: [
-      "walk_id": walk.id.uuidString,
-      "operation": "saveSharedImage"
-    ])
-
-    // Firebase認証ヘルパーを使用した認証確認
-    switch FirebaseAuthHelper.requireAuthentication() {
-    case .success(let userId):
-      // 認証済み、処理続行
-      break
-    case .failure(let authError):
-      logger.warning(
-        operation: "saveSharedImage",
-        message: "認証エラー: \(authError.localizedDescription)",
-        context: ["walk_id": walk.id.uuidString],
-        humanNote: "ユーザーが認証されていません",
-        aiTodo: "認証状態を確認してください"
-      )
-      completion(.failure(.authenticationRequired))
-      return
-    }
-
-    let userId = FirebaseAuthHelper.getCurrentUserId()!
-
-    // 画像をJPEGデータに変換（設定値を使用）
-    guard let imageData = image.jpegData(compressionQuality: FirebaseStorageConfig.jpegCompressionQuality) else {
-      logger.warning(
-        operation: "saveSharedImage",
-        message: "画像のJPEGデータ変換に失敗",
-        context: ["walk_id": walk.id.uuidString],
-        humanNote: "画像の変換に失敗",
-        aiTodo: "画像データの整合性を確認"
-      )
-      completion(.failure(.invalidData))
-      return
-    }
-
-    // Storage参照を作成（設定値を使用）
-    let sharedImagePath = FirebaseStorageConfig.sharedImagePath(userId: userId, walkId: walk.id.uuidString)
-    let imageRef = storage.reference().child(sharedImagePath)
-
-    // メタデータを設定（設定値を使用）
-    let metadata = StorageMetadata()
-    metadata.contentType = "image/jpeg"
-    var commonMetadata = FirebaseStorageConfig.commonMetadata(walkId: walk.id.uuidString, userId: userId)
-    commonMetadata["walk_title"] = walk.title
-    metadata.customMetadata = commonMetadata
-
-    logger.info(
-      operation: "saveSharedImage",
-      message: "画像アップロード開始",
-      context: [
-        "walk_id": walk.id.uuidString,
-        "user_id": userId,
-        "file_size": String(imageData.count),
-        "storage_path": sharedImagePath
-      ]
-    )
-
-    // 画像をアップロード
-    imageRef.putData(imageData, metadata: metadata) { [weak self] _, error in
-      if let error = error {
-        self?.logger.logError(
-          error,
-          operation: "saveSharedImage:putData",
-          humanNote: "Firebase Storageへのアップロードに失敗",
-          aiTodo: "ネットワーク接続とFirebase Storage設定を確認"
-        )
-        completion(.failure(.storageError(error)))
-        return
-      }
-
-      // ダウンロードURLを取得
-      imageRef.downloadURL { [weak self] url, error in
-        if let error = error {
-          self?.logger.logError(
-            error,
-            operation: "saveSharedImage:downloadURL",
-            humanNote: "ダウンロードURL取得に失敗",
-            aiTodo: "Firebase Storage設定とアクセス権限を確認"
-          )
-          completion(.failure(.storageError(error)))
-          return
-        }
-
-        guard let downloadURL = url else {
-          self?.logger.warning(
-            operation: "saveSharedImage:downloadURL",
-            message: "ダウンロードURLが取得できませんでした",
-            context: ["walk_id": walk.id.uuidString],
-            humanNote: "URLの取得に失敗",
-            aiTodo: "Firebase Storage設定を確認"
-          )
-          completion(.failure(.storageError(NSError(domain: "WalkRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗"]))))
-          return
-        }
-
-        let urlString = downloadURL.absoluteString
-
-        self?.logger.info(
-          operation: "saveSharedImage:downloadURL",
-          message: "画像アップロード成功",
-          context: [
-            "walk_id": walk.id.uuidString,
-            "user_id": userId,
-            "download_url": urlString,
-            "file_size": String(imageData.count)
-          ]
-        )
-
-        // WalkデータにURLを保存
-        self?.updateWalkWithSharedImageURL(walk, imageURL: urlString) { result in
-          switch result {
-          case .success:
-            completion(.success(urlString))
-          case .failure(let error):
-            completion(.failure(error))
-          }
-        }
-      }
-    }
-  }
-
-  /// 散歩データに共有画像URLを追加して更新
-  ///
-  /// - Parameters:
-  ///   - walk: 更新する散歩データ
-  ///   - imageURL: 共有画像のダウンロードURL
-  ///   - completion: 更新結果のコールバック
-  private func updateWalkWithSharedImageURL(
-    _ walk: Walk,
-    imageURL: String,
-    completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
-  ) {
-    logger.logMethodStart(context: [
-      "walk_id": walk.id.uuidString,
-      "operation": "updateWalkWithSharedImageURL"
-    ])
-
-    // Walkデータを更新（共有画像URLを追加）
-    var updatedWalk = walk
-    // 注意: Walkモデルにshared_image_urlフィールドを追加する必要があります
-    // 今回はログのみで実装を省略
-
-    logger.info(
-      operation: "updateWalkWithSharedImageURL",
-      message: "散歩データに共有画像URL追加（実装は今後追加）",
-      context: [
-        "walk_id": walk.id.uuidString,
-        "image_url": imageURL
-      ]
-    )
-
-    // 現在のWalkモデルには共有画像URLフィールドがないため、
-    // とりあえず成功として処理
-    completion(.success(updatedWalk))
-  }
-
   // MARK: - Private Helper Methods
 
-  /// Firebase Authenticationから現在のユーザーIDを取得
-  ///
-  /// ログイン中のユーザーの一意識別子を取得します。
-  /// ユーザーがログインしていない場合はnilを返します。
-  ///
-  /// - Returns: 現在のユーザーID、または未ログインの場合nil
   private func getCurrentUserId() -> String? {
     // Firebase Authから現在のユーザーIDを取得
     let userId = Auth.auth().currentUser?.uid
     return userId
   }
 
-  /// ローカルキャッシュを指定のWalkで更新
-  ///
-  /// 既存のWalkがキャッシュにある場合は更新し、
-  /// ない場合は新しく追加します。
-  ///
-  /// - Parameter walk: キャッシュに保存するWalkオブジェクト
   private func updateCache(with walk: Walk) {
     if let index = cachedWalks.firstIndex(where: { $0.id == walk.id }) {
       cachedWalks[index] = walk
@@ -1163,31 +735,12 @@ class WalkRepository {
     }
   }
 
-  /// 指定されたIDのWalkをローカルキャッシュから削除
-  ///
-  /// キャッシュから指定WalkIDと一致するすべてのWalkを削除します。
-  ///
-  /// - Parameter walkId: 削除するWalkのUUID
   private func removeFromCache(walkId: UUID) {
     cachedWalks.removeAll { $0.id == walkId }
   }
 
   // MARK: - Error Handling
 
-  /// FirestoreエラーをWalkRepositoryErrorにマッピング
-  ///
-  /// 系統エラーをアプリケーション固有のエラータイプに変換します。
-  /// ネットワークエラー、認証エラー、Firestore固有エラーを適切に分類します。
-  ///
-  /// ## Error Code Mapping
-  /// - NSURLError: ネットワーク関連エラー
-  /// - Firestore Error 7: PERMISSION_DENIED → authenticationRequired
-  /// - Firestore Error 5: NOT_FOUND → notFound
-  /// - Firestore Error 14: UNAVAILABLE → networkError
-  /// - Firestore Error 3: INVALID_ARGUMENT → invalidData
-  ///
-  /// - Parameter error: マッピング元のエラー
-  /// - Returns: 変換されたWalkRepositoryError
   private func mapFirestoreError(_ error: Error) -> WalkRepositoryError {
     let nsError = error as NSError
 

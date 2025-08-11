@@ -43,47 +43,28 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと距離が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
+    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {})
 
     // When & Then
-    // ViewInspectorの.inspect()呼び出しは潜在的なクラッシュリスクがあるためコメントアウト
-    // let distanceText = try view.inspect().find(text: mockWalk.distanceString)
-    // XCTAssertNotNil(distanceText)
-    
-    // 代替テスト：Viewの初期化とWalkモデルの距離データ検証
-    XCTAssertNotNil(view)
-    XCTAssertEqual(mockWalk.totalDistance, 1500)
-    XCTAssertNotNil(mockWalk.distanceString)
+    let distanceText = try view.inspect().find(text: mockWalk.distanceString)
+    XCTAssertNotNil(distanceText)
   }
 
   func test_StatsBarView_Walkデータを渡すと時間が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
+    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {})
 
     // When & Then
-    // ViewInspectorの.inspect()呼び出しは潜在的なクラッシュリスクがあるためコメントアウト
-    // let durationText = try view.inspect().find(text: mockWalk.durationString)
-    // XCTAssertNotNil(durationText)
-    
-    // 代替テスト：Viewの初期化とWalkモデルの時間データ検証
-    XCTAssertNotNil(view)
-    XCTAssertNotNil(mockWalk.startTime)
-    XCTAssertNotNil(mockWalk.endTime)
-    XCTAssertNotNil(mockWalk.durationString)
+    let durationText = try view.inspect().find(text: mockWalk.durationString)
+    XCTAssertNotNil(durationText)
   }
 
   func test_StatsBarView_Walkデータを渡すと歩数が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
+    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {})
 
     // When & Then
-    // ViewInspectorの.inspect()呼び出しは潜在的なクラッシュリスクがあるためコメントアウト
-    // let stepsText = try view.inspect().find(text: "2000歩")
-    // XCTAssertNotNil(stepsText)
-    
-    // 代替テスト：Viewの初期化とWalkモデルの歩数データ検証
-    XCTAssertNotNil(view)
-    XCTAssertEqual(mockWalk.totalSteps, 2000)
-    XCTAssertEqual(mockWalk.status, .completed)
+    let stepsText = try view.inspect().find(text: "2000歩")
+    XCTAssertNotNil(stepsText)
   }
 }

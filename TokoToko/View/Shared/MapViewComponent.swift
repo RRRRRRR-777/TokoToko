@@ -9,68 +9,20 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-/// 散歩ルートとアノテーションを表示するカスタムマップコンポーネント
-///
-/// `MapViewComponent`はSwiftUIのMapと組み合わせて、散歩アプリケーション専用の
-/// マップ表示機能を提供します。GPS軌跡のポリライン表示、写真位置のマーカー表示、
-/// ユーザー位置の追跡機能を統合しています。
-///
-/// ## Overview
-///
-/// - **ルート表示**: GPS座標列からポリラインを生成し散歩ルートを可視化
-/// - **アノテーション**: 写真撮影地点や特定位置にカスタムマーカーを表示
-/// - **位置追跡**: ユーザーの現在位置をリアルタイムで表示
-/// - **インタラクティブ**: ズーム、パン、マーカータップなどのユーザー操作に対応
-///
-/// ## Topics
-///
-/// ### Properties
-/// - ``region``
-/// - ``annotations``
-/// - ``polylineCoordinates``
-/// - ``showsUserLocation``
-///
-/// ### Initialization
-/// - ``init(region:annotations:polylineCoordinates:showsUserLocation:)``
 struct MapViewComponent: View {
-  /// 位置情報の管理を担当するLocationManagerインスタンス
-  ///
-  /// GPS位置情報の取得、権限管理、現在位置の監視を統合的に処理します。
+  // 位置情報マネージャー
   private let locationManager = LocationManager.shared
-
-  /// マップ表示領域の座標範囲
-  ///
-  /// 表示するマップの中心座標とズームレベルを定義するバインディングプロパティです。
-  /// 親ビューから渡され、ユーザーの操作に応じて動的に更新されます。
   @Binding var region: MKCoordinateRegion
 
-  /// マップ上に表示するアノテーション配列
-  ///
-  /// 写真の撮影地点、興味のあるポイント、その他のカスタムマーカーを表現するMapItemの配列です。
-  /// 各アノテーションはタイトル、座標、アイコンを持ちます。
+  // 表示するアノテーション
   var annotations: [MapItem] = []
 
-  /// 散歩ルートを描画するためのGPS座標配列
-  ///
-  /// 散歩中に記録されたGPS位置情報から生成される座標列で、
-  /// マップ上にポリライン（線分の連続）として散歩ルートを可視化します。
+  // 表示するポリライン座標
   var polylineCoordinates: [CLLocationCoordinate2D] = []
 
-  /// ユーザーの現在位置を表示するかどうかのフラグ
-  ///
-  /// trueの場合、マップ上にユーザーの現在位置が青い円で表示されます。
-  /// プライバシー保護や特定の表示モードでfalseに設定可能です。
+  // ユーザー位置を表示するかどうか
   var showsUserLocation: Bool = true
 
-  /// MapViewComponentの主要初期化メソッド
-  ///
-  /// リージョンバインディングとマップ表示要素を指定してマップコンポーネントを初期化します。
-  ///
-  /// - Parameters:
-  ///   - region: マップ表示領域のバインディング
-  ///   - annotations: 表示するアノテーションの配列（デフォルト: 空配列）
-  ///   - polylineCoordinates: 散歩ルート描画用の座標配列（デフォルト: 空配列）
-  ///   - showsUserLocation: ユーザー位置表示の有無（デフォルト: true）
   init(
     region: Binding<MKCoordinateRegion>,
     annotations: [MapItem] = [],
@@ -83,15 +35,7 @@ struct MapViewComponent: View {
     self.showsUserLocation = showsUserLocation
   }
 
-  /// デフォルトリージョン用の便利な初期化メソッド
-  ///
-  /// リージョンを東京駅中心の固定値に設定してマップコンポーネントを初期化します。
-  /// テストやプロトタイプ、初期位置が不明な場合に使用します。
-  ///
-  /// - Parameters:
-  ///   - annotations: 表示するアノテーションの配列（デフォルト: 空配列）
-  ///   - polylineCoordinates: 散歩ルート描画用の座標配列（デフォルト: 空配列）
-  ///   - showsUserLocation: ユーザー位置表示の有無（デフォルト: true）
+  // デフォルトリージョン用の便利なイニシャライザ
   init(
     annotations: [MapItem] = [],
     polylineCoordinates: [CLLocationCoordinate2D] = [],
@@ -124,10 +68,7 @@ struct MapViewComponent: View {
   }
 }
 
-/// iOS 17以上用のマップビュー実装
-///
-/// iOS 17で導入された新しいMapKit APIを使用したマップビューコンポーネントです。
-/// 改善されたパフォーマンスと新機能（MapCameraPosition、Map構文など）を活用しています。
+// iOS 17以上用のマップビュー
 @available(iOS 17.0, *)
 private struct iOS17MapView: View {
   @Binding var region: MKCoordinateRegion
@@ -210,10 +151,7 @@ private struct iOS17MapView: View {
   }
 }
 
-/// iOS 15-16用のマップビュー実装
-///
-/// iOS 15-16で利用可能なMapKit APIを使用したマップビューコンポーネントです。
-/// 従来のMap構文とUIViewRepresentableを組み合わせてポリライン表示を実現します。
+// iOS 15-16用のマップビュー
 private struct iOS15MapView: View {
   @Binding var region: MKCoordinateRegion
   var annotations: [MapItem]
@@ -278,10 +216,7 @@ private struct iOS15MapView: View {
   }
 }
 
-/// iOS 15-16用のポリライン対応マップビュー
-///
-/// iOS 15-16でポリライン表示を実現するためのUIViewRepresentableラッパーです。
-/// MKMapViewを直接使用してポリラインのレンダリングとユーザーインタラクションを処理します。
+// iOS 15-16用のポリライン対応マップビュー
 private struct iOS15MapWithPolylineView: UIViewRepresentable {
   @Binding var region: MKCoordinateRegion
   var annotations: [MapItem]
@@ -325,10 +260,6 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
     Coordinator(self)
   }
 
-  /// iOS15MapWithPolylineViewのCoordinator
-  ///
-  /// MKMapViewDelegateプロトコルを実装し、ポリラインレンダリングと
-  /// マップ領域変更イベントを処理します。
   class Coordinator: NSObject, MKMapViewDelegate {
     var parent: iOS15MapWithPolylineView
 
@@ -352,22 +283,11 @@ private struct iOS15MapWithPolylineView: UIViewRepresentable {
   }
 }
 
-/// MKCoordinateRegionの比較用拡張
-///
-/// 座標領域の近似的な等価比較を行うためのヘルパーメソッドを提供します。
-/// 浮動小数点数の精度問題を考慮して、指定された許容範囲内での比較を行います。
+// MKCoordinateRegionの比較用拡張
 extension MKCoordinateRegion {
-  /// 2つのMKCoordinateRegionが近似的に等しいかどうかを判定
-  ///
-  /// 浮動小数点数の精度問題を考慮して、指定された許容値内で
-  /// 中心座標とスパンが等しいかどうかを判定します。
-  ///
-  /// - Parameters:
-  ///   - other: 比較対象のMKCoordinateRegion
-  ///   - tolerance: 許容誤差（デフォルト: 0.0001）
-  /// - Returns: 近似的に等しい場合true
   fileprivate func isApproximatelyEqual(to other: MKCoordinateRegion, tolerance: Double = 0.0001)
-    -> Bool {
+    -> Bool
+  {
     abs(center.latitude - other.center.latitude) < tolerance
       && abs(center.longitude - other.center.longitude) < tolerance
       && abs(span.latitudeDelta - other.span.latitudeDelta) < tolerance

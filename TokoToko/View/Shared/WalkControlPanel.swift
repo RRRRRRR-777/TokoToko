@@ -8,73 +8,15 @@
 import CoreMotion
 import SwiftUI
 
-/// 散歩の開始・停止・一時停止を制御するコントロールパネル
-///
-/// `WalkControlPanel`は散歩セッションの制御に必要な全てのボタンとダイアログを提供します。
-/// 散歩状態に応じて適切なコントロールを表示し、ユーザーの操作を`WalkManager`に伝達します。
-///
-/// ## Overview
-///
-/// - **状態適応表示**: 散歩の状態（未開始、進行中、一時停止、完了）に応じた適切なUI表示
-/// - **確認ダイアログ**: 散歩開始時のタイトル入力、終了時の確認ダイアログ
-/// - **フローティング対応**: 画面上での固定配置またはインライン配置の選択可能
-/// - **アクセシビリティ**: VoiceOverとUIテスト対応のアクセシビリティ識別子
-///
-/// ## Topics
-///
-/// ### Properties
-/// - ``walkManager``
-/// - ``isFloating``
-/// - ``showingStartAlert``
-/// - ``showingStopAlert``
-/// - ``walkTitle``
-///
-/// ### Initialization
-/// - ``init(walkManager:isFloating:)``
 struct WalkControlPanel: View {
-  /// 散歩データとセッション管理を担当するWalkManager
-  ///
-  /// 散歩の開始・停止・一時停止の実行、現在の散歩状態の監視を行います。
-  /// @ObservedObjectにより状態変更が自動的にUIに反映されます。
   @ObservedObject var walkManager: WalkManager
-
-  /// 散歩開始確認ダイアログの表示状態
-  ///
-  /// 散歩開始ボタンタップ時に表示されるタイトル入力ダイアログの表示制御に使用されます。
   @State private var showingStartAlert = false
-
-  /// 散歩終了確認ダイアログの表示状態
-  ///
-  /// 散歩終了ボタンタップ時に表示される確認ダイアログの表示制御に使用されます。
   @State private var showingStopAlert = false
-
-  /// 散歩完了後の共有シート表示状態
-  ///
-  /// 散歩完了時に表示される共有シートの表示制御に使用されます。
-  @State private var showingShareSheet = false
-
-  /// 共有対象の散歩データ
-  ///
-  /// 共有シート表示時に使用される完了した散歩データを保持します。
-  @State private var walkToShare: Walk?
-
-  /// 散歩に設定するタイトル名
-  ///
-  /// 散歩開始時の確認ダイアログで入力されるタイトル文字列を保持します。
   @State private var walkTitle = ""
 
-  /// フローティング表示モードかどうかのフラグ
-  ///
-  /// trueの場合は画面右下固定配置、falseの場合は通常のレイアウト内配置となります。
+  // 右下固定配置かどうか
   let isFloating: Bool
 
-  /// WalkControlPanelの初期化メソッド
-  ///
-  /// 必要なWalkManagerインスタンスと表示モードを設定します。
-  ///
-  /// - Parameters:
-  ///   - walkManager: 散歩管理を行うWalkManagerインスタンス
-  ///   - isFloating: フローティング表示の有無（デフォルト: false）
   init(walkManager: WalkManager, isFloating: Bool = false) {
     self.walkManager = walkManager
     self.isFloating = isFloating
@@ -181,26 +123,11 @@ struct WalkControlPanel: View {
     }
     .alert("散歩を終了", isPresented: $showingStopAlert) {
       Button("終了", role: .destructive) {
-        if let currentWalk = walkManager.currentWalk {
-          walkToShare = currentWalk
-        }
         walkManager.stopWalk()
-
-        // 散歩完了後に共有シートを表示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-          if let walk = walkToShare {
-            showingShareSheet = true
-          }
-        }
       }
       Button("キャンセル", role: .cancel) {}
     } message: {
       Text("散歩を終了しますか？記録が保存されます。")
-    }
-    .sheet(isPresented: $showingShareSheet) {
-      if let walk = walkToShare {
-        WalkCompletionView(walk: walk, isPresented: $showingShareSheet)
-      }
     }
   }
 
@@ -216,7 +143,7 @@ struct WalkControlPanel: View {
           LinearGradient(
             gradient: Gradient(colors: [
               Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
+              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
             ]),
             startPoint: .leading,
             endPoint: .trailing
@@ -235,47 +162,10 @@ struct WalkControlPanel: View {
   }
 }
 
-/// 散歩の統計情報を表示するビューコンポーネント
-///
-/// `WalkInfoDisplay`は散歩中の重要な統計データ（時間、歩数、距離）を
-/// 見やすい形式で横並びに表示するコンポーネントです。歩数データのソースに応じて
-/// 適切なインジケーターと説明を表示します。
-///
-/// ## Overview
-///
-/// - **経過時間表示**: 散歩開始からの経過時間をフォーマット済み文字列で表示
-/// - **歩数表示**: センサー実測値、推定値、計測不可状態を適切に区別して表示
-/// - **距離表示**: 移動距離をキロメートル単位で表示
-/// - **ソースインジケーター**: 歩数データの信頼性をアイコンで視覚的に表現
-///
-/// ## Topics
-///
-/// ### Properties
-/// - ``elapsedTime``
-/// - ``totalSteps``
-/// - ``distance``
-/// - ``stepCountSource``
 struct WalkInfoDisplay: View {
-  /// 散歩開始からの経過時間
-  ///
-  /// HH:mm形式でフォーマットされた経過時間文字列です。
   let elapsedTime: String
-
-  /// 総歩数
-  ///
-  /// 散歩中に計測または推定された総歩数です。
-  /// 表示目的のみに使用され、実際の値は`stepCountSource`から取得されます。
   let totalSteps: Int
-
-  /// 移動距離
-  ///
-  /// GPS軌跡から計算された移動距離をキロメートル単位で表示するための文字列です。
   let distance: String
-
-  /// 歩数データのソース情報
-  ///
-  /// 歩数がセンサー実測値、推定値、計測不可のいずれかを示し、
-  /// 適切なインジケーターとラベル表示に使用されます。
   let stepCountSource: StepCountSource
 
   var body: some View {
@@ -299,7 +189,7 @@ struct WalkInfoDisplay: View {
             .foregroundColor(.secondary)
           stepSourceIndicator
         }
-
+        
         stepCountDisplay
       }
 
@@ -316,12 +206,12 @@ struct WalkInfoDisplay: View {
       }
     }
   }
-
+  
   // 歩数ラベル
   private var stepCountLabel: some View {
     Text(stepCountLabelText)
   }
-
+  
   // 歩数ラベルテキスト
   private var stepCountLabelText: String {
     switch stepCountSource {
@@ -333,7 +223,7 @@ struct WalkInfoDisplay: View {
       return "歩数"
     }
   }
-
+  
   // 歩数ソースインジケーター
   private var stepSourceIndicator: some View {
     Group {
@@ -356,7 +246,7 @@ struct WalkInfoDisplay: View {
       }
     }
   }
-
+  
   // 歩数表示
   private var stepCountDisplay: some View {
     Group {
@@ -383,8 +273,8 @@ struct WalkInfoDisplay: View {
     Divider()
 
     WalkInfoDisplay(
-      elapsedTime: "12:34",
-      totalSteps: 1234,
+      elapsedTime: "12:34", 
+      totalSteps: 1234, 
       distance: "1.2 km",
       stepCountSource: .coremotion(steps: 1234)
     )
@@ -392,10 +282,10 @@ struct WalkInfoDisplay: View {
     .background(Color(.systemGray6))
     .cornerRadius(12)
     .padding()
-
+    
     WalkInfoDisplay(
-      elapsedTime: "08:15",
-      totalSteps: 650,
+      elapsedTime: "08:15", 
+      totalSteps: 650, 
       distance: "0.5 km",
       stepCountSource: .estimated(steps: 650)
     )
@@ -403,10 +293,10 @@ struct WalkInfoDisplay: View {
     .background(Color(.systemGray6))
     .cornerRadius(12)
     .padding()
-
+    
     WalkInfoDisplay(
-      elapsedTime: "05:20",
-      totalSteps: 0,
+      elapsedTime: "05:20", 
+      totalSteps: 0, 
       distance: "0.3 km",
       stepCountSource: .unavailable
     )
