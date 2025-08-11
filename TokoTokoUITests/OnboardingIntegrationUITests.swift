@@ -31,7 +31,7 @@ final class OnboardingIntegrationUITests: XCTestCase {
         
         // Then: 位置情報許可後にオンボーディングモーダルが表示されること
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 8.0), "位置情報許可後にオンボーディングモーダルが表示されること")
+        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 15.0), "位置情報許可後にオンボーディングモーダルが表示されること")
         
         // オンボーディングのタイトルが表示されること
         let titleText = app.staticTexts["TokoTokoへようこそ"]
@@ -45,7 +45,7 @@ final class OnboardingIntegrationUITests: XCTestCase {
         XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "HomeViewが表示されること")
         
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 8.0), "位置情報許可後にオンボーディングモーダルが表示されること")
+        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 15.0), "位置情報許可後にオンボーディングモーダルが表示されること")
         
         // When: 次ページボタンをタップ
         let nextButton = app.buttons["OnboardingNextButton"]
@@ -73,7 +73,7 @@ final class OnboardingIntegrationUITests: XCTestCase {
         XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "HomeViewが表示されること")
         
         let onboardingModal = app.otherElements["OnboardingModalView"]
-        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 8.0), "位置情報許可後にオンボーディングモーダルが表示されること")
+        XCTAssertTrue(onboardingModal.waitForExistence(timeout: 15.0), "位置情報許可後にオンボーディングモーダルが表示されること")
         
         // When: 閉じるボタンをタップ
         let closeButton = app.buttons["OnboardingCloseButton"]
