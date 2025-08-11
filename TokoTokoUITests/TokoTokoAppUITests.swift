@@ -195,7 +195,7 @@ final class TokoTokoAppUITests: XCTestCase {
         // おでかけ画面のマップビューが表示されていることを確認
         // NavigationView内にあるMapViewを探す
         let mapView = app.otherElements["MapView"]
-        let mapExists = mapView.waitForExistence(timeout: 10)
+        let mapExists = mapView.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong)
         
         if !mapExists {
             // より広範囲で探す - descendantsを使用
