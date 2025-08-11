@@ -1,5 +1,5 @@
 {
-  "originHash" : "4198cb976f015a40d6d75a5214afe601f5a185d60c3b31f28ab90fbd27c709e5",
+  "originHash" : "03f78f0da48dc6159c46f524daf8e988920cf611d13fddbe4e1b32ebd3c6df60",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -161,6 +161,15 @@
       "state" : {
         "revision" : "a6fcac8485bc8f57b2d2b55bb6d97138e8659e4b",
         "version" : "0.10.2"
+      }
+    },
+    {
+      "identity" : "yams",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jpsim/Yams.git",
+      "state" : {
+        "revision" : "3d6871d5b4a5cd519adf233fbb576e0a2af71c17",
+        "version" : "5.4.0"
       }
     }
   ],
