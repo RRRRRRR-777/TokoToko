@@ -182,7 +182,7 @@ final class OnboardingManagerTests: XCTestCase {
         XCTAssertNotNil(versionUpdateContent, "バージョンアップコンテンツが生成されること")
 
         // コンテンツの構造が正しいこと
-        XCTAssertEqual(firstLaunchContent?.pages.count, 2, "初回起動コンテンツは2ページであること")
+        XCTAssertEqual(firstLaunchContent?.pages.count, 3, "初回起動コンテンツは3ページであること")
         XCTAssertEqual(versionUpdateContent?.pages.count, 1, "バージョンアップコンテンツは1ページであること")
 
         // ページ内容が空でないこと
@@ -195,17 +195,16 @@ final class OnboardingManagerTests: XCTestCase {
 
     // MARK: - TDD Red Phase - YML機能の失敗テスト（次フェーズで実装）
 
-    /*
-    func testLoadOnboardingFromYMLShouldFail() {
-        // Given: YML読み込み機能が未実装の状態
-        // When: YMLファイルからコンテンツを読み込もうとする
+    func testLoadOnboardingFromYML() {
+        // Given: YML読み込み機能が実装された状態
+        // When: YMLファイルからコンテンツを読み込む
         do {
-            let content = try sut.loadOnboardingFromYML()
-            // Then: この段階では失敗するはず（メソッドが未実装）
-            XCTFail("loadOnboardingFromYML()が未実装の状態では、このテストは失敗するはず")
+            let config = try sut.loadOnboardingFromYML()
+            // Then: 正常に読み込まれること
+            XCTAssertNotNil(config, "YML設定が読み込まれること")
+            XCTAssertNotNil(config?.onboarding, "オンボーディングデータが存在すること")
         } catch {
-            // Expected: メソッド未実装のため失敗する
-            XCTAssertTrue(true, "YML読み込み機能が未実装のため失敗する")
+            XCTFail("YML読み込みが失敗: \(error)")
         }
     }
 
@@ -213,12 +212,14 @@ final class OnboardingManagerTests: XCTestCase {
         // Given: YMLファイルが存在しない状況
         // When: 存在しないYMLファイルを読み込もうとする
         do {
-            let content = try sut.loadOnboardingFromYML(fileName: "non_existent_file.yml")
-            // Then: この段階では失敗するはず（メソッドが未実装）
-            XCTFail("存在しないファイルの処理が未実装の状態では、このテストは失敗するはず")
+            let config = try sut.loadOnboardingFromYML(fileName: "non_existent_file.yml")
+            XCTFail("存在しないファイルでエラーが発生すべき")
         } catch {
-            // Expected: ファイル不存在処理が未実装のため失敗する
-            XCTAssertTrue(true, "YMLファイル不存在の処理が未実装のため失敗する")
+            // Then: エラーが発生すること
+            XCTAssertTrue(error is OnboardingError, "適切なエラー型であること")
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.fileNotFound, "ファイル不在エラーであること")
+            }
         }
     }
 
@@ -226,58 +227,86 @@ final class OnboardingManagerTests: XCTestCase {
         // Given: 不正な形式のYMLファイル
         // When: 不正なYMLファイルを読み込もうとする
         do {
-            let content = try sut.loadOnboardingFromYML(invalidFormat: true)
-            // Then: この段階では失敗するはず（エラーハンドリング未実装）
-            XCTFail("不正なYML形式の処理が未実装の状態では、このテストは失敗するはず")
+            let config = try sut.loadOnboardingFromYML(invalidFormat: true)
+            XCTFail("不正な形式でエラーが発生すべき")
         } catch {
-            // Expected: エラーハンドリングが未実装のため失敗する
-            XCTAssertTrue(true, "不正なYML形式の処理が未実装のため失敗する")
+            // Then: エラーが発生すること
+            XCTAssertTrue(error is OnboardingError, "適切なエラー型であること")
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.invalidFormat, "不正な形式エラーであること")
+            }
         }
     }
 
     func testYMLLoadingPerformanceShouldMeet500msRequirement() {
         // Given: YML読み込みのパフォーマンステスト準備
         let startTime = Date()
-
-        // When: YMLファイルを読み込む（未実装）
+        
+        // When: YMLファイルを読み込む
         do {
-            let content = try sut.loadOnboardingFromYML()
+            let config = try sut.loadOnboardingFromYML()
             let endTime = Date()
-            let elapsedTime = endTime.timeIntervalSince(startTime)
-
-            // Then: この段階では失敗するはず（メソッドが未実装）
-            XCTFail("YML読み込み処理が未実装の状態では、このテストは失敗するはず")
+            let elapsedTime = endTime.timeIntervalSince(startTime) * 1000 // msに変換
+            
+            // Then: 500ms以内に完了すること
+            XCTAssertLessThan(elapsedTime, 500, "YML読み込みは500ms以内に完了すること")
+            XCTAssertNotNil(config, "設定が読み込まれること")
         } catch {
-            // Expected: パフォーマンステストメソッドが未実装のため失敗する
-            XCTAssertTrue(true, "YML読み込みパフォーマンステストが未実装のため失敗する")
+            XCTFail("YML読み込みが失敗: \(error)")
         }
     }
 
-    func testCreateContentFromYMLDataShouldFail() {
-        // Given: YMLデータからコンテンツ作成が未実装の状態
+    func testCreateContentFromYMLData() {
+        // Given: YMLデータからコンテンツ作成（テスト用メソッド）
         // When: YMLデータからOnboardingContentを作成しようとする
         do {
             let mockYMLData = ["title": "test", "description": "test desc"]
             let content = try sut.createOnboardingContent(from: mockYMLData)
-            // Then: この段階では失敗するはず（メソッドが未実装）
-            XCTFail("YMLデータからのコンテンツ作成が未実装の状態では、このテストは失敗するはず")
+            XCTFail("現時点では未実装エラーが発生すべき")
         } catch {
-            // Expected: コンテンツ作成メソッドが未実装のため失敗する
-            XCTAssertTrue(true, "YMLデータからのコンテンツ作成が未実装のため失敗する")
+            // Then: 未実装エラーが発生すること（将来実装予定）
+            XCTAssertTrue(error is OnboardingError, "適切なエラー型であること")
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.notImplemented, "未実装エラーであること")
+            }
         }
     }
 
-    func testVersionParsingFromYMLShouldFail() {
-        // Given: バージョン解析機能が未実装の状態
-        // When: バージョン文字列を解析しようとする
+    func testVersionParsing() {
+        // Given: バージョン解析機能
+        
+        // When/Then: 正常なバージョン文字列を解析
         do {
-            let parsedVersion = try sut.parseVersion("1.2.3")
-            // Then: この段階では失敗するはず（メソッドが未実装）
-            XCTFail("バージョン解析機能が未実装の状態では、このテストは失敗するはず")
+            // 1.0形式
+            let version1 = try sut.parseVersion("1.0")
+            XCTAssertEqual(version1.major, 1)
+            XCTAssertEqual(version1.minor, 0)
+            XCTAssertNil(version1.patch)
+            
+            // 1.2形式
+            let version2 = try sut.parseVersion("1.2")
+            XCTAssertEqual(version2.major, 1)
+            XCTAssertEqual(version2.minor, 2)
+            XCTAssertNil(version2.patch)
+            
+            // 1.2.3形式
+            let version3 = try sut.parseVersion("1.2.3")
+            XCTAssertEqual(version3.major, 1)
+            XCTAssertEqual(version3.minor, 2)
+            XCTAssertEqual(version3.patch, 3)
         } catch {
-            // Expected: バージョン解析が未実装のため失敗する
-            XCTAssertTrue(true, "バージョン解析機能が未実装のため失敗する")
+            XCTFail("バージョン解析が失敗: \(error)")
+        }
+        
+        // 不正なバージョン形式
+        do {
+            let _ = try sut.parseVersion("1")
+            XCTFail("不正なバージョンでエラーが発生すべき")
+        } catch {
+            XCTAssertTrue(error is OnboardingError)
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.invalidVersion)
+            }
         }
     }
-    */
 }
