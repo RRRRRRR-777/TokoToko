@@ -211,16 +211,19 @@ class OnboardingManager: ObservableObject {
     private func createVersionUpdateContent(type: OnboardingType, version: String) -> OnboardingContent {
         // YMLから読み込んだデータを優先的に使用
         if let config = ymlConfig,
-           let versionUpdates = config.onboarding.versionUpdates,
-           let versionSection = versionUpdates[version] {
-            let pages = versionSection.pages.map { pageData in
-                OnboardingPage(
-                    title: pageData.title,
-                    description: pageData.description,
-                    imageName: pageData.imageName
-                )
+           let versionUpdates = config.onboarding.versionUpdates {
+            
+            // バージョンマッピング: 完全一致、部分マッチ（1.2.3 -> 1.2 -> 1）の順で試行
+            if let versionSection = findVersionSection(version: version, versionUpdates: versionUpdates) {
+                let pages = versionSection.pages.map { pageData in
+                    OnboardingPage(
+                        title: pageData.title,
+                        description: pageData.description,
+                        imageName: pageData.imageName
+                    )
+                }
+                return OnboardingContent(type: type, pages: pages)
             }
-            return OnboardingContent(type: type, pages: pages)
         }
         
         // フォールバック: ハードコードされた値を使用
@@ -232,6 +235,43 @@ class OnboardingManager: ObservableObject {
             )
         ]
         return OnboardingContent(type: type, pages: pages)
+    }
+    
+    /// バージョンセクションを段階的に検索する
+    /// 1.2.3 -> 1.2 -> 1.0 -> 1 の順で一致するセクションを探す
+    private func findVersionSection(version: String, versionUpdates: [String: OnboardingSection]) -> OnboardingSection? {
+        // 完全一致を最初に試行
+        if let exactMatch = versionUpdates[version] {
+            return exactMatch
+        }
+        
+        // バージョン解析して部分マッチを試行
+        do {
+            let parsedVersion = try parseVersion(version)
+            
+            // マイナーバージョンマッチ (1.2.3 -> 1.2)
+            let minorVersionKey = "\(parsedVersion.major).\(parsedVersion.minor)"
+            if let minorMatch = versionUpdates[minorVersionKey] {
+                return minorMatch
+            }
+            
+            // メジャーバージョン.0マッチ (1.2.3 -> 1.0)
+            let majorDotZeroKey = "\(parsedVersion.major).0"
+            if let majorDotZeroMatch = versionUpdates[majorDotZeroKey] {
+                return majorDotZeroMatch
+            }
+            
+            // メジャーバージョンマッチ (1.2.3 -> 1)
+            let majorVersionKey = "\(parsedVersion.major)"
+            if let majorMatch = versionUpdates[majorVersionKey] {
+                return majorMatch
+            }
+        } catch {
+            // バージョン解析エラーの場合は完全一致のみ
+            return versionUpdates[version]
+        }
+        
+        return nil
     }
 }
 
