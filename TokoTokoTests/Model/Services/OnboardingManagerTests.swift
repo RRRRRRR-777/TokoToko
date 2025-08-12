@@ -183,7 +183,7 @@ final class OnboardingManagerTests: XCTestCase {
 
         // コンテンツの構造が正しいこと
         XCTAssertEqual(firstLaunchContent?.pages.count, 3, "初回起動コンテンツは3ページであること")
-        XCTAssertEqual(versionUpdateContent?.pages.count, 1, "バージョンアップコンテンツは1ページであること")
+        XCTAssertEqual(versionUpdateContent?.pages.count, 2, "バージョンアップコンテンツは2ページであること（1.1.0 → 1.0にマッピング）")
 
         // ページ内容が空でないこと
         if let firstPage = firstLaunchContent?.pages.first {
