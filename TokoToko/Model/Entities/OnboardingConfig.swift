@@ -8,6 +8,9 @@
 import Foundation
 
 /// YMLファイルからのオンボーディング設定を管理するルートモデル
+///
+/// `onboarding.yml`ファイルの構造に対応するSwiftデータモデルです。
+/// 初回起動時とバージョンアップデート時のオンボーディングコンテンツを管理します。
 struct OnboardingConfig: Codable {
   let onboarding: OnboardingData
 }

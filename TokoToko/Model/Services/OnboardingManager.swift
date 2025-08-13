@@ -31,6 +31,26 @@ struct VersionComponents {
     let patch: Int?
 }
 
+/// YMLファイル連携によるオンボーディング管理クラス
+///
+/// オンボーディングコンテンツの動的読み込み、表示判定、状態管理を行います。
+/// YMLファイルからコンテンツを読み込み、初回起動・バージョンアップデート時の
+/// 適切なオンボーディング表示を制御します。
+///
+/// ## 主要機能
+/// - **YMLファイル読み込み**: `onboarding.yml`から動的コンテンツ読み込み
+/// - **バージョンマッピング**: 1.2.3 → 1.2 → 1.0 の段階的検索
+/// - **フォールバック機能**: YML読み込み失敗時のハードコード値使用
+/// - **状態管理**: 表示履歴の永続化とObservableObject対応
+///
+/// ## 使用例
+/// ```swift
+/// let manager = OnboardingManager()
+/// if manager.shouldShowOnboarding(for: .firstLaunch) {
+///     let content = manager.getOnboardingContent(for: .firstLaunch)
+///     // オンボーディング表示
+/// }
+/// ```
 class OnboardingManager: ObservableObject {
     @Published private var notificationTrigger = false
     @Published var currentContent: OnboardingContent?
