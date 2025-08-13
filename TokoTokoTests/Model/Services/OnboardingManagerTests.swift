@@ -353,4 +353,105 @@ final class OnboardingManagerTests: XCTestCase {
         XCTAssertNotNil(emptyVersionContent, "空バージョンでもフォールバックコンテンツが取得できること")
         XCTAssertEqual(emptyVersionContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
     }
+    
+    // MARK: - Version Retrieval Tests
+    
+    func testGetCurrentAppVersionReturnsValidVersion() {
+        // Given/When: getCurrentAppVersionを呼び出し
+        let version = sut.getCurrentAppVersion()
+        
+        // Then: バージョンが取得できること
+        XCTAssertNotNil(version, "アプリバージョンが取得できること")
+        XCTAssertFalse(version?.isEmpty ?? true, "バージョンが空でないこと")
+        
+        // バージョンフォーマットの検証（例: "1.0", "1.2.3"）
+        if let appVersion = version {
+            let components = appVersion.split(separator: ".")
+            XCTAssertGreaterThanOrEqual(components.count, 2, "バージョンは少なくともメジャー.マイナー形式であること")
+            XCTAssertTrue(components.allSatisfy { Int($0) != nil }, "バージョンの各コンポーネントは数字であること")
+        }
+    }
+    
+    // MARK: - Version Update Onboarding Check Tests
+    
+    func testCheckVersionUpdateOnboardingWhenVersionUpdateNeeded() {
+        // Given: 現在のバージョンのオンボーディングがまだ表示されていない
+        let currentVersion = sut.getCurrentAppVersion() ?? "1.0"
+        
+        // When: バージョンアップデートオンボーディングをチェック
+        let content = sut.checkVersionUpdateOnboarding()
+        
+        // Then: オンボーディングコンテンツが返されること
+        XCTAssertNotNil(content, "バージョンアップデートオンボーディングが必要な場合はコンテンツが返されること")
+        XCTAssertEqual(content?.type, .versionUpdate(version: currentVersion), "正しいバージョンのオンボーディングタイプであること")
+        XCTAssertFalse(content?.pages.isEmpty ?? true, "ページが含まれていること")
+    }
+    
+    func testCheckVersionUpdateOnboardingWhenAlreadyShown() {
+        // Given: 現在のバージョンのオンボーディングを既に表示済み
+        let currentVersion = sut.getCurrentAppVersion() ?? "1.0"
+        sut.markOnboardingAsShown(for: .versionUpdate(version: currentVersion))
+        
+        // When: バージョンアップデートオンボーディングをチェック
+        let content = sut.checkVersionUpdateOnboarding()
+        
+        // Then: nilが返されること（オンボーディング不要）
+        XCTAssertNil(content, "既に表示済みの場合はnilが返されること")
+    }
+    
+    func testCheckVersionUpdateOnboardingWithSpecificVersions() {
+        // Given: 異なるバージョンでの動作確認
+        let version1 = "1.0"
+        let version2 = "1.2"
+        
+        // When/Then: バージョン1.0のオンボーディング
+        let content1 = sut.getOnboardingContent(for: .versionUpdate(version: version1))
+        XCTAssertNotNil(content1, "1.0バージョンのオンボーディングが取得できること")
+        
+        let shouldShow1 = sut.shouldShowOnboarding(for: .versionUpdate(version: version1))
+        XCTAssertTrue(shouldShow1, "1.0バージョンの初回表示時はtrueであること")
+        
+        // オンボーディング表示済みマーク
+        sut.markOnboardingAsShown(for: .versionUpdate(version: version1))
+        let shouldShow1After = sut.shouldShowOnboarding(for: .versionUpdate(version: version1))
+        XCTAssertFalse(shouldShow1After, "1.0バージョン表示後はfalseであること")
+        
+        // When/Then: バージョン1.2のオンボーディング（別バージョンなので表示される）
+        let shouldShow2 = sut.shouldShowOnboarding(for: .versionUpdate(version: version2))
+        XCTAssertTrue(shouldShow2, "異なるバージョン(1.2)は表示されること")
+    }
+    
+    // MARK: - Initialization Auto-Detection Tests
+    
+    func testInitializationAutoSetsVersionUpdateOnboardingWhenFirstLaunchCompleted() {
+        // Given: 初回起動が完了している状況
+        mockUserDefaults.set(true, forKey: "onboarding_first_launch_shown")
+        
+        // When: OnboardingManagerを新たに初期化
+        let newManager = OnboardingManager(userDefaults: mockUserDefaults)
+        
+        // Then: バージョンアップデートオンボーディングが自動的に設定されること
+        let hasContent = newManager.currentContent != nil
+        let currentVersion = newManager.getCurrentAppVersion() ?? "1.0"
+        let shouldShowVersionUpdate = newManager.shouldShowOnboarding(for: .versionUpdate(version: currentVersion))
+        
+        if shouldShowVersionUpdate {
+            XCTAssertTrue(hasContent, "バージョンアップデートが必要な場合、初期化時にcurrentContentが設定されること")
+            XCTAssertEqual(newManager.currentContent?.type, .versionUpdate(version: currentVersion), "正しいバージョンアップデートタイプが設定されること")
+        } else {
+            XCTAssertFalse(hasContent, "バージョンアップデートが不要な場合、currentContentはnilであること")
+        }
+    }
+    
+    func testInitializationPrioritizesFirstLaunchOverVersionUpdate() {
+        // Given: 初回起動もバージョンアップデートも未表示の状況
+        // (新しいUserDefaultsインスタンスなので何も設定されていない)
+        
+        // When: OnboardingManagerを初期化
+        let newManager = OnboardingManager(userDefaults: mockUserDefaults)
+        
+        // Then: 初回起動オンボーディングが優先されること
+        XCTAssertNotNil(newManager.currentContent, "初回起動時はcurrentContentが設定されること")
+        XCTAssertEqual(newManager.currentContent?.type, .firstLaunch, "初回起動が優先されること")
+    }
 }
