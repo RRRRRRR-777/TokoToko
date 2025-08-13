@@ -43,7 +43,8 @@ TokoToko/
 - **FirebaseAuthHelper**: Firebase認証のヘルパー関数
 - **ConsentManager**: ユーザー同意管理（プライバシーポリシー、利用規約）
 - **PolicyService**: ポリシー文書の管理とバージョン管理
-- **OnboardingManager**: 新規ユーザーのオンボーディング状態管理
+- **OnboardingManager**: YMLファイル連携による動的オンボーディング管理（初回起動・バージョンアップデート対応、マイナーバージョンマッピング、フォールバック機能）
+- **OnboardingConfig**: YMLファイル構造に対応するデータモデル（first_launch/version_updates）
 
 #### 散歩機能
 - **WalkManager**: 散歩記録、位置追跡、散歩状態を管理するシングルトン
@@ -87,7 +88,7 @@ TokoToko/
 - **WalkSharingView**: 散歩共有画面
 - **StatsBarView**: 統計情報バー
 - **StoryCarouselView**: ストーリーカルーセル表示
-- **OnboardingModalView**: オンボーディングモーダル
+- **OnboardingModalView**: YMLコンテンツ対応オンボーディングモーダル（動的ページネーション、画像プレースホルダー、スワイプジェスチャー対応）
 - **ImageGeneratorTestView**: 画像生成テストビュー
 
 ### データモデル（ERD）
@@ -123,6 +124,7 @@ TokoToko/
 #### 主要な依存関係
 - Firebase（Analytics, Auth, Firestore, Core）
 - GoogleSignIn
+- Yams（YMLファイル解析）
 - ViewInspector（テスト用）
 
 
@@ -295,6 +297,23 @@ swiftlint lint
 # - 最大空行: 1行
 swift-format lint --configuration .swift-format [file]
 ```
+
+## デザインリソース
+
+### Figmaデザインファイル
+**プロジェクト公式デザインファイル**: https://www.figma.com/design/Fckz8sGprt1MafTTbAkxPa/%E3%81%A6%E3%81%8F%E3%81%A8%E3%81%93?node-id=0-1&t=rOXa7C6hsC4rNrlL-1
+
+#### デザインファイル使用方法
+- **アクセス**: 上記URLから直接アクセス可能
+- **用途**: UIコンポーネント、レイアウト、カラーパレット、アイコンの参照
+- **Figma CLI連携**: `mcp__figma-dev-mode-mcp-server__*` ツールで自動取得可能
+- **画像ダウンロード**: プロジェクト内`tmp/`ディレクトリに自動保存
+
+#### デザイン比較作業時のワークフロー
+1. Figmaから最新デザインを取得
+2. 現在の実装と比較・差分確認
+3. 必要に応じてUI調整を実施
+4. デザイン一致度を検証
 
 ## 開発環境
 

@@ -130,10 +130,10 @@ final class OnboardingConfigTests: XCTestCase {
       let config = try YAMLDecoder().decode(OnboardingConfig.self, from: ymlString)
       // Then: TDD Green Phase - version_updatesが正常にデコードできること
       XCTAssertNotNil(config.onboarding.versionUpdates, "version_updatesセクションが存在すること")
-      XCTAssertEqual(config.onboarding.versionUpdates?.count, 2, "2つのバージョンが含まれること")
-      XCTAssertNotNil(config.onboarding.versionUpdates?["1.0"], "バージョン1.0のセクションが存在すること")
-      XCTAssertNotNil(config.onboarding.versionUpdates?["2.0"], "バージョン2.0のセクションが存在すること")
-      XCTAssertEqual(config.onboarding.versionUpdates?["1.0"]?.pages.first?.title, "バージョン1.0", "バージョン1.0のタイトルが正しいこと")
+      XCTAssertEqual(config.onboarding.versionUpdates.count, 2, "2つのバージョンが含まれること")
+      XCTAssertNotNil(config.onboarding.versionUpdates["1.0"], "バージョン1.0のセクションが存在すること")
+      XCTAssertNotNil(config.onboarding.versionUpdates["2.0"], "バージョン2.0のセクションが存在すること")
+      XCTAssertEqual(config.onboarding.versionUpdates["1.0"]?.pages.first?.title, "バージョン1.0", "バージョン1.0のタイトルが正しいこと")
     } catch {
       XCTFail("version_updatesが実装済みの場合、デコードは成功するべき: \(error)")
     }
