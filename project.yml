@@ -22,7 +22,6 @@ fileGroups:
   - storage.rules
   - Info.plist
   - ci_scripts
-  - .claude
 
 targetTemplates:
   CommonSettings:
