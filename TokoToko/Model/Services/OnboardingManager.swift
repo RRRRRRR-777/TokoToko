@@ -25,6 +25,12 @@ struct OnboardingContent {
     let pages: [OnboardingPage]
 }
 
+struct VersionComponents {
+    let major: Int
+    let minor: Int
+    let patch: Int?
+}
+
 class OnboardingManager: ObservableObject {
     @Published private var notificationTrigger = false
     @Published var currentContent: OnboardingContent?
@@ -152,7 +158,7 @@ class OnboardingManager: ObservableObject {
     }
 
     /// バージョン文字列を解析
-    func parseVersion(_ version: String) throws -> (major: Int, minor: Int, patch: Int?) {
+    func parseVersion(_ version: String) throws -> VersionComponents {
         let components = version.split(separator: ".")
         guard components.count >= 2 else {
             throw OnboardingError.invalidVersion
@@ -164,7 +170,7 @@ class OnboardingManager: ObservableObject {
         }
 
         let patch = components.count > 2 ? Int(components[2]) : nil
-        return (major, minor, patch)
+        return VersionComponents(major: major, minor: minor, patch: patch)
     }
 
     // MARK: - Private Methods
