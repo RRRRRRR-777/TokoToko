@@ -47,7 +47,7 @@ final class OnboardingModalViewTests: XCTestCase {
         // Then: ページインジケーターが更新されること
         let pageIndicator = app.pageIndicators["OnboardingPageIndicator"]
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 2", "2ページ目に移動すること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 3", "2ページ目に移動すること")
         }
         
         // When: 前ページボタンをタップ
@@ -56,7 +56,7 @@ final class OnboardingModalViewTests: XCTestCase {
         
         // Then: 1ページ目に戻ること
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 2", "1ページ目に戻ること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 3", "1ページ目に戻ること")
         }
     }
     
@@ -139,5 +139,58 @@ final class OnboardingModalViewTests: XCTestCase {
             sleep(1) // アニメーション待機
             XCTAssertEqual(pageIndicator.value as? String, "page 1 of 3", "スワイプで前ページに戻ること")
         }
+    }
+    
+    // MARK: - YMLコンテンツ専用テスト
+    
+    func testOnboardingModalViewYMLContent() throws {
+        // Given: 初回起動でYMLコンテンツのオンボーディングを表示
+        UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
+        
+        let closeButton = app.buttons["OnboardingCloseButton"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
+        
+        // Then: YMLファイルから読み込まれた3ページ構成であることを確認
+        let pageIndicator = app.pageIndicators["OnboardingPageIndicator"]
+        if pageIndicator.exists {
+            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 3", "YMLファイルから3ページが読み込まれること")
+        }
+        
+        // When: 全ページを順次確認（YMLコンテンツが適切に表示されることを確認）
+        let nextButton = app.buttons["OnboardingNextButton"]
+        
+        // 2ページ目へ
+        nextButton.tap()
+        sleep(1)
+        if pageIndicator.exists {
+            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 3", "2ページ目が表示されること")
+        }
+        
+        // 3ページ目へ
+        nextButton.tap()
+        sleep(1)
+        if pageIndicator.exists {
+            XCTAssertEqual(pageIndicator.value as? String, "page 3 of 3", "3ページ目が表示されること")
+        }
+        
+        // Then: 最終ページでは次ページボタンが無効化されること
+        XCTAssertFalse(nextButton.isEnabled, "最終ページでは次ページボタンが無効であること")
+    }
+    
+    func testOnboardingModalViewPerformanceRequirement() throws {
+        // Given: パフォーマンステスト（YML読み込み時間が500ms以内）
+        let startTime = CFAbsoluteTimeGetCurrent()
+        
+        // When: アプリを起動してYMLコンテンツを読み込む
+        UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
+        
+        let closeButton = app.buttons["OnboardingCloseButton"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
+        
+        let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime
+        
+        // Then: YMLファイル読み込みを含む全体の起動時間が500ms以内であること
+        // Note: UI表示までの時間なので、実際のYML読み込みはさらに短時間
+        XCTAssertLessThan(elapsedTime * 1000, 500, "YMLファイル読み込みを含むオンボーディング表示が500ms以内に完了すること")
     }
 }
