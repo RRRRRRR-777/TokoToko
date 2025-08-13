@@ -210,8 +210,8 @@ class OnboardingManager: ObservableObject {
 
     private func createVersionUpdateContent(type: OnboardingType, version: String) -> OnboardingContent {
         // YMLから読み込んだデータを優先的に使用
-        if let config = ymlConfig,
-           let versionUpdates = config.onboarding.versionUpdates {
+        if let config = ymlConfig {
+            let versionUpdates = config.onboarding.versionUpdates
 
             // バージョンマッピング: 完全一致、部分マッチ（1.2.3 -> 1.2 -> 1）の順で試行
             if let versionSection = findVersionSection(version: version, versionUpdates: versionUpdates) {
