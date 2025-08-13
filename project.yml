@@ -22,7 +22,6 @@ fileGroups:
   - storage.rules
   - Info.plist
   - ci_scripts
-  - .claude
 
 targetTemplates:
   CommonSettings:
@@ -40,6 +39,9 @@ packages:
   ViewInspector:
     url: https://github.com/nalexn/ViewInspector.git
     from: 0.10.2
+  Yams:
+    url: https://github.com/jpsim/Yams.git
+    from: 5.1.0
 targets:
   TokoToko:
     type: application
@@ -56,6 +58,7 @@ targets:
       - path: TokoToko/Assets.xcassets
       - path: TokoToko/GoogleService-Info.plist
       - path: Documentation.docc
+      - path: TokoToko/Resources
     templates: [CommonSettings]
     dependencies:
       - package: Firebase
@@ -70,6 +73,8 @@ targets:
         product: FirebaseStorage
       - package: GoogleSignIn
         product: GoogleSignIn
+      - package: Yams
+        product: Yams
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoToko

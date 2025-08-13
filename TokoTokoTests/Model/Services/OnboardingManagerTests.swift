@@ -182,8 +182,8 @@ final class OnboardingManagerTests: XCTestCase {
         XCTAssertNotNil(versionUpdateContent, "バージョンアップコンテンツが生成されること")
 
         // コンテンツの構造が正しいこと
-        XCTAssertEqual(firstLaunchContent?.pages.count, 2, "初回起動コンテンツは2ページであること")
-        XCTAssertEqual(versionUpdateContent?.pages.count, 1, "バージョンアップコンテンツは1ページであること")
+        XCTAssertEqual(firstLaunchContent?.pages.count, 3, "初回起動コンテンツは3ページであること")
+        XCTAssertEqual(versionUpdateContent?.pages.count, 2, "バージョンアップコンテンツは2ページであること（1.1.0 → 1.0にマッピング）")
 
         // ページ内容が空でないこと
         if let firstPage = firstLaunchContent?.pages.first {
@@ -191,5 +191,267 @@ final class OnboardingManagerTests: XCTestCase {
             XCTAssertFalse(firstPage.description.isEmpty, "説明文が空でないこと")
             XCTAssertFalse(firstPage.imageName.isEmpty, "画像名が空でないこと")
         }
+    }
+
+    // MARK: - TDD Red Phase - YML機能の失敗テスト（次フェーズで実装）
+
+    func testLoadOnboardingFromYML() {
+        // Given: YML読み込み機能が実装された状態
+        // When: YMLファイルからコンテンツを読み込む
+        do {
+            let config = try sut.loadOnboardingFromYML()
+            // Then: 正常に読み込まれること
+            XCTAssertNotNil(config, "YML設定が読み込まれること")
+            XCTAssertNotNil(config?.onboarding, "オンボーディングデータが存在すること")
+        } catch {
+            XCTFail("YML読み込みが失敗: \(error)")
+        }
+    }
+
+    func testYMLFileNotFoundShouldFallback() {
+        // Given: YMLファイルが存在しない状況
+        // When: 存在しないYMLファイルを読み込もうとする
+        do {
+            let config = try sut.loadOnboardingFromYML(fileName: "non_existent_file.yml")
+            XCTFail("存在しないファイルでエラーが発生すべき")
+        } catch {
+            // Then: エラーが発生すること
+            XCTAssertTrue(error is OnboardingError, "適切なエラー型であること")
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.fileNotFound, "ファイル不在エラーであること")
+            }
+        }
+    }
+
+    func testInvalidYMLFormatShouldFallback() {
+        // Given: 不正な形式のYMLファイル
+        // When: 不正なYMLファイルを読み込もうとする
+        do {
+            let config = try sut.loadOnboardingFromYML(invalidFormat: true)
+            XCTFail("不正な形式でエラーが発生すべき")
+        } catch {
+            // Then: エラーが発生すること
+            XCTAssertTrue(error is OnboardingError, "適切なエラー型であること")
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.invalidFormat, "不正な形式エラーであること")
+            }
+        }
+    }
+
+    func testYMLLoadingPerformanceShouldMeet500msRequirement() {
+        // Given: YML読み込みのパフォーマンステスト準備
+        let startTime = Date()
+        
+        // When: YMLファイルを読み込む
+        do {
+            let config = try sut.loadOnboardingFromYML()
+            let endTime = Date()
+            let elapsedTime = endTime.timeIntervalSince(startTime) * 1000 // msに変換
+            
+            // Then: 500ms以内に完了すること
+            XCTAssertLessThan(elapsedTime, 500, "YML読み込みは500ms以内に完了すること")
+            XCTAssertNotNil(config, "設定が読み込まれること")
+        } catch {
+            XCTFail("YML読み込みが失敗: \(error)")
+        }
+    }
+
+    func testCreateContentFromYMLData() {
+        // Given: YMLデータからコンテンツ作成（テスト用メソッド）
+        // When: YMLデータからOnboardingContentを作成しようとする
+        do {
+            let mockYMLData = ["title": "test", "description": "test desc"]
+            let content = try sut.createOnboardingContent(from: mockYMLData)
+            XCTFail("現時点では未実装エラーが発生すべき")
+        } catch {
+            // Then: 未実装エラーが発生すること（将来実装予定）
+            XCTAssertTrue(error is OnboardingError, "適切なエラー型であること")
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.notImplemented, "未実装エラーであること")
+            }
+        }
+    }
+
+    func testVersionParsing() {
+        // Given: バージョン解析機能
+        
+        // When/Then: 正常なバージョン文字列を解析
+        do {
+            // 1.0形式
+            let version1 = try sut.parseVersion("1.0")
+            XCTAssertEqual(version1.major, 1)
+            XCTAssertEqual(version1.minor, 0)
+            XCTAssertNil(version1.patch)
+            
+            // 1.2形式
+            let version2 = try sut.parseVersion("1.2")
+            XCTAssertEqual(version2.major, 1)
+            XCTAssertEqual(version2.minor, 2)
+            XCTAssertNil(version2.patch)
+            
+            // 1.2.3形式
+            let version3 = try sut.parseVersion("1.2.3")
+            XCTAssertEqual(version3.major, 1)
+            XCTAssertEqual(version3.minor, 2)
+            XCTAssertEqual(version3.patch, 3)
+        } catch {
+            XCTFail("バージョン解析が失敗: \(error)")
+        }
+        
+        // 不正なバージョン形式
+        do {
+            let _ = try sut.parseVersion("1")
+            XCTFail("不正なバージョンでエラーが発生すべき")
+        } catch {
+            XCTAssertTrue(error is OnboardingError)
+            if let onboardingError = error as? OnboardingError {
+                XCTAssertEqual(onboardingError, OnboardingError.invalidVersion)
+            }
+        }
+    }
+    
+    func testVersionMappingWithYML() {
+        // Given: YMLファイルにバージョン情報が定義されている状況
+        // onboarding.ymlには "1.0" と "2.0" が定義されている
+        
+        // When/Then: 完全一致するバージョンの場合
+        let exactMatchContent = sut.getOnboardingContent(for: .versionUpdate(version: "1.0"))
+        XCTAssertNotNil(exactMatchContent, "完全一致するバージョンのコンテンツが取得できること")
+        XCTAssertEqual(exactMatchContent?.pages.count, 2, "1.0バージョンは2ページであること")
+        XCTAssertEqual(exactMatchContent?.pages.first?.title, "新機能追加", "YMLからのタイトルが取得されること")
+        
+        // When/Then: 部分マッチするバージョンの場合（1.0.5 -> 1.0）
+        let partialMatchContent = sut.getOnboardingContent(for: .versionUpdate(version: "1.0.5"))
+        XCTAssertNotNil(partialMatchContent, "部分マッチするバージョンのコンテンツが取得できること")
+        XCTAssertEqual(partialMatchContent?.pages.count, 2, "1.0.5は1.0にマッピングされて2ページであること")
+        XCTAssertEqual(partialMatchContent?.pages.first?.title, "新機能追加", "部分マッチでもYMLからのタイトルが取得されること")
+        
+        // When/Then: 存在しないバージョンの場合（フォールバック）
+        let fallbackContent = sut.getOnboardingContent(for: .versionUpdate(version: "3.0.0"))
+        XCTAssertNotNil(fallbackContent, "存在しないバージョンでもフォールバックコンテンツが取得できること")
+        XCTAssertEqual(fallbackContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
+        XCTAssertEqual(fallbackContent?.pages.first?.title, "新機能追加", "フォールバックタイトルが設定されること")
+        XCTAssertTrue(fallbackContent?.pages.first?.description.contains("3.0.0") ?? false, "フォールバック説明文にバージョン番号が含まれること")
+    }
+    
+    func testVersionMappingEdgeCases() {
+        // Given: エッジケースのバージョン指定
+        
+        // When/Then: 2.5.1 -> 2.0 へのマッピング（YMLに2.0が存在）
+        let mappedContent = sut.getOnboardingContent(for: .versionUpdate(version: "2.5.1"))
+        XCTAssertNotNil(mappedContent, "2.5.1が2.0にマッピングされること")
+        XCTAssertEqual(mappedContent?.pages.count, 2, "2.0バージョンは2ページであること")
+        XCTAssertEqual(mappedContent?.pages.first?.title, "大幅アップデート", "YMLの2.0コンテンツが取得されること")
+        
+        // When/Then: 無効なバージョン形式の場合
+        let invalidVersionContent = sut.getOnboardingContent(for: .versionUpdate(version: "invalid.version"))
+        XCTAssertNotNil(invalidVersionContent, "無効なバージョン形式でもフォールバックコンテンツが取得できること")
+        XCTAssertEqual(invalidVersionContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
+        
+        // When/Then: 空文字列バージョンの場合
+        let emptyVersionContent = sut.getOnboardingContent(for: .versionUpdate(version: ""))
+        XCTAssertNotNil(emptyVersionContent, "空バージョンでもフォールバックコンテンツが取得できること")
+        XCTAssertEqual(emptyVersionContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
+    }
+    
+    // MARK: - Version Retrieval Tests
+    
+    func testGetCurrentAppVersionReturnsValidVersion() {
+        // Given/When: getCurrentAppVersionを呼び出し
+        let version = sut.getCurrentAppVersion()
+        
+        // Then: バージョンが取得できること
+        XCTAssertNotNil(version, "アプリバージョンが取得できること")
+        XCTAssertFalse(version?.isEmpty ?? true, "バージョンが空でないこと")
+        
+        // バージョンフォーマットの検証（例: "1.0", "1.2.3"）
+        if let appVersion = version {
+            let components = appVersion.split(separator: ".")
+            XCTAssertGreaterThanOrEqual(components.count, 2, "バージョンは少なくともメジャー.マイナー形式であること")
+            XCTAssertTrue(components.allSatisfy { Int($0) != nil }, "バージョンの各コンポーネントは数字であること")
+        }
+    }
+    
+    // MARK: - Version Update Onboarding Check Tests
+    
+    func testCheckVersionUpdateOnboardingWhenVersionUpdateNeeded() {
+        // Given: 現在のバージョンのオンボーディングがまだ表示されていない
+        let currentVersion = sut.getCurrentAppVersion() ?? "1.0"
+        
+        // When: バージョンアップデートオンボーディングをチェック
+        let content = sut.checkVersionUpdateOnboarding()
+        
+        // Then: オンボーディングコンテンツが返されること
+        XCTAssertNotNil(content, "バージョンアップデートオンボーディングが必要な場合はコンテンツが返されること")
+        XCTAssertEqual(content?.type, .versionUpdate(version: currentVersion), "正しいバージョンのオンボーディングタイプであること")
+        XCTAssertFalse(content?.pages.isEmpty ?? true, "ページが含まれていること")
+    }
+    
+    func testCheckVersionUpdateOnboardingWhenAlreadyShown() {
+        // Given: 現在のバージョンのオンボーディングを既に表示済み
+        let currentVersion = sut.getCurrentAppVersion() ?? "1.0"
+        sut.markOnboardingAsShown(for: .versionUpdate(version: currentVersion))
+        
+        // When: バージョンアップデートオンボーディングをチェック
+        let content = sut.checkVersionUpdateOnboarding()
+        
+        // Then: nilが返されること（オンボーディング不要）
+        XCTAssertNil(content, "既に表示済みの場合はnilが返されること")
+    }
+    
+    func testCheckVersionUpdateOnboardingWithSpecificVersions() {
+        // Given: 異なるバージョンでの動作確認
+        let version1 = "1.0"
+        let version2 = "1.2"
+        
+        // When/Then: バージョン1.0のオンボーディング
+        let content1 = sut.getOnboardingContent(for: .versionUpdate(version: version1))
+        XCTAssertNotNil(content1, "1.0バージョンのオンボーディングが取得できること")
+        
+        let shouldShow1 = sut.shouldShowOnboarding(for: .versionUpdate(version: version1))
+        XCTAssertTrue(shouldShow1, "1.0バージョンの初回表示時はtrueであること")
+        
+        // オンボーディング表示済みマーク
+        sut.markOnboardingAsShown(for: .versionUpdate(version: version1))
+        let shouldShow1After = sut.shouldShowOnboarding(for: .versionUpdate(version: version1))
+        XCTAssertFalse(shouldShow1After, "1.0バージョン表示後はfalseであること")
+        
+        // When/Then: バージョン1.2のオンボーディング（別バージョンなので表示される）
+        let shouldShow2 = sut.shouldShowOnboarding(for: .versionUpdate(version: version2))
+        XCTAssertTrue(shouldShow2, "異なるバージョン(1.2)は表示されること")
+    }
+    
+    // MARK: - Initialization Auto-Detection Tests
+    
+    func testInitializationAutoSetsVersionUpdateOnboardingWhenFirstLaunchCompleted() {
+        // Given: 初回起動が完了している状況
+        mockUserDefaults.set(true, forKey: "onboarding_first_launch_shown")
+        
+        // When: OnboardingManagerを新たに初期化
+        let newManager = OnboardingManager(userDefaults: mockUserDefaults)
+        
+        // Then: バージョンアップデートオンボーディングが自動的に設定されること
+        let hasContent = newManager.currentContent != nil
+        let currentVersion = newManager.getCurrentAppVersion() ?? "1.0"
+        let shouldShowVersionUpdate = newManager.shouldShowOnboarding(for: .versionUpdate(version: currentVersion))
+        
+        if shouldShowVersionUpdate {
+            XCTAssertTrue(hasContent, "バージョンアップデートが必要な場合、初期化時にcurrentContentが設定されること")
+            XCTAssertEqual(newManager.currentContent?.type, .versionUpdate(version: currentVersion), "正しいバージョンアップデートタイプが設定されること")
+        } else {
+            XCTAssertFalse(hasContent, "バージョンアップデートが不要な場合、currentContentはnilであること")
+        }
+    }
+    
+    func testInitializationPrioritizesFirstLaunchOverVersionUpdate() {
+        // Given: 初回起動もバージョンアップデートも未表示の状況
+        // (新しいUserDefaultsインスタンスなので何も設定されていない)
+        
+        // When: OnboardingManagerを初期化
+        let newManager = OnboardingManager(userDefaults: mockUserDefaults)
+        
+        // Then: 初回起動オンボーディングが優先されること
+        XCTAssertNotNil(newManager.currentContent, "初回起動時はcurrentContentが設定されること")
+        XCTAssertEqual(newManager.currentContent?.type, .firstLaunch, "初回起動が優先されること")
     }
 }

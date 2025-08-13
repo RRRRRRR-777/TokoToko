@@ -51,14 +51,22 @@ struct OnboardingModalView: View {
 
     private var contentView: some View {
         VStack(spacing: 16) {
-            // 画像プレースホルダーをカードスタイルに変更
+            // 実際の画像またはプレースホルダーを表示
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.gray.opacity(0.1))
                 .frame(width: 160, height: 120)
                 .overlay(
-                    Image(systemName: "photo")
-                        .font(.system(size: 40))
-                        .foregroundColor(.gray.opacity(0.6))
+                    Group {
+                        if let image = UIImage(named: currentPage.imageName) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } else {
+                            Image(systemName: "photo")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray.opacity(0.6))
+                        }
+                    }
                 )
 
             Text(currentPage.title)
