@@ -64,9 +64,14 @@ class OnboardingManager: ObservableObject {
         self.userDefaults = userDefaults
         // YMLファイルからコンテンツを読み込む
         loadYMLConfig()
-        // 初回起動時のコンテンツを自動的に設定
+
+        // 初回起動時のコンテンツを優先して設定
         if shouldShowOnboarding(for: .firstLaunch) {
             currentContent = getOnboardingContent(for: .firstLaunch)
+        }
+        // 初回起動でない場合、バージョンアップデートオンボーディングをチェック
+        else if let versionUpdateContent = checkVersionUpdateOnboarding() {
+            currentContent = versionUpdateContent
         }
     }
 
@@ -191,6 +196,28 @@ class OnboardingManager: ObservableObject {
 
         let patch = components.count > 2 ? Int(components[2]) : nil
         return VersionComponents(major: major, minor: minor, patch: patch)
+    }
+
+    /// 現在のアプリバージョンを取得
+    /// - Returns: CFBundleShortVersionStringから取得したバージョン文字列（例: "1.0", "1.2.3"）
+    func getCurrentAppVersion() -> String? {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    /// 現在のアプリバージョンに基づいてバージョンアップデートオンボーディングが必要かチェック
+    /// - Returns: バージョンアップデートオンボーディングが必要な場合はOnboardingContent、不要な場合はnil
+    func checkVersionUpdateOnboarding() -> OnboardingContent? {
+        guard let currentVersion = getCurrentAppVersion() else {
+            return nil
+        }
+
+        let onboardingType = OnboardingType.versionUpdate(version: currentVersion)
+
+        if shouldShowOnboarding(for: onboardingType) {
+            return getOnboardingContent(for: onboardingType)
+        }
+
+        return nil
     }
 
     // MARK: - Private Methods
