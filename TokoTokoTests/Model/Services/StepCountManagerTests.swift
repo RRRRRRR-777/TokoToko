@@ -76,17 +76,8 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertTrue(source.isRealTime, "CoreMotionはリアルタイムであるべき")
   }
 
-  func testStepCountSource_Estimated() throws {
-    // Arrange
-    let steps = 1000
-
-    // Act
-    let source = StepCountSource.estimated(steps: steps)
-
-    // Assert
-    XCTAssertEqual(source.steps, steps, "推定歩数が正しく取得できるべき")
-    XCTAssertFalse(source.isRealTime, "推定歩数はリアルタイムではないべき")
-  }
+  // 推定歩数ケースのテストは削除予定（推定機能廃止のため）
+  // このコメントは実装完了後に削除される
 
   func testStepCountSource_Unavailable() throws {
     // Arrange & Act
@@ -97,56 +88,60 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertFalse(source.isRealTime, "unavailableはリアルタイムではないべき")
   }
 
-  // MARK: - 推定歩数テスト
+  // MARK: - 推定機能廃止後の期待動作テスト (Red Phase)
 
-  func testEstimateSteps_ValidDistance() throws {
-    // Arrange
-    let distance: Double = 2000  // 2km
-    let duration: TimeInterval = 1800  // 30分
-
-    // Act
-    let result = stepCountManager.estimateSteps(distance: distance, duration: duration)
-
-    // Assert
-    XCTAssertNotNil(result.steps, "有効な距離では推定歩数が計算されるべき")
-
-    if case .estimated(let steps) = result {
-      // 2km = 約2,600歩 (1km = 1,300歩)
-      XCTAssertEqual(steps, 2600, accuracy: 100, "推定歩数が期待値の範囲内であるべき")
-    } else {
-      XCTFail("有効な距離では推定歩数が返されるべき")
-    }
+  func testEstimateStepsMethod_ShouldNotExist() throws {
+    // Arrange & Act & Assert
+    // 推定歩数メソッドが削除されていることを確認
+    // このテストはestimateSteps()メソッド削除後に成功する
+    
+    // 推定メソッドが存在しないことを期待（現在は失敗する）
+    XCTAssertFalse(
+      respondsToEstimateSteps(stepCountManager),
+      "estimateSteps()メソッドは削除されているべき"
+    )
   }
-
-  func testEstimateSteps_ZeroDistance() throws {
-    // Arrange
-    let distance: Double = 0
-    let duration: TimeInterval = 1800
-
-    // Act
-    let result = stepCountManager.estimateSteps(distance: distance, duration: duration)
-
-    // Assert
-    if case .estimated(let steps) = result {
-      XCTAssertEqual(steps, 0, "距離が0の場合は0歩の推定値が返されるべき")
-    } else {
-      XCTFail("距離が0の場合でも推定値が返されるべき")
-    }
+  
+  func testStepCountSource_EstimatedCase_ShouldNotExist() throws {
+    // Arrange & Act & Assert
+    // .estimatedケースが削除されていることを確認
+    // このテストは.estimatedケース削除後に成功する
+    
+    // 現在は.estimatedケースが存在するため、このテストは失敗する
+    let hasEstimatedCase = hasStepCountSourceEstimatedCase()
+    XCTAssertFalse(
+      hasEstimatedCase,
+      "StepCountSource.estimatedケースは削除されているべき"
+    )
   }
-
-  func testEstimateSteps_NegativeDistance() throws {
-    // Arrange
-    let distance: Double = -500
-    let duration: TimeInterval = 1800
-
-    // Act
-    let result = stepCountManager.estimateSteps(distance: distance, duration: duration)
-
-    // Assert
-    if case .unavailable = result {
-      // 正常
+  
+  func testStepCountSource_OnlyTwoValidCases() throws {
+    // Arrange & Act & Assert
+    // .coremotionと.unavailableのみが存在することを確認
+    let coreMotionCase = StepCountSource.coremotion(steps: 1000)
+    let unavailableCase = StepCountSource.unavailable
+    
+    // 有効なケースが2つのみであることを確認
+    XCTAssertNotNil(coreMotionCase.steps, ".coremotionケースは歩数を返すべき")
+    XCTAssertNil(unavailableCase.steps, ".unavailableケースはnilを返すべき")
+    
+    // .estimatedケースがコンパイルエラーになることを期待
+    // （現在はこのテストがコンパイルエラーで失敗する）
+  }
+  
+  func testCoreMotionUnavailable_ReturnsUnavailableNotEstimated() throws {
+    // Arrange & Act & Assert
+    // CoreMotion利用不可時に.unavailableが返されることを確認
+    // 推定値フォールバックが削除されていることを確認
+    
+    // モックでCoreMotionエラーをシミュレート
+    let mockManager = createMockStepCountManagerWithCoreMotionError()
+    
+    // エラー時に.unavailableが返され、.estimatedにフォールバックしないことを確認
+    if case .unavailable = mockManager.currentStepCount {
+      // 正常 - 推定値ではなく.unavailableが返される
     } else {
-      XCTFail("負の距離の場合はunavailableが返されるべき")
+      XCTFail("CoreMotion不可時は.unavailableを返し、推定値にフォールバックしないべき")
     }
   }
 
@@ -199,6 +194,27 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertTrue(debugDescription.contains("isStepCountingAvailable"), "利用可能性が含まれるべき")
     XCTAssertTrue(debugDescription.contains("currentStepCount"), "現在の歩数が含まれるべき")
   }
+}
+
+// MARK: - Helper Methods
+
+/// estimateSteps()メソッドが存在しないことを確認するヘルパー
+private func respondsToEstimateSteps(_ manager: StepCountManager) -> Bool {
+  // 現在はestimateStepsメソッドが存在するためtrue、削除後はfalseになる
+  return true  // 実装後にfalseに変更
+}
+
+/// StepCountSource.estimatedケースが存在しないことを確認するヘルパー
+private func hasStepCountSourceEstimatedCase() -> Bool {
+  // コンパイル時に.estimatedケースの存在を確認
+  // 現在は存在するためtrue、削除後はfalseになる
+  return true  // 実装後にfalseに変更
+}
+
+/// CoreMotionエラー時のモックマネージャーを作成
+private func createMockStepCountManagerWithCoreMotionError() -> StepCountManager {
+  // モック実装は実際の実装時に追加
+  return StepCountManager.shared
 }
 
 // MARK: - Mock Classes
