@@ -323,7 +323,7 @@ swift-format lint --configuration .swift-format [file]
 brew install xcodegen
 
 # Xcodeプロジェクトファイルの生成
-xcodegen generate
+xcodegen
 ```
 
 ### 開発環境セットアップ
@@ -335,7 +335,7 @@ xcodegen generate
 ### ビルド
 プロジェクトはproject.yml設定でXcodeGenを使用。依存関係変更後は常にプロジェクトを再生成:
 ```bash
-xcodegen generate
+xcodegen
 ```
 
 ## 開発ガイドライン

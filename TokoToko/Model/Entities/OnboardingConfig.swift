@@ -24,6 +24,12 @@ struct OnboardingData: Codable {
     case firstLaunch = "first_launch"
     case versionUpdates = "version_updates"
   }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    firstLaunch = try container.decodeIfPresent(OnboardingSection.self, forKey: .firstLaunch)
+    versionUpdates = try container.decodeIfPresent([String: OnboardingSection].self, forKey: .versionUpdates) ?? [:]
+  }
 }
 
 /// 特定タイプ（初回起動・バージョンアップデート）のオンボーディングセクション

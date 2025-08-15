@@ -227,7 +227,7 @@ class OnboardingManager: ObservableObject {
             ymlConfig = try loadOnboardingFromYML()
         } catch {
             // YML読み込みエラーの場合は既存のハードコードされた値を使用
-            print("YML読み込みエラー: \(error)")
+            print("YML読み込みエラー（フォールバックを使用）: \(error.localizedDescription)")
         }
     }
 
