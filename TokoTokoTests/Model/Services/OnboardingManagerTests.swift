@@ -173,17 +173,14 @@ final class OnboardingManagerTests: XCTestCase {
 
     func testOnboardingContentConsistency() {
         // TDD Red: コンテンツ整合性テスト
-        // Given: 初回起動とバージョンアップの両方のコンテンツを取得
+        // Given: 初回起動コンテンツを取得
         let firstLaunchContent = sut.getOnboardingContent(for: .firstLaunch)
-        let versionUpdateContent = sut.getOnboardingContent(for: .versionUpdate(version: "1.1.0"))
 
-        // Then: 両方のコンテンツが適切に生成されること
+        // Then: 初回起動コンテンツが適切に生成されること
         XCTAssertNotNil(firstLaunchContent, "初回起動コンテンツが生成されること")
-        XCTAssertNotNil(versionUpdateContent, "バージョンアップコンテンツが生成されること")
 
         // コンテンツの構造が正しいこと
-        XCTAssertEqual(firstLaunchContent?.pages.count, 3, "初回起動コンテンツは3ページであること")
-        XCTAssertEqual(versionUpdateContent?.pages.count, 2, "バージョンアップコンテンツは2ページであること（1.1.0 → 1.0にマッピング）")
+        XCTAssertEqual(firstLaunchContent?.pages.count, 4, "初回起動コンテンツは4ページであること")
 
         // ページ内容が空でないこと
         if let firstPage = firstLaunchContent?.pages.first {
@@ -309,51 +306,7 @@ final class OnboardingManagerTests: XCTestCase {
             }
         }
     }
-    
-    func testVersionMappingWithYML() {
-        // Given: YMLファイルにバージョン情報が定義されている状況
-        // onboarding.ymlには "1.0" と "2.0" が定義されている
-        
-        // When/Then: 完全一致するバージョンの場合
-        let exactMatchContent = sut.getOnboardingContent(for: .versionUpdate(version: "1.0"))
-        XCTAssertNotNil(exactMatchContent, "完全一致するバージョンのコンテンツが取得できること")
-        XCTAssertEqual(exactMatchContent?.pages.count, 2, "1.0バージョンは2ページであること")
-        XCTAssertEqual(exactMatchContent?.pages.first?.title, "新機能追加", "YMLからのタイトルが取得されること")
-        
-        // When/Then: 部分マッチするバージョンの場合（1.0.5 -> 1.0）
-        let partialMatchContent = sut.getOnboardingContent(for: .versionUpdate(version: "1.0.5"))
-        XCTAssertNotNil(partialMatchContent, "部分マッチするバージョンのコンテンツが取得できること")
-        XCTAssertEqual(partialMatchContent?.pages.count, 2, "1.0.5は1.0にマッピングされて2ページであること")
-        XCTAssertEqual(partialMatchContent?.pages.first?.title, "新機能追加", "部分マッチでもYMLからのタイトルが取得されること")
-        
-        // When/Then: 存在しないバージョンの場合（フォールバック）
-        let fallbackContent = sut.getOnboardingContent(for: .versionUpdate(version: "3.0.0"))
-        XCTAssertNotNil(fallbackContent, "存在しないバージョンでもフォールバックコンテンツが取得できること")
-        XCTAssertEqual(fallbackContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
-        XCTAssertEqual(fallbackContent?.pages.first?.title, "新機能追加", "フォールバックタイトルが設定されること")
-        XCTAssertTrue(fallbackContent?.pages.first?.description.contains("3.0.0") ?? false, "フォールバック説明文にバージョン番号が含まれること")
-    }
-    
-    func testVersionMappingEdgeCases() {
-        // Given: エッジケースのバージョン指定
-        
-        // When/Then: 2.5.1 -> 2.0 へのマッピング（YMLに2.0が存在）
-        let mappedContent = sut.getOnboardingContent(for: .versionUpdate(version: "2.5.1"))
-        XCTAssertNotNil(mappedContent, "2.5.1が2.0にマッピングされること")
-        XCTAssertEqual(mappedContent?.pages.count, 2, "2.0バージョンは2ページであること")
-        XCTAssertEqual(mappedContent?.pages.first?.title, "大幅アップデート", "YMLの2.0コンテンツが取得されること")
-        
-        // When/Then: 無効なバージョン形式の場合
-        let invalidVersionContent = sut.getOnboardingContent(for: .versionUpdate(version: "invalid.version"))
-        XCTAssertNotNil(invalidVersionContent, "無効なバージョン形式でもフォールバックコンテンツが取得できること")
-        XCTAssertEqual(invalidVersionContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
-        
-        // When/Then: 空文字列バージョンの場合
-        let emptyVersionContent = sut.getOnboardingContent(for: .versionUpdate(version: ""))
-        XCTAssertNotNil(emptyVersionContent, "空バージョンでもフォールバックコンテンツが取得できること")
-        XCTAssertEqual(emptyVersionContent?.pages.count, 1, "フォールバックコンテンツは1ページであること")
-    }
-    
+
     // MARK: - Version Retrieval Tests
     
     func testGetCurrentAppVersionReturnsValidVersion() {
