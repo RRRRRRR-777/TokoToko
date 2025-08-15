@@ -13,4 +13,4 @@ onboarding:
       - title: "期間限定で広告を非表示に"
         description: "今だけ広告表示なしでご利用いただけます。"
         image_name: "first_launch_4"
-  version_updates: {}
+  version_updates: {} # 現在は未使用。将来のバージョン更新時に追加予定
