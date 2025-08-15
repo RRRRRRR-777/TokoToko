@@ -52,22 +52,19 @@ struct OnboardingModalView: View {
     private var contentView: some View {
         VStack(spacing: 16) {
             // 実際の画像またはプレースホルダーを表示
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.gray.opacity(0.1))
-                .frame(width: 160, height: 120)
-                .overlay(
-                    Group {
-                        if let image = UIImage(named: currentPage.imageName) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        } else {
-                            Image(systemName: "photo")
-                                .font(.system(size: 40))
-                                .foregroundColor(.gray.opacity(0.6))
-                        }
-                    }
-                )
+            Group {
+                if let image = UIImage(named: currentPage.imageName) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 160, maxHeight: 120)
+                } else {
+                    Image(systemName: "photo")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray.opacity(0.6))
+                        .frame(width: 160, height: 120)
+                }
+            }
 
             Text(currentPage.title)
                 .font(.system(size: 20, weight: .bold))
