@@ -292,15 +292,18 @@ struct WalkInfoDisplay: View {
 
       Spacer()
 
-      VStack(alignment: .center, spacing: 4) {
-        HStack(spacing: 4) {
-          stepCountLabel
-            .font(.caption)
-            .foregroundColor(.secondary)
-          stepSourceIndicator
-        }
+      // 歩数部分：StepCountSource.unavailable時は非表示
+      if case .coremotion = stepCountSource {
+        VStack(alignment: .center, spacing: 4) {
+          HStack(spacing: 4) {
+            stepCountLabel
+              .font(.caption)
+              .foregroundColor(.secondary)
+            stepSourceIndicator
+          }
 
-        stepCountDisplay
+          stepCountDisplay
+        }
       }
 
       Spacer()
