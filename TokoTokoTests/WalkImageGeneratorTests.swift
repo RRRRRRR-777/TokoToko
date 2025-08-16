@@ -84,7 +84,7 @@ final class WalkImageGeneratorTests: XCTestCase {
     walk
   }
 
-  /// 歩数フォーマット処理のヘルパーメソッド（実装後の期待動作）
+  /// 歩数フォーマット処理のヘルパーメソッド（実装済みの動作と同期）
   private func formatStepsForDisplay(totalSteps: Int) -> String {
     totalSteps == 0 ? "-" : "\(totalSteps)歩"
   }

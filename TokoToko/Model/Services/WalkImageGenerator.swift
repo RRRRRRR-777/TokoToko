@@ -541,7 +541,7 @@ class WalkImageGenerator {
 
         // 歩数
         drawStatisticWithIconAndShadow(
-            value: "\(walk.totalSteps)歩",
+            value: walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)歩",
             systemIconName: "figure.walk",
             at: CGPoint(x: rect.minX + columnWidth * 2.5, y: rect.midY - 10),
             iconSize: iconSize,
