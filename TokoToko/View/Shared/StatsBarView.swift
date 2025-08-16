@@ -15,7 +15,8 @@ struct StatsBarView: View {
   @State private var showingDeleteAlert = false
   @State private var showingErrorAlert = false
   @State private var errorMessage = ""
-  @Environment(\.presentationMode) var presentationMode
+  @Environment(\.presentationMode)
+  var presentationMode
 
   var body: some View {
     VStack {
@@ -30,52 +31,8 @@ struct StatsBarView: View {
 
   private var expandedView: some View {
     VStack(spacing: 16) {
-      VStack(spacing: 20) {
-        VStack(alignment: .center, spacing: 4) {
-          Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-            .font(.title2)
-          Text(walk.distanceString)
-            .font(.system(size: 12))
-            .fontWeight(.semibold)
-        }
-
-        VStack(alignment: .center, spacing: 4) {
-          Image(systemName: "clock")
-            .font(.title2)
-          Text(walk.durationString)
-            .font(.system(size: 12))
-            .fontWeight(.semibold)
-        }
-
-        VStack(alignment: .center, spacing: 4) {
-          Image(systemName: "figure.walk")
-            .font(.title2)
-          Text(walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)歩")
-            .font(.system(size: 12))
-            .fontWeight(.semibold)
-        }
-
-        // 散歩履歴一覧への切り替えボタン
-         HStack {
-          NavigationLink(destination:
-            WalkListView()
-              .navigationBarBackButtonHidden(false)
-          ) {
-            Image(systemName: "arrow.left.arrow.right")
-              .font(.system(size: 18, weight: .medium))
-              .foregroundColor(.black)
-              .shadow(color: .black.opacity(0.1), radius: 0.5, x: 4, y: 4)
-          }
-          .accessibilityIdentifier("散歩履歴一覧を表示")
-          Button(action: { showingDeleteAlert = true }) {
-            Image(systemName: "ellipsis")
-              .font(.system(size: 18, weight: .medium))
-              .foregroundColor(.black)
-              .shadow(color: .black.opacity(0.1), radius: 0.5, x: 4, y: 4)
-          }
-          .accessibilityIdentifier("散歩削除メニュー")
-         }
-      }
+      statsSection
+      actionButtonsSection
     }
     .padding(.all, 16)
     .frame(width: 90)
@@ -98,6 +55,66 @@ struct StatsBarView: View {
       Button("OK") {}
     } message: {
       Text(errorMessage)
+    }
+  }
+
+  private var statsSection: some View {
+    VStack(spacing: 20) {
+      distanceStatView
+      durationStatView
+      stepsStatView
+    }
+  }
+
+  private var distanceStatView: some View {
+    VStack(alignment: .center, spacing: 4) {
+      Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
+        .font(.title2)
+      Text(walk.distanceString)
+        .font(.system(size: 12))
+        .fontWeight(.semibold)
+    }
+  }
+
+  private var durationStatView: some View {
+    VStack(alignment: .center, spacing: 4) {
+      Image(systemName: "clock")
+        .font(.title2)
+      Text(walk.durationString)
+        .font(.system(size: 12))
+        .fontWeight(.semibold)
+    }
+  }
+
+  private var stepsStatView: some View {
+    VStack(alignment: .center, spacing: 4) {
+      Image(systemName: "figure.walk")
+        .font(.title2)
+      Text(walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)歩")
+        .font(.system(size: 12))
+        .fontWeight(.semibold)
+    }
+  }
+
+  private var actionButtonsSection: some View {
+    HStack {
+      NavigationLink(destination:
+        WalkListView()
+          .navigationBarBackButtonHidden(false)
+      ) {
+        Image(systemName: "arrow.left.arrow.right")
+          .font(.system(size: 18, weight: .medium))
+          .foregroundColor(.black)
+          .shadow(color: .black.opacity(0.1), radius: 0.5, x: 4, y: 4)
+      }
+      .accessibilityIdentifier("散歩履歴一覧を表示")
+      Button(action: { showingDeleteAlert = true }) {
+        Image(systemName: "ellipsis")
+          .font(.system(size: 18, weight: .medium))
+          .foregroundColor(.black)
+          .shadow(color: .black.opacity(0.1), radius: 0.5, x: 4, y: 4)
+      }
+      .accessibilityIdentifier("散歩削除メニュー")
     }
   }
 
