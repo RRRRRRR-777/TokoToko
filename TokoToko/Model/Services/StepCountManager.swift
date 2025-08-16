@@ -13,13 +13,12 @@ import Foundation
 /// 歩数データのソースと値を表現する列挙型
 ///
 /// 歩数情報の取得方法と信頼性を区別し、適切な表示とロジック制御を可能にします。
-/// CoreMotionからのリアルタイム値、推定値、計測不可状態を表現します。
+/// CoreMotionからのリアルタイム値と計測不可状態を表現します。
 ///
 /// ## Topics
 ///
 /// ### Cases
 /// - ``coremotion(steps:)``
-/// - ``estimated(steps:)``
 /// - ``unavailable``
 ///
 /// ### Properties
@@ -33,12 +32,6 @@ enum StepCountSource {
   /// - Parameter steps: 計測された歩数
   case coremotion(steps: Int)
 
-  /// 距離・時間情報から推定された歩数値
-  ///
-  /// CoreMotionが利用できない場合の代替手段として、
-  /// 移動距離と時間から統計的に推定された歩数です。
-  /// - Parameter steps: 推定された歩数
-  case estimated(steps: Int)
 
   /// 歩数計測が利用不可能な状態
   ///
@@ -48,10 +41,10 @@ enum StepCountSource {
 
   /// 歩数値を取得（計測不可の場合はnil）
   ///
-  /// - Returns: 計測または推定された歩数、計測不可の場合はnil
+  /// - Returns: 計測された歩数、計測不可の場合はnil
   var steps: Int? {
     switch self {
-    case .coremotion(let steps), .estimated(let steps):
+    case .coremotion(let steps):
       return steps
     case .unavailable:
       return nil
@@ -61,14 +54,14 @@ enum StepCountSource {
   /// リアルタイム計測データかどうか
   ///
   /// CoreMotionからの実測値の場合にtrueを返します。
-  /// 推定値や計測不可の場合はfalseです。
+  /// 計測不可の場合はfalseです。
   ///
   /// - Returns: リアルタイム計測の場合true、それ以外はfalse
   var isRealTime: Bool {
     switch self {
     case .coremotion:
       return true
-    case .estimated, .unavailable:
+    case .unavailable:
       return false
     }
   }
@@ -89,7 +82,7 @@ enum StepCountSource {
 protocol StepCountDelegate: AnyObject {
   /// 歩数データが更新された時に呼び出される
   ///
-  /// CoreMotionからの新しい歩数データや推定値が利用可能になった時に呼び出されます。
+  /// CoreMotionからの新しい歩数データが利用可能になった時に呼び出されます。
   /// メインスレッドで呼び出されるため、安全にUI更新を行うことができます。
   /// - Parameter stepCount: 更新された歩数データ
   func stepCountDidUpdate(_ stepCount: StepCountSource)
@@ -97,7 +90,7 @@ protocol StepCountDelegate: AnyObject {
   /// 歩数計測でエラーが発生した時に呼び出される
   ///
   /// センサーの利用不可、権限拒否、またはその他のエラーが発生した時に呼び出されます。
-  /// エラー情報をユーザーに表示したり、代替手段への切り替え処理を行ってください。
+  /// エラー情報をユーザーに表示し、計測不可状態であることを通知してください。
   /// - Parameter error: 発生したエラー
   func stepCountDidFailWithError(_ error: Error)
 }
@@ -158,13 +151,12 @@ enum StepCountError: Error, LocalizedError {
 /// 歩数計測と管理を統合するシングルトンクラス
 ///
 /// `StepCountManager`はCoreMotionを使用した歩数計測機能を提供します。
-/// リアルタイムの歩数取得、推定値計算、エラーハンドリングを統合管理します。
+/// リアルタイムの歩数取得とエラーハンドリングを管理します。
 ///
 /// ## Overview
 ///
 /// 主要な機能：
 /// - **CoreMotion連携**: CMPedometerを使用した高精度歩数計測
-/// - **フォールバック推定**: センサー不可時の距離ベース推定
 /// - **リアルタイム更新**: 1秒間隔での歩数データ更新
 /// - **エラーハンドリング**: 権限、センサー状態の統合管理
 /// - **デバッグサポート**: 詳細なログ出力と状態表示
@@ -178,8 +170,7 @@ enum StepCountError: Error, LocalizedError {
 /// if stepManager.isStepCountingAvailable() {
 ///     stepManager.startTracking()
 /// } else {
-///     // 推定値を使用
-///     let estimated = stepManager.estimateSteps(distance: 1000, duration: 600)
+///     // 歩数が利用できない場合は計測不可状態になります
 /// }
 /// ```
 ///
@@ -199,7 +190,6 @@ enum StepCountError: Error, LocalizedError {
 /// - ``isStepCountingAvailable()``
 /// - ``startTracking()``
 /// - ``stopTracking()``
-/// - ``estimateSteps(distance:duration:)``
 class StepCountManager: ObservableObject, CustomDebugStringConvertible {
 
   // MARK: - Properties
@@ -239,7 +229,6 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
 
   // MARK: - Constants
   private let updateInterval: TimeInterval = 1.0  // 1秒間隔で更新
-  private let stepsPerKilometer: Double = 1300  // 1kmあたりの平均歩数
 
   // MARK: - Initialization
   private init() {
@@ -392,43 +381,6 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
     updateStepCount(.unavailable)
   }
 
-  /// 距離情報から歩数を推定計算
-  ///
-  /// CoreMotionが利用できない場合のフォールバック手段として、
-  /// 移動距離と経過時間から統計的に歩数を推定します。
-  ///
-  /// ## Estimation Method
-  /// - 基準: 1キロメートあたり約1,300歩（一般的な歩幅を基準）
-  /// - 計算: `(距離[m] / 1000) * 1300`
-  /// - 結果: 0未満の値は0に調整
-  ///
-  /// ## Input Validation
-  /// - 負の距離値の場合は.unavailableを返す
-  /// - 距離が0の場合は0歩として.estimated(steps: 0)を返す
-  ///
-  /// - Parameters:
-  ///   - distance: 移動距離（メートル単位）
-  ///   - duration: 経過時間（秒単位）※現在は未使用
-  /// - Returns: 推定された歩数または計測不可状態
-  func estimateSteps(distance: Double, duration: TimeInterval) -> StepCountSource {
-    // 距離が0でも推定値として0歩を返す（unavailableではなく）
-    guard distance >= 0 else {
-      #if DEBUG
-        print("⚠️ 推定歩数計算: 負の距離値のため unavailable")
-      #endif
-      return .unavailable
-    }
-
-    // 距離ベースの推定（1km = 約1,300歩）
-    let distanceInKm = distance / 1000.0
-    let estimatedSteps = Int(distanceInKm * stepsPerKilometer)
-
-    #if DEBUG
-      print("📊 推定歩数計算: \(String(format: "%.3f", distanceInKm))km → \(estimatedSteps)歩")
-    #endif
-
-    return .estimated(steps: max(0, estimatedSteps))
-  }
 
   // MARK: - Private Methods
 

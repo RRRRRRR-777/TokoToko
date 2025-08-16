@@ -268,19 +268,13 @@ final class WalkManagerTests: XCTestCase {
     walkManager.currentStepCount = .unavailable
   }
 
-  func testWalkManager_TotalSteps_WithEstimatedData() throws {
-    // Arrange
-    let testSteps = 800
-
-    // Act - 推定データがある場合のテスト
-    walkManager.currentStepCount = .estimated(steps: testSteps)
+  func testWalkManager_TotalSteps_WithUnavailableData() throws {
+    // Arrange & Act - 計測不可の場合のテスト（推定機能廃止後）
+    walkManager.currentStepCount = .unavailable
     let totalSteps = walkManager.totalSteps
 
     // Assert
-    XCTAssertEqual(totalSteps, testSteps, "推定歩数データが使用される")
-
-    // リセット
-    walkManager.currentStepCount = .unavailable
+    XCTAssertEqual(totalSteps, 0, "計測不可時は0が返されるべき")
   }
 
   func testWalkManager_CancelWalk_ResetsState() throws {
