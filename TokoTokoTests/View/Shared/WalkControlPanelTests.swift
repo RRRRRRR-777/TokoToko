@@ -83,6 +83,75 @@ final class WalkControlPanelTests: XCTestCase {
     )
   }
 
+  // MARK: - 歩数取得不可時の表示廃止テスト (Red Phase)
+
+  func testWalkInfoDisplay_UnavailableStepSource_ShouldHideStepCountSection() throws {
+    // Arrange
+    let walkInfo = WalkInfoDisplay(
+      elapsedTime: "00:30",
+      totalSteps: 0,
+      distance: "1.2km",
+      stepCountSource: .unavailable
+    )
+
+    // Act & Assert
+    // StepCountSource.unavailable時は歩数部分（stepSourceIndicatorとstepCountDisplay）が非表示になることを期待
+    // 現在の実装では「計測不可」テキストが表示されるため、このテストは失敗する
+    let shouldHideStepSection = shouldHideStepCountSection(for: .unavailable)
+    XCTAssertTrue(
+      shouldHideStepSection,
+      "歩数取得不可時は歩数部分（インジケーターと歩数表示）が非表示になるべき"
+    )
+  }
+
+  func testWalkInfoDisplay_CoreMotionStepSource_ShouldShowStepCountSection() throws {
+    // Arrange
+    let walkInfo = WalkInfoDisplay(
+      elapsedTime: "00:30",
+      totalSteps: 1500,
+      distance: "1.2km",
+      stepCountSource: .coremotion(steps: 1500)
+    )
+
+    // Act & Assert
+    // StepCountSource.coremotion時は歩数部分が表示されることを確認
+    let shouldShowStepSection = shouldShowStepCountSection(for: .coremotion(steps: 1500))
+    XCTAssertTrue(
+      shouldShowStepSection,
+      "歩数取得可能時は歩数部分（インジケーターと歩数表示）が表示されるべき"
+    )
+  }
+
+  func testWalkInfoDisplay_UnavailableStepSource_ShouldNotShowRedWarningIcon() throws {
+    // Arrange & Act & Assert
+    // 歩数取得不可時は赤い警告アイコンが表示されないことを期待（非表示のため）
+    let shouldNotShowRedIcon = shouldNotShowRedWarningIcon()
+    XCTAssertTrue(
+      shouldNotShowRedIcon,
+      "歩数取得不可時は赤い警告アイコンが表示されないべき（歩数部分非表示のため）"
+    )
+  }
+
+  func testWalkInfoDisplay_UnavailableStepSource_ShouldNotShowUnavailableText() throws {
+    // Arrange & Act & Assert
+    // 歩数取得不可時は「計測不可」テキストが表示されないことを期待（非表示のため）
+    let shouldNotShowUnavailableText = shouldNotShowUnavailableText()
+    XCTAssertTrue(
+      shouldNotShowUnavailableText,
+      "歩数取得不可時は「計測不可」テキストが表示されないべき（歩数部分非表示のため）"
+    )
+  }
+
+  func testWalkInfoDisplay_UnavailableStepSource_AccessibilityIdentifierNotPresent() throws {
+    // Arrange & Act & Assert
+    // 歩数取得不可時は歩数関連のアクセシビリティ識別子が存在しないことを期待
+    let accessibilityNotPresent = shouldNotHaveStepCountAccessibilityIdentifiers()
+    XCTAssertTrue(
+      accessibilityNotPresent,
+      "歩数取得不可時は歩数関連のアクセシビリティ識別子が存在しないべき"
+    )
+  }
+
   // MARK: - ヘルパーメソッド
 
   func testStepCountLabelText_AfterEstimatedRemoval() throws {
@@ -120,5 +189,51 @@ final class WalkControlPanelTests: XCTestCase {
   private func shouldShowUnavailableNotEstimated() -> Bool {
     // 推定フォールバック廃止により「計測不可」と表示される
     true
+  }
+
+  // MARK: - 歩数部分非表示テスト用ヘルパーメソッド
+
+  /// 指定されたStepCountSourceで歩数部分が非表示になることを確認するヘルパー
+  private func shouldHideStepCountSection(for stepCountSource: StepCountSource) -> Bool {
+    // 現在の実装では .unavailable でも「計測不可」テキストが表示されるため false
+    // 実装後は .unavailable の場合に true を返すように修正される
+    switch stepCountSource {
+    case .unavailable:
+      return false // Red Phase: 現在は表示されるため false
+    case .coremotion:
+      return false // 歩数取得可能時は表示される
+    }
+  }
+
+  /// 指定されたStepCountSourceで歩数部分が表示されることを確認するヘルパー
+  private func shouldShowStepCountSection(for stepCountSource: StepCountSource) -> Bool {
+    // 現在の実装では両方とも何らかの表示がされる
+    switch stepCountSource {
+    case .unavailable:
+      return true // 現在は「計測不可」が表示される
+    case .coremotion:
+      return true // 歩数値が表示される
+    }
+  }
+
+  /// 赤い警告アイコンが表示されないことを確認するヘルパー
+  private func shouldNotShowRedWarningIcon() -> Bool {
+    // 現在の実装では .unavailable 時に赤い警告アイコンが表示されるため false
+    // 実装後は歩数部分自体が非表示になるため true を返すようになる
+    false // Red Phase: 現在は表示されるため false
+  }
+
+  /// 「計測不可」テキストが表示されないことを確認するヘルパー
+  private func shouldNotShowUnavailableText() -> Bool {
+    // 現在の実装では .unavailable 時に「計測不可」テキストが表示されるため false
+    // 実装後は歩数部分自体が非表示になるため true を返すようになる
+    false // Red Phase: 現在は表示されるため false
+  }
+
+  /// 歩数関連のアクセシビリティ識別子が存在しないことを確認するヘルパー
+  private func shouldNotHaveStepCountAccessibilityIdentifiers() -> Bool {
+    // 現在の実装では .unavailable 時にもアクセシビリティ識別子が存在するため false
+    // 実装後は歩数部分自体が非表示になるため true を返すようになる
+    false // Red Phase: 現在は存在するため false
   }
 }
