@@ -244,9 +244,9 @@ struct WalkControlPanel: View {
 /// ## Overview
 ///
 /// - **経過時間表示**: 散歩開始からの経過時間をフォーマット済み文字列で表示
-/// - **歩数表示**: センサー実測値、推定値、計測不可状態を適切に区別して表示
+/// - **歩数表示**: センサー実測値、計測不可状態を適切に区別して表示
 /// - **距離表示**: 移動距離をキロメートル単位で表示
-/// - **ソースインジケーター**: 歩数データの信頼性をアイコンで視覚的に表現
+/// - **ソースインジケーター**: 歩数データの計測状態をアイコンで視覚的に表現
 ///
 /// ## Topics
 ///
@@ -263,7 +263,7 @@ struct WalkInfoDisplay: View {
 
   /// 総歩数
   ///
-  /// 散歩中に計測または推定された総歩数です。
+  /// 散歩中に計測された総歩数です。
   /// 表示目的のみに使用され、実際の値は`stepCountSource`から取得されます。
   let totalSteps: Int
 
@@ -274,7 +274,7 @@ struct WalkInfoDisplay: View {
 
   /// 歩数データのソース情報
   ///
-  /// 歩数がセンサー実測値、推定値、計測不可のいずれかを示し、
+  /// 歩数がセンサー実測値、計測不可のいずれかを示し、
   /// 適切なインジケーターとラベル表示に使用されます。
   let stepCountSource: StepCountSource
 
@@ -327,8 +327,6 @@ struct WalkInfoDisplay: View {
     switch stepCountSource {
     case .coremotion:
       return "歩数"
-    case .estimated:
-      return "歩数(推定)"
     case .unavailable:
       return "歩数"
     }
@@ -343,11 +341,6 @@ struct WalkInfoDisplay: View {
           .font(.caption2)
           .foregroundColor(.green)
           .help("センサー実測値")
-      case .estimated:
-        Image(systemName: "ruler.fill")
-          .font(.caption2)
-          .foregroundColor(.orange)
-          .help("距離ベース推定値")
       case .unavailable:
         Image(systemName: "exclamationmark.triangle.fill")
           .font(.caption2)
@@ -397,7 +390,7 @@ struct WalkInfoDisplay: View {
       elapsedTime: "08:15",
       totalSteps: 650,
       distance: "0.5 km",
-      stepCountSource: .estimated(steps: 650)
+      stepCountSource: .coremotion(steps: 650)
     )
     .padding()
     .background(Color(.systemGray6))
