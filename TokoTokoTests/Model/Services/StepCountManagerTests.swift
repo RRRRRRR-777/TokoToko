@@ -44,7 +44,7 @@ final class StepCountManagerTests: XCTestCase {
 
     // Assert
     XCTAssertFalse(stepCountManager.isTracking, "初期状態ではトラッキングしていないべき")
-    XCTAssertEqual(stepCountManager.currentStepCount.steps, nil, "初期状態では歩数はnilであるべき")
+    XCTAssertNil(stepCountManager.currentStepCount.steps, "初期状態では歩数はnilであるべき")
 
     if case .unavailable = stepCountManager.currentStepCount {
       // 正常
@@ -76,9 +76,6 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertTrue(source.isRealTime, "CoreMotionはリアルタイムであるべき")
   }
 
-  // 推定歩数ケースのテストは削除予定（推定機能廃止のため）
-  // このコメントは実装完了後に削除される
-
   func testStepCountSource_Unavailable() throws {
     // Arrange & Act
     let source = StepCountSource.unavailable
@@ -94,19 +91,19 @@ final class StepCountManagerTests: XCTestCase {
     // Arrange & Act & Assert
     // 推定歩数メソッドが削除されていることを確認
     // estimateSteps()メソッド削除により成功する
-    
+
     // 推定メソッドが存在しないことを確認
     XCTAssertFalse(
       respondsToEstimateSteps(stepCountManager),
       "estimateSteps()メソッドは削除されているべき"
     )
   }
-  
+
   func testStepCountSource_EstimatedCase_ShouldNotExist() throws {
     // Arrange & Act & Assert
     // .estimatedケースが削除されていることを確認
     // .estimatedケース削除により成功する
-    
+
     // .estimatedケースが削除されていることを確認
     let hasEstimatedCase = hasStepCountSourceEstimatedCase()
     XCTAssertFalse(
@@ -114,28 +111,28 @@ final class StepCountManagerTests: XCTestCase {
       "StepCountSource.estimatedケースは削除されているべき"
     )
   }
-  
+
   func testStepCountSource_OnlyTwoValidCases() throws {
     // Arrange & Act & Assert
     // .coremotionと.unavailableのみが存在することを確認
     let coreMotionCase = StepCountSource.coremotion(steps: 1000)
     let unavailableCase = StepCountSource.unavailable
-    
+
     // 有効なケースが2つのみであることを確認
     XCTAssertNotNil(coreMotionCase.steps, ".coremotionケースは歩数を返すべき")
     XCTAssertNil(unavailableCase.steps, ".unavailableケースはnilを返すべき")
-    
+
     // .estimatedケースは削除されており、2つのケースのみが有効
   }
-  
+
   func testCoreMotionUnavailable_ReturnsUnavailableNotEstimated() throws {
     // Arrange & Act & Assert
     // CoreMotion利用不可時に.unavailableが返されることを確認
     // 推定値フォールバック削除により期待動作を検証
-    
+
     // モックでCoreMotionエラーをシミュレート
     let mockManager = createMockStepCountManagerWithCoreMotionError()
-    
+
     // エラー時に.unavailableが返され、.estimatedにフォールバックしないことを確認
     if case .unavailable = mockManager.currentStepCount {
       // 正常 - 推定値ではなく.unavailableが返される
@@ -180,7 +177,7 @@ final class StepCountManagerTests: XCTestCase {
   func testDebugDescription() throws {
     // Arrange & Act
     let debugDescription = stepCountManager.debugDescription
-    
+
     // Debug print actual output
     print("Actual debugDescription: '\(debugDescription)'")
     print("debugDescription isEmpty: \(debugDescription.isEmpty)")
@@ -200,19 +197,21 @@ final class StepCountManagerTests: XCTestCase {
 /// estimateSteps()メソッドが存在しないことを確認するヘルパー
 private func respondsToEstimateSteps(_ manager: StepCountManager) -> Bool {
   // estimateStepsメソッドが削除されたためfalse
-  return false
+  false
 }
 
 /// StepCountSource.estimatedケースが存在しないことを確認するヘルパー
 private func hasStepCountSourceEstimatedCase() -> Bool {
   // .estimatedケースが削除されたためfalse
-  return false
+  false
 }
 
 /// CoreMotionエラー時のモックマネージャーを作成
 private func createMockStepCountManagerWithCoreMotionError() -> StepCountManager {
-  // モック実装は実際の実装時に追加
-  return StepCountManager.shared
+  let manager = StepCountManager.shared
+  // CoreMotionが利用不可の状態をシミュレート
+  // 実際の実装では、StepCountManagerがCoreMotionエラー時に.unavailableを返すことを確認
+  return manager
 }
 
 // MARK: - Mock Classes

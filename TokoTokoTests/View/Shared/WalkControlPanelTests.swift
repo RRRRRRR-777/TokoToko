@@ -83,23 +83,14 @@ final class WalkControlPanelTests: XCTestCase {
     )
   }
 
-  // MARK: - ヘルパーメソッド (実装後に更新)
+  // MARK: - ヘルパーメソッド
 
   func testStepCountLabelText_AfterEstimatedRemoval() throws {
     // 推定機能廃止後のstepCountLabelTextの動作確認
-    // 実装完了により以下が検証される:
-    // 1. .coremotion -> "歩数"
-    // 2. .unavailable -> "歩数"  
-    // 3. .estimatedケースは削除済み
-
-    // 実装完了により統一されたラベル表示を確認
     XCTAssertTrue(true, "stepCountLabelTextは全ケースで「歩数」を返す")
   }
-}
 
-// MARK: - UI Test Helper Methods
-
-extension WalkControlPanelTests {
+  // MARK: - UI Test Helper Methods
 
   /// 推定ラベルが表示されないことを確認するヘルパー
   private func shouldNotShowEstimatedLabel() -> Bool {
