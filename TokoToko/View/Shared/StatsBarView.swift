@@ -50,7 +50,7 @@ struct StatsBarView: View {
         VStack(alignment: .center, spacing: 4) {
           Image(systemName: "figure.walk")
             .font(.title2)
-          Text("\(walk.totalSteps)歩")
+          Text(walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)歩")
             .font(.system(size: 12))
             .fontWeight(.semibold)
         }
