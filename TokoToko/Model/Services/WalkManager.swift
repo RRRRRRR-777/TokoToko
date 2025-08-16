@@ -100,7 +100,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   /// 現在の歩数カウントソース
   ///
-  /// CoreMotionからの実際の歩数、1歩あたりの距離からの推定、または利用不可状態。
+  /// CoreMotionからの実際の歩数、または利用不可状態。
   @Published var currentStepCount: StepCountSource = .unavailable
 
   /// 散歩セッションがアクティブかどうか
@@ -300,13 +300,13 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       } else {
         logger.warning(
           operation: "startWalk",
-          message: "CoreMotion利用不可、推定モードで開始",
-          context: ["tracking_mode": "estimated"],
+          message: "CoreMotion利用不可、計測不可状態で開始",
+          context: ["tracking_mode": "unavailable"],
           humanNote: "シミュレーターまたは非対応デバイス",
           aiTodo: "実機での動作確認を推奨"
         )
-        // シミュレーターや非対応デバイスでは最初から推定モードに設定
-        currentStepCount = .estimated(steps: 0)
+        // CoreMotion不可時は計測不可状態に設定
+        currentStepCount = .unavailable
       }
     } catch {
       logger.logError(
@@ -315,8 +315,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
         humanNote: "歩数トラッキング開始でエラー",
         aiTodo: "CoreMotionの権限と設定を確認"
       )
-      // エラー時も推定モードで続行
-      currentStepCount = .estimated(steps: 0)
+      // エラー時は計測不可状態に設定
+      currentStepCount = .unavailable
     }
 
     // タイマーを開始
@@ -580,22 +580,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     guard let walk = currentWalk else { return }
     elapsedTime = walk.duration
 
-    // CoreMotion非対応時は推定歩数をリアルタイム更新
-    if case .estimated = currentStepCount {
-      let newEstimatedStepCount = stepCountManager.estimateSteps(
-        distance: distance,
-        duration: elapsedTime
-      )
-      currentStepCount = newEstimatedStepCount
-
-      #if DEBUG
-        if let steps = newEstimatedStepCount.steps {
-          print(
-            "📊 推定歩数更新: \(steps)歩 (距離: \(String(format: "%.1f", distance))m, 時間: \(String(format: "%.0f", elapsedTime))s)"
-          )
-        }
-      #endif
-    }
+    // 歩数はStepCountManagerのtotalStepsで管理
   }
 
   /// 散歩経過時間のフォーマット済み文字列
@@ -618,20 +603,13 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   /// 現在の総歩数
   ///
-  /// CoreMotionからの実際の歩数、または距離・時間からの推定歩数を返します。
-  /// CoreMotionが利用できない場合は、歩行速度から自動的に推定します。
+  /// CoreMotionからの実際の歩数を返します。
+  /// CoreMotionが利用できない場合は0を返します。
   ///
-  /// - Returns: 現在の総歩数
+  /// - Returns: 現在の総歩数、計測不可の場合は0
   var totalSteps: Int {
-    // StepCountManagerから歩数を取得、フォールバックで推定歩数を使用
-    if let steps = currentStepCount.steps {
-      return steps
-    }
-
-    // CoreMotionが利用できない場合は距離ベースで推定
-    let estimatedStepCount = stepCountManager.estimateSteps(
-      distance: distance, duration: elapsedTime)
-    return estimatedStepCount.steps ?? 0
+    // StepCountManagerから歩数を取得（実測値のみ）
+    return currentStepCount.steps ?? 0
   }
 
   /// 距離のフォーマット済み文字列
@@ -797,14 +775,8 @@ extension WalkManager {
         print("❌ 歩数取得エラー: \(error.localizedDescription)")
       #endif
 
-      // エラー発生時は距離ベースの推定値にフォールバック
-      if let self = self, self.isRecording {
-        let estimatedStepCount = self.stepCountManager.estimateSteps(
-          distance: self.distance,
-          duration: self.elapsedTime
-        )
-        self.currentStepCount = estimatedStepCount
-      }
+      // エラー時は計測不可状態を維持
+      // currentStepCountは既にunavailableに設定済み
     }
   }
 }
