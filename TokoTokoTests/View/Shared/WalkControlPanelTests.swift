@@ -17,12 +17,12 @@ final class WalkControlPanelTests: XCTestCase {
 
   func testWalkInfoDisplay_ShouldNotShowEstimatedStepLabel() throws {
     // Arrange
-    // 現在は.estimatedケースで「歩数(推定)」が表示される
-    let estimatedWalkInfo = WalkInfoDisplay(
+    // .estimatedケースが削除されたため、.coremotionケースで検証
+    let walkInfo = WalkInfoDisplay(
       elapsedTime: "00:30",
       totalSteps: 1500,
       distance: "1.2km",
-      stepCountSource: .estimated(steps: 1500)
+      stepCountSource: .coremotion(steps: 1500)
     )
 
     // Act & Assert
