@@ -541,7 +541,7 @@ class WalkImageGenerator {
 
         // 歩数
         drawStatisticWithIconAndShadow(
-            value: walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)歩",
+            value: formatStepsForDisplay(walk.totalSteps),
             systemIconName: "figure.walk",
             at: CGPoint(x: rect.minX + columnWidth * 2.5, y: rect.midY - 10),
             iconSize: iconSize,
@@ -646,6 +646,14 @@ class WalkImageGenerator {
         }
 
         return compressedImage
+    }
+
+    /// 歩数を表示用フォーマットに変換
+    ///
+    /// - Parameter totalSteps: 総歩数
+    /// - Returns: 歩数取得不可時は「-」、有効時は「XXX歩」形式
+    private func formatStepsForDisplay(_ totalSteps: Int) -> String {
+        totalSteps == 0 ? "-" : "\(totalSteps)歩"
     }
 }
 
