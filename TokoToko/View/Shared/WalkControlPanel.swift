@@ -292,16 +292,7 @@ struct WalkInfoDisplay: View {
 
       Spacer()
 
-      VStack(alignment: .center, spacing: 4) {
-        HStack(spacing: 4) {
-          stepCountLabel
-            .font(.caption)
-            .foregroundColor(.secondary)
-          stepSourceIndicator
-        }
-
-        stepCountDisplay
-      }
+      stepCountSection
 
       Spacer()
 
@@ -313,6 +304,22 @@ struct WalkInfoDisplay: View {
           .font(.title2)
           .fontWeight(.bold)
           .foregroundColor(.primary)
+      }
+    }
+  }
+
+  // 歩数セクション：StepCountSource.unavailable時は非表示
+  @ViewBuilder private var stepCountSection: some View {
+    if case .coremotion = stepCountSource {
+      VStack(alignment: .center, spacing: 4) {
+        HStack(spacing: 4) {
+          stepCountLabel
+            .font(.caption)
+            .foregroundColor(.secondary)
+          stepSourceIndicator
+        }
+
+        stepCountDisplay
       }
     }
   }
