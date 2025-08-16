@@ -89,7 +89,7 @@ final class StatsBarViewTests: XCTestCase {
 
   // MARK: - 歩数取得不可時の表示廃止テスト (Red Phase)
 
-  func test_StatsBarView_歩数取得不可時は「-」と表示される() throws {
+  func test_StatsBarView_歩数取得不可時はダッシュと表示される() throws {
     // Arrange
     let walkWithNoSteps = Walk(
       title: "歩数なし散歩",
@@ -111,7 +111,7 @@ final class StatsBarViewTests: XCTestCase {
     )
   }
 
-  func test_StatsBarView_有効な歩数は「XXX歩」形式で表示される() throws {
+  func test_StatsBarView_有効な歩数はXXX歩形式で表示される() throws {
     // Arrange
     let walkWithValidSteps = Walk(
       title: "有効歩数散歩",
