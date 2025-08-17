@@ -650,10 +650,18 @@ class WalkImageGenerator {
 
     /// 歩数を表示用フォーマットに変換
     ///
+    /// 歩数データの状態に応じて適切な表示形式を返します。
+    /// 防御的プログラミングの観点から、負数値や異常値に対しても安全に処理します。
+    ///
     /// - Parameter totalSteps: 総歩数
-    /// - Returns: 歩数取得不可時は「-」、有効時は「XXX歩」形式
+    /// - Returns: 
+    ///   - 歩数取得不可時（0以下）: 「-」
+    ///   - 有効な歩数データ: 「XXX歩」形式
     private func formatStepsForDisplay(_ totalSteps: Int) -> String {
-        totalSteps == 0 ? "-" : "\(totalSteps)歩"
+        guard totalSteps > 0 else {
+            return "-"
+        }
+        return "\(totalSteps)歩"
     }
 }
 
