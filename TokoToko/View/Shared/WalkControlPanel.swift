@@ -329,7 +329,6 @@ struct WalkInfoDisplay: View {
           stepCountLabel
             .font(.caption)
             .foregroundColor(.secondary)
-          stepSourceIndicator
         }
 
         stepCountDisplay
@@ -349,24 +348,6 @@ struct WalkInfoDisplay: View {
       return "歩数"
     case .unavailable:
       return "歩数"
-    }
-  }
-
-  // 歩数ソースインジケーター
-  private var stepSourceIndicator: some View {
-    Group {
-      switch stepCountSource {
-      case .coremotion:
-        Image(systemName: "sensor.tag.radiowaves.forward.fill")
-          .font(.caption2)
-          .foregroundColor(.green)
-          .help("センサー実測値")
-      case .unavailable:
-        Image(systemName: "exclamationmark.triangle.fill")
-          .font(.caption2)
-          .foregroundColor(.red)
-          .help("歩数計測不可")
-      }
     }
   }
 
