@@ -401,8 +401,7 @@ struct HomeView: View {
   /// Issue #99対応: フラッシュ防止のための専用ローディング画面（SplashView表示）
   @ViewBuilder
   private var loadingPermissionCheckView: some View {
-    SplashView()
-      .accessibilityIdentifier("LocationPermissionCheckingView")
+    LoadingView(message: "マップを読み込み中...")
   }
 
   /// 未知の位置情報許可状態表示
