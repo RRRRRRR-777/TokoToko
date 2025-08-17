@@ -398,45 +398,11 @@ struct HomeView: View {
 
   /// 位置情報許可状態確認中のローディング表示
   ///
-  /// Issue #99対応: フラッシュ防止のための専用ローディング画面
+  /// Issue #99対応: フラッシュ防止のための専用ローディング画面（SplashView表示）
   @ViewBuilder
   private var loadingPermissionCheckView: some View {
-    GeometryReader { geometry in
-      ZStack {
-        // 洗練されたグラデーション背景
-        LinearGradient(
-          gradient: Gradient(colors: [
-            Color(.systemGray6),
-            Color(.systemGray5).opacity(0.8)
-          ]),
-          startPoint: .topLeading,
-          endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
-
-        // パフォーマンス最適化されたローディング表示
-        VStack(spacing: 12) {
-          ProgressView()
-            .scaleEffect(1.2)
-            .progressViewStyle(optimizedProgressViewStyle)
-
-          Text("位置情報確認中...")
-            .font(.system(.subheadline, design: .rounded))
-            .fontWeight(.medium)
-            .foregroundColor(.primary.opacity(0.8))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-          RoundedRectangle(cornerRadius: 16)
-            .fill(Color(.systemBackground).opacity(0.9))
-            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
-        )
-        .padding(.horizontal, 60)
-        .padding(.vertical, geometry.size.height * 0.4)
-      }
-    }
-    .accessibilityIdentifier("LocationPermissionCheckingView")
-    .accessibilityLabel("位置情報の許可状態を確認中です")
+    SplashView()
+      .accessibilityIdentifier("LocationPermissionCheckingView")
   }
 
   /// 未知の位置情報許可状態表示
@@ -616,7 +582,6 @@ struct HomeView: View {
   private func checkLocationPermissionStatus() {
     // 状態管理を強化
     let initialState = isLocationPermissionCheckCompleted
-    
     // アニメーション付きの状態変更（最適化されたタイミング）
     withAnimation(.easeOut(duration: 0.12)) {
       isLocationPermissionCheckCompleted = false
@@ -624,7 +589,6 @@ struct HomeView: View {
 
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
-    
     // フラッシュ防止のための精密なタイミング制御
     DispatchQueue.main.async {
       // 最小遅延で確実なUIレンダリング完了を保証
