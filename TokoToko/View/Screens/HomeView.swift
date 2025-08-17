@@ -251,29 +251,38 @@ struct HomeView: View {
         }
       } else {
         // Issue #99対応: 位置情報許可状態チェック完了後に適切な画面表示
+        // Phase 2-2改善: 条件分岐順序最適化とローディング状態改善
         if isLocationPermissionCheckCompleted {
-          // 位置情報の許可状態に応じて表示を切り替え
+          // 位置情報の許可状態に応じて表示を切り替え（使用頻度順に最適化）
           switch locationManager.authorizationStatus {
-          case .notDetermined:
-            requestPermissionView
-
-          case .restricted, .denied:
-            permissionDeniedView
-
           case .authorizedWhenInUse, .authorizedAlways:
+            // 最も一般的なケース: 位置情報許可済み
             MapViewComponent(
               region: $region,
               annotations: createMapAnnotations(),
               polylineCoordinates: createPolylineCoordinates()
             )
+            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+
+          case .notDetermined:
+            // 初回起動時: 許可要求画面
+            requestPermissionView
+              .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+
+          case .restricted, .denied:
+            // 許可拒否済み: 設定案内画面
+            permissionDeniedView
+              .transition(.opacity.animation(.easeInOut(duration: 0.2)))
 
           @unknown default:
-            Text("位置情報の許可状態が不明です")
-              .foregroundColor(.secondary)
+            // 未知の状態: エラー表示（将来のiOS対応）
+            unknownPermissionStateView
+              .transition(.opacity.animation(.easeInOut(duration: 0.2)))
           }
         } else {
-          // 許可状態確認中は空のビューを表示（フラッシュ防止）
-          EmptyView()
+          // 許可状態確認中: 改善されたローディング表示（フラッシュ防止）
+          loadingPermissionCheckView
+            .transition(.opacity.animation(.easeInOut(duration: 0.1)))
         }
       }
 
@@ -378,6 +387,75 @@ struct HomeView: View {
     .padding()
   }
 
+  // Phase 2-2追加: 改善されたローディング表示
+  private var loadingPermissionCheckView: some View {
+    VStack(spacing: 16) {
+      // フラッシュ防止のため、最小限の表示で急速チェックを示唆
+      Rectangle()
+        .fill(Color(.systemGray6))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(
+          VStack(spacing: 8) {
+            ProgressView()
+              .scaleEffect(0.8)
+              .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+            
+            Text("位置情報確認中...")
+              .font(.caption2)
+              .foregroundColor(.secondary)
+          }
+          .opacity(0.6)
+        )
+    }
+    .accessibilityIdentifier("LocationPermissionCheckingView")
+  }
+
+  // Phase 2-2追加: 未知の許可状態エラー表示
+  private var unknownPermissionStateView: some View {
+    VStack(spacing: 16) {
+      Image(systemName: "questionmark.circle")
+        .font(.system(size: 50))
+        .foregroundColor(.orange)
+
+      VStack(spacing: 8) {
+        Text("位置情報の許可状態が不明です")
+          .font(.headline)
+          .multilineTextAlignment(.center)
+
+        Text("アプリを再起動するか、設定で位置情報を確認してください。")
+          .font(.caption)
+          .multilineTextAlignment(.center)
+          .foregroundColor(.secondary)
+      }
+
+      HStack(spacing: 12) {
+        Button("設定を開く") {
+          if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+          }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.orange)
+        .foregroundColor(.white)
+        .cornerRadius(8)
+
+        Button("再試行") {
+          // 位置情報状態を再チェック
+          isLocationPermissionCheckCompleted = false
+          checkLocationPermissionStatus()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.blue)
+        .foregroundColor(.white)
+        .cornerRadius(8)
+      }
+    }
+    .padding()
+    .accessibilityIdentifier("UnknownPermissionStateView")
+  }
+
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
     currentLocation = locationManager.currentLocation
@@ -480,18 +558,28 @@ struct HomeView: View {
   ///
   /// Issue #99対応: 位置情報許可画面のフラッシュ現象を防止するため、
   /// 画面表示前に許可状態を確認し、適切な表示を行います。
-  /// フラッシュ防止のため、処理時間は50ms以内を目標とします。
+  /// Phase 2-2改善: より確実なフラッシュ防止とエラーハンドリングを実装。
   private func checkLocationPermissionStatus() {
+    // Phase 2-2改善: チェック開始時に明示的に未完了状態を設定
+    isLocationPermissionCheckCompleted = false
+    
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
-
-    // メイン スレッドで状態更新（UIの即座更新）
+    
+    // Phase 2-2改善: 最小遅延でフラッシュを防止しつつ、UIの反応性を保つ
     DispatchQueue.main.async {
-      self.isLocationPermissionCheckCompleted = true
-
-      // 許可済みの場合は位置情報マネージャーをセットアップ
-      if status == .authorizedWhenInUse || status == .authorizedAlways {
-        self.setupLocationManager()
+      // 1msの微小遅延でUIレンダリングを確実に完了させる
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
+        self.isLocationPermissionCheckCompleted = true
+        
+        // 許可済みの場合は位置情報マネージャーをセットアップ
+        if status == .authorizedWhenInUse || status == .authorizedAlways {
+          self.setupLocationManager()
+        }
+        
+        #if DEBUG
+        print("Phase 2-2: 位置情報許可状態チェック完了 - 状態: \(status)")
+        #endif
       }
     }
   }

@@ -264,4 +264,14 @@ extension HomeView {
   func testCheckLocationPermissionStatus() {
     checkLocationPermissionStatus()
   }
+  
+  /// テスト用：Phase 2-2改善版ローディングビューのアクセス
+  ///
+  /// Phase 2-2で追加された改善版ローディング表示のテスト用アクセサです。
+  /// フラッシュ防止機能の改善を検証するために使用されます。
+  func testLoadingPermissionCheckView() -> Bool {
+    // ローディングビューの存在をテストするためのメソッド
+    // 実装の詳細は非公開のため、基本的な動作確認のみ
+    return !isLocationPermissionCheckCompleted
+  }
 }
