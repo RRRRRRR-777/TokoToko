@@ -82,7 +82,7 @@ struct HomeView: View {
   /// false: 許可状態チェック中、画面表示待機
   @State private var isLocationPermissionCheckCompleted = false
 
-  /// Phase 3-3追加: パフォーマンス最適化用のプロパティ
+  /// パフォーマンス最適化用のプロパティ
   ///
   /// 計算コストの高い要素をキャッシュし、不要な再描画を防止します。
   private var optimizedProgressViewStyle: CircularProgressViewStyle {
@@ -189,9 +189,8 @@ struct HomeView: View {
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
       // Issue #99対応: 位置情報許可状態を事前にチェック（フラッシュ防止）
-      // Phase 3-2: 統合テスト対応のための初期化処理
       #if DEBUG
-      print("Phase 3-2: HomeView onAppear - 位置情報許可状態チェック開始")
+      print("HomeView onAppear - 位置情報許可状態チェック開始")
       #endif
       checkLocationPermissionStatus()
 
@@ -262,7 +261,6 @@ struct HomeView: View {
         }
       } else {
         // Issue #99対応: 位置情報許可状態チェック完了後に適切な画面表示
-        // Phase 2-2改善: 条件分岐順序最適化とローディング状態改善
         if isLocationPermissionCheckCompleted {
           // 位置情報の許可状態に応じて表示を切り替え（使用頻度順に最適化）
           switch locationManager.authorizationStatus {
@@ -398,12 +396,14 @@ struct HomeView: View {
     .padding()
   }
 
-  // Phase 3-3最適化: メモリ効率とパフォーマンスの最適化
+  /// 位置情報許可状態確認中のローディング表示
+  ///
+  /// Issue #99対応: フラッシュ防止のための専用ローディング画面
   @ViewBuilder
   private var loadingPermissionCheckView: some View {
     GeometryReader { geometry in
       ZStack {
-        // Phase 2-3: より洗練されたグラデーション背景
+        // 洗練されたグラデーション背景
         LinearGradient(
           gradient: Gradient(colors: [
             Color(.systemGray6),
@@ -414,7 +414,7 @@ struct HomeView: View {
         )
         .ignoresSafeArea()
 
-        // Phase 3-3: パフォーマンス最適化されたローディング表示
+        // パフォーマンス最適化されたローディング表示
         VStack(spacing: 12) {
           ProgressView()
             .scaleEffect(1.2)
@@ -439,11 +439,13 @@ struct HomeView: View {
     .accessibilityLabel("位置情報の許可状態を確認中です")
   }
 
-  // Phase 3-3最適化: メモリ効率とパフォーマンスの最適化
+  /// 未知の位置情報許可状態表示
+  ///
+  /// 将来のiOSバージョンでの新しい許可状態に対応
   @ViewBuilder
   private var unknownPermissionStateView: some View {
     VStack(spacing: 24) {
-      // Phase 2-3: アニメーション付きエラーアイコン
+      // アニメーション付きエラーアイコン
       Image(systemName: "questionmark.circle.fill")
         .font(.system(size: 60, weight: .medium))
         .foregroundStyle(
@@ -473,7 +475,7 @@ struct HomeView: View {
           .padding(.horizontal, 8)
       }
 
-      // Phase 2-3: 改善されたボタンデザインとレイアウト
+      // 改善されたボタンデザインとレイアウト
       VStack(spacing: 12) {
         createActionButton(
           title: "設定を開く",
@@ -611,9 +613,8 @@ struct HomeView: View {
   ///
   /// Issue #99対応: 位置情報許可画面のフラッシュ現象を防止するため、
   /// 画面表示前に許可状態を確認し、適切な表示を行います。
-  /// Phase 3-2最終改善: フラッシュ現象の完全排除と統合テスト対応。
   private func checkLocationPermissionStatus() {
-    // Phase 3-2: 統合テスト対応のため、状態管理を強化
+    // 状態管理を強化
     let initialState = isLocationPermissionCheckCompleted
     
     // アニメーション付きの状態変更（最適化されたタイミング）
@@ -624,11 +625,11 @@ struct HomeView: View {
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
     
-    // Phase 3-2: フラッシュ防止のための精密なタイミング制御
+    // フラッシュ防止のための精密なタイミング制御
     DispatchQueue.main.async {
       // 最小遅延で確実なUIレンダリング完了を保証
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
-        // Phase 3-2: スムーズな状態完了アニメーション
+        // スムーズな状態完了アニメーション
         withAnimation(.easeInOut(duration: 0.2)) {
           self.isLocationPermissionCheckCompleted = true
         }
@@ -638,9 +639,9 @@ struct HomeView: View {
           self.setupLocationManager()
         }
         
-        // Phase 3-2: 統合テスト用の状態ログ
+        // 統合テスト用の状態ログ
         #if DEBUG
-        print("Phase 3-2: 位置情報許可状態チェック完了")
+        print("位置情報許可状態チェック完了")
         print("  - 初期状態: \(initialState)")
         print("  - 最終状態: \(self.isLocationPermissionCheckCompleted)")
         print("  - 許可状態: \(status)")
@@ -652,7 +653,7 @@ struct HomeView: View {
 
   /// 位置情報が許可されているかを判定するヘルパーメソッド
   ///
-  /// Phase 3-2改善: 統合テスト対応とロバスト性向上
+  /// 統合テスト対応とロバスト性向上
   private func isLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
     switch status {
     case .authorizedWhenInUse, .authorizedAlways:
@@ -662,7 +663,7 @@ struct HomeView: View {
     @unknown default:
       // 将来のiOSバージョンでの新しい状態を安全に処理
       #if DEBUG
-      print("Phase 3-2: 未知の位置情報許可状態: \(status)")
+      print("未知の位置情報許可状態: \(status)")
       #endif
       return false
     }
@@ -670,7 +671,7 @@ struct HomeView: View {
 
   /// アクションボタンを生成するヘルパーメソッド
   ///
-  /// Phase 3-3最適化: メモリ効率とパフォーマンスの最適化
+  /// メモリ効率とパフォーマンスの最適化
   @ViewBuilder
   private func createActionButton(
     title: String,
@@ -681,7 +682,7 @@ struct HomeView: View {
     Button {
       action()
     } label: {
-      // Phase 3-3: パフォーマンス最適化されたHStack
+      // パフォーマンス最適化されたHStack
       HStack(spacing: 8) {
         Image(systemName: icon)
           .font(.system(size: 16, weight: .medium))
@@ -705,7 +706,7 @@ struct HomeView: View {
   
   /// ボタン背景の最適化されたグラデーション生成
   ///
-  /// Phase 3-3追加: グラデーションキャッシュとメモリ最適化
+  /// グラデーションキャッシュとメモリ最適化
   @ViewBuilder
   private func optimizedButtonBackground(_ baseColor: Color) -> some View {
     LinearGradient(

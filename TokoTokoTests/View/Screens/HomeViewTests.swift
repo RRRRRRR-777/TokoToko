@@ -30,12 +30,11 @@ final class HomeViewTests: XCTestCase {
     try super.tearDownWithError()
   }
 
-  // MARK: - TDD Red Phase: 失敗するテストケース
+  // MARK: - 位置情報許可状態チェックテスト
 
   /// 位置情報許可状態チェック完了フラグの初期値テスト
   ///
   /// **期待動作**: 初期化時はisLocationPermissionCheckCompletedがfalse
-  /// **実装状態**: Green Phaseで実装済み
   func testLocationPermissionCheckCompletedInitialValue() throws {
     // Given: HomeViewのバインディング作成
     let showOnboarding = Binding.constant(false)
@@ -52,7 +51,6 @@ final class HomeViewTests: XCTestCase {
   /// 位置情報許可状態チェック機能の存在テスト
   ///
   /// **期待動作**: checkLocationPermissionStatus()メソッドが実装されている
-  /// **実装状態**: Green Phaseで実装済み
   func testCheckLocationPermissionStatusMethodExists() throws {
     // Given: HomeViewのバインディング作成
     let showOnboarding = Binding.constant(false)
@@ -70,7 +68,6 @@ final class HomeViewTests: XCTestCase {
   /// 位置情報許可済み時の画面フラッシュ防止テスト
   ///
   /// **期待動作**: 位置情報が許可済みの場合、許可画面が一瞬も表示されない
-  /// **実装状態**: Green Phaseで実装済み、フラッシュ防止機能追加
   func testLocationPermissionFlashPrevention() throws {
     // Given: HomeViewのバインディング作成
     let showOnboarding = Binding.constant(false)
@@ -96,7 +93,6 @@ final class HomeViewTests: XCTestCase {
   /// 位置情報許可状態チェックの応答時間テスト
   ///
   /// **期待動作**: 許可状態チェックが50ms以内に完了する
-  /// **実装状態**: Green Phaseで実装済み
   func testLocationPermissionCheckResponseTime() throws {
     // Given: HomeViewのバインディング作成
     let showOnboarding = Binding.constant(false)
@@ -116,12 +112,11 @@ final class HomeViewTests: XCTestCase {
                       "位置情報許可状態チェックは50ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
   }
 
-  // MARK: - TDD Phase 3 Red: アプリ起動フロー総合テスト
+  // MARK: - アプリ起動フロー総合テスト
 
   /// アプリ起動から位置情報許可まで全体フローテスト
   ///
   /// **期待動作**: アプリ起動→HomeView表示→位置情報許可状態チェック→適切な画面表示
-  /// **実装状態**: 未実装 - 起動フロー全体の統合テストが必要
   func testCompleteAppLaunchFlow() throws {
     // Given: HomeViewの完全な初期化
     let showOnboarding = Binding.constant(false)
@@ -153,7 +148,6 @@ final class HomeViewTests: XCTestCase {
   /// アプリ起動時の複数権限状態テスト
   ///
   /// **期待動作**: 各種許可状態（未決定、許可、拒否）での適切な画面表示
-  /// **実装状態**: 未実装 - 権限状態別の表示確認が必要
   func testLaunchFlowWithDifferentPermissionStates() throws {
     // Given: HomeViewの初期化
     let showOnboarding = Binding.constant(false)
@@ -190,7 +184,6 @@ final class HomeViewTests: XCTestCase {
   /// 起動時のパフォーマンス検証テスト
   ///
   /// **期待動作**: アプリ起動から位置情報確認完了まで100ms以内
-  /// **実装状態**: 未実装 - パフォーマンス要件の確認が必要
   func testLaunchFlowPerformance() throws {
     // Given: HomeViewとパフォーマンス測定の準備
     let showOnboarding = Binding.constant(false)
@@ -221,7 +214,6 @@ final class HomeViewTests: XCTestCase {
   /// フラッシュ現象の完全排除確認テスト
   ///
   /// **期待動作**: 位置情報許可済み時に一切の中間画面表示がない
-  /// **実装状態**: 未実装 - フラッシュ現象の最終確認が必要
   func testCompleteFlashEliminationVerification() throws {
     // Given: HomeViewとフラッシュ検出システム
     let showOnboarding = Binding.constant(false)
@@ -268,12 +260,11 @@ final class HomeViewTests: XCTestCase {
                    "\(Int(monitoringDuration * 1000))ms監視期間中にフラッシュ現象は発生してはいけません")
   }
 
-  // MARK: - TDD Phase 2 Red: 許可画面フラッシュ防止UIテスト
+  // MARK: - 許可画面フラッシュ防止UIテスト
 
   /// フラッシュ防止のタイミング検証テスト
   ///
   /// **期待動作**: 位置情報許可状態チェック中は空のビューが表示され、許可画面は表示されない
-  /// **実装状態**: 未実装 - このテストは失敗する予定
   func testFlashPreventionDuringPermissionCheck() throws {
     // Given: HomeViewのバインディング作成
     let showOnboarding = Binding.constant(false)
@@ -298,7 +289,6 @@ final class HomeViewTests: XCTestCase {
   /// 許可画面表示条件の詳細テスト
   ///
   /// **期待動作**: 許可状態がnotDeterminedの場合のみ、チェック完了後に許可画面を表示
-  /// **実装状態**: 未実装 - より詳細な条件分岐テストが必要
   func testPermissionScreenDisplayConditions() throws {
     // Given: HomeViewのバインディング作成
     let showOnboarding = Binding.constant(false)
@@ -323,7 +313,6 @@ final class HomeViewTests: XCTestCase {
   /// 許可画面フラッシュの時間計測テスト
   ///
   /// **期待動作**: 許可画面が表示される時間が0ms（つまり、表示されない）
-  /// **実装状態**: 未実装 - フラッシュ時間の詳細計測が必要
   func testPermissionScreenFlashDuration() throws {
     // Given: HomeViewのバインディング作成とフラッシュ検出の準備
     let showOnboarding = Binding.constant(false)
@@ -371,7 +360,6 @@ final class HomeViewTests: XCTestCase {
   /// 画面遷移の滑らかさテスト
   ///
   /// **期待動作**: 許可状態確認から適切な画面表示まで、中間状態が見えない
-  /// **実装状態**: 未実装 - 画面遷移の滑らかさ検証が必要
   func testSmoothTransitionWithoutFlash() throws {
     // Given: HomeViewの初期化
     let showOnboarding = Binding.constant(false)
@@ -417,9 +405,9 @@ extension HomeView {
     checkLocationPermissionStatus()
   }
   
-  /// テスト用：Phase 2-3改善版ローディング・エラービューのアクセス
+  /// テスト用：改善版ローディング・エラービューのアクセス
   ///
-  /// Phase 2-3で改善されたローディング表示とエラー表示のテスト用アクセサです。
+  /// 改善されたローディング表示とエラー表示のテスト用アクセサです。
   /// アニメーション統一とビジュアル改善の検証に使用されます。
   func testLoadingPermissionCheckView() -> Bool {
     // ローディング表示の状態確認
@@ -428,16 +416,16 @@ extension HomeView {
   
   /// テスト用：位置情報許可状態判定ヘルパーのアクセス
   ///
-  /// Phase 2-3で追加されたヘルパーメソッドのテスト用アクセサです。
+  /// 追加されたヘルパーメソッドのテスト用アクセサです。
   /// 可読性向上のためのリファクタリング効果を検証します。
   func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
     // テスト用に許可状態判定ロジックを公開
     return status == .authorizedWhenInUse || status == .authorizedAlways
   }
   
-  /// テスト用：Phase 3統合テスト用の包括的状態アクセス
+  /// テスト用：統合テスト用の包括的状態アクセス
   ///
-  /// Phase 3で追加された統合テスト用の状態確認メソッドです。
+  /// 統合テスト用の状態確認メソッドです。
   /// アプリ起動フロー全体の検証に使用されます。
   func testComprehensiveState() -> (isCheckCompleted: Bool, canAccessLocation: Bool) {
     let isCompleted = isLocationPermissionCheckCompleted
