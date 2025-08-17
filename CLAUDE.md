@@ -301,8 +301,6 @@ swift-format lint --configuration .swift-format [file]
 ## デザインリソース
 
 ### Figmaデザインファイル
-**プロジェクト公式デザインファイル**: https://www.figma.com/design/Fckz8sGprt1MafTTbAkxPa/%E3%81%A6%E3%81%8F%E3%81%A8%E3%81%93?node-id=0-1&t=rOXa7C6hsC4rNrlL-1
-
 #### デザインファイル使用方法
 - **アクセス**: 上記URLから直接アクセス可能
 - **用途**: UIコンポーネント、レイアウト、カラーパレット、アイコンの参照

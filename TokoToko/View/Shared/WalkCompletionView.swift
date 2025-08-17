@@ -171,7 +171,7 @@ struct WalkCompletionView: View {
                     Image(systemName: "figure.walk")
                         .font(.title2)
                         .foregroundColor(.orange)
-                    Text("\(walk.totalSteps)")
+                    Text(walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)")
                         .font(.title3)
                         .fontWeight(.bold)
                     Text("歩数")

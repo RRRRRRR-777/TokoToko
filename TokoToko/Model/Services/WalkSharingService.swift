@@ -198,7 +198,7 @@ class WalkSharingService {
 
         📍 距離: \(components.distance)
         ⏱️ 時間: \(components.duration)
-        👣 歩数: \(components.steps)歩
+        👣 歩数: \(components.steps == 0 ? "-" : "\(components.steps)歩")
 
         #\(components.appName) #散歩 #ウォーキング #健康
         """

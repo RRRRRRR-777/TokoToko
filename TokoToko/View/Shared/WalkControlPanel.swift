@@ -278,42 +278,77 @@ struct WalkInfoDisplay: View {
   /// 適切なインジケーターとラベル表示に使用されます。
   let stepCountSource: StepCountSource
 
+  /// 歩数表示の有無に応じた動的スペーシング
+  ///
+  /// StepCountSourceの状態に基づいて最適なレイアウトスペーシングを提供します。
+  /// 歩数情報が表示される場合とされない場合で、視覚的バランスを調整します。
+  ///
+  /// - Returns:
+  ///   - 歩数表示あり（3要素レイアウト）: 40pt - 適度な間隔
+  ///   - 歩数表示なし（2要素レイアウト）: 80pt - 広い間隔でバランス調整
+  ///
+  /// 注意: 新しいStepCountSourceタイプが追加された場合、適切なスペーシング値の検討が必要です。
+  private var dynamicSpacing: CGFloat {
+    switch stepCountSource {
+    case .coremotion:
+      return 40  // 3要素（時間・歩数・距離）表示時の適度な間隔
+    case .unavailable:
+      return 80  // 2要素（時間・距離）表示時のバランス調整
+    }
+  }
+
   var body: some View {
     HStack {
-      VStack(alignment: .leading, spacing: 4) {
-        Text("経過時間")
-          .font(.caption)
-          .foregroundColor(.secondary)
-        Text(elapsedTime)
-          .font(.title2)
-          .fontWeight(.bold)
-          .foregroundColor(.primary)
+      Spacer()
+
+      HStack(spacing: dynamicSpacing) {
+        VStack(alignment: .center, spacing: 4) {
+          Text("経過時間")
+            .font(.caption)
+            .foregroundColor(.secondary)
+          Text(elapsedTime)
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundColor(.primary)
+        }
+
+        stepCountSection
+
+        VStack(alignment: .center, spacing: 4) {
+          Text("距離")
+            .font(.caption)
+            .foregroundColor(.secondary)
+          Text(distance)
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundColor(.primary)
+        }
       }
 
       Spacer()
+    }
+  }
 
+  // 歩数セクション：歩数データが利用可能な場合のみ表示
+  ///
+  /// StepCountSourceの状態に基づいて歩数情報を表示します。
+  /// 将来的な新しいソースタイプの追加に対応できるよう、明示的な条件分岐を使用しています。
+  @ViewBuilder private var stepCountSection: some View {
+    switch stepCountSource {
+    case .coremotion:
+      // センサーによる歩数計測が可能な場合のみ表示
       VStack(alignment: .center, spacing: 4) {
         HStack(spacing: 4) {
           stepCountLabel
             .font(.caption)
             .foregroundColor(.secondary)
-          stepSourceIndicator
         }
 
         stepCountDisplay
       }
-
-      Spacer()
-
-      VStack(alignment: .trailing, spacing: 4) {
-        Text("距離")
-          .font(.caption)
-          .foregroundColor(.secondary)
-        Text(distance)
-          .font(.title2)
-          .fontWeight(.bold)
-          .foregroundColor(.primary)
-      }
+    case .unavailable:
+      // 歩数計測不可時は何も表示しない（UIの簡素化）
+      EmptyView()
     }
   }
 
@@ -329,24 +364,6 @@ struct WalkInfoDisplay: View {
       return "歩数"
     case .unavailable:
       return "歩数"
-    }
-  }
-
-  // 歩数ソースインジケーター
-  private var stepSourceIndicator: some View {
-    Group {
-      switch stepCountSource {
-      case .coremotion:
-        Image(systemName: "sensor.tag.radiowaves.forward.fill")
-          .font(.caption2)
-          .foregroundColor(.green)
-          .help("センサー実測値")
-      case .unavailable:
-        Image(systemName: "exclamationmark.triangle.fill")
-          .font(.caption2)
-          .foregroundColor(.red)
-          .help("歩数計測不可")
-      }
     }
   }
 
@@ -380,17 +397,6 @@ struct WalkInfoDisplay: View {
       totalSteps: 1234,
       distance: "1.2 km",
       stepCountSource: .coremotion(steps: 1234)
-    )
-    .padding()
-    .background(Color(.systemGray6))
-    .cornerRadius(12)
-    .padding()
-
-    WalkInfoDisplay(
-      elapsedTime: "08:15",
-      totalSteps: 650,
-      distance: "0.5 km",
-      stepCountSource: .coremotion(steps: 650)
     )
     .padding()
     .background(Color(.systemGray6))

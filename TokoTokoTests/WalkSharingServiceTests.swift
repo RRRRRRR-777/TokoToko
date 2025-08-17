@@ -83,7 +83,7 @@ final class WalkSharingServiceTests: XCTestCase {
         
         // Then
         XCTAssertTrue(shareText.contains("ゼロ距離散歩"), "タイトルが含まれていない")
-        XCTAssertTrue(shareText.contains("0歩"), "歩数が含まれていない")
+        XCTAssertTrue(shareText.contains("👣 歩数: -"), "歩数が「-」表示されていない")
         XCTAssertFalse(shareText.isEmpty, "共有テキストが空文字列になっている")
     }
     
