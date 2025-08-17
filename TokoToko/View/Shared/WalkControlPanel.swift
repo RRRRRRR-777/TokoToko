@@ -278,33 +278,46 @@ struct WalkInfoDisplay: View {
   /// 適切なインジケーターとラベル表示に使用されます。
   let stepCountSource: StepCountSource
 
+  /// 歩数表示の有無に応じた動的スペーシング
+  ///
+  /// 歩数が表示される場合は40pt、表示されない場合は80ptのスペーシングを返します。
+  private var dynamicSpacing: CGFloat {
+    if case .coremotion = stepCountSource {
+      return 40
+    } else {
+      return 80
+    }
+  }
+
   var body: some View {
     HStack {
-      VStack(alignment: .leading, spacing: 4) {
-        Text("経過時間")
-          .font(.caption)
-          .foregroundColor(.secondary)
-        Text(elapsedTime)
-          .font(.title2)
-          .fontWeight(.bold)
-          .foregroundColor(.primary)
+      Spacer()
+
+      HStack(spacing: dynamicSpacing) {
+        VStack(alignment: .center, spacing: 4) {
+          Text("経過時間")
+            .font(.caption)
+            .foregroundColor(.secondary)
+          Text(elapsedTime)
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundColor(.primary)
+        }
+
+        stepCountSection
+
+        VStack(alignment: .center, spacing: 4) {
+          Text("距離")
+            .font(.caption)
+            .foregroundColor(.secondary)
+          Text(distance)
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundColor(.primary)
+        }
       }
 
       Spacer()
-
-      stepCountSection
-
-      Spacer()
-
-      VStack(alignment: .trailing, spacing: 4) {
-        Text("距離")
-          .font(.caption)
-          .foregroundColor(.secondary)
-        Text(distance)
-          .font(.title2)
-          .fontWeight(.bold)
-          .foregroundColor(.primary)
-      }
     }
   }
 
@@ -387,17 +400,6 @@ struct WalkInfoDisplay: View {
       totalSteps: 1234,
       distance: "1.2 km",
       stepCountSource: .coremotion(steps: 1234)
-    )
-    .padding()
-    .background(Color(.systemGray6))
-    .cornerRadius(12)
-    .padding()
-
-    WalkInfoDisplay(
-      elapsedTime: "08:15",
-      totalSteps: 650,
-      distance: "0.5 km",
-      stepCountSource: .coremotion(steps: 650)
     )
     .padding()
     .background(Color(.systemGray6))
