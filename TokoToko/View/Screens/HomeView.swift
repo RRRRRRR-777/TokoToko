@@ -75,6 +75,13 @@ struct HomeView: View {
   /// 最新のGPS位置情報を保持し、マップの中心位置調整や散歩開始地点の記録に使用されます。
   @State private var currentLocation: CLLocation?
 
+  /// 位置情報許可状態チェック完了フラグ
+  ///
+  /// Issue #99対応: 位置情報許可状態の事前チェック完了を示すフラグです。
+  /// true: 許可状態チェック完了、適切な画面表示可能
+  /// false: 許可状態チェック中、画面表示待機
+  @State private var isLocationPermissionCheckCompleted = false
+
   /// HomeViewの初期化メソッド
   ///
   /// オンボーディング表示状態のバインディングを受け取り、
@@ -174,7 +181,8 @@ struct HomeView: View {
     .navigationBarHidden(true)
     .ignoresSafeArea(.all, edges: .top)
     .onAppear {
-      setupLocationManager()
+      // Issue #99対応: 位置情報許可状態を事前にチェック（フラッシュ防止）
+      checkLocationPermissionStatus()
       
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
@@ -242,24 +250,30 @@ struct HomeView: View {
           #endif
         }
       } else {
-        // 位置情報の許可状態に応じて表示を切り替え
-        switch locationManager.authorizationStatus {
-        case .notDetermined:
-          requestPermissionView
+        // Issue #99対応: 位置情報許可状態チェック完了後に適切な画面表示
+        if isLocationPermissionCheckCompleted {
+          // 位置情報の許可状態に応じて表示を切り替え
+          switch locationManager.authorizationStatus {
+          case .notDetermined:
+            requestPermissionView
 
-        case .restricted, .denied:
-          permissionDeniedView
+          case .restricted, .denied:
+            permissionDeniedView
 
-        case .authorizedWhenInUse, .authorizedAlways:
-          MapViewComponent(
-            region: $region,
-            annotations: createMapAnnotations(),
-            polylineCoordinates: createPolylineCoordinates()
-          )
+          case .authorizedWhenInUse, .authorizedAlways:
+            MapViewComponent(
+              region: $region,
+              annotations: createMapAnnotations(),
+              polylineCoordinates: createPolylineCoordinates()
+            )
 
-        @unknown default:
-          Text("位置情報の許可状態が不明です")
-            .foregroundColor(.secondary)
+          @unknown default:
+            Text("位置情報の許可状態が不明です")
+              .foregroundColor(.secondary)
+          }
+        } else {
+          // 許可状態確認中は空のビューを表示（フラッシュ防止）
+          EmptyView()
         }
       }
 
@@ -460,6 +474,26 @@ struct HomeView: View {
     }
 
     return currentWalk.locations.map { $0.coordinate }
+  }
+
+  /// 位置情報許可状態を事前にチェックする
+  ///
+  /// Issue #99対応: 位置情報許可画面のフラッシュ現象を防止するため、
+  /// 画面表示前に許可状態を確認し、適切な表示を行います。
+  /// フラッシュ防止のため、処理時間は50ms以内を目標とします。
+  private func checkLocationPermissionStatus() {
+    // 許可状態を即座に確認（同期的処理）
+    let status = locationManager.checkAuthorizationStatus()
+    
+    // メイン スレッドで状態更新（UIの即座更新）
+    DispatchQueue.main.async {
+      self.isLocationPermissionCheckCompleted = true
+      
+      // 許可済みの場合は位置情報マネージャーをセットアップ
+      if status == .authorizedWhenInUse || status == .authorizedAlways {
+        self.setupLocationManager()
+      }
+    }
   }
 }
 
