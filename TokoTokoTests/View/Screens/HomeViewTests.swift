@@ -116,6 +116,158 @@ final class HomeViewTests: XCTestCase {
                       "位置情報許可状態チェックは50ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
   }
 
+  // MARK: - TDD Phase 3 Red: アプリ起動フロー総合テスト
+
+  /// アプリ起動から位置情報許可まで全体フローテスト
+  ///
+  /// **期待動作**: アプリ起動→HomeView表示→位置情報許可状態チェック→適切な画面表示
+  /// **実装状態**: 未実装 - 起動フロー全体の統合テストが必要
+  func testCompleteAppLaunchFlow() throws {
+    // Given: HomeViewの完全な初期化
+    let showOnboarding = Binding.constant(false)
+    let homeView = HomeView(showOnboarding: showOnboarding)
+      .environmentObject(mockOnboardingManager)
+
+    // When: アプリ起動フローのシミュレーション
+    // Then: 各段階での適切な状態確認
+    
+    // Step 1: 初期化直後の状態
+    XCTAssertFalse(homeView.testIsLocationPermissionCheckCompleted,
+                   "起動直後は位置情報許可状態チェックが未完了である必要があります")
+    
+    // Step 2: 位置情報許可状態チェック実行
+    homeView.testCheckLocationPermissionStatus()
+    
+    // Step 3: 非同期処理完了待ちと最終状態確認
+    let expectation = XCTestExpectation(description: "アプリ起動フロー完了")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+      // 最終的に許可状態チェックが完了していることを確認
+      XCTAssertTrue(homeView.testIsLocationPermissionCheckCompleted,
+                    "起動フロー完了後は位置情報許可状態チェックが完了している必要があります")
+      expectation.fulfill()
+    }
+    
+    wait(for: [expectation], timeout: 1.0)
+  }
+
+  /// アプリ起動時の複数権限状態テスト
+  ///
+  /// **期待動作**: 各種許可状態（未決定、許可、拒否）での適切な画面表示
+  /// **実装状態**: 未実装 - 権限状態別の表示確認が必要
+  func testLaunchFlowWithDifferentPermissionStates() throws {
+    // Given: HomeViewの初期化
+    let showOnboarding = Binding.constant(false)
+    let homeView = HomeView(showOnboarding: showOnboarding)
+      .environmentObject(mockOnboardingManager)
+
+    // When: 各権限状態でのフロー確認
+    // Then: 権限状態に応じた適切な処理
+    
+    // テスト用権限状態リスト
+    let permissionStates: [CLAuthorizationStatus] = [
+      .notDetermined,
+      .authorizedWhenInUse,
+      .authorizedAlways,
+      .denied,
+      .restricted
+    ]
+    
+    for status in permissionStates {
+      // 各権限状態での判定テスト
+      let isAuthorized = homeView.testIsLocationAuthorized(status)
+      
+      switch status {
+      case .authorizedWhenInUse, .authorizedAlways:
+        XCTAssertTrue(isAuthorized, "\(status)は許可済み状態として判定される必要があります")
+      case .notDetermined, .denied, .restricted:
+        XCTAssertFalse(isAuthorized, "\(status)は未許可状態として判定される必要があります")
+      @unknown default:
+        XCTAssertFalse(isAuthorized, "未知の状態は未許可として判定される必要があります")
+      }
+    }
+  }
+
+  /// 起動時のパフォーマンス検証テスト
+  ///
+  /// **期待動作**: アプリ起動から位置情報確認完了まで100ms以内
+  /// **実装状態**: 未実装 - パフォーマンス要件の確認が必要
+  func testLaunchFlowPerformance() throws {
+    // Given: HomeViewとパフォーマンス測定の準備
+    let showOnboarding = Binding.constant(false)
+    let homeView = HomeView(showOnboarding: showOnboarding)
+      .environmentObject(mockOnboardingManager)
+
+    // When: 起動フローのパフォーマンス測定
+    let startTime = CFAbsoluteTimeGetCurrent()
+    
+    homeView.testCheckLocationPermissionStatus()
+    
+    // 非同期処理完了後の測定
+    let expectation = XCTestExpectation(description: "パフォーマンス測定完了")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+      let endTime = CFAbsoluteTimeGetCurrent()
+      let executionTime = (endTime - startTime) * 1000 // ミリ秒変換
+      
+      // Then: パフォーマンス要件確認
+      XCTAssertLessThan(executionTime, 100.0,
+                        "起動フローは100ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
+      
+      expectation.fulfill()
+    }
+    
+    wait(for: [expectation], timeout: 1.0)
+  }
+
+  /// フラッシュ現象の完全排除確認テスト
+  ///
+  /// **期待動作**: 位置情報許可済み時に一切の中間画面表示がない
+  /// **実装状態**: 未実装 - フラッシュ現象の最終確認が必要
+  func testCompleteFlashEliminationVerification() throws {
+    // Given: HomeViewとフラッシュ検出システム
+    let showOnboarding = Binding.constant(false)
+    let homeView = HomeView(showOnboarding: showOnboarding)
+      .environmentObject(mockOnboardingManager)
+
+    var flashDetected = false
+    let monitoringDuration = 0.1 // 100ms監視
+    let checkInterval = 0.005 // 5ms間隔でチェック
+    
+    // When: 高頻度でのフラッシュ監視
+    let expectation = XCTestExpectation(description: "フラッシュ現象検証完了")
+    let startTime = CFAbsoluteTimeGetCurrent()
+    
+    // 位置情報チェック開始
+    homeView.testCheckLocationPermissionStatus()
+    
+    // 高頻度監視タイマー
+    let timer = Timer.scheduledTimer(withTimeInterval: checkInterval, repeats: true) { timer in
+      let currentTime = CFAbsoluteTimeGetCurrent()
+      
+      // 監視時間終了チェック
+      if (currentTime - startTime) >= monitoringDuration {
+        timer.invalidate()
+        expectation.fulfill()
+        return
+      }
+      
+      // フラッシュ現象検出（許可画面の一瞬表示）
+      do {
+        let _ = try homeView.inspect().find(text: "位置情報の使用許可が必要です")
+        flashDetected = true
+        timer.invalidate()
+        expectation.fulfill()
+      } catch {
+        // 許可画面が見つからない = 正常（フラッシュなし）
+      }
+    }
+    
+    wait(for: [expectation], timeout: 1.0)
+    
+    // Then: フラッシュ現象が完全に排除されていることを確認
+    XCTAssertFalse(flashDetected,
+                   "\(Int(monitoringDuration * 1000))ms監視期間中にフラッシュ現象は発生してはいけません")
+  }
+
   // MARK: - TDD Phase 2 Red: 許可画面フラッシュ防止UIテスト
 
   /// フラッシュ防止のタイミング検証テスト
@@ -281,5 +433,19 @@ extension HomeView {
   func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
     // テスト用に許可状態判定ロジックを公開
     return status == .authorizedWhenInUse || status == .authorizedAlways
+  }
+  
+  /// テスト用：Phase 3統合テスト用の包括的状態アクセス
+  ///
+  /// Phase 3で追加された統合テスト用の状態確認メソッドです。
+  /// アプリ起動フロー全体の検証に使用されます。
+  func testComprehensiveState() -> (isCheckCompleted: Bool, canAccessLocation: Bool) {
+    let isCompleted = isLocationPermissionCheckCompleted
+    // 実際の位置情報マネージャーの状態も確認
+    let locationManager = LocationManager.shared
+    let canAccess = locationManager.checkAuthorizationStatus() == .authorizedWhenInUse ||
+                   locationManager.checkAuthorizationStatus() == .authorizedAlways
+    
+    return (isCheckCompleted: isCompleted, canAccessLocation: canAccess)
   }
 }
