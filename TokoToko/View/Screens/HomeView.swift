@@ -387,73 +387,115 @@ struct HomeView: View {
     .padding()
   }
 
-  // Phase 2-2追加: 改善されたローディング表示
+  // Phase 2-3改善: アニメーション統一とパフォーマンス最適化
   private var loadingPermissionCheckView: some View {
-    VStack(spacing: 16) {
-      // フラッシュ防止のため、最小限の表示で急速チェックを示唆
-      Rectangle()
-        .fill(Color(.systemGray6))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(
-          VStack(spacing: 8) {
-            ProgressView()
-              .scaleEffect(0.8)
-              .progressViewStyle(CircularProgressViewStyle(tint: .gray))
-            
-            Text("位置情報確認中...")
-              .font(.caption2)
-              .foregroundColor(.secondary)
-          }
-          .opacity(0.6)
+    GeometryReader { geometry in
+      ZStack {
+        // Phase 2-3: より洗練されたグラデーション背景
+        LinearGradient(
+          gradient: Gradient(colors: [
+            Color(.systemGray6),
+            Color(.systemGray5).opacity(0.8)
+          ]),
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
         )
+        .ignoresSafeArea()
+
+        // Phase 2-3: 中央配置の改善されたローディング表示
+        VStack(spacing: 12) {
+          ProgressView()
+            .scaleEffect(1.2)
+            .progressViewStyle(CircularProgressViewStyle(
+              tint: Color(red: 0.2, green: 0.7, blue: 0.9)
+            ))
+
+          Text("位置情報確認中...")
+            .font(.system(.subheadline, design: .rounded))
+            .fontWeight(.medium)
+            .foregroundColor(.primary.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+          RoundedRectangle(cornerRadius: 16)
+            .fill(Color(.systemBackground).opacity(0.9))
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
+        .padding(.horizontal, 60)
+        .padding(.vertical, geometry.size.height * 0.4)
+      }
     }
     .accessibilityIdentifier("LocationPermissionCheckingView")
+    .accessibilityLabel("位置情報の許可状態を確認中です")
   }
 
-  // Phase 2-2追加: 未知の許可状態エラー表示
+  // Phase 2-3改善: エラー表示の視覚的改善とアニメーション追加
   private var unknownPermissionStateView: some View {
-    VStack(spacing: 16) {
-      Image(systemName: "questionmark.circle")
-        .font(.system(size: 50))
-        .foregroundColor(.orange)
+    VStack(spacing: 24) {
+      // Phase 2-3: アニメーション付きエラーアイコン
+      Image(systemName: "questionmark.circle.fill")
+        .font(.system(size: 60, weight: .medium))
+        .foregroundStyle(
+          LinearGradient(
+            colors: [.orange, .yellow],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .scaleEffect(isLoading ? 0.95 : 1.05)
+        .animation(
+          .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+          value: isLoading
+        )
 
-      VStack(spacing: 8) {
+      VStack(spacing: 12) {
         Text("位置情報の許可状態が不明です")
-          .font(.headline)
+          .font(.system(.title2, design: .rounded))
+          .fontWeight(.semibold)
           .multilineTextAlignment(.center)
+          .foregroundColor(.primary)
 
         Text("アプリを再起動するか、設定で位置情報を確認してください。")
-          .font(.caption)
+          .font(.system(.body, design: .rounded))
           .multilineTextAlignment(.center)
           .foregroundColor(.secondary)
+          .padding(.horizontal, 8)
       }
 
-      HStack(spacing: 12) {
-        Button("設定を開く") {
+      // Phase 2-3: 改善されたボタンデザインとレイアウト
+      VStack(spacing: 12) {
+        createActionButton(
+          title: "設定を開く",
+          icon: "gearshape.fill",
+          backgroundColor: .orange
+        ) {
           if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
           }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color.orange)
-        .foregroundColor(.white)
-        .cornerRadius(8)
 
-        Button("再試行") {
-          // 位置情報状態を再チェック
-          isLocationPermissionCheckCompleted = false
+        createActionButton(
+          title: "再試行",
+          icon: "arrow.clockwise",
+          backgroundColor: .blue
+        ) {
+          withAnimation(.easeInOut(duration: 0.3)) {
+            isLocationPermissionCheckCompleted = false
+          }
           checkLocationPermissionStatus()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color.blue)
-        .foregroundColor(.white)
-        .cornerRadius(8)
       }
     }
-    .padding()
+    .padding(.horizontal, 32)
+    .padding(.vertical, 24)
+    .background(
+      RoundedRectangle(cornerRadius: 20)
+        .fill(Color(.systemBackground))
+        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+    )
+    .padding(.horizontal, 24)
     .accessibilityIdentifier("UnknownPermissionStateView")
+    .accessibilityLabel("位置情報の許可状態が不明です")
   }
 
   // 位置情報マネージャーの設定
@@ -558,30 +600,82 @@ struct HomeView: View {
   ///
   /// Issue #99対応: 位置情報許可画面のフラッシュ現象を防止するため、
   /// 画面表示前に許可状態を確認し、適切な表示を行います。
-  /// Phase 2-2改善: より確実なフラッシュ防止とエラーハンドリングを実装。
+  /// Phase 2-3改善: アニメーション統一と処理の最適化を実装。
   private func checkLocationPermissionStatus() {
-    // Phase 2-2改善: チェック開始時に明示的に未完了状態を設定
-    isLocationPermissionCheckCompleted = false
-    
+    // Phase 2-3改善: アニメーション付きの状態変更
+    withAnimation(.easeOut(duration: 0.15)) {
+      isLocationPermissionCheckCompleted = false
+    }
+
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
-    
-    // Phase 2-2改善: 最小遅延でフラッシュを防止しつつ、UIの反応性を保つ
+
+    // Phase 2-3改善: より滑らかな遷移のための調整
     DispatchQueue.main.async {
-      // 1msの微小遅延でUIレンダリングを確実に完了させる
+      // UIレンダリング完了を確実にする微小遅延
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
-        self.isLocationPermissionCheckCompleted = true
-        
+        withAnimation(.easeInOut(duration: 0.25)) {
+          self.isLocationPermissionCheckCompleted = true
+        }
+
         // 許可済みの場合は位置情報マネージャーをセットアップ
-        if status == .authorizedWhenInUse || status == .authorizedAlways {
+        if self.isLocationAuthorized(status) {
           self.setupLocationManager()
         }
-        
+
         #if DEBUG
-        print("Phase 2-2: 位置情報許可状態チェック完了 - 状態: \(status)")
+        print("Phase 2-3: 位置情報許可状態チェック完了 - 状態: \(status)")
         #endif
       }
     }
+  }
+
+  /// 位置情報が許可されているかを判定するヘルパーメソッド
+  ///
+  /// Phase 2-3追加: 可読性向上のためのヘルパーメソッド
+  private func isLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
+    status == .authorizedWhenInUse || status == .authorizedAlways
+  }
+
+  /// アクションボタンを生成するヘルパーメソッド
+  ///
+  /// Phase 2-3追加: 統一されたボタンスタイルのためのヘルパーメソッド
+  private func createActionButton(
+    title: String,
+    icon: String,
+    backgroundColor: Color,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button {
+      action()
+    } label: {
+      HStack(spacing: 8) {
+        Image(systemName: icon)
+          .font(.system(size: 16, weight: .medium))
+        Text(title)
+          .font(.system(.body, design: .rounded))
+          .fontWeight(.medium)
+      }
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, 14)
+      .padding(.horizontal, 20)
+      .background(
+        LinearGradient(
+          gradient: Gradient(colors: [
+            backgroundColor,
+            backgroundColor.opacity(0.8)
+          ]),
+          startPoint: .leading,
+          endPoint: .trailing
+        )
+      )
+      .foregroundColor(.white)
+      .clipShape(RoundedRectangle(cornerRadius: 12))
+      .shadow(color: backgroundColor.opacity(0.3), radius: 4, x: 0, y: 2)
+    }
+    .buttonStyle(PlainButtonStyle())
+    .scaleEffect(isLoading ? 0.98 : 1.0)
+    .animation(.easeInOut(duration: 0.1), value: isLoading)
   }
 }
 

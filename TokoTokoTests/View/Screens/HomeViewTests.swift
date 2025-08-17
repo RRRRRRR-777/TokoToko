@@ -265,13 +265,21 @@ extension HomeView {
     checkLocationPermissionStatus()
   }
   
-  /// テスト用：Phase 2-2改善版ローディングビューのアクセス
+  /// テスト用：Phase 2-3改善版ローディング・エラービューのアクセス
   ///
-  /// Phase 2-2で追加された改善版ローディング表示のテスト用アクセサです。
-  /// フラッシュ防止機能の改善を検証するために使用されます。
+  /// Phase 2-3で改善されたローディング表示とエラー表示のテスト用アクセサです。
+  /// アニメーション統一とビジュアル改善の検証に使用されます。
   func testLoadingPermissionCheckView() -> Bool {
-    // ローディングビューの存在をテストするためのメソッド
-    // 実装の詳細は非公開のため、基本的な動作確認のみ
+    // ローディング表示の状態確認
     return !isLocationPermissionCheckCompleted
+  }
+  
+  /// テスト用：位置情報許可状態判定ヘルパーのアクセス
+  ///
+  /// Phase 2-3で追加されたヘルパーメソッドのテスト用アクセサです。
+  /// 可読性向上のためのリファクタリング効果を検証します。
+  func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
+    // テスト用に許可状態判定ロジックを公開
+    return status == .authorizedWhenInUse || status == .authorizedAlways
   }
 }
