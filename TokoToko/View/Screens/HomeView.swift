@@ -41,12 +41,12 @@ struct HomeView: View {
   ///
   /// MainTabViewから渡されるバインディングで、オンボーディングの表示/非表示を制御します。
   @Binding var showOnboarding: Bool
-  
+
   /// オンボーディングマネージャー
   ///
   /// オンボーディングコンテンツの管理と表示状態の制御を行います。
   @EnvironmentObject var onboardingManager: OnboardingManager
-  
+
   /// 散歩管理の中央コントローラー
   ///
   /// 散歩の開始・停止、統計情報の管理、位置情報の記録を担当するシングルトンインスタンスです。
@@ -183,7 +183,7 @@ struct HomeView: View {
     .onAppear {
       // Issue #99対応: 位置情報許可状態を事前にチェック（フラッシュ防止）
       checkLocationPermissionStatus()
-      
+
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
       if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
@@ -203,7 +203,7 @@ struct HomeView: View {
       print("位置情報許可状態が変更されました: \(status)")
       #endif
       setupLocationManager()
-      
+
       // UIテスト時以外は位置情報許可が決定された後にオンボーディングを表示
       if !ProcessInfo.processInfo.arguments.contains("--uitesting") {
         handleLocationPermissionChange(status)
@@ -403,7 +403,7 @@ struct HomeView: View {
     guard onboardingManager.shouldShowOnboarding(for: .firstLaunch) else {
       return
     }
-    
+
     switch status {
     case .authorizedWhenInUse, .authorizedAlways, .denied, .restricted:
       // 位置情報の許可/拒否が決定されたらオンボーディングを表示
@@ -484,11 +484,11 @@ struct HomeView: View {
   private func checkLocationPermissionStatus() {
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
-    
+
     // メイン スレッドで状態更新（UIの即座更新）
     DispatchQueue.main.async {
       self.isLocationPermissionCheckCompleted = true
-      
+
       // 許可済みの場合は位置情報マネージャーをセットアップ
       if status == .authorizedWhenInUse || status == .authorizedAlways {
         self.setupLocationManager()
