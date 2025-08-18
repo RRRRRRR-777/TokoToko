@@ -82,6 +82,13 @@ struct HomeView: View {
   /// false: 許可状態チェック中、画面表示待機
   @State private var isLocationPermissionCheckCompleted = false
 
+  /// アニメーション制御フラグ
+  ///
+  /// repeatForeverアニメーションのライフサイクル管理用
+  /// ビューの表示状態に応じてアニメーションを適切に制御します
+  @State private var shouldAnimateRecording = false
+  @State private var shouldAnimateUnknownState = false
+
   /// パフォーマンス最適化用のプロパティ
   ///
   /// 計算コストの高い要素をキャッシュし、不要な再描画を防止します。
@@ -206,6 +213,9 @@ struct HomeView: View {
       #endif
       checkLocationPermissionStatus()
 
+      // アニメーション制御の初期化
+      initializeAnimationStates()
+
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
       if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
@@ -219,6 +229,10 @@ struct HomeView: View {
           self.showOnboarding = true
         }
       }
+    }
+    .onDisappear {
+      // アニメーション停止でメモリリーク防止
+      stopAllAnimations()
     }
     .onChange(of: locationManager.authorizationStatus) { status in
       #if DEBUG
@@ -236,6 +250,15 @@ struct HomeView: View {
         currentLocation = location
         region = locationManager.region(for: location)
       }
+    }
+    .onChange(of: walkManager.isWalking) { isWalking in
+      // 散歩状態の変更に応じてアニメーション状態を同期
+      updateRecordingAnimationState()
+      
+      #if DEBUG
+      print("散歩状態変更: \(isWalking)")
+      print("  - アニメーション状態: \(shouldAnimateRecording)")
+      #endif
     }
     .loadingOverlay(isLoading: isLoading)
     .overlay(
@@ -332,9 +355,9 @@ struct HomeView: View {
           walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5)
         )
         .animation(
-          walkManager.currentWalk?.status == .paused
+          (walkManager.currentWalk?.status == .paused || !shouldAnimateRecording)
             ? .none : .easeInOut(duration: 1.0).repeatForever(),
-          value: walkManager.isWalking
+          value: shouldAnimateRecording
         )
 
       Text(walkManager.currentWalk?.status == .paused ? "一時停止中" : "記録中")
@@ -432,10 +455,10 @@ struct HomeView: View {
             endPoint: .bottomTrailing
           )
         )
-        .scaleEffect(isLoading ? 0.95 : 1.05)
+        .scaleEffect(shouldAnimateUnknownState ? 0.95 : 1.05)
         .animation(
-          .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
-          value: isLoading
+          shouldAnimateUnknownState ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .none,
+          value: shouldAnimateUnknownState
         )
 
       VStack(spacing: 12) {
@@ -704,6 +727,60 @@ struct HomeView: View {
       startPoint: .leading,
       endPoint: .trailing
     )
+  }
+  
+  // MARK: - アニメーションライフサイクル管理
+  
+  /// アニメーション状態の初期化
+  ///
+  /// ビュー表示時にアニメーション制御フラグを適切に設定します。
+  /// メモリリーク防止とパフォーマンス最適化を目的としています。
+  private func initializeAnimationStates() {
+    DispatchQueue.main.async {
+      self.shouldAnimateRecording = self.walkManager.isWalking && 
+                                  self.walkManager.currentWalk?.status != .paused
+      self.shouldAnimateUnknownState = true
+      
+      #if DEBUG
+      print("アニメーション初期化:")
+      print("  - 記録アニメーション: \(self.shouldAnimateRecording)")
+      print("  - 未知状態アニメーション: \(self.shouldAnimateUnknownState)")
+      #endif
+    }
+  }
+  
+  /// すべてのアニメーションを停止
+  ///
+  /// ビューが非表示になる際にrepeatForeverアニメーションを停止し、
+  /// メモリリークと不要なCPU使用を防止します。
+  private func stopAllAnimations() {
+    DispatchQueue.main.async {
+      withAnimation(.none) {
+        self.shouldAnimateRecording = false
+        self.shouldAnimateUnknownState = false
+      }
+      
+      #if DEBUG
+      print("全アニメーション停止完了")
+      #endif
+    }
+  }
+  
+  /// 記録アニメーション状態の更新
+  ///
+  /// 散歩状態の変更に応じてアニメーション状態を同期します。
+  /// 一時停止時や停止時には適切にアニメーションを停止します。
+  private func updateRecordingAnimationState() {
+    DispatchQueue.main.async {
+      let newState = self.walkManager.isWalking && 
+                     self.walkManager.currentWalk?.status != .paused
+      
+      if self.shouldAnimateRecording != newState {
+        withAnimation(.easeInOut(duration: 0.3)) {
+          self.shouldAnimateRecording = newState
+        }
+      }
+    }
   }
 }
 
