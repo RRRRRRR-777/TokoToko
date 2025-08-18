@@ -89,6 +89,18 @@ struct HomeView: View {
     CircularProgressViewStyle(tint: Color(red: 0.2, green: 0.7, blue: 0.9))
   }
 
+  // MARK: - タイミング制御定数
+  
+  /// UIアニメーション関連の定数
+  private enum AnimationTiming {
+    /// 初期状態変更アニメーションの時間
+    static let initialStateChange: Double = 0.12
+    /// 完了状態アニメーションの時間  
+    static let completionStateChange: Double = 0.2
+    /// UIレンダリング完了保証のための最小遅延
+    static let uiRenderingDelay: Double = 0.001
+  }
+
   /// HomeViewの初期化メソッド
   ///
   /// オンボーディング表示状態のバインディングを受け取り、
@@ -581,36 +593,35 @@ struct HomeView: View {
   private func checkLocationPermissionStatus() {
     // 状態管理を強化
     let initialState = isLocationPermissionCheckCompleted
+    
     // アニメーション付きの状態変更（最適化されたタイミング）
-    withAnimation(.easeOut(duration: 0.12)) {
+    withAnimation(.easeOut(duration: AnimationTiming.initialStateChange)) {
       isLocationPermissionCheckCompleted = false
     }
 
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
+    
     // フラッシュ防止のための精密なタイミング制御
-    DispatchQueue.main.async {
-      // 最小遅延で確実なUIレンダリング完了を保証
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
-        // スムーズな状態完了アニメーション
-        withAnimation(.easeInOut(duration: 0.2)) {
-          self.isLocationPermissionCheckCompleted = true
-        }
-
-        // 許可済みの場合の統合処理
-        if self.isLocationAuthorized(status) {
-          self.setupLocationManager()
-        }
-        
-        // 統合テスト用の状態ログ
-        #if DEBUG
-        print("位置情報許可状態チェック完了")
-        print("  - 初期状態: \(initialState)")
-        print("  - 最終状態: \(self.isLocationPermissionCheckCompleted)")
-        print("  - 許可状態: \(status)")
-        print("  - 許可判定: \(self.isLocationAuthorized(status))")
-        #endif
+    DispatchQueue.main.asyncAfter(deadline: .now() + AnimationTiming.uiRenderingDelay) {
+      // スムーズな状態完了アニメーション
+      withAnimation(.easeInOut(duration: AnimationTiming.completionStateChange)) {
+        self.isLocationPermissionCheckCompleted = true
       }
+
+      // 許可済みの場合の統合処理
+      if self.isLocationAuthorized(status) {
+        self.setupLocationManager()
+      }
+      
+      // 統合テスト用の状態ログ
+      #if DEBUG
+      print("位置情報許可状態チェック完了")
+      print("  - 初期状態: \(initialState)")
+      print("  - 最終状態: \(self.isLocationPermissionCheckCompleted)")
+      print("  - 許可状態: \(status)")
+      print("  - 許可判定: \(self.isLocationAuthorized(status))")
+      #endif
     }
   }
 
