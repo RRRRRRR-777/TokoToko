@@ -495,6 +495,8 @@ struct HomeView: View {
           withAnimation(.easeInOut(duration: 0.3)) {
             isLocationPermissionCheckCompleted = false
           }
+          // アニメーション状態の同期（競合状態防止）
+          updateRecordingAnimationState()
           checkLocationPermissionStatus()
         }
       }
