@@ -602,6 +602,19 @@ struct HomeView: View {
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
     
+    // 非同期で許可状態更新処理を実行
+    performLocationPermissionUpdate(initialState: initialState, status: status)
+  }
+  
+  /// 位置情報許可状態の更新処理
+  ///
+  /// 許可状態チェック後の非同期更新処理を分離したメソッドです。
+  /// フラッシュ防止のタイミング制御と状態更新を担当します。
+  ///
+  /// - Parameters:
+  ///   - initialState: チェック開始時の状態
+  ///   - status: 取得した許可状態
+  private func performLocationPermissionUpdate(initialState: Bool, status: CLAuthorizationStatus) {
     // フラッシュ防止のための精密なタイミング制御
     DispatchQueue.main.asyncAfter(deadline: .now() + AnimationTiming.uiRenderingDelay) {
       // スムーズな状態完了アニメーション
