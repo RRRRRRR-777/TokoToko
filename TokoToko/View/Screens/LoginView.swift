@@ -129,28 +129,31 @@ struct LoginView: View {
     VStack(spacing: 20) {
       Spacer()
 
-      Image(systemName: "mappin.and.ellipse")
+      Image("TekuTokoIcon")
         .resizable()
         .aspectRatio(contentMode: .fit)
-        .frame(width: 100, height: 100)
-        .foregroundColor(.blue)
-
-      Text("TokoTokoへようこそ")
+        .frame(width: 240, height: 240)
+      
+      Text("とことこへようこそ")
         .font(.largeTitle)
+        .foregroundColor(Color(red: 40/255, green: 115/255, blue: 80/255))
         .fontWeight(.bold)
 
-      Text("位置情報を共有して、友達と繋がりましょう")
+      Text("今日の散歩を、明日の思い出にシェアしよう")
         .font(.subheadline)
-        .foregroundColor(.secondary)
+        .foregroundColor(Color(red: 120/255, green: 110/255, blue: 100/255))
         .multilineTextAlignment(.center)
         .padding(.horizontal)
 
       Spacer()
 
       if isLoading {
-        ProgressView()
-          .progressViewStyle(CircularProgressViewStyle())
-          .scaleEffect(1.5)
+        VStack {
+          ProgressView()
+            .progressViewStyle(CircularProgressViewStyle())
+            .scaleEffect(1.5)
+        }
+        .frame(maxWidth: .infinity, minHeight: 80)
       } else {
         // カスタムGoogleサインインボタン
         // GoogleSignInButtonの代替実装（hiraginosans-w6フォントエラー回避のため）
@@ -216,6 +219,7 @@ struct LoginView: View {
       .padding(.bottom, 20)
     }
     .padding()
+    .background(Color("BackgroundColor"), ignoresSafeAreaEdges: .all)
     // アプリレベルでログイン状態を管理するため、onAppearでの処理は不要
     .sheet(isPresented: $showingPolicyView) {
       NavigationView {
