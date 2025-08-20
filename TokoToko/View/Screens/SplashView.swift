@@ -30,7 +30,6 @@ struct SplashView: View {
         .resizable()
         .aspectRatio(contentMode: .fit)
         .frame(width: 240, height: 240)
-        .background(.black)
 
       Spacer()
     }

@@ -133,7 +133,6 @@ struct LoginView: View {
         .resizable()
         .aspectRatio(contentMode: .fit)
         .frame(width: 240, height: 240)
-        .background(.black)
       
       Text("とことこへようこそ")
         .font(.largeTitle)
@@ -155,7 +154,6 @@ struct LoginView: View {
             .scaleEffect(1.5)
         }
         .frame(maxWidth: .infinity, minHeight: 80)
-        .background(Color(red: 252/255, green: 247/255, blue: 239/255))
       } else {
         // カスタムGoogleサインインボタン
         // GoogleSignInButtonの代替実装（hiraginosans-w6フォントエラー回避のため）
