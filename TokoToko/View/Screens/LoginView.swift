@@ -219,7 +219,7 @@ struct LoginView: View {
       .padding(.bottom, 20)
     }
     .padding()
-    .background(Color(red: 252/255, green: 247/255, blue: 239/255), ignoresSafeAreaEdges: .all)
+    .background(Color("BackgroundColor"), ignoresSafeAreaEdges: .all)
     // アプリレベルでログイン状態を管理するため、onAppearでの処理は不要
     .sheet(isPresented: $showingPolicyView) {
       NavigationView {

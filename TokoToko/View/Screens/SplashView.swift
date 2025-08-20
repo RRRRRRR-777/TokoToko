@@ -34,7 +34,7 @@ struct SplashView: View {
       Spacer()
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color(red: 252/255, green: 247/255, blue: 239/255))
+    .background(Color("BackgroundColor"))
     .accessibilityLabel("アプリケーション初期化中")
   }
 }
