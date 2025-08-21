@@ -546,7 +546,6 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       return
     }
 
-
     walkRepository.saveWalk(walk) { result in
       DispatchQueue.main.async {
         switch result {
@@ -751,13 +750,22 @@ extension WalkManager: LocationUpdateDelegate {
 extension WalkManager {
   /// 歩数カウントが更新された時に呼び出されます
   ///
-  /// CoreMotionからの実際の歩数、または距離・時間からの推定歩数を受け取り、
-  /// UI更新のためにメインスレッドで`currentStepCount`を更新します。
+  /// CoreMotionからの実際の歩数を受け取り、UI更新のためにメインスレッドで
+  /// `currentStepCount`を更新します。散歩記録中の場合は、現在のWalkオブジェクトの
+  /// 歩数も同期的に更新します。
   ///
   /// - Parameter stepCount: 更新された歩数データ
   func stepCountDidUpdate(_ stepCount: StepCountSource) {
     DispatchQueue.main.async { [weak self] in
-      self?.currentStepCount = stepCount
+      guard let self = self else { return }
+
+      self.currentStepCount = stepCount
+
+      // 散歩中の場合、現在のWalkにも歩数を更新
+      if var walk = self.currentWalk, self.isRecording {
+        walk.totalSteps = stepCount.steps ?? 0
+        self.currentWalk = walk
+      }
 
       #if DEBUG
         if let steps = stepCount.steps {
