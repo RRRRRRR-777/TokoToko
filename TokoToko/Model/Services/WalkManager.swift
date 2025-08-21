@@ -464,15 +464,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     let previousStatus = walk.status.rawValue
 
     // 最終歩数を保存
-    let finalSteps = totalSteps
-    walk.totalSteps = finalSteps
-    
-    #if DEBUG
-      print("📊 散歩終了時の歩数保存: \(finalSteps)歩")
-      print("   - currentStepCount: \(currentStepCount)")
-      print("   - walk.totalSteps: \(walk.totalSteps)")
-    #endif
-    
+    walk.totalSteps = totalSteps
     walk.complete()
     currentWalk = walk
 
@@ -553,7 +545,6 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       print("エラー: 保存する散歩がありません")
       return
     }
-
 
     walkRepository.saveWalk(walk) { result in
       DispatchQueue.main.async {
@@ -759,16 +750,17 @@ extension WalkManager: LocationUpdateDelegate {
 extension WalkManager {
   /// 歩数カウントが更新された時に呼び出されます
   ///
-  /// CoreMotionからの実際の歩数、または距離・時間からの推定歩数を受け取り、
-  /// UI更新のためにメインスレッドで`currentStepCount`を更新します。
+  /// CoreMotionからの実際の歩数を受け取り、UI更新のためにメインスレッドで
+  /// `currentStepCount`を更新します。散歩記録中の場合は、現在のWalkオブジェクトの
+  /// 歩数も同期的に更新します。
   ///
   /// - Parameter stepCount: 更新された歩数データ
   func stepCountDidUpdate(_ stepCount: StepCountSource) {
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { return }
-      
+
       self.currentStepCount = stepCount
-      
+
       // 散歩中の場合、現在のWalkにも歩数を更新
       if var walk = self.currentWalk, self.isRecording {
         walk.totalSteps = stepCount.steps ?? 0
@@ -778,9 +770,6 @@ extension WalkManager {
       #if DEBUG
         if let steps = stepCount.steps {
           print("📊 歩数更新: \(steps)歩 (\(stepCount.isRealTime ? "実測" : "推定"))")
-          if self.isRecording {
-            print("   - 散歩記録中: walk.totalSteps = \(self.currentWalk?.totalSteps ?? 0)")
-          }
         }
       #endif
     }
