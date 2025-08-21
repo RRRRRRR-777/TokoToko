@@ -32,7 +32,6 @@ enum StepCountSource {
   /// - Parameter steps: 計測された歩数
   case coremotion(steps: Int)
 
-
   /// 歩数計測が利用不可能な状態
   ///
   /// センサーが利用できない、権限が拒否された、
@@ -357,14 +356,15 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   /// 歩数のリアルタイムトラッキングを停止
   ///
   /// 現在実行中の歩数トラッキングを安全に停止し、
-  /// 関連する状態をリセットします。
+  /// 関連する状態をリセットします。一時停止時の表示継続のため、
+  /// 歩数データは保持されます。
   ///
   /// ## Cleanup Process
   /// 1. トラッキング状態を確認（停止済みの場合は早期リターン）
   /// 2. CMPedometer.stopUpdates()でセンサーアップデート停止
   /// 3. トラッキング状態をfalseに設定
   /// 4. 開始時刻とベースラインをリセット
-  /// 5. 歩数データをunavailable状態に設定
+  /// 5. 歩数データは保持される（unavailableにリセットしない）
   func stopTracking() {
     guard isTracking else { return }
 
@@ -376,11 +376,7 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
     isTracking = false
     startDate = nil
     baselineSteps = 0
-
-    // 停止時は計測不可状態にリセット
-    updateStepCount(.unavailable)
   }
-
 
   // MARK: - Private Methods
 
