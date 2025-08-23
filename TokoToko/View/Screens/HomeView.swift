@@ -807,6 +807,50 @@ struct RoundedCorner: Shape {
   }
 }
 
+// MARK: - テスト用拡張
+
+#if DEBUG
+extension HomeView {
+  /// テスト用：位置情報許可状態チェック完了フラグのアクセサー
+  ///
+  /// HomeViewの内部状態isLocationPermissionCheckCompletedにアクセスするためのテスト専用プロパティです。
+  /// 位置情報許可状態の事前チェック完了を確認するテストで使用されます。
+  var testIsLocationPermissionCheckCompleted: Bool {
+    isLocationPermissionCheckCompleted
+  }
+
+  /// テスト用：位置情報許可状態チェックメソッドの呼び出し
+  ///
+  /// HomeViewのcheckLocationPermissionStatus()メソッドをテストから呼び出すためのラッパーメソッドです。
+  /// メソッドの存在確認と動作テストで使用されます。
+  func testCheckLocationPermissionStatus() {
+    checkLocationPermissionStatus()
+  }
+  
+  /// テスト用：位置情報許可状態判定ヘルパーのアクセス
+  ///
+  /// 位置情報許可状態の判定ロジックをテストから呼び出すためのメソッドです。
+  /// 各種許可状態での判定動作を検証します。
+  func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
+    return isLocationAuthorized(status)
+  }
+  
+  /// テスト用：統合テスト用の包括的状態アクセス
+  ///
+  /// 統合テスト用の状態確認メソッドです。
+  /// アプリ起動フロー全体の検証に使用されます。
+  func testComprehensiveState() -> (isCheckCompleted: Bool, canAccessLocation: Bool) {
+    let isCompleted = isLocationPermissionCheckCompleted
+    // 実際の位置情報マネージャーの状態も確認
+    let locationManager = LocationManager.shared
+    let canAccess = locationManager.checkAuthorizationStatus() == .authorizedWhenInUse ||
+                   locationManager.checkAuthorizationStatus() == .authorizedAlways
+    
+    return (isCheckCompleted: isCompleted, canAccessLocation: canAccess)
+  }
+}
+#endif
+
 #Preview {
   HomeView(showOnboarding: .constant(false))
     .environmentObject(OnboardingManager())

@@ -101,12 +101,21 @@ class LocationManager: NSObject, ObservableObject {
   /// UIテスト実行時のモック位置情報や状態管理に使用されます。
   private let testingHelper = UITestingHelper.shared
 
+  /// 位置情報設定適用オブジェクト
+  ///
+  /// LocationSettingsApplicableプロトコルを実装したオブジェクト。
+  /// デフォルトはLocationSettingsManager.sharedですが、テスト時はモックを注入可能です。
+  private let settingsApplicator: LocationSettingsApplicable
+
   /// LocationManagerの初期化メソッド
   ///
   /// シングルトンパターンによりプライベート初期化子を定義します。
   /// 初期化時に位置情報マネージャーの設定を行い、UIテストモードの場合は
   /// モック位置情報を設定します。
-  override private init() {
+  ///
+  /// - Parameter settingsApplicator: 位置情報設定適用オブジェクト。デフォルトはLocationSettingsManager.shared
+  private init(settingsApplicator: LocationSettingsApplicable = LocationSettingsManager.shared) {
+    self.settingsApplicator = settingsApplicator
     super.init()
     setupLocationManager()
 
@@ -119,12 +128,15 @@ class LocationManager: NSObject, ObservableObject {
   /// 位置情報マネージャーの初期設定
   ///
   /// CLLocationManagerのデリゲート設定と精度・フィルター等のパラメーター設定を行います。
-  /// バッテリー効率と位置精度のバランスを考慮した設定値を使用します。
+  /// 注入された設定適用オブジェクトから設定を読み込み、ユーザーが選択した精度モードを適用します。
   private func setupLocationManager() {
     locationManager.delegate = self
-    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters  // バッテリー効率を考慮
-    locationManager.distanceFilter = 15  // 15メートル移動したら更新
-    locationManager.pausesLocationUpdatesAutomatically = false  // 自動停止を無効化
+    
+    // 注入された設定適用オブジェクトから設定を適用
+    settingsApplicator.applySettingsToLocationManager(locationManager)
+    
+    // 自動停止は常に無効化
+    locationManager.pausesLocationUpdatesAutomatically = false
   }
 
   /// アプリ使用中のみの位置情報アクセス許可をリクエスト
@@ -164,6 +176,9 @@ class LocationManager: NSObject, ObservableObject {
       "authorization_status": authorizationStatus.rawValue.description
     ])
 
+    // 注入された設定適用オブジェクトから最新の設定を適用
+    settingsApplicator.applySettingsToLocationManager(locationManager)
+    
     // バックグラウンド更新の設定を確認
     configureBackgroundLocationUpdates()
     locationManager.startUpdatingLocation()
