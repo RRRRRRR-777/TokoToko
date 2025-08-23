@@ -33,18 +33,18 @@ import SwiftUI
 /// - ``PermissionStatusRow``
 /// - ``BackgroundUpdateToggle``
 struct LocationAccuracySettingsView: View {
-  
+
   /// 位置情報設定マネージャー
   ///
   /// 精度モードとバックグラウンド更新設定を管理します。
   /// @EnvironmentObjectとして注入され、設定変更がリアルタイムで反映されます。
   @EnvironmentObject private var settingsManager: LocationSettingsManager
-  
+
   /// 現在の位置情報権限状態
   ///
   /// LocationManagerから取得した権限状態を表示用に保持します。
   @State private var authorizationStatus: CLAuthorizationStatus = .notDetermined
-  
+
   var body: some View {
     NavigationView {
       List {
@@ -61,7 +61,7 @@ struct LocationAccuracySettingsView: View {
             .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
           }
         }
-        
+
         // バックグラウンド更新セクション
         Section(header: Text("バックグラウンド設定")) {
           HStack {
@@ -76,16 +76,16 @@ struct LocationAccuracySettingsView: View {
             ))
             .accessibilityIdentifier("background_update_toggle")
           }
-          
+
           Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
             .font(.caption)
             .foregroundColor(.secondary)
         }
-        
+
         // 権限状態セクション
         Section(header: Text("権限状態")) {
           PermissionStatusRow(status: authorizationStatus)
-          
+
           Button("設定アプリを開く") {
             openSettingsApp()
           }
@@ -99,16 +99,16 @@ struct LocationAccuracySettingsView: View {
       }
     }
   }
-  
+
   // MARK: - Private Methods
-  
+
   /// 現在の位置情報権限状態を更新
   ///
   /// LocationManagerから最新の権限状態を取得して表示を更新します。
   private func updateAuthorizationStatus() {
     authorizationStatus = LocationManager.shared.checkAuthorizationStatus()
   }
-  
+
   /// 設定アプリを開く
   ///
   /// ユーザーをiOSの設定アプリの位置情報設定画面に誘導します。
@@ -128,7 +128,7 @@ private struct AccuracyModeRow: View {
   let mode: LocationAccuracyMode
   let isSelected: Bool
   let onTap: () -> Void
-  
+
   var body: some View {
     Button(action: onTap) {
       HStack {
@@ -136,15 +136,15 @@ private struct AccuracyModeRow: View {
           Text(mode.displayName)
             .font(.body)
             .foregroundColor(.primary)
-          
+
           Text(mode.description)
             .font(.caption)
             .foregroundColor(.secondary)
             .multilineTextAlignment(.leading)
         }
-        
+
         Spacer()
-        
+
         if isSelected {
           Image(systemName: "checkmark.circle.fill")
             .foregroundColor(.accentColor)
@@ -164,7 +164,7 @@ private struct AccuracyModeRow: View {
 /// 現在の位置情報権限状態を表示します。
 private struct PermissionStatusRow: View {
   let status: CLAuthorizationStatus
-  
+
   var body: some View {
     HStack {
       Text("位置情報権限")
@@ -174,7 +174,7 @@ private struct PermissionStatusRow: View {
         .font(.caption)
     }
   }
-  
+
   /// 権限状態の表示テキスト
   private var statusText: String {
     switch status {
@@ -192,7 +192,7 @@ private struct PermissionStatusRow: View {
       return "不明"
     }
   }
-  
+
   /// 権限状態の表示色
   private var statusColor: Color {
     switch status {

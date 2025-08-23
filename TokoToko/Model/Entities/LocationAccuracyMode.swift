@@ -42,22 +42,22 @@ enum LocationAccuracyMode: String, CaseIterable, Identifiable {
   /// GPS最高精度で位置情報を記録します。
   /// 正確なルート記録が必要な短時間散歩に適しています。
   case highAccuracy = "high"
-  
+
   /// バランスモード（推奨）
   ///
   /// 精度とバッテリー消費のバランスを取った設定です。
   /// 日常的な散歩記録に最適で、デフォルト設定として推奨されます。
   case balanced = "balanced"
-  
+
   /// 省電力モード
   ///
   /// バッテリー消費を抑えた低精度設定です。
   /// 長時間の散歩やバッテリー残量が少ない場合に適しています。
   case batterySaving = "battery"
-  
+
   /// Identifiableプロトコル対応のID
   var id: String { rawValue }
-  
+
   /// CoreLocationの精度設定値
   ///
   /// 各モードに対応するCLLocationAccuracyの値を返します。
@@ -72,7 +72,7 @@ enum LocationAccuracyMode: String, CaseIterable, Identifiable {
       return kCLLocationAccuracyHundredMeters
     }
   }
-  
+
   /// 位置更新の距離フィルター値（メートル）
   ///
   /// 指定した距離だけ移動した場合にのみ位置情報を更新します。
@@ -87,7 +87,7 @@ enum LocationAccuracyMode: String, CaseIterable, Identifiable {
       return 50.0  // 50メートル移動で更新
     }
   }
-  
+
   /// 表示用の名称
   ///
   /// ユーザーインターフェースに表示される日本語名称です。
@@ -101,7 +101,7 @@ enum LocationAccuracyMode: String, CaseIterable, Identifiable {
       return "省電力"
     }
   }
-  
+
   /// 詳細説明
   ///
   /// 各モードの特徴と適用場面を説明するテキストです。
@@ -116,17 +116,13 @@ enum LocationAccuracyMode: String, CaseIterable, Identifiable {
       return "バッテリー消費を抑えます。長時間の散歩に適しています。"
     }
   }
-  
+
   /// UserDefaults保存用のキー
   ///
   /// 設定の永続化に使用するUserDefaultsキーです。
   static let userDefaultsKey = "locationAccuracyMode"
-}
+  // MARK: - Default Value
 
-// MARK: - Extensions
-
-/// LocationAccuracyModeのデフォルト値定義
-extension LocationAccuracyMode {
   /// デフォルトの精度モード
   ///
   /// アプリ初回起動時や設定が見つからない場合に使用されるデフォルト値です。

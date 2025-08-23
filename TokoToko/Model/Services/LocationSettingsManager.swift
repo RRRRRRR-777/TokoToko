@@ -38,58 +38,58 @@ import Foundation
 /// ### LocationManager Integration
 /// - ``applySettingsToLocationManager(_:)``
 class LocationSettingsManager: ObservableObject {
-  
+
   // MARK: - Singleton
-  
+
   /// LocationSettingsManagerのシングルトンインスタンス
   ///
   /// アプリ全体で単一の設定管理インスタンスを使用し、
   /// 設定状態の一貫性を保証します。
   static let shared = LocationSettingsManager()
-  
+
   // MARK: - Properties
-  
+
   /// 現在の位置情報精度モード
   ///
   /// 現在選択されている精度モードです。
   /// @Publishedにより、値が変更されるとUI側に自動的に反映されます。
   @Published private(set) var currentMode: LocationAccuracyMode
-  
+
   /// バックグラウンド更新の有効状態
   ///
   /// バックグラウンドでの位置情報更新が有効かどうかを示します。
   /// @Publishedにより、値が変更されるとUI側に自動的に反映されます。
   @Published private(set) var isBackgroundUpdateEnabled: Bool
-  
+
   /// 設定永続化に使用するUserDefaults
   ///
   /// 通常はUserDefaults.standardを使用しますが、
   /// テスト時は独立したUserDefaultsインスタンスを注入できます。
   private let userDefaults: UserDefaults
-  
+
   // MARK: - UserDefaults Keys
-  
+
   /// バックグラウンド更新設定のUserDefaultsキー
   private static let backgroundUpdateEnabledKey = "backgroundUpdateEnabled"
-  
+
   // MARK: - Initialization
-  
+
   /// LocationSettingsManagerの初期化
   ///
   /// - Parameter userDefaults: 設定保存に使用するUserDefaults（テスト時にはモック注入可能）
   init(userDefaults: UserDefaults = .standard) {
     self.userDefaults = userDefaults
-    
+
     // デフォルト値の設定
     self.currentMode = .default
     self.isBackgroundUpdateEnabled = true
-    
+
     // 保存済み設定を読み込み
     loadSettings()
   }
-  
+
   // MARK: - Configuration Methods
-  
+
   /// 位置情報精度モードを設定
   ///
   /// 指定された精度モードに変更し、UIに反映します。
@@ -99,7 +99,7 @@ class LocationSettingsManager: ObservableObject {
   func setAccuracyMode(_ mode: LocationAccuracyMode) {
     currentMode = mode
   }
-  
+
   /// バックグラウンド更新の有効/無効を設定
   ///
   /// バックグラウンドでの位置情報更新の有効状態を変更します。
@@ -109,9 +109,9 @@ class LocationSettingsManager: ObservableObject {
   func setBackgroundUpdateEnabled(_ enabled: Bool) {
     isBackgroundUpdateEnabled = enabled
   }
-  
+
   // MARK: - Persistence Methods
-  
+
   /// 現在の設定をUserDefaultsに保存
   ///
   /// 精度モードとバックグラウンド更新設定を永続化します。
@@ -120,7 +120,7 @@ class LocationSettingsManager: ObservableObject {
     userDefaults.set(currentMode.rawValue, forKey: LocationAccuracyMode.userDefaultsKey)
     userDefaults.set(isBackgroundUpdateEnabled, forKey: Self.backgroundUpdateEnabledKey)
   }
-  
+
   /// UserDefaultsから設定を読み込み
   ///
   /// 保存された設定を読み込んで現在の設定として適用します。
@@ -133,7 +133,7 @@ class LocationSettingsManager: ObservableObject {
     } else {
       currentMode = .default
     }
-    
+
     // バックグラウンド更新設定の読み込み
     // UserDefaultsにキーが存在しない場合はデフォルト値（true）を使用
     if userDefaults.object(forKey: Self.backgroundUpdateEnabledKey) != nil {
@@ -142,9 +142,9 @@ class LocationSettingsManager: ObservableObject {
       isBackgroundUpdateEnabled = true
     }
   }
-  
+
   // MARK: - LocationManager Integration
-  
+
   /// 現在の設定をLocationManagerに適用
   ///
   /// 設定されている精度モードとバックグラウンド更新設定を
@@ -155,7 +155,7 @@ class LocationSettingsManager: ObservableObject {
     // 精度設定の適用
     locationManager.desiredAccuracy = currentMode.desiredAccuracy
     locationManager.distanceFilter = currentMode.distanceFilter
-    
+
     // バックグラウンド更新設定の適用
     // 注意: allowsBackgroundLocationUpdatesの設定には権限と
     //      Info.plistの設定が必要です

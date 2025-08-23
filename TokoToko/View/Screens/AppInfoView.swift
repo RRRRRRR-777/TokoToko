@@ -33,29 +33,29 @@ import SwiftUI
 /// - Info.plist bundle information
 /// - Static developer information
 struct AppInfoView: View {
-  
+
   /// Info.plistから取得するアプリバージョン
   private var appVersion: String {
     Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "不明"
   }
-  
+
   /// Info.plistから取得するビルド番号
   private var buildNumber: String {
     Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "不明"
   }
-  
+
   /// Info.plistから取得するアプリ名
   private var appName: String {
     let displayName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
     let bundleName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
     return displayName ?? bundleName ?? "TokoToko"
   }
-  
+
   /// 現在の年を取得
   private var currentYear: Int {
     Calendar.current.component(.year, from: Date())
   }
-  
+
   var body: some View {
     NavigationView {
       List {
@@ -68,7 +68,7 @@ struct AppInfoView: View {
               .fontWeight(.semibold)
               .multilineTextAlignment(.center)
               .accessibilityIdentifier("app_name")
-            
+
             Text("日常の散歩を記録・共有するSNSアプリ")
               .font(.caption)
               .foregroundColor(.secondary)
@@ -77,7 +77,7 @@ struct AppInfoView: View {
           .frame(maxWidth: .infinity)
           .padding(.vertical, 8)
         }
-        
+
         // バージョン情報セクション
         Section(header: Text("バージョン情報")) {
           InfoRow(
@@ -85,14 +85,14 @@ struct AppInfoView: View {
             value: appVersion,
             accessibilityId: "version_info"
           )
-          
+
           InfoRow(
             title: "ビルド",
             value: buildNumber,
             accessibilityId: "build_info"
           )
         }
-        
+
         // 開発元情報セクション
         Section(header: Text("開発元")) {
           InfoRow(
@@ -100,14 +100,14 @@ struct AppInfoView: View {
             value: "riku.yamada",
             accessibilityId: "developer_info"
           )
-          
+
           InfoRow(
             title: "コピーライト",
             value: "© \(currentYear) riku.yamada",
             accessibilityId: "copyright_info"
           )
         }
-        
+
         // 技術情報セクション
         Section(header: Text("技術情報")) {
           InfoRow(
@@ -115,24 +115,24 @@ struct AppInfoView: View {
             value: "SwiftUI",
             accessibilityId: "framework_info"
           )
-          
+
           InfoRow(
             title: "最小対応バージョン",
             value: "iOS 15.0",
             accessibilityId: "min_version_info"
           )
         }
-        
+
         // アプリの説明セクション
         Section(header: Text("このアプリについて")) {
           VStack(alignment: .leading, spacing: 12) {
             Text("TokoTokoは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
               .font(.body)
-            
+
             Text("主な機能：")
               .font(.headline)
               .padding(.top, 8)
-            
+
             VStack(alignment: .leading, spacing: 4) {
               FeatureRow(text: "GPS追跡による散歩ルート記録")
               FeatureRow(text: "写真付きの散歩レポート作成")
@@ -158,14 +158,14 @@ private struct InfoRow: View {
   let title: String
   let value: String
   let accessibilityId: String
-  
+
   var body: some View {
     HStack {
       Text(title)
         .foregroundColor(.primary)
-      
+
       Spacer()
-      
+
       Text(value)
         .foregroundColor(.secondary)
         .font(.caption)
@@ -179,16 +179,16 @@ private struct InfoRow: View {
 /// アプリの機能を箇条書きで表示するコンポーネントです。
 private struct FeatureRow: View {
   let text: String
-  
+
   var body: some View {
     HStack(alignment: .top, spacing: 8) {
       Text("•")
         .foregroundColor(.secondary)
-      
+
       Text(text)
         .font(.body)
         .foregroundColor(.primary)
-      
+
       Spacer()
     }
   }
