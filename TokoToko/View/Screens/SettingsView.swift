@@ -274,6 +274,8 @@ struct SettingsView: View {
         }
       }
     }
+    .listStyle(PlainListStyle())
+    .modifier(BackgroundColorModifier())
     .navigationTitle("設定")
     .alert("ログアウトしますか？", isPresented: $showingLogoutAlert) {
       Button("キャンセル", role: .cancel) {}
@@ -373,6 +375,23 @@ struct SettingsView: View {
       }
     }
     isPolicyLoading = false
+  }
+}
+
+/// List背景色変更用のViewModifier
+///
+/// iOS 16以降では`.scrollContentBackground(.hidden)`を使用し、
+/// iOS 15以下では従来の方法で背景色を適用します。
+struct BackgroundColorModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 16.0, *) {
+      content
+        .scrollContentBackground(.hidden)
+        .background(Color("BackgroundColor"))
+    } else {
+      content
+        .background(Color("BackgroundColor"))
+    }
   }
 }
 
