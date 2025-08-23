@@ -399,7 +399,7 @@ struct WalkInfoDisplay: View {
       stepCountSource: .coremotion(steps: 1234)
     )
     .padding()
-    .background(Color(.systemGray6))
+    .background(Color("BackgroundColor"))
     .cornerRadius(12)
     .padding()
 
@@ -410,7 +410,7 @@ struct WalkInfoDisplay: View {
       stepCountSource: .unavailable
     )
     .padding()
-    .background(Color(.systemGray6))
+    .background(Color("BackgroundColor"))
     .cornerRadius(12)
     .padding()
   }
