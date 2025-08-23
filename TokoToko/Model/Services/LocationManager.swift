@@ -119,12 +119,15 @@ class LocationManager: NSObject, ObservableObject {
   /// 位置情報マネージャーの初期設定
   ///
   /// CLLocationManagerのデリゲート設定と精度・フィルター等のパラメーター設定を行います。
-  /// バッテリー効率と位置精度のバランスを考慮した設定値を使用します。
+  /// LocationSettingsManagerから設定を読み込み、ユーザーが選択した精度モードを適用します。
   private func setupLocationManager() {
     locationManager.delegate = self
-    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters  // バッテリー効率を考慮
-    locationManager.distanceFilter = 15  // 15メートル移動したら更新
-    locationManager.pausesLocationUpdatesAutomatically = false  // 自動停止を無効化
+    
+    // LocationSettingsManagerから設定を適用
+    LocationSettingsManager.shared.applySettingsToLocationManager(locationManager)
+    
+    // 自動停止は常に無効化
+    locationManager.pausesLocationUpdatesAutomatically = false
   }
 
   /// アプリ使用中のみの位置情報アクセス許可をリクエスト
@@ -164,6 +167,9 @@ class LocationManager: NSObject, ObservableObject {
       "authorization_status": authorizationStatus.rawValue.description
     ])
 
+    // LocationSettingsManagerから最新の設定を適用
+    LocationSettingsManager.shared.applySettingsToLocationManager(locationManager)
+    
     // バックグラウンド更新の設定を確認
     configureBackgroundLocationUpdates()
     locationManager.startUpdatingLocation()
