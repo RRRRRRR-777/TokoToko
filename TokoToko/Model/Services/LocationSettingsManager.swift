@@ -8,6 +8,22 @@
 import CoreLocation
 import Foundation
 
+/// 位置情報設定の適用を抽象化するプロトコル
+///
+/// LocationManagerとLocationSettingsManager間の依存関係を逆転させ、
+/// テスタビリティと保守性を向上させるためのプロトコルです。
+protocol LocationSettingsApplicable {
+  /// 現在の位置情報精度モード
+  var currentMode: LocationAccuracyMode { get }
+  
+  /// バックグラウンド更新の有効状態
+  var isBackgroundUpdateEnabled: Bool { get }
+  
+  /// 設定をLocationManagerに適用
+  /// - Parameter locationManager: 設定を適用するLocationManagerインスタンス
+  func applySettingsToLocationManager(_ locationManager: CLLocationManager)
+}
+
 /// 位置情報設定の管理クラス
 ///
 /// アプリの位置情報精度設定とバックグラウンド更新設定を管理します。
@@ -37,7 +53,7 @@ import Foundation
 ///
 /// ### LocationManager Integration
 /// - ``applySettingsToLocationManager(_:)``
-class LocationSettingsManager: ObservableObject {
+class LocationSettingsManager: ObservableObject, LocationSettingsApplicable {
 
   // MARK: - Singleton
 
@@ -66,6 +82,11 @@ class LocationSettingsManager: ObservableObject {
   /// 通常はUserDefaults.standardを使用しますが、
   /// テスト時は独立したUserDefaultsインスタンスを注入できます。
   private let userDefaults: UserDefaults
+
+  /// 設定エラーログ用のEnhancedVibeLogger
+  ///
+  /// 設定適用時のエラーやデバッグ情報を記録するために使用します。
+  private let logger = EnhancedVibeLogger.shared
 
   // MARK: - UserDefaults Keys
 
@@ -152,24 +173,140 @@ class LocationSettingsManager: ObservableObject {
   ///
   /// - Parameter locationManager: 設定を適用するLocationManagerインスタンス
   func applySettingsToLocationManager(_ locationManager: CLLocationManager) {
-    // 精度設定の適用
-    locationManager.desiredAccuracy = currentMode.desiredAccuracy
-    locationManager.distanceFilter = currentMode.distanceFilter
+    logger.info("位置情報設定をLocationManagerに適用開始", category: "LocationSettings")
+    
+    do {
+      // 精度設定の適用
+      locationManager.desiredAccuracy = currentMode.desiredAccuracy
+      locationManager.distanceFilter = currentMode.distanceFilter
+      
+      logger.info("精度設定適用完了: \(currentMode.displayName), 距離フィルター: \(currentMode.distanceFilter)m", category: "LocationSettings")
 
-    // バックグラウンド更新設定の適用
-    // 注意: allowsBackgroundLocationUpdatesの設定には権限と
-    //      Info.plistの設定が必要です
-    if #available(iOS 9.0, *) {
-      // バックグラウンド更新が無効の場合、またはWhenInUse権限の場合はfalseに設定
-      if !isBackgroundUpdateEnabled || locationManager.authorizationStatus != .authorizedAlways {
-        locationManager.allowsBackgroundLocationUpdates = false
+      // バックグラウンド更新設定の適用
+      try applyBackgroundLocationSettings(to: locationManager)
+      
+      logger.info("LocationManager設定適用完了", category: "LocationSettings")
+      
+    } catch {
+      logger.error("LocationManager設定適用エラー: \(error.localizedDescription)", category: "LocationSettings")
+    }
+  }
+
+  /// バックグラウンド位置情報設定の適用
+  ///
+  /// Info.plistの設定確認とバックグラウンド更新の有効化を安全に行います。
+  ///
+  /// - Parameter locationManager: 設定を適用するLocationManagerインスタンス
+  /// - Throws: 設定適用時のエラー
+  private func applyBackgroundLocationSettings(to locationManager: CLLocationManager) throws {
+    guard #available(iOS 9.0, *) else {
+      logger.warning("iOS 9.0未満のため、バックグラウンド位置情報設定をスキップ", category: "LocationSettings")
+      return
+    }
+
+    // バックグラウンド更新が無効の場合、またはWhenInUse権限の場合はfalseに設定
+    guard isBackgroundUpdateEnabled else {
+      locationManager.allowsBackgroundLocationUpdates = false
+      logger.info("バックグラウンド更新が無効化されているため、LocationManagerで無効化", category: "LocationSettings")
+      return
+    }
+
+    guard locationManager.authorizationStatus == .authorizedAlways else {
+      locationManager.allowsBackgroundLocationUpdates = false
+      logger.warning("Always権限が許可されていないため、バックグラウンド更新を無効化", category: "LocationSettings")
+      return
+    }
+
+    // Info.plistの設定確認とバックグラウンド更新の有効化
+    do {
+      let hasLocationBackgroundMode = try checkLocationBackgroundModeInInfoPlist()
+      
+      if hasLocationBackgroundMode {
+        locationManager.allowsBackgroundLocationUpdates = true
+        logger.info("バックグラウンド位置情報更新を有効化", category: "LocationSettings")
       } else {
-        // Info.plistにlocation背景モードが設定されている場合のみ有効化
-        if let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String],
-           backgroundModes.contains("location") {
-          locationManager.allowsBackgroundLocationUpdates = true
-        }
+        locationManager.allowsBackgroundLocationUpdates = false
+        logger.warning("Info.plistにlocationバックグラウンドモードが設定されていないため、バックグラウンド更新を無効化", category: "LocationSettings")
       }
+      
+    } catch {
+      logger.error("Info.plistの確認でエラー: \(error.localizedDescription)", category: "LocationSettings")
+      locationManager.allowsBackgroundLocationUpdates = false
+      throw LocationSettingsError.infoPlistCheckFailed(error)
+    }
+  }
+
+  /// Info.plistでlocationバックグラウンドモードが設定されているかを確認
+  ///
+  /// - Returns: locationバックグラウンドモードが設定されている場合はtrue
+  /// - Throws: Info.plistの読み込みでエラーが発生した場合
+  private func checkLocationBackgroundModeInInfoPlist() throws -> Bool {
+    guard let infoDictionary = Bundle.main.infoDictionary else {
+      throw LocationSettingsError.infoPlistNotFound
+    }
+
+    guard let backgroundModes = infoDictionary["UIBackgroundModes"] as? [String] else {
+      // UIBackgroundModesキーが存在しない場合は正常（バックグラウンドモードなし）
+      return false
+    }
+
+    return backgroundModes.contains("location")
+  }
+}
+
+/// LocationSettingsManagerで発生する可能性のあるエラー
+enum LocationSettingsError: LocalizedError {
+  case infoPlistNotFound
+  case infoPlistCheckFailed(Error)
+
+  var errorDescription: String? {
+    switch self {
+    case .infoPlistNotFound:
+      return "Info.plistが見つかりません"
+    case .infoPlistCheckFailed(let underlyingError):
+      return "Info.plistの確認に失敗しました: \(underlyingError.localizedDescription)"
     }
   }
 }
+
+// MARK: - Testing Support
+
+#if DEBUG
+/// テスト用のLocationSettingsApplicableモック実装
+///
+/// 単体テストでLocationManagerの動作を検証する際に使用します。
+/// 設定値を固定し、applySettingsToLocationManagerの呼び出しを記録できます。
+///
+/// ## Usage Example
+/// ```swift
+/// let mockSettings = MockLocationSettingsApplicable(
+///   mode: .highAccuracy,
+///   backgroundEnabled: false
+/// )
+/// let locationManager = LocationManager(settingsApplicator: mockSettings)
+/// ```
+class MockLocationSettingsApplicable: LocationSettingsApplicable {
+  let currentMode: LocationAccuracyMode
+  let isBackgroundUpdateEnabled: Bool
+  
+  /// applySettingsToLocationManagerが呼び出された回数
+  private(set) var applySettingsCallCount: Int = 0
+  
+  /// 最後にapplySettingsToLocationManagerに渡されたLocationManager
+  private(set) var lastAppliedLocationManager: CLLocationManager?
+  
+  init(mode: LocationAccuracyMode, backgroundEnabled: Bool) {
+    self.currentMode = mode
+    self.isBackgroundUpdateEnabled = backgroundEnabled
+  }
+  
+  func applySettingsToLocationManager(_ locationManager: CLLocationManager) {
+    applySettingsCallCount += 1
+    lastAppliedLocationManager = locationManager
+    
+    // 基本的な設定のみ適用（テスト用の簡易実装）
+    locationManager.desiredAccuracy = currentMode.desiredAccuracy
+    locationManager.distanceFilter = currentMode.distanceFilter
+  }
+}
+#endif
