@@ -37,6 +37,11 @@ struct SettingsView: View {
   /// ログアウト処理と認証状態の参照に使用されるAuthManagerのインスタンスです。
   @EnvironmentObject private var authManager: AuthManager
 
+  /// 位置情報設定管理オブジェクト
+  ///
+  /// 位置情報精度設定とバックグラウンド更新設定の管理に使用されるLocationSettingsManagerのインスタンスです。
+  @EnvironmentObject private var locationSettingsManager: LocationSettingsManager
+
   /// ログアウト確認ダイアログの表示状態
   ///
   /// ログアウトボタンタップ時に表示される確認ダイアログの表示制御に使用されます。
@@ -244,11 +249,11 @@ struct SettingsView: View {
 
       Section(header: Text("位置情報")) {
         NavigationLink(destination: LocationAccuracySettingsView()
-          .environmentObject(LocationSettingsManager.shared)) {
+          .environmentObject(locationSettingsManager)) {
           HStack {
             Text("位置情報設定")
             Spacer()
-            Text(LocationSettingsManager.shared.currentMode.displayName)
+            Text(locationSettingsManager.currentMode.displayName)
               .foregroundColor(.secondary)
               .font(.caption)
           }

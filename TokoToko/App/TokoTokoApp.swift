@@ -161,6 +161,12 @@ struct TokoTokoApp: App {
   /// 初回同意フローと再同意フローを制御します。
   @StateObject private var consentManager = ConsentManager()
 
+  /// 位置情報設定管理オブジェクト
+  ///
+  /// アプリ全体の位置情報精度設定とバックグラウンド更新設定を管理するインスタンスです。
+  /// 依存性注入によりテストしやすい設計を実現します。
+  @StateObject private var locationSettingsManager = LocationSettingsManager()
+
   var body: some Scene {
     WindowGroup {
       NavigationView {
@@ -179,6 +185,7 @@ struct TokoTokoApp: App {
           MainTabView()
             .environmentObject(authManager)
             .environmentObject(consentManager)
+            .environmentObject(locationSettingsManager)
         }
       }
     }
@@ -218,6 +225,12 @@ struct MainTabView: View {
   /// 親ビューから注入されるConsentManagerインスタンスです。
   /// 再同意チェックなどに使用されます。
   @EnvironmentObject var consentManager: ConsentManager
+
+  /// 位置情報設定管理オブジェクト
+  ///
+  /// 親ビューから注入されるLocationSettingsManagerインスタンスです。
+  /// 設定画面で位置情報精度設定を管理するために使用されます。
+  @EnvironmentObject var locationSettingsManager: LocationSettingsManager
 
   /// 現在選択されているタブ
   ///
@@ -295,6 +308,7 @@ struct MainTabView: View {
             NavigationView {
               SettingsView()
                 .environmentObject(authManager)
+                .environmentObject(locationSettingsManager)
             }
           }
         }
