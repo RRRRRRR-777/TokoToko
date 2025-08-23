@@ -72,6 +72,7 @@ struct WalkCompletionView: View {
                 }
                 .padding()
             }
+            .background(Color("BackgroundColor"))
             .navigationTitle("散歩完了")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -116,7 +117,7 @@ struct WalkCompletionView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(Color("BackgroundColor"))
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         )
     }
@@ -185,7 +186,7 @@ struct WalkCompletionView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color("BackgroundColor").opacity(0.8))
         )
     }
 
@@ -204,7 +205,7 @@ struct WalkCompletionView: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(Color("BackgroundColor").opacity(0.6))
                 )
             } else if let image = generatedImage {
                 VStack(spacing: 8) {
