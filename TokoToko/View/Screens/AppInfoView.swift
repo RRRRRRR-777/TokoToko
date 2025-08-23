@@ -63,7 +63,7 @@ struct AppInfoView: View {
         Section(header: Text("アプリ情報")) {
           // アプリ名
           VStack(alignment: .center, spacing: 8) {
-            Text("TokoToko - おさんぽSNS")
+            Text("とことこ - おさんぽSNS")
               .font(.title2)
               .fontWeight(.semibold)
               .multilineTextAlignment(.center)
@@ -126,7 +126,7 @@ struct AppInfoView: View {
         // アプリの説明セクション
         Section(header: Text("このアプリについて")) {
           VStack(alignment: .leading, spacing: 12) {
-            Text("TokoTokoは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
+            Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
               .font(.body)
 
             Text("主な機能：")

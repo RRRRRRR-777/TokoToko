@@ -42,7 +42,7 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
       .environmentObject(settingsManager)
     
     // When & Then
-    let navigationView = try view.inspect().find(NavigationView.self)
+    let navigationView = try view.inspect().find(ViewType.NavigationView.self)
     XCTAssertNotNil(navigationView, "NavigationViewが存在するべき")
     
     // ナビゲーションタイトルの確認
