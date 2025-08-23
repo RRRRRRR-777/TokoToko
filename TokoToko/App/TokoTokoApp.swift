@@ -188,7 +188,28 @@ struct TokoTokoApp: App {
             .environmentObject(locationSettingsManager)
         }
       }
+      .onAppear {
+        configureNavigationBarAppearance()
+      }
     }
+  }
+
+  /// ナビゲーションバーの外観をBackgroundColorに設定
+  ///
+  /// アプリ全体のナビゲーションバー背景色を一貫したベージュ色に設定します。
+  /// 標準外観とコンパクト外観の両方に適用し、iOS全バージョンでの一貫性を確保します。
+  private func configureNavigationBarAppearance() {
+    let backgroundColor = UIColor(named: "BackgroundColor") ?? UIColor.systemBackground
+    
+    // iOS 15+ の外観設定
+    let navigationBarAppearance = UINavigationBarAppearance()
+    navigationBarAppearance.configureWithOpaqueBackground()
+    navigationBarAppearance.backgroundColor = backgroundColor
+    
+    // グローバル設定を適用
+    UINavigationBar.appearance().standardAppearance = navigationBarAppearance
+    UINavigationBar.appearance().compactAppearance = navigationBarAppearance
+    UINavigationBar.appearance().scrollEdgeAppearance = navigationBarAppearance
   }
 }
 
@@ -420,7 +441,7 @@ struct CustomTabBar: View {
     .frame(width: 280, height: 70)
     .background(
       RoundedRectangle(cornerRadius: 35)
-        .fill(Color.white)
+        .fill(Color("BackgroundColor"))
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
     )
     .padding(.trailing, 80)
