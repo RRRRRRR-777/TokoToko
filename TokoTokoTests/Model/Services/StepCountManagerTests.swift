@@ -190,6 +190,227 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertTrue(debugDescription.contains("isStepCountingAvailable"), "利用可能性が含まれるべき")
     XCTAssertTrue(debugDescription.contains("currentStepCount"), "現在の歩数が含まれるべき")
   }
+
+  // MARK: - 歩数リセットテスト (Issue #106)
+
+  func testStepCount_ResetsToZeroOnNewSession() throws {
+    // Arrange - 初期状態確認
+    XCTAssertFalse(stepCountManager.isTracking, "前提条件: トラッキングしていない")
+
+    // Act 1 - 最初の散歩セッションを開始
+    if stepCountManager.isStepCountingAvailable() {
+      stepCountManager.startTracking()
+      XCTAssertTrue(stepCountManager.isTracking, "トラッキングが開始されるべき")
+
+      // トラッキング停止
+      stepCountManager.stopTracking()
+      XCTAssertFalse(stepCountManager.isTracking, "トラッキングが停止されるべき")
+
+      // Assert - stopTracking後にcurrentStepCountがリセットされることを確認
+      if case .unavailable = stepCountManager.currentStepCount {
+        // 正常 - unavailableにリセットされている
+      } else {
+        XCTFail("stopTracking後はcurrentStepCountがunavailableにリセットされるべき")
+      }
+
+      // Act 2 - 新しい散歩セッションを開始
+      stepCountManager.startTracking()
+      XCTAssertTrue(stepCountManager.isTracking, "2回目のトラッキングが開始されるべき")
+
+      // Assert - 新しいセッションでは歩数が0から始まることを確認
+      // （実際のCMPedometerの更新はないため、初期状態の確認のみ）
+      // 実際の動作確認は手動テストまたはシミュレータでの確認が必要
+    }
+  }
+
+  func testBaselineSteps_ResetsOnStopTracking() throws {
+    // Arrange - StepCountManagerの内部状態を確認するためのテスト
+    // baselineStepsはprivateだが、動作から推測
+    XCTAssertFalse(stepCountManager.isTracking, "前提条件: トラッキングしていない")
+
+    if stepCountManager.isStepCountingAvailable() {
+      // Act 1 - トラッキング開始
+      stepCountManager.startTracking()
+
+      // Act 2 - トラッキング停止
+      stepCountManager.stopTracking()
+
+      // Assert - 停止後の状態確認
+      XCTAssertFalse(stepCountManager.isTracking, "トラッキングが停止されるべき")
+      if case .unavailable = stepCountManager.currentStepCount {
+        // 正常 - リセットされている
+      } else {
+        XCTFail("stopTracking後はcurrentStepCountがunavailableになるべき")
+      }
+
+      // Act 3 - 再度トラッキング開始
+      stepCountManager.startTracking()
+
+      // Assert - 新しいセッションが正しく開始されることを確認
+      XCTAssertTrue(stepCountManager.isTracking, "新しいトラッキングセッションが開始されるべき")
+    }
+  }
+
+  // MARK: - 新しいAPI動作テスト (Issue #106 Fix)
+
+  func testNewAPIParameterBehavior() throws {
+    // Arrange - 初期状態確認
+    XCTAssertFalse(stepCountManager.isTracking, "前提条件: トラッキングしていない")
+
+    if stepCountManager.isStepCountingAvailable() {
+      // Act 1 - 新しい散歩開始（newWalk: true）
+      stepCountManager.startTracking(newWalk: true)
+      XCTAssertTrue(stepCountManager.isTracking, "新しい散歩でトラッキングが開始されるべき")
+
+      // Act 2 - 一時停止（finalStop: false）
+      stepCountManager.stopTracking(finalStop: false)
+      XCTAssertFalse(stepCountManager.isTracking, "一時停止でトラッキングフラグがfalseになるべき")
+      // 注意: CMPedometerの実際の停止は単体テストでは検証困難
+
+      // Act 3 - 再開（newWalk: false）
+      stepCountManager.startTracking(newWalk: false)
+      XCTAssertTrue(stepCountManager.isTracking, "再開でトラッキングが再開されるべき")
+
+      // Act 4 - 最終停止（finalStop: true）
+      stepCountManager.stopTracking(finalStop: true)
+      XCTAssertFalse(stepCountManager.isTracking, "最終停止でトラッキングが停止されるべき")
+      if case .unavailable = stepCountManager.currentStepCount {
+        // 正常 - 最終停止後はunavailable
+      } else {
+        XCTFail("最終停止後はcurrentStepCountがunavailableになるべき")
+      }
+    }
+  }
+
+  func testWalkManagerIntegration() throws {
+    // Arrange - WalkManagerとの連携テスト
+    let walkManager = WalkManager.shared
+
+    // 初期状態確認
+    XCTAssertNil(walkManager.currentWalk, "初期状態では散歩はnil")
+    XCTAssertFalse(stepCountManager.isTracking, "初期状態ではトラッキングしていない")
+
+    // Act 1 - 散歩開始
+    walkManager.startWalk()
+    XCTAssertNotNil(walkManager.currentWalk, "散歩開始後はcurrentWalkが存在")
+    XCTAssertTrue(stepCountManager.isTracking, "散歩開始後はトラッキング中")
+
+    // Act 2 - 一時停止
+    walkManager.pauseWalk()
+    XCTAssertNotNil(walkManager.currentWalk, "一時停止後もcurrentWalkが存在")
+    XCTAssertFalse(stepCountManager.isTracking, "一時停止後はトラッキング停止")
+
+    // Act 3 - 再開
+    walkManager.resumeWalk()
+    XCTAssertNotNil(walkManager.currentWalk, "再開後もcurrentWalkが存在")
+    XCTAssertTrue(stepCountManager.isTracking, "再開後はトラッキング再開")
+
+    // Act 4 - 散歩完了
+    walkManager.stopWalk()
+    // 注意: stopWalk後のcurrentWalkの状態はWalkManagerの実装に依存
+    XCTAssertFalse(stepCountManager.isTracking, "完了後はトラッキング停止")
+  }
+
+  func testRapidPauseResumeCycle() throws {
+    // Arrange - rapid pause/resume cycleのテスト（状態管理レベル）
+    XCTAssertFalse(stepCountManager.isTracking, "前提条件: トラッキングしていない")
+
+    if stepCountManager.isStepCountingAvailable() {
+      // Act - 短時間での連続pause/resume
+      stepCountManager.startTracking(newWalk: true)
+      XCTAssertTrue(stepCountManager.isTracking, "開始")
+
+      // 連続でpause/resume（CMPedometer問題の再現を試行）
+      for i in 1...3 {
+        stepCountManager.stopTracking(finalStop: false)
+        XCTAssertFalse(stepCountManager.isTracking, "pause \(i)")
+
+        stepCountManager.startTracking(newWalk: false)
+        XCTAssertTrue(stepCountManager.isTracking, "resume \(i)")
+      }
+
+      // 最終停止
+      stepCountManager.stopTracking(finalStop: true)
+      XCTAssertFalse(stepCountManager.isTracking, "最終停止")
+    }
+  }
+
+  // MARK: - 即座に0歩表示テスト (Issue #106 初期表示問題修正)
+
+  func testImmediateZeroStepDisplay() throws {
+    // Arrange - 初期状態確認
+    XCTAssertFalse(stepCountManager.isTracking, "前提条件: トラッキングしていない")
+    if case .unavailable = stepCountManager.currentStepCount {
+      // 正常な初期状態
+    } else {
+      XCTFail("初期状態ではunavailableであるべき")
+    }
+
+    if stepCountManager.isStepCountingAvailable() {
+      // 非同期デリゲート通知のExpectation設定
+      let expectation = expectation(description: "Immediate zero step display")
+
+      mockDelegate.stepCountUpdateHandler = { stepCount in
+        // 即座の0歩表示を確認
+        if case .coremotion(let steps) = stepCount, steps == 0 {
+          expectation.fulfill()
+        }
+      }
+
+      // Act - 新しい散歩開始
+      stepCountManager.startTracking(newWalk: true)
+
+      // Assert - 非同期でデリゲート通知を待機
+      wait(for: [expectation], timeout: 1.0)
+
+      // 追加検証: StepCountManagerの状態も即座に更新されることを確認
+      XCTAssertTrue(stepCountManager.isTracking, "トラッキングが開始されるべき")
+      if case .coremotion(let steps) = stepCountManager.currentStepCount {
+        XCTAssertEqual(steps, 0, "散歩開始時に即座に0歩が表示されるべき")
+      } else {
+        XCTFail("散歩開始時にcoremotion(steps: 0)が設定されるべき")
+      }
+
+      // 最終停止
+      stepCountManager.stopTracking(finalStop: true)
+    }
+  }
+
+  func testDelegateNotificationOnStart() throws {
+    // Arrange - モックデリゲート準備
+    mockDelegate.reset()
+    XCTAssertFalse(stepCountManager.isTracking, "前提条件: トラッキングしていない")
+    XCTAssertEqual(mockDelegate.stepCountUpdates.count, 0, "初期状態では更新なし")
+
+    if stepCountManager.isStepCountingAvailable() {
+      // 非同期デリゲート通知のExpectation設定
+      let expectation = expectation(description: "Immediate step count update")
+
+      mockDelegate.stepCountUpdateHandler = { stepCount in
+        if case .coremotion(let steps) = stepCount, steps == 0 {
+          expectation.fulfill()
+        }
+      }
+
+      // Act - 新しい散歩開始
+      stepCountManager.startTracking(newWalk: true)
+
+      // Assert - 非同期でデリゲート通知を待機
+      wait(for: [expectation], timeout: 1.0)
+
+      // 追加検証: 配列にも正しく記録されていることを確認
+      XCTAssertEqual(mockDelegate.stepCountUpdates.count, 1, "散歩開始時に1回更新通知が来るべき")
+      if let firstUpdate = mockDelegate.stepCountUpdates.first,
+         case .coremotion(let steps) = firstUpdate {
+        XCTAssertEqual(steps, 0, "最初の更新は0歩であるべき")
+      } else {
+        XCTFail("最初の更新はcoremotion(steps: 0)であるべき")
+      }
+
+      // 最終停止
+      stepCountManager.stopTracking(finalStop: true)
+    }
+  }
 }
 
 // MARK: - Helper Methods
@@ -220,16 +441,24 @@ class MockStepCountDelegate: StepCountDelegate {
   var stepCountUpdates: [StepCountSource] = []
   var errors: [Error] = []
 
+  // 非同期テスト用のハンドラ
+  var stepCountUpdateHandler: ((StepCountSource) -> Void)?
+  var errorHandler: ((Error) -> Void)?
+
   func stepCountDidUpdate(_ stepCount: StepCountSource) {
     stepCountUpdates.append(stepCount)
+    stepCountUpdateHandler?(stepCount)
   }
 
   func stepCountDidFailWithError(_ error: Error) {
     errors.append(error)
+    errorHandler?(error)
   }
 
   func reset() {
     stepCountUpdates.removeAll()
     errors.removeAll()
+    stepCountUpdateHandler = nil
+    errorHandler = nil
   }
 }

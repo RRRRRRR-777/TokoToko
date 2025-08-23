@@ -118,7 +118,7 @@ class WalkImageGenerator {
         static let appIcon: CGFloat = 18
     }
 
-    private init() {}
+    init() {}
 
     /// 散歩データから共有用画像を生成します
     ///

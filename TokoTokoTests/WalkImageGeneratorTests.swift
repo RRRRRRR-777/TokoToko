@@ -71,17 +71,26 @@ final class WalkImageGeneratorTests: XCTestCase {
 
   /// テスト用散歩データ作成ヘルパー
   private func createTestWalk(totalSteps: Int) -> Walk {
+    let startTime = Date()
+    let endTime = Date().addingTimeInterval(1800) // 30分後
+    
+    var walk = Walk(
+      title: "テスト散歩",
+      description: "テスト用散歩データ",
+      startTime: startTime,
+      endTime: endTime,
+      totalDistance: 1500.0,
+      totalSteps: totalSteps,
+      status: .completed
+    )
+    
+    // 位置データを追加
     let startLocation = CLLocation(latitude: 35.6762, longitude: 139.6503)
     let endLocation = CLLocation(latitude: 35.6785, longitude: 139.6512)
-
-    var walk = Walk()
     walk.addLocation(startLocation)
     walk.addLocation(endLocation)
-    walk.totalSteps = totalSteps
-    walk.startDate = Date()
-    walk.endDate = Date().addingTimeInterval(1800) // 30分後
 
-    walk
+    return walk
   }
 
   /// 歩数フォーマット処理のヘルパーメソッド（実装済みの動作と同期）
