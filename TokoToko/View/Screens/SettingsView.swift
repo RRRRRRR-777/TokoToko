@@ -158,6 +158,7 @@ struct SettingsView: View {
             Text(mockEmail ?? "test@example.com")
               .foregroundColor(.secondary)
           }
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           // プロフィール画像表示（テスト用）
           HStack {
@@ -167,6 +168,7 @@ struct SettingsView: View {
               .fill(Color.gray)
               .frame(width: 40, height: 40)
           }
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           Button(action: {
             showingLogoutAlert = true
@@ -181,6 +183,7 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // 通常モードの場合は実際のユーザー情報を使用
         else if let user = Auth.auth().currentUser {
@@ -190,6 +193,7 @@ struct SettingsView: View {
             Text(user.email ?? "不明")
               .foregroundColor(.secondary)
           }
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           if let photoURL = user.photoURL, let url = URL(string: photoURL.absoluteString) {
             HStack {
@@ -205,6 +209,7 @@ struct SettingsView: View {
               .frame(width: 40, height: 40)
               .clipShape(Circle())
             }
+            .listRowBackground(Color("BackgroundColor").opacity(0.8))
           }
 
           Button(action: {
@@ -220,6 +225,7 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }
 
@@ -234,6 +240,7 @@ struct SettingsView: View {
           Text("プライバシーポリシー")
             .foregroundColor(.primary)
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
         Button(action: {
           Task {
@@ -245,6 +252,7 @@ struct SettingsView: View {
           Text("利用規約")
             .foregroundColor(.primary)
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
       Section(header: Text("位置情報")) {
@@ -258,12 +266,14 @@ struct SettingsView: View {
               .font(.caption)
           }
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
       Section(header: Text("その他")) {
         NavigationLink(destination: AppInfoView()) {
           Text("このアプリについて")
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
       if let errorMessage = errorMessage {
@@ -271,6 +281,7 @@ struct SettingsView: View {
           Text(errorMessage)
             .foregroundColor(.red)
             .font(.caption)
+            .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }
     }
