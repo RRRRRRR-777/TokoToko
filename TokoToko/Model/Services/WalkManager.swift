@@ -155,7 +155,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   deinit {
     cancellables.removeAll()
     timer?.invalidate()
-    stepCountManager.stopTracking()
+    stepCountManager.stopTracking(finalStop: true)
   }
 
   // 位置情報マネージャーの設定
@@ -291,7 +291,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     do {
       // CoreMotion利用可能性を事前チェック
       if stepCountManager.isStepCountingAvailable() {
-        stepCountManager.startTracking()
+        stepCountManager.startTracking(newWalk: true)
         logger.info(
           operation: "startWalk",
           message: "CoreMotion歩数トラッキング開始",
@@ -369,8 +369,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
 
-    // 歩数トラッキングを停止
-    stepCountManager.stopTracking()
+    // 歩数トラッキングを一時停止（CMPedometerは継続）
+    stepCountManager.stopTracking(finalStop: false)
 
     logger.logWalkStateTransitionBugPrevention(
       walkId: currentWalk?.id.uuidString ?? "unknown",
@@ -418,8 +418,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 位置情報の更新を再開
     locationManager.startUpdatingLocation()
 
-    // 歩数トラッキングを再開
-    stepCountManager.startTracking()
+    // 歩数トラッキングを再開（CMPedometerは継続中）
+    stepCountManager.startTracking(newWalk: false)
 
     // タイマーを再開
     startTimer()
@@ -474,8 +474,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
 
-    // 歩数トラッキングを停止
-    stepCountManager.stopTracking()
+    // 歩数トラッキングを完全停止
+    stepCountManager.stopTracking(finalStop: true)
 
     // サムネイル画像を生成して保存
     generateAndSaveThumbnail(for: walk)
@@ -524,8 +524,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     // 位置情報の更新を停止
     locationManager.stopUpdatingLocation()
 
-    // 歩数トラッキングを停止
-    stepCountManager.stopTracking()
+    // 歩数トラッキングを完全停止
+    stepCountManager.stopTracking(finalStop: true)
 
     print("散歩をキャンセルしました")
   }

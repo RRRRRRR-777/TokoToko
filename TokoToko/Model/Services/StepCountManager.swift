@@ -218,26 +218,19 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   @Published var isTracking: Bool = false
 
   private lazy var pedometer: CMPedometer = {
-    #if DEBUG
-      print("📱 CMPedometer初期化")
-    #endif
-    return CMPedometer()
+    CMPedometer()
   }()
   private var startDate: Date?
-  private var baselineSteps: Int = 0
+  private var baselineSteps: Int = -1  // -1は未設定を示す
 
   // MARK: - Constants
   private let updateInterval: TimeInterval = 1.0  // 1秒間隔で更新
 
   // MARK: - Initialization
-  private init() {
-    #if DEBUG
-      print("📱 StepCountManager初期化")
-    #endif
-  }
+  private init() {}
 
   deinit {
-    stopTracking()
+    stopTracking(finalStop: true)
   }
 
   // MARK: - Public Methods
@@ -255,15 +248,8 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   /// - Returns: 歩数計測が利用可能な場合true、利用不可の場合false
   func isStepCountingAvailable() -> Bool {
     do {
-      let available = CMPedometer.isStepCountingAvailable()
-      #if DEBUG
-        print("📱 CMPedometer.isStepCountingAvailable(): \(available)")
-      #endif
-      return available
+      return CMPedometer.isStepCountingAvailable()
     } catch {
-      #if DEBUG
-        print("❌ CMPedometer.isStepCountingAvailable() エラー: \(error)")
-      #endif
       return false
     }
   }
@@ -273,135 +259,106 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   /// CoreMotionのCMPedometerを使用して歩数の継続的な計測を開始します。
   /// 計測開始前に利用可能性と権限の確認を行い、
   /// 必要に応じてエラーハンドリングを実行します。
+  /// 一時停止からの再開時はCMPedometerの再開始を避け、状態のみ更新します。
   ///
   /// ## Process Flow
   /// 1. 既にトラッキング中かどうかを確認
   /// 2. CMPedometerの利用可能性をチェック
   /// 3. トラッキング状態と開始時刻を設定
-  /// 4. CMPedometer.startUpdates()で計測開始
+  /// 4. 必要時のみCMPedometer.startUpdates()で計測開始
   /// 5. コールバックでデータとエラーを処理
   ///
   /// ## Error Handling
   /// - センサー利用不可: StepCountError.notAvailable
   /// - 権限拒否: StepCountError.notAuthorized
   /// - システムエラー: StepCountError.sensorUnavailable
-  func startTracking() {
-    #if DEBUG
-      print("🚀 歩数トラッキング開始")
-    #endif
-
+  func startTracking(newWalk: Bool = false) {
     guard !isTracking else {
-      #if DEBUG
-        print("⚠️ 既にトラッキング中です")
-      #endif
       return
     }
 
-    do {
-      let isAvailable = isStepCountingAvailable()
-      #if DEBUG
-        print("📱 CMPedometer利用可能性: \(isAvailable)")
-      #endif
+    guard isStepCountingAvailable() else {
+      handleError(.notAvailable)
+      return
+    }
 
-      guard isAvailable else {
-        let error = StepCountError.notAvailable
-        #if DEBUG
-          print("❌ 歩数計測不可: \(error.localizedDescription)")
-        #endif
-        handleError(error)
-        return
-      }
-
+    if newWalk || baselineSteps < 0 {
+      // 新しい散歩開始時のみベースラインをリセット
       startDate = Date()
-      baselineSteps = 0
-      isTracking = true
+      baselineSteps = -1  // 未設定を示す値（初回更新時に設定される）
 
-      #if DEBUG
-        print("📊 CMPedometer.startUpdates開始")
-      #endif
+      // 散歩開始時に即座に0歩で表示開始
+      currentStepCount = .coremotion(steps: 0)
+      delegate?.stepCountDidUpdate(currentStepCount)
 
       // CMPedometerでのリアルタイム歩数取得を開始
       guard let startDate = startDate else {
-        #if DEBUG
-          print("❌ startDateがnilです")
-        #endif
         handleError(.sensorUnavailable)
         return
       }
 
       pedometer.startUpdates(from: startDate) { [weak self] data, error in
         DispatchQueue.main.async {
-          #if DEBUG
-            if let error = error {
-              print("❌ CMPedometer callback エラー: \(error)")
-            } else if let data = data {
-              print("📊 CMPedometer callback 成功: \(data.numberOfSteps)歩")
-            }
-          #endif
           self?.handlePedometerUpdate(data: data, error: error)
         }
       }
-
-      #if DEBUG
-        print("✅ 歩数トラッキング開始完了")
-      #endif
-    } catch {
-      #if DEBUG
-        print("❌ StepCountManager.startTracking() で予期しないエラー: \(error)")
-      #endif
-      handleError(.sensorUnavailable)
     }
+
+    isTracking = true
   }
 
   /// 歩数のリアルタイムトラッキングを停止
   ///
   /// 現在実行中の歩数トラッキングを安全に停止し、
-  /// 関連する状態をリセットします。一時停止時の表示継続のため、
-  /// 歩数データは保持されます。
+  /// 関連する状態をリセットします。散歩完全終了時のみCMPedometerを停止し、
+  /// 一時停止時はCMPedometerを継続させて短時間での再開始問題を回避します。
   ///
   /// ## Cleanup Process
   /// 1. トラッキング状態を確認（停止済みの場合は早期リターン）
   /// 2. CMPedometer.stopUpdates()でセンサーアップデート停止
   /// 3. トラッキング状態をfalseに設定
   /// 4. 開始時刻とベースラインをリセット
-  /// 5. 歩数データは保持される（unavailableにリセットしない）
-  func stopTracking() {
-    guard isTracking else { return }
+  /// 5. 歩数データをunavailableにリセット（散歩完全終了時のみ）
+  func stopTracking(finalStop: Bool = true) {
+    guard isTracking else {
+      return
+    }
 
-    #if DEBUG
-      print("⏹️ 歩数トラッキング停止")
-    #endif
-
-    pedometer.stopUpdates()
-    isTracking = false
-    startDate = nil
-    baselineSteps = 0
+    if finalStop {
+      // 散歩完全終了時のみCMPedometerを停止
+      pedometer.stopUpdates()
+      isTracking = false
+      startDate = nil
+      baselineSteps = -1  // 未設定状態に戻す
+      currentStepCount = .unavailable
+    } else {
+      // 一時停止時: CMPedometerは継続、状態のみ更新
+      isTracking = false
+    }
   }
 
   // MARK: - Private Methods
 
   private func handlePedometerUpdate(data: CMPedometerData?, error: Error?) {
     if let error = error {
-      #if DEBUG
-        print("❌ CMPedometerエラー: \(error.localizedDescription)")
-      #endif
       handlePedometerError(error)
       return
     }
 
     guard let data = data else {
-      #if DEBUG
-        print("⚠️ CMPedometerData がnilです")
-      #endif
       return
     }
 
-    let steps = data.numberOfSteps.intValue
-    let stepCountSource = StepCountSource.coremotion(steps: steps)
+    let rawSteps = data.numberOfSteps.intValue
 
-    #if DEBUG
-      print("📊 CoreMotion歩数更新: \(steps)歩")
-    #endif
+    // baselineStepsが未設定（-1）の場合に初期化
+    if baselineSteps < 0 {
+      baselineSteps = rawSteps
+    }
+
+    // ベースラインからの差分を計算（常に0以上を保証）
+    let steps = max(0, rawSteps - baselineSteps)
+    let stepCountSource = StepCountSource.coremotion(steps: steps)
 
     updateStepCount(stepCountSource)
   }
@@ -427,10 +384,6 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   }
 
   private func handleError(_ error: StepCountError) {
-    #if DEBUG
-      print("❌ StepCountError: \(error.localizedDescription)")
-    #endif
-
     updateStepCount(.unavailable)
     delegate?.stepCountDidFailWithError(error)
   }
