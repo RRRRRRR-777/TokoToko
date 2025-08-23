@@ -39,6 +39,14 @@ import Foundation
 /// - ``applySettingsToLocationManager(_:)``
 class LocationSettingsManager: ObservableObject {
   
+  // MARK: - Singleton
+  
+  /// LocationSettingsManagerのシングルトンインスタンス
+  ///
+  /// アプリ全体で単一の設定管理インスタンスを使用し、
+  /// 設定状態の一貫性を保証します。
+  static let shared = LocationSettingsManager()
+  
   // MARK: - Properties
   
   /// 現在の位置情報精度モード

@@ -219,8 +219,6 @@ struct SettingsView: View {
       }
 
       Section(header: Text("アプリ設定")) {
-        Text("通知")
-
         Button(action: {
           Task {
             await loadCachedPolicy()
@@ -245,13 +243,22 @@ struct SettingsView: View {
       }
 
       Section(header: Text("位置情報")) {
-        Text("位置情報の精度")
-        Text("バックグラウンド更新")
+        NavigationLink(destination: LocationAccuracySettingsView()
+          .environmentObject(LocationSettingsManager.shared)) {
+          HStack {
+            Text("位置情報設定")
+            Spacer()
+            Text(LocationSettingsManager.shared.currentMode.displayName)
+              .foregroundColor(.secondary)
+              .font(.caption)
+          }
+        }
       }
 
       Section(header: Text("その他")) {
-        Text("このアプリについて")
-        Text("ヘルプ")
+        NavigationLink(destination: AppInfoView()) {
+          Text("このアプリについて")
+        }
       }
 
       if let errorMessage = errorMessage {
