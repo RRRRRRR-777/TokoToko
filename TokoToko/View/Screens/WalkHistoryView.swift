@@ -218,9 +218,9 @@ struct WalkHistoryView: View {
     .background(
       LinearGradient(
         colors: [
-          Color.white.opacity(0.8),
-          Color.white.opacity(0.7),
-          Color.white.opacity(0.6),
+          Color("BackgroundColor").opacity(0.8),
+          Color("BackgroundColor").opacity(0.7),
+          Color("BackgroundColor").opacity(0.6),
           Color.clear
         ],
         startPoint: .top,
