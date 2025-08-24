@@ -49,6 +49,7 @@ struct PolicyView: View {
         }
         .navigationTitle(policyType.title)
         .navigationBarTitleDisplayMode(.large)
+        .background(Color("BackgroundColor"))
     }
 
     private var dateFormatter: DateFormatter {

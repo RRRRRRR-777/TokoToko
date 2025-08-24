@@ -128,6 +128,7 @@ struct ConsentView: View {
                     })
             }
         }
+        .background(Color("BackgroundColor"))
     }
 }
 
