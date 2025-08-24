@@ -47,57 +47,70 @@ struct LocationAccuracySettingsView: View {
 
   var body: some View {
     NavigationView {
-      List {
-        // 精度モード選択セクション
-        Section(header: Text("位置情報の精度")) {
-          ForEach(LocationAccuracyMode.allCases) { mode in
-            AccuracyModeRow(
-              mode: mode,
-              isSelected: settingsManager.currentMode == mode
-            ) {
-              settingsManager.setAccuracyMode(mode)
+      settingsListView
+        .navigationTitle("位置情報設定")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+          updateAuthorizationStatus()
+        }
+    }
+  }
+  
+  /// 設定リストビューの共通実装
+  private var settingsListView: some View {
+    List {
+      // 精度モード選択セクション
+      Section(header: Text("位置情報の精度")) {
+        ForEach(LocationAccuracyMode.allCases) { mode in
+          AccuracyModeRow(
+            mode: mode,
+            isSelected: settingsManager.currentMode == mode
+          ) {
+            settingsManager.setAccuracyMode(mode)
+            settingsManager.saveSettings()
+          }
+          .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
+          .listRowBackground(Color("BackgroundColor"))
+        }
+      }
+      
+      // バックグラウンド更新セクション
+      Section(header: Text("バックグラウンド設定")) {
+        HStack {
+          Text("バックグラウンド更新")
+          Spacer()
+          Toggle("", isOn: .init(
+            get: { settingsManager.isBackgroundUpdateEnabled },
+            set: { enabled in
+              settingsManager.setBackgroundUpdateEnabled(enabled)
               settingsManager.saveSettings()
             }
-            .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
-          }
+          ))
+          .accessibilityIdentifier("background_update_toggle")
         }
-
-        // バックグラウンド更新セクション
-        Section(header: Text("バックグラウンド設定")) {
-          HStack {
-            Text("バックグラウンド更新")
-            Spacer()
-            Toggle("", isOn: .init(
-              get: { settingsManager.isBackgroundUpdateEnabled },
-              set: { enabled in
-                settingsManager.setBackgroundUpdateEnabled(enabled)
-                settingsManager.saveSettings()
-              }
-            ))
-            .accessibilityIdentifier("background_update_toggle")
-          }
-
-          Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-
-        // 権限状態セクション
-        Section(header: Text("権限状態")) {
-          PermissionStatusRow(status: authorizationStatus)
-
-          Button("設定アプリを開く") {
-            openSettingsApp()
-          }
-          .accessibilityIdentifier("open_settings_app")
-        }
+        .listRowBackground(Color("BackgroundColor"))
+        
+        Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
+          .font(.caption)
+          .foregroundColor(.secondary)
+          .listRowBackground(Color("BackgroundColor"))
       }
-      .navigationTitle("位置情報設定")
-      .navigationBarTitleDisplayMode(.inline)
-      .onAppear {
-        updateAuthorizationStatus()
+      
+      // 権限状態セクション
+      Section(header: Text("権限状態")) {
+        PermissionStatusRow(status: authorizationStatus)
+          .listRowBackground(Color("BackgroundColor"))
+        
+        Button("設定アプリを開く") {
+          openSettingsApp()
+        }
+        .accessibilityIdentifier("open_settings_app")
+        .listRowBackground(Color("BackgroundColor"))
       }
     }
+    .listStyle(PlainListStyle())
+    .background(Color("BackgroundColor"))
+    .modifier(ScrollContentBackgroundModifier())
   }
 
   // MARK: - Private Methods
@@ -115,6 +128,20 @@ struct LocationAccuracySettingsView: View {
   private func openSettingsApp() {
     if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
       UIApplication.shared.open(settingsUrl)
+    }
+  }
+}
+
+// MARK: - View Modifiers
+
+/// iOS版に応じたスクロール背景の制御
+private struct ScrollContentBackgroundModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 16.0, *) {
+      content
+        .scrollContentBackground(.hidden)
+    } else {
+      content
     }
   }
 }
