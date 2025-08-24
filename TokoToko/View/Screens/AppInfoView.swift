@@ -58,93 +58,122 @@ struct AppInfoView: View {
 
   var body: some View {
     NavigationView {
-      List {
-        // アプリ基本情報セクション
-        Section(header: Text("アプリ情報")) {
-          // アプリ名
-          VStack(alignment: .center, spacing: 8) {
-            Text("とことこ - おさんぽSNS")
-              .font(.title2)
-              .fontWeight(.semibold)
-              .multilineTextAlignment(.center)
-              .accessibilityIdentifier("app_name")
+      appInfoListView
+        .navigationTitle("このアプリについて")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+  }
+  
+  /// アプリ情報リストビューの共通実装
+  private var appInfoListView: some View {
+    List {
+      // アプリ基本情報セクション
+      Section(header: Text("アプリ情報")) {
+        // アプリ名
+        VStack(alignment: .center, spacing: 8) {
+          Text("とことこ - おさんぽSNS")
+            .font(.title2)
+            .fontWeight(.semibold)
+            .multilineTextAlignment(.center)
+            .accessibilityIdentifier("app_name")
 
-            Text("日常の散歩を記録・共有するSNSアプリ")
-              .font(.caption)
-              .foregroundColor(.secondary)
-              .multilineTextAlignment(.center)
-          }
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 8)
+          Text("日常の散歩を記録・共有するSNSアプリ")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
         }
-
-        // バージョン情報セクション
-        Section(header: Text("バージョン情報")) {
-          InfoRow(
-            title: "バージョン",
-            value: appVersion,
-            accessibilityId: "version_info"
-          )
-
-          InfoRow(
-            title: "ビルド",
-            value: buildNumber,
-            accessibilityId: "build_info"
-          )
-        }
-
-        // 開発元情報セクション
-        Section(header: Text("開発元")) {
-          InfoRow(
-            title: "開発元",
-            value: "riku.yamada",
-            accessibilityId: "developer_info"
-          )
-
-          InfoRow(
-            title: "コピーライト",
-            value: "© \(currentYear) riku.yamada",
-            accessibilityId: "copyright_info"
-          )
-        }
-
-        // 技術情報セクション
-        Section(header: Text("技術情報")) {
-          InfoRow(
-            title: "フレームワーク",
-            value: "SwiftUI",
-            accessibilityId: "framework_info"
-          )
-
-          InfoRow(
-            title: "最小対応バージョン",
-            value: "iOS 15.0",
-            accessibilityId: "min_version_info"
-          )
-        }
-
-        // アプリの説明セクション
-        Section(header: Text("このアプリについて")) {
-          VStack(alignment: .leading, spacing: 12) {
-            Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
-              .font(.body)
-
-            Text("主な機能：")
-              .font(.headline)
-              .padding(.top, 8)
-
-            VStack(alignment: .leading, spacing: 4) {
-              FeatureRow(text: "GPS追跡による散歩ルート記録")
-              FeatureRow(text: "写真付きの散歩レポート作成")
-              FeatureRow(text: "SNS・メール・LINEでの共有")
-              FeatureRow(text: "散歩履歴の管理と振り返り")
-            }
-          }
-          .padding(.vertical, 4)
-        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .listRowBackground(Color("BackgroundColor"))
       }
-      .navigationTitle("このアプリについて")
-      .navigationBarTitleDisplayMode(.inline)
+
+      // バージョン情報セクション
+      Section(header: Text("バージョン情報")) {
+        InfoRow(
+          title: "バージョン",
+          value: appVersion,
+          accessibilityId: "version_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+
+        InfoRow(
+          title: "ビルド",
+          value: buildNumber,
+          accessibilityId: "build_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+      }
+
+      // 開発元情報セクション
+      Section(header: Text("開発元")) {
+        InfoRow(
+          title: "開発元",
+          value: "riku.yamada",
+          accessibilityId: "developer_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+
+        InfoRow(
+          title: "コピーライト",
+          value: "© \(currentYear) riku.yamada",
+          accessibilityId: "copyright_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+      }
+
+      // 技術情報セクション
+      Section(header: Text("技術情報")) {
+        InfoRow(
+          title: "フレームワーク",
+          value: "SwiftUI",
+          accessibilityId: "framework_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+
+        InfoRow(
+          title: "最小対応バージョン",
+          value: "iOS 15.0",
+          accessibilityId: "min_version_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+      }
+
+      // アプリの説明セクション
+      Section(header: Text("このアプリについて")) {
+        VStack(alignment: .leading, spacing: 12) {
+          Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
+            .font(.body)
+
+          Text("主な機能：")
+            .font(.headline)
+            .padding(.top, 8)
+
+          VStack(alignment: .leading, spacing: 4) {
+            FeatureRow(text: "GPS追跡による散歩ルート記録")
+            FeatureRow(text: "SNS・メール・LINEでの共有")
+            FeatureRow(text: "散歩履歴の管理と振り返り")
+          }
+        }
+        .padding(.vertical, 4)
+        .listRowBackground(Color("BackgroundColor"))
+      }
+    }
+    .listStyle(PlainListStyle())
+    .background(Color("BackgroundColor"))
+    .modifier(ScrollContentBackgroundModifier())
+  }
+}
+
+// MARK: - View Modifiers
+
+/// iOS版に応じたスクロール背景の制御
+private struct ScrollContentBackgroundModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 16.0, *) {
+      content
+        .scrollContentBackground(.hidden)
+    } else {
+      content
     }
   }
 }
