@@ -103,6 +103,23 @@ struct SettingsView: View {
   }
 
   init() {
+    // ナビゲーションバーの外観設定
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithOpaqueBackground()
+    appearance.backgroundColor = UIColor(named: "BackgroundColor")
+    appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
+    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
+    
+    UINavigationBar.appearance().standardAppearance = appearance
+    UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    UINavigationBar.appearance().compactAppearance = appearance
+    
+    // List背景の完全制御
+    UITableView.appearance().backgroundColor = UIColor.clear
+    UITableView.appearance().separatorStyle = .none
+    UITableViewCell.appearance().backgroundColor = UIColor.clear
+    UITableViewHeaderFooterView.appearance().backgroundColor = UIColor.clear
+    
     // UIテストモードの場合
     if ProcessInfo.processInfo.arguments.contains("--uitesting") {
       // ログアウトアラートを強制表示する場合
@@ -148,21 +165,37 @@ struct SettingsView: View {
 
   var body: some View {
     List {
-      Section(header: Text("アカウント")) {
+      Section(header: 
+        HStack {
+          Text("アカウント")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         // UIテストモードの場合はモックユーザー情報を使用
         if isUITesting && hasUserInfo {
           // メールアドレス表示
           HStack {
             Text("メールアドレス")
+              .foregroundColor(.black)
             Spacer()
             Text(mockEmail ?? "test@example.com")
-              .foregroundColor(.secondary)
+              .foregroundColor(.black)
           }
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           // プロフィール画像表示（テスト用）
           HStack {
             Text("プロフィール画像")
+              .foregroundColor(.black)
             Spacer()
             Circle()
               .fill(Color.gray)
@@ -189,15 +222,17 @@ struct SettingsView: View {
         else if let user = Auth.auth().currentUser {
           HStack {
             Text("メールアドレス")
+              .foregroundColor(.black)
             Spacer()
             Text(user.email ?? "不明")
-              .foregroundColor(.secondary)
+              .foregroundColor(.black)
           }
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           if let photoURL = user.photoURL, let url = URL(string: photoURL.absoluteString) {
             HStack {
               Text("プロフィール画像")
+                .foregroundColor(.black)
               Spacer()
               AsyncImage(url: url) { image in
                 image
@@ -229,7 +264,21 @@ struct SettingsView: View {
         }
       }
 
-      Section(header: Text("アプリ設定")) {
+      Section(header: 
+        HStack {
+          Text("アプリ設定")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         Button(action: {
           Task {
             await loadCachedPolicy()
@@ -238,7 +287,7 @@ struct SettingsView: View {
           selectedPolicyType = .privacyPolicy
         }) {
           Text("プライバシーポリシー")
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
@@ -250,28 +299,58 @@ struct SettingsView: View {
           selectedPolicyType = .termsOfService
         }) {
           Text("利用規約")
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header: Text("位置情報")) {
+      Section(header: 
+        HStack {
+          Text("位置情報")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         NavigationLink(destination: LocationAccuracySettingsView()
           .environmentObject(locationSettingsManager)) {
           HStack {
             Text("位置情報設定")
+              .foregroundColor(.black)
             Spacer()
             Text(locationSettingsManager.currentMode.displayName)
-              .foregroundColor(.secondary)
+              .foregroundColor(.black)
               .font(.caption)
           }
         }
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header: Text("その他")) {
+      Section(header: 
+        HStack {
+          Text("その他")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         NavigationLink(destination: AppInfoView()) {
           Text("このアプリについて")
+            .foregroundColor(.black)
         }
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
@@ -279,7 +358,7 @@ struct SettingsView: View {
       if let errorMessage = errorMessage {
         Section {
           Text(errorMessage)
-            .foregroundColor(.red)
+            .foregroundColor(.black)
             .font(.caption)
             .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
@@ -287,7 +366,9 @@ struct SettingsView: View {
     }
     .listStyle(PlainListStyle())
     .modifier(BackgroundColorModifier())
+    .background(Color("BackgroundColor").ignoresSafeArea())
     .navigationTitle("設定")
+    .accentColor(.black)
     .alert("ログアウトしますか？", isPresented: $showingLogoutAlert) {
       Button("キャンセル", role: .cancel) {}
       Button("ログアウト", role: .destructive) {
