@@ -21,7 +21,7 @@ struct LoadingView: View {
         .foregroundColor(.secondary)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color(.systemBackground))
+    .background(Color("BackgroundColor"))
   }
 }
 
