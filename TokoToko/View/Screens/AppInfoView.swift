@@ -62,6 +62,15 @@ struct AppInfoView: View {
         .navigationTitle("このアプリについて")
         .navigationBarTitleDisplayMode(.inline)
     }
+    .accentColor(.black)
+    .onAppear {
+      // iOS 15対応: ナビゲーションバーの外観設定
+      let appearance = UINavigationBarAppearance()
+      appearance.configureWithOpaqueBackground()
+      appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
+      UINavigationBar.appearance().standardAppearance = appearance
+      UINavigationBar.appearance().compactAppearance = appearance
+    }
   }
   
   /// アプリ情報リストビューの共通実装
@@ -74,12 +83,13 @@ struct AppInfoView: View {
           Text("とことこ - おさんぽSNS")
             .font(.title2)
             .fontWeight(.semibold)
+            .foregroundColor(.black)
             .multilineTextAlignment(.center)
             .accessibilityIdentifier("app_name")
 
           Text("日常の散歩を記録・共有するSNSアプリ")
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.black)
             .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -94,6 +104,7 @@ struct AppInfoView: View {
           value: appVersion,
           accessibilityId: "version_info"
         )
+        .foregroundColor(.black)
         .listRowBackground(Color("BackgroundColor"))
 
         InfoRow(
@@ -101,8 +112,10 @@ struct AppInfoView: View {
           value: buildNumber,
           accessibilityId: "build_info"
         )
+        .foregroundColor(.black)
         .listRowBackground(Color("BackgroundColor"))
       }
+      .foregroundColor(.black)
 
       // 開発元情報セクション
       Section(header: Text("開発元")) {
@@ -120,6 +133,7 @@ struct AppInfoView: View {
         )
         .listRowBackground(Color("BackgroundColor"))
       }
+      .foregroundColor(.black)
 
       // 技術情報セクション
       Section(header: Text("技術情報")) {
@@ -137,6 +151,7 @@ struct AppInfoView: View {
         )
         .listRowBackground(Color("BackgroundColor"))
       }
+      .foregroundColor(.black)
 
       // アプリの説明セクション
       Section(header: Text("このアプリについて")) {
@@ -155,10 +170,12 @@ struct AppInfoView: View {
           }
         }
         .padding(.vertical, 4)
+        .foregroundColor(.black)
         .listRowBackground(Color("BackgroundColor"))
       }
     }
     .listStyle(PlainListStyle())
+    .foregroundColor(.black)
     .background(Color("BackgroundColor"))
     .modifier(ScrollContentBackgroundModifier())
   }
@@ -191,12 +208,12 @@ private struct InfoRow: View {
   var body: some View {
     HStack {
       Text(title)
-        .foregroundColor(.primary)
+        .foregroundColor(.black)
 
       Spacer()
 
       Text(value)
-        .foregroundColor(.secondary)
+        .foregroundColor(.black)
         .font(.caption)
     }
     .accessibilityIdentifier(accessibilityId)
@@ -212,11 +229,11 @@ private struct FeatureRow: View {
   var body: some View {
     HStack(alignment: .top, spacing: 8) {
       Text("•")
-        .foregroundColor(.secondary)
+        .foregroundColor(.black)
 
       Text(text)
         .font(.body)
-        .foregroundColor(.primary)
+        .foregroundColor(.black)
 
       Spacer()
     }
