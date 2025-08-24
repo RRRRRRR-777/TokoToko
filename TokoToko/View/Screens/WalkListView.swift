@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import UIKit
 
 /// 散歩履歴のリスト表示とタブ管理画面
 ///
@@ -93,11 +94,15 @@ struct WalkListView: View {
     .navigationTitle("おさんぽ")
     .navigationBarTitleDisplayMode(.inline)
     .onAppear {
+      // UISegmentedControlの選択色をBackgroundColorに設定
+      UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(named: "BackgroundColor")
+
       loadMyWalks()
     }
     .refreshable {
       loadMyWalks()
     }
+    .background(Color("BackgroundColor"))
   }
 
   /// 自分の散歩履歴を表示するビュー
