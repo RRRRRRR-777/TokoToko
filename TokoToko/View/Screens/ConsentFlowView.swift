@@ -56,7 +56,7 @@ struct ConsentFlowView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
-        .background(Color(.systemBackground))
+        .background(Color("BackgroundColor"))
         .sheet(isPresented: $showingPolicyView) {
             if let policy = consentManager.currentPolicy {
                 NavigationView {
@@ -79,13 +79,13 @@ struct ConsentFlowView: View {
 
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "mappin.and.ellipse")
+            Image("TekuTokoIcon")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 80)
                 .foregroundColor(.blue)
 
-            Text("TokoTokoへようこそ")
+            Text("とことこへようこそ")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
@@ -123,22 +123,22 @@ struct ConsentFlowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
 
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.black)
             }
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6))
+                  .fill(Color(red: 234/255, green: 234/255, blue: 234/255))
             )
         }
         .buttonStyle(PlainButtonStyle())
