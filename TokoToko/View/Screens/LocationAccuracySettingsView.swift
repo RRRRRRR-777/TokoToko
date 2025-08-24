@@ -60,7 +60,16 @@ struct LocationAccuracySettingsView: View {
   private var settingsListView: some View {
     List {
       // 精度モード選択セクション
-      Section(header: Text("位置情報の精度")) {
+      Section(header: 
+        HStack {
+          Text("位置情報の精度")
+            .foregroundColor(.gray)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         ForEach(LocationAccuracyMode.allCases) { mode in
           AccuracyModeRow(
             mode: mode,
@@ -75,9 +84,19 @@ struct LocationAccuracySettingsView: View {
       }
       
       // バックグラウンド更新セクション
-      Section(header: Text("バックグラウンド設定")) {
+      Section(header:
+        HStack {
+          Text("バックグラウンド設定")
+            .foregroundColor(.gray)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         HStack {
           Text("バックグラウンド更新")
+            .foregroundColor(.black)
           Spacer()
           Toggle("", isOn: .init(
             get: { settingsManager.isBackgroundUpdateEnabled },
@@ -92,18 +111,28 @@ struct LocationAccuracySettingsView: View {
         
         Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
           .font(.caption)
-          .foregroundColor(.secondary)
+          .foregroundColor(.black)
           .listRowBackground(Color("BackgroundColor"))
       }
       
       // 権限状態セクション
-      Section(header: Text("権限状態")) {
+      Section(header:
+        HStack {
+          Text("権限状態")
+            .foregroundColor(.gray)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         PermissionStatusRow(status: authorizationStatus)
           .listRowBackground(Color("BackgroundColor"))
         
         Button("設定アプリを開く") {
           openSettingsApp()
         }
+        .foregroundColor(.black)
         .accessibilityIdentifier("open_settings_app")
         .listRowBackground(Color("BackgroundColor"))
       }
@@ -120,6 +149,31 @@ struct LocationAccuracySettingsView: View {
   /// LocationManagerから最新の権限状態を取得して表示を更新します。
   private func updateAuthorizationStatus() {
     authorizationStatus = LocationManager.shared.checkAuthorizationStatus()
+  }
+
+  /// ナビゲーションバーの外観設定
+  ///
+  /// ダークモード・ライトモード統一のためのナビゲーションバー外観を設定します。
+  private func setupNavigationAppearance() {
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithTransparentBackground()
+    appearance.backgroundColor = UIColor(named: "BackgroundColor")
+    appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
+    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
+    
+    UINavigationBar.appearance().standardAppearance = appearance
+    UINavigationBar.appearance().compactAppearance = appearance
+    UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    
+    // テーブル背景の統一
+    UITableView.appearance().backgroundColor = UIColor(named: "BackgroundColor")
+    UITableViewCell.appearance().backgroundColor = .clear
+    UITableView.appearance().separatorColor = .clear
+    UITableViewHeaderFooterView.appearance().tintColor = .clear
+    UITableViewHeaderFooterView.appearance().backgroundColor = UIColor(named: "BackgroundColor")
+    
+    // スクロール領域外の背景色も統一
+    UIView.appearance(whenContainedInInstancesOf: [UITableView.self]).backgroundColor = UIColor(named: "BackgroundColor")
   }
 
   /// 設定アプリを開く
@@ -162,11 +216,11 @@ private struct AccuracyModeRow: View {
         VStack(alignment: .leading, spacing: 4) {
           Text(mode.displayName)
             .font(.body)
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
 
           Text(mode.description)
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.black)
             .multilineTextAlignment(.leading)
         }
 
@@ -195,6 +249,7 @@ private struct PermissionStatusRow: View {
   var body: some View {
     HStack {
       Text("位置情報権限")
+        .foregroundColor(.black)
       Spacer()
       Text(statusText)
         .foregroundColor(statusColor)
