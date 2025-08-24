@@ -63,10 +63,12 @@ struct AppInfoView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     .accentColor(.black)
+    .background(Color("BackgroundColor").ignoresSafeArea())
     .onAppear {
       // iOS 15対応: ナビゲーションバーの外観設定
       let appearance = UINavigationBarAppearance()
       appearance.configureWithOpaqueBackground()
+      appearance.backgroundColor = UIColor(named: "BackgroundColor")
       appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
       UINavigationBar.appearance().standardAppearance = appearance
       UINavigationBar.appearance().compactAppearance = appearance
@@ -77,7 +79,17 @@ struct AppInfoView: View {
   private var appInfoListView: some View {
     List {
       // アプリ基本情報セクション
-      Section(header: Text("アプリ情報")) {
+      Section(header: 
+        HStack {
+          Text("アプリ情報")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         // アプリ名
         VStack(alignment: .center, spacing: 8) {
           Text("とことこ - おさんぽSNS")
@@ -98,7 +110,17 @@ struct AppInfoView: View {
       }
 
       // バージョン情報セクション
-      Section(header: Text("バージョン情報")) {
+      Section(header: 
+        HStack {
+          Text("バージョン情報")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         InfoRow(
           title: "バージョン",
           value: appVersion,
@@ -118,7 +140,17 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // 開発元情報セクション
-      Section(header: Text("開発元")) {
+      Section(header: 
+        HStack {
+          Text("開発元")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         InfoRow(
           title: "開発元",
           value: "riku.yamada",
@@ -136,7 +168,17 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // 技術情報セクション
-      Section(header: Text("技術情報")) {
+      Section(header: 
+        HStack {
+          Text("技術情報")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         InfoRow(
           title: "フレームワーク",
           value: "SwiftUI",
@@ -154,7 +196,17 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // アプリの説明セクション
-      Section(header: Text("このアプリについて")) {
+      Section(header: 
+        HStack {
+          Text("このアプリについて")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         VStack(alignment: .leading, spacing: 12) {
           Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
             .font(.body)
@@ -177,6 +229,14 @@ struct AppInfoView: View {
     .listStyle(PlainListStyle())
     .foregroundColor(.black)
     .background(Color("BackgroundColor"))
+    .onAppear {
+      // iOS 15対応: リストの背景色を完全に制御
+      UITableView.appearance().backgroundColor = UIColor.clear
+      UITableView.appearance().separatorStyle = .none
+      UITableViewCell.appearance().backgroundColor = UIColor.clear
+      UITableViewHeaderFooterView.appearance().backgroundView = UIView()
+      UITableViewHeaderFooterView.appearance().backgroundView?.backgroundColor = UIColor.clear
+    }
     .modifier(ScrollContentBackgroundModifier())
   }
 }
