@@ -412,6 +412,7 @@ struct SettingsView_Previews: PreviewProvider {
     NavigationView {
       SettingsView()
         .environmentObject(AuthManager())
+        .environmentObject(LocationSettingsManager())
     }
   }
 }
