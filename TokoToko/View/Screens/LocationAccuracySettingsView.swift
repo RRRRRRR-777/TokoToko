@@ -46,13 +46,20 @@ struct LocationAccuracySettingsView: View {
   @State private var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
   var body: some View {
-    NavigationView {
-      settingsListView
-        .navigationTitle("位置情報設定")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-          updateAuthorizationStatus()
-        }
+    ZStack {
+      Color("BackgroundColor")
+        .ignoresSafeArea(.all)
+      
+      NavigationView {
+        settingsListView
+          .navigationTitle("位置情報設定")
+          .navigationBarTitleDisplayMode(.inline)
+          .onAppear {
+            updateAuthorizationStatus()
+            setupNavigationAppearance()
+          }
+      }
+      .accentColor(.black)
     }
   }
   
@@ -140,6 +147,10 @@ struct LocationAccuracySettingsView: View {
     .listStyle(PlainListStyle())
     .background(Color("BackgroundColor"))
     .modifier(ScrollContentBackgroundModifier())
+    .onAppear {
+      setupTableViewAppearance()
+    }
+    .background(Color("BackgroundColor").ignoresSafeArea())
   }
 
   // MARK: - Private Methods
@@ -151,10 +162,12 @@ struct LocationAccuracySettingsView: View {
     authorizationStatus = LocationManager.shared.checkAuthorizationStatus()
   }
 
-  /// ナビゲーションバーの外観設定
+  /// UI外観の統合設定
   ///
-  /// ダークモード・ライトモード統一のためのナビゲーションバー外観を設定します。
+  /// ナビゲーションバー、テーブルビュー、スクロールビューの外観を統一して
+  /// ダークモード・ライトモード統一とスクロール背景問題を解決します。
   private func setupNavigationAppearance() {
+    // ナビゲーションバー外観設定
     let appearance = UINavigationBarAppearance()
     appearance.configureWithTransparentBackground()
     appearance.backgroundColor = UIColor(named: "BackgroundColor")
@@ -165,15 +178,63 @@ struct LocationAccuracySettingsView: View {
     UINavigationBar.appearance().compactAppearance = appearance
     UINavigationBar.appearance().scrollEdgeAppearance = appearance
     
-    // テーブル背景の統一
-    UITableView.appearance().backgroundColor = UIColor(named: "BackgroundColor")
-    UITableViewCell.appearance().backgroundColor = .clear
-    UITableView.appearance().separatorColor = .clear
-    UITableViewHeaderFooterView.appearance().tintColor = .clear
-    UITableViewHeaderFooterView.appearance().backgroundColor = UIColor(named: "BackgroundColor")
+    // 統合背景制御
+    setupUnifiedBackgroundAppearance()
+  }
+
+  /// 統合背景外観設定
+  ///
+  /// 全UIコンポーネントの背景色をBackgroundColorに統一します。
+  private func setupUnifiedBackgroundAppearance() {
+    let backgroundColor = UIColor(named: "BackgroundColor")
     
-    // スクロール領域外の背景色も統一
-    UIView.appearance(whenContainedInInstancesOf: [UITableView.self]).backgroundColor = UIColor(named: "BackgroundColor")
+    // テーブルビュー関連
+    UITableView.appearance().backgroundColor = backgroundColor
+    UITableView.appearance().separatorStyle = .none
+    UITableView.appearance().separatorColor = .clear
+    UITableViewCell.appearance().backgroundColor = .clear
+    UITableViewHeaderFooterView.appearance().backgroundColor = backgroundColor
+    UITableViewHeaderFooterView.appearance().backgroundConfiguration = nil
+    
+    // スクロールビューと全体制御
+    UIScrollView.appearance().backgroundColor = backgroundColor
+    UIWindow.appearance().backgroundColor = backgroundColor
+    UIView.appearance(whenContainedInInstancesOf: [UITableView.self]).backgroundColor = backgroundColor
+  }
+
+  /// 動的背景制御
+  ///
+  /// ビュー階層を直接探索して背景色を動的に設定します。
+  /// SwiftUIとUIKitの境界で発生する背景問題の最終解決策です。
+  private func setupTableViewAppearance() {
+    DispatchQueue.main.async {
+      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+         let window = windowScene.windows.first {
+        window.backgroundColor = UIColor(named: "BackgroundColor")
+        self.applyBackgroundColorRecursively(to: window)
+      }
+    }
+  }
+  
+  /// ビュー階層に背景色を再帰的に適用
+  private func applyBackgroundColorRecursively(to view: UIView) {
+    let backgroundColor = UIColor(named: "BackgroundColor")
+    
+    // UITableViewとその親階層に特別な処理
+    if let tableView = view as? UITableView {
+      tableView.backgroundColor = backgroundColor
+      var parentView = tableView.superview
+      while parentView != nil {
+        parentView?.backgroundColor = backgroundColor
+        parentView = parentView?.superview
+      }
+    }
+    
+    // 全サブビューに適用
+    view.backgroundColor = backgroundColor
+    for subview in view.subviews {
+      applyBackgroundColorRecursively(to: subview)
+    }
   }
 
   /// 設定アプリを開く
@@ -188,14 +249,19 @@ struct LocationAccuracySettingsView: View {
 
 // MARK: - View Modifiers
 
-/// iOS版に応じたスクロール背景の制御
+/// iOS版別スクロール背景制御
+///
+/// iOS 16以降の.scrollContentBackground(.hidden)を活用しつつ、
+/// 全バージョンで確実な背景色統一を提供します。
 private struct ScrollContentBackgroundModifier: ViewModifier {
   func body(content: Content) -> some View {
     if #available(iOS 16.0, *) {
       content
         .scrollContentBackground(.hidden)
+        .background(Color("BackgroundColor"))
     } else {
       content
+        .background(Color("BackgroundColor"))
     }
   }
 }
