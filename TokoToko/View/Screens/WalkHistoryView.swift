@@ -53,8 +53,21 @@ struct WalkHistoryView: View {
   @Environment(\.presentationMode)
   var presentationMode
 
+  /// カラースキーム環境変数
+  ///
+  /// ライトモード・ダークモードの判定に使用されます。
+  @Environment(\.colorScheme)
+  var colorScheme
+
   /// 共有シートの表示状態
   @State private var showingShareSheet = false
+
+  /// 外観モードに応じた背景グラデーション色
+  ///
+  /// ライトモードでは既存のBackgroundColor、ダークモードではグレーを返します。
+  private var backgroundGradientColor: Color {
+    colorScheme == .dark ? Color.gray : Color("BackgroundColor")
+  }
 
   /// WalkHistoryViewの初期化メソッド
   ///
@@ -218,9 +231,9 @@ struct WalkHistoryView: View {
     .background(
       LinearGradient(
         colors: [
-          Color("BackgroundColor").opacity(0.8),
-          Color("BackgroundColor").opacity(0.7),
-          Color("BackgroundColor").opacity(0.6),
+          backgroundGradientColor.opacity(0.8),
+          backgroundGradientColor.opacity(0.7),
+          backgroundGradientColor.opacity(0.6),
           Color.clear
         ],
         startPoint: .top,
