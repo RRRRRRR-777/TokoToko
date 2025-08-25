@@ -193,9 +193,9 @@ struct WalkHistoryView: View {
           showingShareSheet = true
         }) {
           Image(systemName: "square.and.arrow.up")
-            .font(.system(size: 18, weight: .medium))
+            .font(.system(size: 24, weight: .medium))
             .foregroundColor(Color(red: 68 / 255, green: 136 / 255, blue: 77 / 255))
-            .frame(width: 40, height: 40)
+            .frame(width: 60, height: 60)
         }
 
         // ユーザー情報表示
