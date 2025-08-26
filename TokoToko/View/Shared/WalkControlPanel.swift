@@ -305,11 +305,11 @@ struct WalkInfoDisplay: View {
         VStack(alignment: .center, spacing: 4) {
           Text("経過時間")
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.gray)
           Text(elapsedTime)
             .font(.title2)
             .fontWeight(.bold)
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
 
         stepCountSection
@@ -317,11 +317,11 @@ struct WalkInfoDisplay: View {
         VStack(alignment: .center, spacing: 4) {
           Text("距離")
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.gray)
           Text(distance)
             .font(.title2)
             .fontWeight(.bold)
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
       }
 
@@ -341,7 +341,7 @@ struct WalkInfoDisplay: View {
         HStack(spacing: 4) {
           stepCountLabel
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.black)
         }
 
         stepCountDisplay
@@ -355,6 +355,7 @@ struct WalkInfoDisplay: View {
   // 歩数ラベル
   private var stepCountLabel: some View {
     Text(stepCountLabelText)
+      .foregroundColor(.gray)
   }
 
   // 歩数ラベルテキスト
@@ -374,12 +375,12 @@ struct WalkInfoDisplay: View {
         Text(String(steps) + "歩")
           .font(.title2)
           .fontWeight(.bold)
-          .foregroundColor(.primary)
+          .foregroundColor(.black)
       } else {
         Text("計測不可")
           .font(.title3)
           .fontWeight(.medium)
-          .foregroundColor(.secondary)
+          .foregroundColor(.black)
       }
     }
   }
