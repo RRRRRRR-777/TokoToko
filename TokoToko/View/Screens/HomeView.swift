@@ -332,39 +332,11 @@ struct HomeView: View {
           Spacer()
           HStack {
             Spacer()
-            walkingIndicator
-              .padding()
           }
         }
       }
     }
     .background(Color(.systemGray6))
-  }
-
-  // 散歩中インジケーター
-  private var walkingIndicator: some View {
-    HStack(spacing: 8) {
-      Circle()
-        .fill(walkManager.currentWalk?.status == .paused ? Color.orange : Color.red)
-        .frame(width: 8, height: 8)
-        .scaleEffect(
-          walkManager.currentWalk?.status == .paused ? 1.0 : (walkManager.isWalking ? 1.0 : 0.5)
-        )
-        .animation(
-          (walkManager.currentWalk?.status == .paused || !shouldAnimateRecording)
-            ? .none : .easeInOut(duration: 1.0).repeatForever(),
-          value: shouldAnimateRecording
-        )
-
-      Text(walkManager.currentWalk?.status == .paused ? "一時停止中" : "記録中")
-        .font(.caption)
-        .fontWeight(.medium)
-    }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 6)
-    .background(Color.white.opacity(0.9))
-    .cornerRadius(16)
-    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
   }
 
   // 位置情報の許可を求めるビュー
