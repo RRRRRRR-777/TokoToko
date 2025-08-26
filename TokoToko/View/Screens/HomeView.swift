@@ -146,10 +146,6 @@ struct HomeView: View {
               distance: walkManager.distanceString,
               stepCountSource: walkManager.currentStepCount
             )
-            .padding()
-            .background(Color.white.opacity(0.95))
-            .cornerRadius(16)
-            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
 
             // 一時停止中の再開ボタン
             if walkManager.currentWalk?.status == .paused {
