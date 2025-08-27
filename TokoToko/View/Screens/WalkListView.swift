@@ -63,6 +63,18 @@ struct WalkListView: View {
   /// - Parameter selectedTab: 初期選択タブのインデックス（デフォルト: 0）
   init(selectedTab: Int = 0) {
     self._selectedTab = State(initialValue: selectedTab)
+
+    // ナビゲーションバーの外観設定
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithOpaqueBackground()
+    appearance.backgroundColor = UIColor(named: "BackgroundColor")
+    appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
+    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
+
+    UINavigationBar.appearance().standardAppearance = appearance
+    UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    UINavigationBar.appearance().compactAppearance = appearance
+    UINavigationBar.appearance().compactScrollEdgeAppearance = appearance
   }
 
   var body: some View {
@@ -75,6 +87,7 @@ struct WalkListView: View {
           .accessibilityIdentifier("フレンドの履歴")
       }
       .pickerStyle(SegmentedPickerStyle())
+      .background(Color("BackgroundColor"))
       .padding(.horizontal)
       .padding(.top, 8)
       .accessibilityIdentifier("履歴タブSegmentedControl")
@@ -93,16 +106,22 @@ struct WalkListView: View {
     }
     .navigationTitle("おさんぽ")
     .navigationBarTitleDisplayMode(.inline)
+    .accentColor(.black)
     .onAppear {
-      // UISegmentedControlの選択色をBackgroundColorに設定
+      // セグメントコントロールの外観設定
+      UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
+      UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.black], for: .selected)
       UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(named: "BackgroundColor")
 
+      // List背景の透明化
+      UITableView.appearance().backgroundColor = .clear
+      UITableViewCell.appearance().backgroundColor = .clear
       loadMyWalks()
     }
     .refreshable {
       loadMyWalks()
     }
-    .background(Color("BackgroundColor"))
+    .background(Color("BackgroundColor").ignoresSafeArea())
   }
 
   /// 自分の散歩履歴を表示するビュー
@@ -114,7 +133,7 @@ struct WalkListView: View {
         VStack {
           Spacer()
           ProgressView("読み込み中...")
-            .foregroundColor(.secondary)
+            .foregroundColor(.black)
           Spacer()
         }
       } else if walks.isEmpty {
@@ -141,6 +160,7 @@ struct WalkListView: View {
       Text("フレンドの履歴")
         .font(.title2)
         .fontWeight(.semibold)
+        .foregroundColor(.black)
         .padding(.bottom, 8)
 
       Text("友達の散歩履歴は近日公開予定です")
@@ -169,6 +189,7 @@ struct WalkListView: View {
       Text("散歩履歴がありません")
         .font(.title2)
         .fontWeight(.semibold)
+        .foregroundColor(.black)
         .accessibilityIdentifier("散歩履歴がありません")
 
       Text("散歩を完了すると、ここに履歴が表示されます")
@@ -200,10 +221,12 @@ struct WalkListView: View {
           WalkRow(walk: walk)
         }
         .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
+        .listRowBackground(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
       }
     }
     .listStyle(PlainListStyle())
+    .background(Color("BackgroundColor"))
     .refreshable {
       loadMyWalks()
     }
