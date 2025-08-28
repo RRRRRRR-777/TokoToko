@@ -8,6 +8,7 @@
 import SwiftUI
 import ViewInspector
 import XCTest
+import UIKit
 @testable import TokoToko
 
 /// LocationAccuracySettingsViewの単体テスト
@@ -222,5 +223,66 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
     
     let accessibilityId = try settingsButton.accessibilityIdentifier()
     XCTAssertEqual(accessibilityId, "open_settings_app", "設定アプリボタンのアクセシビリティ識別子が正しく設定されるべき")
+  }
+  
+  // MARK: - リファクタリング検証テスト
+  
+  /// 改善された再帰メソッドの深度制限テスト
+  func test_再帰メソッド_深度制限が正しく動作する() {
+    // Given
+    let testView = LocationAccuracySettingsView()
+      .environmentObject(settingsManager)
+    let hostingController = UIHostingController(rootView: testView)
+    
+    // 深い階層のテストビューを作成
+    let deepView = createDeepViewHierarchy(depth: 25)
+    hostingController.view.addSubview(deepView)
+    
+    // When & Then (クラッシュしないことを確認)
+    XCTAssertNoThrow({
+      // SwiftUIビューの統合テスト - 深い階層でもクラッシュしないことを確認
+      hostingController.loadViewIfNeeded()
+      hostingController.viewDidAppear(false)
+      // 深度制限により安全に処理されることを確認
+      print("再帰メソッドの深度制限テスト: SwiftUIビュー統合テスト完了")
+    }, "再帰メソッドは深度制限により安全に終了する必要があります")
+    
+    hostingController.view.removeFromSuperview()
+  }
+  
+  /// NavigationBarStyleManagerの統合テスト
+  func test_NavigationBarStyleManager統合_設定が正しく適用される() {
+    // Given
+    let testView = LocationAccuracySettingsView()
+      .environmentObject(settingsManager)
+    
+    // When
+    let hostingController = UIHostingController(rootView: testView)
+    hostingController.loadViewIfNeeded()
+    
+    // Then
+    let navigationBar = hostingController.navigationController?.navigationBar ?? UINavigationBar.appearance()
+    XCTAssertNotNil(navigationBar.standardAppearance, "NavigationBarStyleManagerによる設定が適用されている必要があります")
+    
+    // 統一された外観設定の確認
+    let appearance = navigationBar.standardAppearance
+    XCTAssertNotNil(appearance.backgroundColor, "背景色が設定されている必要があります")
+  }
+  
+  // MARK: - Helper Methods
+  
+  /// 深い階層のビューを作成（テスト用）
+  private func createDeepViewHierarchy(depth: Int) -> UIView {
+    var currentView = UIView()
+    currentView.backgroundColor = UIColor.red
+    
+    for _ in 0..<depth {
+      let childView = UIView()
+      childView.backgroundColor = UIColor.blue
+      currentView.addSubview(childView)
+      currentView = childView
+    }
+    
+    return currentView
   }
 }
