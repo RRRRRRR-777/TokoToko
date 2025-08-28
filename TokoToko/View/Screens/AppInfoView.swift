@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// アプリ情報表示画面
 ///
@@ -65,13 +66,8 @@ struct AppInfoView: View {
     .accentColor(.black)
     .background(Color("BackgroundColor").ignoresSafeArea())
     .onAppear {
-      // iOS 15対応: ナビゲーションバーの外観設定
-      let appearance = UINavigationBarAppearance()
-      appearance.configureWithOpaqueBackground()
-      appearance.backgroundColor = UIColor(named: "BackgroundColor")
-      appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
-      UINavigationBar.appearance().standardAppearance = appearance
-      UINavigationBar.appearance().compactAppearance = appearance
+      // 統一されたナビゲーションバー外観設定を適用
+      NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
     }
   }
   

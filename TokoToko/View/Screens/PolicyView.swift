@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum PolicyType {
     case privacyPolicy
@@ -28,26 +29,8 @@ struct PolicyView: View {
     }
     
     static func configureNavigationBarAppearance() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(named: "BackgroundColor")
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
-        appearance.shadowColor = UIColor.clear
-        appearance.shadowImage = UIImage()
-        
-        let scrollAppearance = UINavigationBarAppearance()
-        scrollAppearance.configureWithOpaqueBackground()
-        scrollAppearance.backgroundColor = UIColor(named: "BackgroundColor")
-        scrollAppearance.titleTextAttributes = [.foregroundColor: UIColor.black]
-        scrollAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
-        scrollAppearance.shadowColor = UIColor.clear
-        scrollAppearance.shadowImage = UIImage()
-        
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = scrollAppearance
-        UINavigationBar.appearance().tintColor = UIColor.black
+        // ポリシー画面用の特殊設定（シャドウ非表示）を適用
+        NavigationBarStyleManager.shared.applyUnifiedStyle(customizations: .policyScreen)
     }
 
     var body: some View {

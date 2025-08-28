@@ -9,6 +9,7 @@ import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
 import SwiftUI
+import UIKit
 
 /// Firebase認証状態を管理するObservableObjectクラス
 ///
@@ -197,19 +198,9 @@ struct TokoTokoApp: App {
   /// ナビゲーションバーの外観をBackgroundColorに設定
   ///
   /// アプリ全体のナビゲーションバー背景色を一貫したベージュ色に設定します。
-  /// 標準外観とコンパクト外観の両方に適用し、iOS全バージョンでの一貫性を確保します。
+  /// NavigationBarStyleManagerを通じて統一されたスタイル管理を提供します。
   private func configureNavigationBarAppearance() {
-    let backgroundColor = UIColor(named: "BackgroundColor") ?? UIColor.systemBackground
-    
-    // iOS 15+ の外観設定
-    let navigationBarAppearance = UINavigationBarAppearance()
-    navigationBarAppearance.configureWithOpaqueBackground()
-    navigationBarAppearance.backgroundColor = backgroundColor
-    
-    // グローバル設定を適用
-    UINavigationBar.appearance().standardAppearance = navigationBarAppearance
-    UINavigationBar.appearance().compactAppearance = navigationBarAppearance
-    UINavigationBar.appearance().scrollEdgeAppearance = navigationBarAppearance
+    NavigationBarStyleManager.shared.applyUnifiedStyle()
   }
 }
 

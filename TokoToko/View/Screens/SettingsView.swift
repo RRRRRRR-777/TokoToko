@@ -7,6 +7,7 @@
 
 import FirebaseAuth
 import SwiftUI
+import UIKit
 
 /// アプリケーション設定とアカウント管理画面
 ///
@@ -103,16 +104,8 @@ struct SettingsView: View {
   }
 
   init() {
-    // ナビゲーションバーの外観設定
-    let appearance = UINavigationBarAppearance()
-    appearance.configureWithOpaqueBackground()
-    appearance.backgroundColor = UIColor(named: "BackgroundColor")
-    appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
-    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
-    
-    UINavigationBar.appearance().standardAppearance = appearance
-    UINavigationBar.appearance().scrollEdgeAppearance = appearance
-    UINavigationBar.appearance().compactAppearance = appearance
+    // 統一されたナビゲーションバー外観設定を適用
+    NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .settingsScreen)
     
     // List背景の完全制御
     UITableView.appearance().backgroundColor = UIColor.clear

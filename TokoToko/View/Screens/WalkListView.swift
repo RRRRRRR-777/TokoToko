@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import CoreLocation
 import UIKit
 
@@ -63,18 +64,9 @@ struct WalkListView: View {
   /// - Parameter selectedTab: 初期選択タブのインデックス（デフォルト: 0）
   init(selectedTab: Int = 0) {
     self._selectedTab = State(initialValue: selectedTab)
-
-    // ナビゲーションバーの外観設定
-    let appearance = UINavigationBarAppearance()
-    appearance.configureWithOpaqueBackground()
-    appearance.backgroundColor = UIColor(named: "BackgroundColor")
-    appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
-    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
-
-    UINavigationBar.appearance().standardAppearance = appearance
-    UINavigationBar.appearance().scrollEdgeAppearance = appearance
-    UINavigationBar.appearance().compactAppearance = appearance
-    UINavigationBar.appearance().compactScrollEdgeAppearance = appearance
+    
+    // 統一されたナビゲーションバー外観設定を適用
+    NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .walkListScreen)
   }
 
   var body: some View {
