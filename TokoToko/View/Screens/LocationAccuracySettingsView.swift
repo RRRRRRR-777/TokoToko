@@ -217,24 +217,65 @@ struct LocationAccuracySettingsView: View {
   }
   
   /// ビュー階層に背景色を再帰的に適用
-  private func applyBackgroundColorRecursively(to view: UIView) {
+  ///
+  /// ビュー階層を深度制限付きで再帰的に探索し、背景色を適用します。
+  /// パフォーマンス最適化として最大探索深度を制限し、デバッグビルドでは実行時間を計測します。
+  ///
+  /// - Parameters:
+  ///   - view: 背景色を適用する対象ビュー
+  ///   - maxDepth: 最大探索深度（デフォルト: 20）
+  ///   - currentDepth: 現在の探索深度（内部使用）
+  private func applyBackgroundColorRecursively(
+    to view: UIView,
+    maxDepth: Int = 20,
+    currentDepth: Int = 0
+  ) {
+    // 深度制限によるスタックオーバーフロー防止
+    guard currentDepth < maxDepth else {
+      #if DEBUG
+      print("LocationAccuracySettingsView: 再帰処理が最大深度(\(maxDepth))に到達しました")
+      #endif
+      return
+    }
+    
+    #if DEBUG
+    let startTime = CFAbsoluteTimeGetCurrent()
+    #endif
+    
     let backgroundColor = UIColor(named: "BackgroundColor")
     
     // UITableViewとその親階層に特別な処理
     if let tableView = view as? UITableView {
       tableView.backgroundColor = backgroundColor
       var parentView = tableView.superview
-      while parentView != nil {
+      var parentDepth = 0
+      
+      // 親階層の探索にも深度制限を適用
+      while parentView != nil && parentDepth < 10 {
         parentView?.backgroundColor = backgroundColor
         parentView = parentView?.superview
+        parentDepth += 1
       }
     }
     
-    // 全サブビューに適用
+    // 現在のビューに背景色を適用
     view.backgroundColor = backgroundColor
+    
+    // サブビューに再帰的に適用
     for subview in view.subviews {
-      applyBackgroundColorRecursively(to: subview)
+      applyBackgroundColorRecursively(
+        to: subview,
+        maxDepth: maxDepth,
+        currentDepth: currentDepth + 1
+      )
     }
+    
+    #if DEBUG
+    let executionTime = CFAbsoluteTimeGetCurrent() - startTime
+    if currentDepth == 0 { // ルート呼び出しでのみログ出力
+      print("LocationAccuracySettingsView: 背景色再帰適用完了 - 実行時間: \(String(format: "%.3f", executionTime * 1000))ms, 最大深度: \(currentDepth)")
+    }
+    #endif
   }
 
   /// 設定アプリを開く
