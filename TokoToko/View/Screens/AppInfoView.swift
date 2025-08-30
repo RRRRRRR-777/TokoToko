@@ -222,14 +222,6 @@ struct AppInfoView: View {
     .listStyle(PlainListStyle())
     .foregroundColor(.black)
     .background(Color("BackgroundColor"))
-    .onAppear {
-      // iOS 15対応: リストの背景色を完全に制御
-      UITableView.appearance().backgroundColor = UIColor.clear
-      UITableView.appearance().separatorStyle = .none
-      UITableViewCell.appearance().backgroundColor = UIColor.clear
-      UITableViewHeaderFooterView.appearance().backgroundView = UIView()
-      UITableViewHeaderFooterView.appearance().backgroundView?.backgroundColor = UIColor.clear
-    }
     .modifier(ScrollContentBackgroundModifier())
   }
 }

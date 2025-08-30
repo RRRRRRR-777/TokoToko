@@ -36,9 +36,15 @@ public struct ScrollContentBackgroundModifier: ViewModifier {
       content
         .scrollContentBackground(.hidden)
     } else {
-      // iOS 15以前では、既存のUITableView.appearance()による
-      // 背景制御方法を維持する
+      // iOS 15以前では、UITableView.appearance()による背景制御を適用
       content
+        .onAppear {
+          UITableView.appearance().backgroundColor = UIColor.clear
+          UITableView.appearance().separatorStyle = .none
+          UITableViewCell.appearance().backgroundColor = UIColor.clear
+          UITableViewHeaderFooterView.appearance().backgroundView = UIView()
+          UITableViewHeaderFooterView.appearance().backgroundView?.backgroundColor = UIColor.clear
+        }
     }
   }
 }
