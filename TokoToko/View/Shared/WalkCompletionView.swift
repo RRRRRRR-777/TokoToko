@@ -72,6 +72,7 @@ struct WalkCompletionView: View {
                 }
                 .padding()
             }
+            .background(Color("BackgroundColor"))
             .navigationTitle("散歩完了")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -80,10 +81,14 @@ struct WalkCompletionView: View {
                     Button("閉じる") {
                         isPresented = false
                     }
+                    .foregroundColor(.black)
                 }
             }
         }
+        .accentColor(.black)
+        .background(Color("BackgroundColor").ignoresSafeArea())
         .onAppear {
+            setupNavigationBarAppearance()
             generateShareImage()
         }
         .shareWalk(walk, isPresented: $showingShareSheet)
@@ -106,17 +111,17 @@ struct WalkCompletionView: View {
                 Text("おつかれさまでした！")
                     .font(.title)
                     .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
 
                 Text("素晴らしい散歩でした")
                     .font(.headline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
             }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(Color("BackgroundColor"))
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         )
     }
@@ -131,6 +136,7 @@ struct WalkCompletionView: View {
                 Text(walk.title)
                     .font(.title2)
                     .fontWeight(.semibold)
+                    .foregroundColor(.black)
                 Spacer()
             }
 
@@ -146,9 +152,10 @@ struct WalkCompletionView: View {
                     Text(walk.distanceString)
                         .font(.title3)
                         .fontWeight(.bold)
+                        .foregroundColor(.black)
                     Text("距離")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -160,9 +167,10 @@ struct WalkCompletionView: View {
                     Text(walk.durationString)
                         .font(.title3)
                         .fontWeight(.bold)
+                        .foregroundColor(.black)
                     Text("時間")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -174,9 +182,10 @@ struct WalkCompletionView: View {
                     Text(walk.totalSteps == 0 ? "-" : "\(walk.totalSteps)")
                         .font(.title3)
                         .fontWeight(.bold)
+                        .foregroundColor(.black)
                     Text("歩数")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -185,7 +194,7 @@ struct WalkCompletionView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color("BackgroundColor").opacity(0.8))
         )
     }
 
@@ -198,19 +207,19 @@ struct WalkCompletionView: View {
                         .scaleEffect(1.2)
                     Text("共有用画像を生成中...")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                 }
                 .frame(height: 200)
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(Color("BackgroundColor").opacity(0.6))
                 )
             } else if let image = generatedImage {
                 VStack(spacing: 8) {
                     Text("共有用画像")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
 
                     Image(uiImage: image)
                         .resizable()
@@ -295,6 +304,19 @@ struct WalkCompletionView: View {
     }
 
     // MARK: - Private Methods
+    
+    /// NavigationBarの背景色を設定
+    private func setupNavigationBarAppearance() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(named: "BackgroundColor")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
+        appearance.shadowColor = UIColor.clear
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     /// 共有用画像を生成
     private func generateShareImage() {

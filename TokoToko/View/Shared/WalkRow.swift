@@ -17,12 +17,12 @@ struct WalkRow: View {
         VStack(alignment: .leading, spacing: 4) {
           Text(walk.title)
             .font(.headline)
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
 
           if !walk.description.isEmpty {
             Text(walk.description)
               .font(.caption)
-              .foregroundColor(.secondary)
+              .foregroundColor(.gray)
               .lineLimit(2)
           }
 
@@ -32,10 +32,10 @@ struct WalkRow: View {
               HStack(spacing: 4) {
                 Image(systemName: "clock")
                   .font(.caption)
-                  .foregroundColor(.secondary)
+                  .foregroundColor(.gray)
                 Text(walk.durationString)
                   .font(.caption)
-                  .foregroundColor(.secondary)
+                  .foregroundColor(.gray)
                   .fixedSize(horizontal: true, vertical: false)
                   .lineLimit(1)
               }
@@ -43,10 +43,10 @@ struct WalkRow: View {
               HStack(spacing: 4) {
                 Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                   .font(.caption)
-                  .foregroundColor(.secondary)
+                  .foregroundColor(.gray)
                 Text(walk.distanceString)
                   .font(.caption)
-                  .foregroundColor(.secondary)
+                  .foregroundColor(.gray)
                   .fixedSize(horizontal: true, vertical: false)
                   .lineLimit(1)
               }
@@ -55,10 +55,10 @@ struct WalkRow: View {
                 HStack(spacing: 4) {
                   Image(systemName: "figure.walk")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                   Text("\(walk.totalSteps) 歩")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                     .fixedSize(horizontal: true, vertical: false)
                     .lineLimit(1)
                 }
@@ -82,12 +82,13 @@ struct WalkRow: View {
         VStack(alignment: .trailing, spacing: 2) {
           Text(dateString)
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.gray)
 
         }
       }
 
     }
+    .padding(.horizontal, 16)
     .padding(.vertical, 4)
   }
 

@@ -278,6 +278,26 @@ struct WalkInfoDisplay: View {
   /// 適切なインジケーターとラベル表示に使用されます。
   let stepCountSource: StepCountSource
 
+  /// カラースキーム環境変数
+  ///
+  /// ライトモード・ダークモードの判定に使用します。
+  @Environment(\.colorScheme) var colorScheme
+
+  /// ライト・ダークモードに対応した背景色
+  ///
+  /// ライトモード時は`Color("BackgroundColor")`、
+  /// ダークモード時は`Color(red: 140/255, green: 135/255, blue: 125/255)`を使用します。
+  var adaptiveBackgroundColor: Color {
+    switch colorScheme {
+    case .light:
+      return Color("BackgroundColor")
+    case .dark:
+      return Color(red: 140/255, green: 135/255, blue: 125/255)
+    @unknown default:
+      return Color("BackgroundColor")
+    }
+  }
+
   /// 歩数表示の有無に応じた動的スペーシング
   ///
   /// StepCountSourceの状態に基づいて最適なレイアウトスペーシングを提供します。
@@ -305,7 +325,7 @@ struct WalkInfoDisplay: View {
         VStack(alignment: .center, spacing: 4) {
           Text("経過時間")
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.primary)
           Text(elapsedTime)
             .font(.title2)
             .fontWeight(.bold)
@@ -317,7 +337,7 @@ struct WalkInfoDisplay: View {
         VStack(alignment: .center, spacing: 4) {
           Text("距離")
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.primary)
           Text(distance)
             .font(.title2)
             .fontWeight(.bold)
@@ -327,6 +347,10 @@ struct WalkInfoDisplay: View {
 
       Spacer()
     }
+    .padding()
+    .background(adaptiveBackgroundColor)
+    .cornerRadius(16)
+    .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
   }
 
   // 歩数セクション：歩数データが利用可能な場合のみ表示
@@ -341,7 +365,7 @@ struct WalkInfoDisplay: View {
         HStack(spacing: 4) {
           stepCountLabel
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.primary)
         }
 
         stepCountDisplay
@@ -355,6 +379,7 @@ struct WalkInfoDisplay: View {
   // 歩数ラベル
   private var stepCountLabel: some View {
     Text(stepCountLabelText)
+      .foregroundColor(.primary)
   }
 
   // 歩数ラベルテキスト
@@ -379,7 +404,7 @@ struct WalkInfoDisplay: View {
         Text("計測不可")
           .font(.title3)
           .fontWeight(.medium)
-          .foregroundColor(.secondary)
+          .foregroundColor(.primary)
       }
     }
   }
@@ -398,10 +423,6 @@ struct WalkInfoDisplay: View {
       distance: "1.2 km",
       stepCountSource: .coremotion(steps: 1234)
     )
-    .padding()
-    .background(Color(.systemGray6))
-    .cornerRadius(12)
-    .padding()
 
     WalkInfoDisplay(
       elapsedTime: "05:20",
@@ -409,9 +430,5 @@ struct WalkInfoDisplay: View {
       distance: "0.3 km",
       stepCountSource: .unavailable
     )
-    .padding()
-    .background(Color(.systemGray6))
-    .cornerRadius(12)
-    .padding()
   }
 }

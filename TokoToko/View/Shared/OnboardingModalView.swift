@@ -21,7 +21,7 @@ struct OnboardingModalView: View {
             navigationView
         }
         .padding(24)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
         .padding(.horizontal, 20)

@@ -56,7 +56,7 @@ struct ConsentFlowView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
-        .background(Color(.systemBackground))
+        .background(Color("BackgroundColor"))
         .sheet(isPresented: $showingPolicyView) {
             if let policy = consentManager.currentPolicy {
                 NavigationView {
@@ -79,20 +79,21 @@ struct ConsentFlowView: View {
 
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "mappin.and.ellipse")
+            Image("TekuTokoIcon")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 80)
                 .foregroundColor(.blue)
 
-            Text("TokoTokoへようこそ")
+            Text("とことこへようこそ")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+                .foregroundColor(.black)
                 .multilineTextAlignment(.center)
 
             Text("サービスをご利用いただく前に、プライバシーポリシーと利用規約をご確認ください。")
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
         }
@@ -123,22 +124,22 @@ struct ConsentFlowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
 
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.black)
             }
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6))
+                  .fill(Color(red: 234/255, green: 234/255, blue: 234/255))
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -173,7 +174,7 @@ struct ConsentFlowView: View {
 
             Text("「同意してサービスを開始」をタップすることで、プライバシーポリシーと利用規約に同意したものとみなされます。")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
         }
@@ -189,11 +190,11 @@ struct ConsentFlowView: View {
 
             Text("エラーが発生しました")
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
 
             Text(error.localizedDescription)
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
 
             Button(action: {
@@ -224,7 +225,7 @@ struct ConsentFlowView: View {
 
             Text("ポリシー情報を読み込み中...")
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
         }
     }
 
@@ -232,11 +233,11 @@ struct ConsentFlowView: View {
         VStack(spacing: 16) {
             Text("利用規約とプライバシーポリシーの準備中です")
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
 
             Text("しばらくお待ちください")
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
         }
     }
 }

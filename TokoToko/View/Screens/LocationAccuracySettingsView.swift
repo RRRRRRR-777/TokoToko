@@ -46,58 +46,111 @@ struct LocationAccuracySettingsView: View {
   @State private var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
   var body: some View {
-    NavigationView {
-      List {
-        // 精度モード選択セクション
-        Section(header: Text("位置情報の精度")) {
-          ForEach(LocationAccuracyMode.allCases) { mode in
-            AccuracyModeRow(
-              mode: mode,
-              isSelected: settingsManager.currentMode == mode
-            ) {
-              settingsManager.setAccuracyMode(mode)
+    ZStack {
+      Color("BackgroundColor")
+        .ignoresSafeArea(.all)
+      
+      NavigationView {
+        settingsListView
+          .navigationTitle("位置情報設定")
+          .navigationBarTitleDisplayMode(.inline)
+          .onAppear {
+            updateAuthorizationStatus()
+            setupNavigationAppearance()
+          }
+      }
+      .accentColor(.black)
+    }
+  }
+  
+  /// 設定リストビューの共通実装
+  private var settingsListView: some View {
+    List {
+      // 精度モード選択セクション
+      Section(header: 
+        HStack {
+          Text("位置情報の精度")
+            .foregroundColor(.gray)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        ForEach(LocationAccuracyMode.allCases) { mode in
+          AccuracyModeRow(
+            mode: mode,
+            isSelected: settingsManager.currentMode == mode
+          ) {
+            settingsManager.setAccuracyMode(mode)
+            settingsManager.saveSettings()
+          }
+          .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
+          .listRowBackground(Color("BackgroundColor"))
+        }
+      }
+      
+      // バックグラウンド更新セクション
+      Section(header:
+        HStack {
+          Text("バックグラウンド設定")
+            .foregroundColor(.gray)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        HStack {
+          Text("バックグラウンド更新")
+            .foregroundColor(.black)
+          Spacer()
+          Toggle("", isOn: .init(
+            get: { settingsManager.isBackgroundUpdateEnabled },
+            set: { enabled in
+              settingsManager.setBackgroundUpdateEnabled(enabled)
               settingsManager.saveSettings()
             }
-            .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
-          }
+          ))
+          .accessibilityIdentifier("background_update_toggle")
         }
-
-        // バックグラウンド更新セクション
-        Section(header: Text("バックグラウンド設定")) {
-          HStack {
-            Text("バックグラウンド更新")
-            Spacer()
-            Toggle("", isOn: .init(
-              get: { settingsManager.isBackgroundUpdateEnabled },
-              set: { enabled in
-                settingsManager.setBackgroundUpdateEnabled(enabled)
-                settingsManager.saveSettings()
-              }
-            ))
-            .accessibilityIdentifier("background_update_toggle")
-          }
-
-          Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-
-        // 権限状態セクション
-        Section(header: Text("権限状態")) {
-          PermissionStatusRow(status: authorizationStatus)
-
-          Button("設定アプリを開く") {
-            openSettingsApp()
-          }
-          .accessibilityIdentifier("open_settings_app")
-        }
+        .listRowBackground(Color("BackgroundColor"))
+        
+        Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
+          .font(.caption)
+          .foregroundColor(.black)
+          .listRowBackground(Color("BackgroundColor"))
       }
-      .navigationTitle("位置情報設定")
-      .navigationBarTitleDisplayMode(.inline)
-      .onAppear {
-        updateAuthorizationStatus()
+      
+      // 権限状態セクション
+      Section(header:
+        HStack {
+          Text("権限状態")
+            .foregroundColor(.gray)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        PermissionStatusRow(status: authorizationStatus)
+          .listRowBackground(Color("BackgroundColor"))
+        
+        Button("設定アプリを開く") {
+          openSettingsApp()
+        }
+        .foregroundColor(.black)
+        .accessibilityIdentifier("open_settings_app")
+        .listRowBackground(Color("BackgroundColor"))
       }
     }
+    .listStyle(PlainListStyle())
+    .background(Color("BackgroundColor"))
+    .modifier(ScrollContentBackgroundModifier())
+    .onAppear {
+      setupTableViewAppearance()
+    }
+    .background(Color("BackgroundColor").ignoresSafeArea())
   }
 
   // MARK: - Private Methods
@@ -107,6 +160,122 @@ struct LocationAccuracySettingsView: View {
   /// LocationManagerから最新の権限状態を取得して表示を更新します。
   private func updateAuthorizationStatus() {
     authorizationStatus = LocationManager.shared.checkAuthorizationStatus()
+  }
+
+  /// UI外観の統合設定
+  ///
+  /// ナビゲーションバー、テーブルビュー、スクロールビューの外観を統一して
+  /// ダークモード・ライトモード統一とスクロール背景問題を解決します。
+  private func setupNavigationAppearance() {
+    // ナビゲーションバー外観設定
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithTransparentBackground()
+    appearance.backgroundColor = UIColor(named: "BackgroundColor")
+    appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
+    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.black]
+    
+    UINavigationBar.appearance().standardAppearance = appearance
+    UINavigationBar.appearance().compactAppearance = appearance
+    UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    
+    // 統合背景制御
+    setupUnifiedBackgroundAppearance()
+  }
+
+  /// 統合背景外観設定
+  ///
+  /// 全UIコンポーネントの背景色をBackgroundColorに統一します。
+  private func setupUnifiedBackgroundAppearance() {
+    let backgroundColor = UIColor(named: "BackgroundColor")
+    
+    // テーブルビュー関連
+    UITableView.appearance().backgroundColor = backgroundColor
+    UITableView.appearance().separatorStyle = .none
+    UITableView.appearance().separatorColor = .clear
+    UITableViewCell.appearance().backgroundColor = .clear
+    UITableViewHeaderFooterView.appearance().backgroundColor = backgroundColor
+    UITableViewHeaderFooterView.appearance().backgroundConfiguration = nil
+    
+    // スクロールビューと全体制御
+    UIScrollView.appearance().backgroundColor = backgroundColor
+    UIWindow.appearance().backgroundColor = backgroundColor
+    UIView.appearance(whenContainedInInstancesOf: [UITableView.self]).backgroundColor = backgroundColor
+  }
+
+  /// 動的背景制御
+  ///
+  /// ビュー階層を直接探索して背景色を動的に設定します。
+  /// SwiftUIとUIKitの境界で発生する背景問題の最終解決策です。
+  private func setupTableViewAppearance() {
+    DispatchQueue.main.async {
+      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+         let window = windowScene.windows.first {
+        window.backgroundColor = UIColor(named: "BackgroundColor")
+        self.applyBackgroundColorRecursively(to: window)
+      }
+    }
+  }
+  
+  /// ビュー階層に背景色を再帰的に適用
+  ///
+  /// ビュー階層を深度制限付きで再帰的に探索し、背景色を適用します。
+  /// パフォーマンス最適化として最大探索深度を制限し、デバッグビルドでは実行時間を計測します。
+  ///
+  /// - Parameters:
+  ///   - view: 背景色を適用する対象ビュー
+  ///   - maxDepth: 最大探索深度（デフォルト: 20）
+  ///   - currentDepth: 現在の探索深度（内部使用）
+  private func applyBackgroundColorRecursively(
+    to view: UIView,
+    maxDepth: Int = 20,
+    currentDepth: Int = 0
+  ) {
+    // 深度制限によるスタックオーバーフロー防止
+    guard currentDepth < maxDepth else {
+      #if DEBUG
+      print("LocationAccuracySettingsView: 再帰処理が最大深度(\(maxDepth))に到達しました")
+      #endif
+      return
+    }
+    
+    #if DEBUG
+    let startTime = CFAbsoluteTimeGetCurrent()
+    #endif
+    
+    let backgroundColor = UIColor(named: "BackgroundColor")
+    
+    // UITableViewとその親階層に特別な処理
+    if let tableView = view as? UITableView {
+      tableView.backgroundColor = backgroundColor
+      var parentView = tableView.superview
+      var parentDepth = 0
+      
+      // 親階層の探索にも深度制限を適用
+      while parentView != nil && parentDepth < 10 {
+        parentView?.backgroundColor = backgroundColor
+        parentView = parentView?.superview
+        parentDepth += 1
+      }
+    }
+    
+    // 現在のビューに背景色を適用
+    view.backgroundColor = backgroundColor
+    
+    // サブビューに再帰的に適用
+    for subview in view.subviews {
+      applyBackgroundColorRecursively(
+        to: subview,
+        maxDepth: maxDepth,
+        currentDepth: currentDepth + 1
+      )
+    }
+    
+    #if DEBUG
+    let executionTime = CFAbsoluteTimeGetCurrent() - startTime
+    if currentDepth == 0 { // ルート呼び出しでのみログ出力
+      print("LocationAccuracySettingsView: 背景色再帰適用完了 - 実行時間: \(String(format: "%.3f", executionTime * 1000))ms, 最大深度: \(currentDepth)")
+    }
+    #endif
   }
 
   /// 設定アプリを開く
@@ -135,11 +304,11 @@ private struct AccuracyModeRow: View {
         VStack(alignment: .leading, spacing: 4) {
           Text(mode.displayName)
             .font(.body)
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
 
           Text(mode.description)
             .font(.caption)
-            .foregroundColor(.secondary)
+            .foregroundColor(.black)
             .multilineTextAlignment(.leading)
         }
 
@@ -168,6 +337,7 @@ private struct PermissionStatusRow: View {
   var body: some View {
     HStack {
       Text("位置情報権限")
+        .foregroundColor(.black)
       Spacer()
       Text(statusText)
         .foregroundColor(statusColor)

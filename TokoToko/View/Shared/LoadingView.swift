@@ -18,10 +18,10 @@ struct LoadingView: View {
 
       Text(message)
         .font(.headline)
-        .foregroundColor(.secondary)
+        .foregroundColor(.gray)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color(.systemBackground))
+    .background(Color("BackgroundColor").ignoresSafeArea())
   }
 }
 
@@ -39,7 +39,7 @@ extension View {
           .padding(30)
           .background(
             RoundedRectangle(cornerRadius: 16)
-              .fill(Color(.systemBackground))
+              .fill(Color("BackgroundColor"))
               .shadow(radius: 10)
           )
       }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// アプリ情報表示画面
 ///
@@ -58,94 +59,181 @@ struct AppInfoView: View {
 
   var body: some View {
     NavigationView {
-      List {
-        // アプリ基本情報セクション
-        Section(header: Text("アプリ情報")) {
-          // アプリ名
-          VStack(alignment: .center, spacing: 8) {
-            Text("とことこ - おさんぽSNS")
-              .font(.title2)
-              .fontWeight(.semibold)
-              .multilineTextAlignment(.center)
-              .accessibilityIdentifier("app_name")
-
-            Text("日常の散歩を記録・共有するSNSアプリ")
-              .font(.caption)
-              .foregroundColor(.secondary)
-              .multilineTextAlignment(.center)
-          }
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 8)
-        }
-
-        // バージョン情報セクション
-        Section(header: Text("バージョン情報")) {
-          InfoRow(
-            title: "バージョン",
-            value: appVersion,
-            accessibilityId: "version_info"
-          )
-
-          InfoRow(
-            title: "ビルド",
-            value: buildNumber,
-            accessibilityId: "build_info"
-          )
-        }
-
-        // 開発元情報セクション
-        Section(header: Text("開発元")) {
-          InfoRow(
-            title: "開発元",
-            value: "riku.yamada",
-            accessibilityId: "developer_info"
-          )
-
-          InfoRow(
-            title: "コピーライト",
-            value: "© \(currentYear) riku.yamada",
-            accessibilityId: "copyright_info"
-          )
-        }
-
-        // 技術情報セクション
-        Section(header: Text("技術情報")) {
-          InfoRow(
-            title: "フレームワーク",
-            value: "SwiftUI",
-            accessibilityId: "framework_info"
-          )
-
-          InfoRow(
-            title: "最小対応バージョン",
-            value: "iOS 15.0",
-            accessibilityId: "min_version_info"
-          )
-        }
-
-        // アプリの説明セクション
-        Section(header: Text("このアプリについて")) {
-          VStack(alignment: .leading, spacing: 12) {
-            Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
-              .font(.body)
-
-            Text("主な機能：")
-              .font(.headline)
-              .padding(.top, 8)
-
-            VStack(alignment: .leading, spacing: 4) {
-              FeatureRow(text: "GPS追跡による散歩ルート記録")
-              FeatureRow(text: "写真付きの散歩レポート作成")
-              FeatureRow(text: "SNS・メール・LINEでの共有")
-              FeatureRow(text: "散歩履歴の管理と振り返り")
-            }
-          }
-          .padding(.vertical, 4)
-        }
-      }
-      .navigationTitle("このアプリについて")
-      .navigationBarTitleDisplayMode(.inline)
+      appInfoListView
+        .navigationTitle("このアプリについて")
+        .navigationBarTitleDisplayMode(.inline)
     }
+    .accentColor(.black)
+    .background(Color("BackgroundColor").ignoresSafeArea())
+    .onAppear {
+      // 統一されたナビゲーションバー外観設定を適用
+      NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
+    }
+  }
+  
+  /// アプリ情報リストビューの共通実装
+  private var appInfoListView: some View {
+    List {
+      // アプリ基本情報セクション
+      Section(header: 
+        HStack {
+          Text("アプリ情報")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        // アプリ名
+        VStack(alignment: .center, spacing: 8) {
+          Text("とことこ - おさんぽSNS")
+            .font(.title2)
+            .fontWeight(.semibold)
+            .foregroundColor(.black)
+            .multilineTextAlignment(.center)
+            .accessibilityIdentifier("app_name")
+
+          Text("日常の散歩を記録・共有するSNSアプリ")
+            .font(.caption)
+            .foregroundColor(.black)
+            .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .listRowBackground(Color("BackgroundColor"))
+      }
+
+      // バージョン情報セクション
+      Section(header: 
+        HStack {
+          Text("バージョン情報")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        InfoRow(
+          title: "バージョン",
+          value: appVersion,
+          accessibilityId: "version_info"
+        )
+        .foregroundColor(.black)
+        .listRowBackground(Color("BackgroundColor"))
+
+        InfoRow(
+          title: "ビルド",
+          value: buildNumber,
+          accessibilityId: "build_info"
+        )
+        .foregroundColor(.black)
+        .listRowBackground(Color("BackgroundColor"))
+      }
+      .foregroundColor(.black)
+
+      // 開発元情報セクション
+      Section(header: 
+        HStack {
+          Text("開発元")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        InfoRow(
+          title: "開発元",
+          value: "riku.yamada",
+          accessibilityId: "developer_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+
+        InfoRow(
+          title: "コピーライト",
+          value: "© \(currentYear) riku.yamada",
+          accessibilityId: "copyright_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+      }
+      .foregroundColor(.black)
+
+      // 技術情報セクション
+      Section(header: 
+        HStack {
+          Text("技術情報")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        InfoRow(
+          title: "フレームワーク",
+          value: "SwiftUI",
+          accessibilityId: "framework_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+
+        InfoRow(
+          title: "最小対応バージョン",
+          value: "iOS 15.0",
+          accessibilityId: "min_version_info"
+        )
+        .listRowBackground(Color("BackgroundColor"))
+      }
+      .foregroundColor(.black)
+
+      // アプリの説明セクション
+      Section(header: 
+        HStack {
+          Text("このアプリについて")
+            .foregroundColor(.black)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
+        VStack(alignment: .leading, spacing: 12) {
+          Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
+            .font(.body)
+
+          Text("主な機能：")
+            .font(.headline)
+            .padding(.top, 8)
+
+          VStack(alignment: .leading, spacing: 4) {
+            FeatureRow(text: "GPS追跡による散歩ルート記録")
+            FeatureRow(text: "SNS・メール・LINEでの共有")
+            FeatureRow(text: "散歩履歴の管理と振り返り")
+          }
+        }
+        .padding(.vertical, 4)
+        .foregroundColor(.black)
+        .listRowBackground(Color("BackgroundColor"))
+      }
+    }
+    .listStyle(PlainListStyle())
+    .foregroundColor(.black)
+    .background(Color("BackgroundColor"))
+    .onAppear {
+      // iOS 15対応: リストの背景色を完全に制御
+      UITableView.appearance().backgroundColor = UIColor.clear
+      UITableView.appearance().separatorStyle = .none
+      UITableViewCell.appearance().backgroundColor = UIColor.clear
+      UITableViewHeaderFooterView.appearance().backgroundView = UIView()
+      UITableViewHeaderFooterView.appearance().backgroundView?.backgroundColor = UIColor.clear
+    }
+    .modifier(ScrollContentBackgroundModifier())
   }
 }
 
@@ -162,12 +250,12 @@ private struct InfoRow: View {
   var body: some View {
     HStack {
       Text(title)
-        .foregroundColor(.primary)
+        .foregroundColor(.black)
 
       Spacer()
 
       Text(value)
-        .foregroundColor(.secondary)
+        .foregroundColor(.black)
         .font(.caption)
     }
     .accessibilityIdentifier(accessibilityId)
@@ -183,11 +271,11 @@ private struct FeatureRow: View {
   var body: some View {
     HStack(alignment: .top, spacing: 8) {
       Text("•")
-        .foregroundColor(.secondary)
+        .foregroundColor(.black)
 
       Text(text)
         .font(.body)
-        .foregroundColor(.primary)
+        .foregroundColor(.black)
 
       Spacer()
     }

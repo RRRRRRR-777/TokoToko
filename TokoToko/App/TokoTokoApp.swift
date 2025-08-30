@@ -9,6 +9,7 @@ import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
 import SwiftUI
+import UIKit
 
 /// Firebase認証状態を管理するObservableObjectクラス
 ///
@@ -188,7 +189,18 @@ struct TokoTokoApp: App {
             .environmentObject(locationSettingsManager)
         }
       }
+      .onAppear {
+        configureNavigationBarAppearance()
+      }
     }
+  }
+
+  /// ナビゲーションバーの外観をBackgroundColorに設定
+  ///
+  /// アプリ全体のナビゲーションバー背景色を一貫したベージュ色に設定します。
+  /// NavigationBarStyleManagerを通じて統一されたスタイル管理を提供します。
+  private func configureNavigationBarAppearance() {
+    NavigationBarStyleManager.shared.applyUnifiedStyle()
   }
 }
 
@@ -420,7 +432,7 @@ struct CustomTabBar: View {
     .frame(width: 280, height: 70)
     .background(
       RoundedRectangle(cornerRadius: 35)
-        .fill(Color.white)
+        .fill(Color("BackgroundColor"))
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
     )
     .padding(.trailing, 80)

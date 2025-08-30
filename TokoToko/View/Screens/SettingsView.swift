@@ -7,6 +7,7 @@
 
 import FirebaseAuth
 import SwiftUI
+import UIKit
 
 /// アプリケーション設定とアカウント管理画面
 ///
@@ -103,6 +104,15 @@ struct SettingsView: View {
   }
 
   init() {
+    // 統一されたナビゲーションバー外観設定を適用
+    NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .settingsScreen)
+    
+    // List背景の完全制御
+    UITableView.appearance().backgroundColor = UIColor.clear
+    UITableView.appearance().separatorStyle = .none
+    UITableViewCell.appearance().backgroundColor = UIColor.clear
+    UITableViewHeaderFooterView.appearance().backgroundColor = UIColor.clear
+    
     // UIテストモードの場合
     if ProcessInfo.processInfo.arguments.contains("--uitesting") {
       // ログアウトアラートを強制表示する場合
@@ -148,25 +158,43 @@ struct SettingsView: View {
 
   var body: some View {
     List {
-      Section(header: Text("アカウント")) {
+      Section(header: 
+        HStack {
+          Text("アカウント")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         // UIテストモードの場合はモックユーザー情報を使用
         if isUITesting && hasUserInfo {
           // メールアドレス表示
           HStack {
             Text("メールアドレス")
+              .foregroundColor(.black)
             Spacer()
             Text(mockEmail ?? "test@example.com")
-              .foregroundColor(.secondary)
+              .foregroundColor(.black)
           }
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           // プロフィール画像表示（テスト用）
           HStack {
             Text("プロフィール画像")
+              .foregroundColor(.black)
             Spacer()
             Circle()
               .fill(Color.gray)
               .frame(width: 40, height: 40)
           }
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           Button(action: {
             showingLogoutAlert = true
@@ -181,19 +209,23 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // 通常モードの場合は実際のユーザー情報を使用
         else if let user = Auth.auth().currentUser {
           HStack {
             Text("メールアドレス")
+              .foregroundColor(.black)
             Spacer()
             Text(user.email ?? "不明")
-              .foregroundColor(.secondary)
+              .foregroundColor(.black)
           }
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
           if let photoURL = user.photoURL, let url = URL(string: photoURL.absoluteString) {
             HStack {
               Text("プロフィール画像")
+                .foregroundColor(.black)
               Spacer()
               AsyncImage(url: url) { image in
                 image
@@ -205,6 +237,7 @@ struct SettingsView: View {
               .frame(width: 40, height: 40)
               .clipShape(Circle())
             }
+            .listRowBackground(Color("BackgroundColor").opacity(0.8))
           }
 
           Button(action: {
@@ -220,10 +253,25 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }
 
-      Section(header: Text("アプリ設定")) {
+      Section(header: 
+        HStack {
+          Text("アプリ設定")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         Button(action: {
           Task {
             await loadCachedPolicy()
@@ -232,8 +280,9 @@ struct SettingsView: View {
           selectedPolicyType = .privacyPolicy
         }) {
           Text("プライバシーポリシー")
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
 
         Button(action: {
           Task {
@@ -243,38 +292,76 @@ struct SettingsView: View {
           selectedPolicyType = .termsOfService
         }) {
           Text("利用規約")
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header: Text("位置情報")) {
+      Section(header: 
+        HStack {
+          Text("位置情報")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         NavigationLink(destination: LocationAccuracySettingsView()
           .environmentObject(locationSettingsManager)) {
           HStack {
             Text("位置情報設定")
+              .foregroundColor(.black)
             Spacer()
             Text(locationSettingsManager.currentMode.displayName)
-              .foregroundColor(.secondary)
+              .foregroundColor(.black)
               .font(.caption)
           }
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header: Text("その他")) {
+      Section(header: 
+        HStack {
+          Text("その他")
+            .foregroundColor(.gray)
+            .font(.footnote)
+            .fontWeight(.regular)
+            .textCase(.uppercase)
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
+        .background(Color("BackgroundColor"))
+        .listRowInsets(EdgeInsets())
+      ) {
         NavigationLink(destination: AppInfoView()) {
           Text("このアプリについて")
+            .foregroundColor(.black)
         }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
       if let errorMessage = errorMessage {
         Section {
           Text(errorMessage)
-            .foregroundColor(.red)
+            .foregroundColor(.black)
             .font(.caption)
+            .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }
     }
+    .listStyle(PlainListStyle())
+    .modifier(BackgroundColorModifier())
+    .background(Color("BackgroundColor").ignoresSafeArea())
     .navigationTitle("設定")
+    .accentColor(.black)
     .alert("ログアウトしますか？", isPresented: $showingLogoutAlert) {
       Button("キャンセル", role: .cancel) {}
       Button("ログアウト", role: .destructive) {
@@ -376,12 +463,30 @@ struct SettingsView: View {
   }
 }
 
+/// List背景色変更用のViewModifier
+///
+/// iOS 16以降では`.scrollContentBackground(.hidden)`を使用し、
+/// iOS 15以下では従来の方法で背景色を適用します。
+struct BackgroundColorModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 16.0, *) {
+      content
+        .scrollContentBackground(.hidden)
+        .background(Color("BackgroundColor"))
+    } else {
+      content
+        .background(Color("BackgroundColor"))
+    }
+  }
+}
+
 // プレビュー用
 struct SettingsView_Previews: PreviewProvider {
   static var previews: some View {
     NavigationView {
       SettingsView()
         .environmentObject(AuthManager())
+        .environmentObject(LocationSettingsManager())
     }
   }
 }
