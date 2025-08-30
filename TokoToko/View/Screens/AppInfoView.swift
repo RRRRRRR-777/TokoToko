@@ -237,20 +237,6 @@ struct AppInfoView: View {
   }
 }
 
-// MARK: - View Modifiers
-
-/// iOS版に応じたスクロール背景の制御
-private struct ScrollContentBackgroundModifier: ViewModifier {
-  func body(content: Content) -> some View {
-    if #available(iOS 16.0, *) {
-      content
-        .scrollContentBackground(.hidden)
-    } else {
-      content
-    }
-  }
-}
-
 // MARK: - Supporting Views
 
 /// 情報表示行

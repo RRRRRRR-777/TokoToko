@@ -288,25 +288,6 @@ struct LocationAccuracySettingsView: View {
   }
 }
 
-// MARK: - View Modifiers
-
-/// iOS版別スクロール背景制御
-///
-/// iOS 16以降の.scrollContentBackground(.hidden)を活用しつつ、
-/// 全バージョンで確実な背景色統一を提供します。
-private struct ScrollContentBackgroundModifier: ViewModifier {
-  func body(content: Content) -> some View {
-    if #available(iOS 16.0, *) {
-      content
-        .scrollContentBackground(.hidden)
-        .background(Color("BackgroundColor"))
-    } else {
-      content
-        .background(Color("BackgroundColor"))
-    }
-  }
-}
-
 // MARK: - Supporting Views
 
 /// 精度モード選択行
