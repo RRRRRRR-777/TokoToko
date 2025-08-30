@@ -82,7 +82,7 @@ class PolicyService {
                 .collection("policies")
                 .document("current")
                 .getDocument()
-            
+
             guard document.exists, let data = document.data() else {
                 // ドキュメントが存在しない場合は、キャッシュを確認
                 if let cachedPolicy = try? await getCachedPolicy() {
@@ -125,11 +125,11 @@ class PolicyService {
         guard let data = UserDefaults.standard.data(forKey: cacheKey) else {
             return nil
         }
-        
+
         guard let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date else {
             return nil
         }
-        
+
         guard expirationDate > Date() else {
             return nil
         }
@@ -253,19 +253,19 @@ class PolicyService {
               !version.isEmpty else {
             throw PolicyServiceError.noPolicyFound
         }
-        
+
         guard let privacyPolicyData = data["privacyPolicy"] as? [String: Any],
               let privacyPolicyJa = privacyPolicyData["ja"] as? String,
               !privacyPolicyJa.isEmpty else {
             throw PolicyServiceError.noPolicyFound
         }
-        
+
         guard let termsOfServiceData = data["termsOfService"] as? [String: Any],
               let termsOfServiceJa = termsOfServiceData["ja"] as? String,
               !termsOfServiceJa.isEmpty else {
             throw PolicyServiceError.noPolicyFound
         }
-        
+
         // タイムスタンプの検証とフォールバック
         let updatedAt: Date
         if let updatedAtTimestamp = data["updatedAt"] as? Timestamp {
@@ -274,7 +274,7 @@ class PolicyService {
             // フォールバック: 現在時刻を使用
             updatedAt = Date()
         }
-        
+
         let effectiveDate: Date
         if let effectiveDateTimestamp = data["effectiveDate"] as? Timestamp {
             effectiveDate = effectiveDateTimestamp.dateValue()
@@ -326,11 +326,11 @@ class PolicyService {
               !policyVersion.isEmpty else {
             throw PolicyServiceError.noPolicyFound
         }
-        
+
         guard let consentedAtTimestamp = data["consentedAt"] as? Timestamp else {
             throw PolicyServiceError.noPolicyFound
         }
-        
+
         guard let consentTypeString = data["consentType"] as? String,
               let consentType = ConsentType(rawValue: consentTypeString) else {
             throw PolicyServiceError.noPolicyFound
@@ -357,8 +357,8 @@ class PolicyService {
             deviceInfo: deviceInfo
         )
     }
-    
+
     private func getCurrentUserID() -> String? {
-        return FirebaseAuth.Auth.auth().currentUser?.uid
+        FirebaseAuth.Auth.auth().currentUser?.uid
     }
 }

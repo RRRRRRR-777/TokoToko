@@ -66,7 +66,7 @@ struct SettingsView: View {
 
   /// キャッシュされたポリシー
   @State private var cachedPolicy: Policy?
-  
+
   /// ポリシー読み込み状態
   @State private var isPolicyLoading = false
 
@@ -106,13 +106,13 @@ struct SettingsView: View {
   init() {
     // 統一されたナビゲーションバー外観設定を適用
     NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .settingsScreen)
-    
+
     // List背景の完全制御
     UITableView.appearance().backgroundColor = UIColor.clear
     UITableView.appearance().separatorStyle = .none
     UITableViewCell.appearance().backgroundColor = UIColor.clear
     UITableViewHeaderFooterView.appearance().backgroundColor = UIColor.clear
-    
+
     // UIテストモードの場合
     if ProcessInfo.processInfo.arguments.contains("--uitesting") {
       // ログアウトアラートを強制表示する場合
@@ -158,7 +158,7 @@ struct SettingsView: View {
 
   var body: some View {
     List {
-      Section(header: 
+      Section(header:
         HStack {
           Text("アカウント")
             .foregroundColor(.gray)
@@ -257,7 +257,7 @@ struct SettingsView: View {
         }
       }
 
-      Section(header: 
+      Section(header:
         HStack {
           Text("アプリ設定")
             .foregroundColor(.gray)
@@ -297,7 +297,7 @@ struct SettingsView: View {
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header: 
+      Section(header:
         HStack {
           Text("位置情報")
             .foregroundColor(.gray)
@@ -326,7 +326,7 @@ struct SettingsView: View {
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header: 
+      Section(header:
         HStack {
           Text("その他")
             .foregroundColor(.gray)

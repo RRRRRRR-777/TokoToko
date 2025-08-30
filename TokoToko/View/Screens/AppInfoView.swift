@@ -67,12 +67,12 @@ struct AppInfoView: View {
         NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
       }
   }
-  
+
   /// アプリ情報リストビューの共通実装
   private var appInfoListView: some View {
     List {
       // アプリ基本情報セクション
-      Section(header: 
+      Section(header:
         HStack {
           Text("アプリ情報")
             .foregroundColor(.black)
@@ -103,7 +103,7 @@ struct AppInfoView: View {
       }
 
       // バージョン情報セクション
-      Section(header: 
+      Section(header:
         HStack {
           Text("バージョン情報")
             .foregroundColor(.black)
@@ -133,7 +133,7 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // 開発元情報セクション
-      Section(header: 
+      Section(header:
         HStack {
           Text("開発元")
             .foregroundColor(.black)
@@ -161,7 +161,7 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // 技術情報セクション
-      Section(header: 
+      Section(header:
         HStack {
           Text("技術情報")
             .foregroundColor(.black)
@@ -189,7 +189,7 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // アプリの説明セクション
-      Section(header: 
+      Section(header:
         HStack {
           Text("このアプリについて")
             .foregroundColor(.black)

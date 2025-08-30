@@ -66,7 +66,7 @@ struct WalkHistoryView: View {
   ///
   /// ライトモードでは既存のBackgroundColor、ダークモードではグレーを返します。
   private var backgroundGradientColor: Color {
-    colorScheme == .dark ? Color(red: 120/255,green: 120/255, blue: 120/255) : Color("BackgroundColor")
+    colorScheme == .dark ? Color(red: 120 / 255, green: 120 / 255, blue: 120 / 255) : Color("BackgroundColor")
   }
 
   /// WalkHistoryViewの初期化メソッド

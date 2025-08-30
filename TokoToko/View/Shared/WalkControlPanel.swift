@@ -292,7 +292,7 @@ struct WalkInfoDisplay: View {
     case .light:
       return Color("BackgroundColor")
     case .dark:
-      return Color(red: 140/255, green: 135/255, blue: 125/255)
+      return Color(red: 140 / 255, green: 135 / 255, blue: 125 / 255)
     @unknown default:
       return Color("BackgroundColor")
     }

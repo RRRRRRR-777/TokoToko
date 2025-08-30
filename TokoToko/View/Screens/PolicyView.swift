@@ -27,7 +27,7 @@ struct PolicyView: View {
             return policy.termsOfService.ja
         }
     }
-    
+
     static func configureNavigationBarAppearance() {
         // ポリシー画面用の特殊設定（シャドウ非表示）を適用
         NavigationBarStyleManager.shared.applyUnifiedStyle(customizations: .policyScreen)
@@ -38,7 +38,7 @@ struct PolicyView: View {
             // 画面全体の背景色（両端の黒い部分も含めて完全にカバー）
             Color("BackgroundColor")
                 .ignoresSafeArea(.all)
-            
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text(policyText)
@@ -104,7 +104,7 @@ struct PolicyView_Previews: PreviewProvider {
             .onAppear {
                 PolicyView.configureNavigationBarAppearance()
             }
-            
+
             NavigationView {
                 PolicyView(
                     policy: Policy(

@@ -11,7 +11,7 @@ import UIKit
 
 /// 散歩データからマップスナップショット画像を生成するクラス
 class WalkMapSnapshotGenerator {
-  
+
   /// 散歩データからマップスナップショット画像を生成します
   ///
   /// - Parameters:
@@ -23,29 +23,29 @@ class WalkMapSnapshotGenerator {
     try await withCheckedThrowingContinuation { continuation in
       let options = MKMapSnapshotter.Options()
       options.size = size
-      
+
       let region = calculateRegion(for: walk.locations)
       options.region = region
-      
+
       options.camera = MKMapCamera()
       options.camera.heading = 0
       options.camera.centerCoordinate = region.center
       options.camera.altitude = altitudeForRegion(region)
-      
+
       let snapshotter = MKMapSnapshotter(options: options)
-      
+
       snapshotter.start { snapshot, error in
         if let error = error {
           print("マップスナップショット生成エラー: \(error)")
           continuation.resume(throwing: WalkImageGeneratorError.mapSnapshotFailed)
           return
         }
-        
+
         guard let snapshot = snapshot else {
           continuation.resume(throwing: WalkImageGeneratorError.mapSnapshotFailed)
           return
         }
-        
+
         let finalMapImage = drawPolylineOnSnapshot(
           snapshot: snapshot,
           locations: walk.locations
@@ -54,7 +54,7 @@ class WalkMapSnapshotGenerator {
       }
     }
   }
-  
+
   /// スナップショットにポリラインを描画します
   ///
   /// - Parameters:
@@ -66,15 +66,15 @@ class WalkMapSnapshotGenerator {
     locations: [CLLocation]
   ) -> UIImage {
     let image = snapshot.image
-    
+
     UIGraphicsBeginImageContextWithOptions(image.size, true, image.scale)
     image.draw(at: CGPoint.zero)
-    
+
     guard let context = UIGraphicsGetCurrentContext() else {
       UIGraphicsEndImageContext()
       return image
     }
-    
+
     if locations.count == 1 {
       drawSinglePointMarker(
         context: context,
@@ -88,13 +88,13 @@ class WalkMapSnapshotGenerator {
         locations: locations
       )
     }
-    
+
     let resultImage = UIGraphicsGetImageFromCurrentImageContext() ?? image
     UIGraphicsEndImageContext()
-    
+
     return resultImage
   }
-  
+
   /// 単一点のマーカーを描画
   private static func drawSinglePointMarker(
     context: CGContext,
@@ -104,7 +104,7 @@ class WalkMapSnapshotGenerator {
     let point = snapshot.point(for: location.coordinate)
     let markerRadius = WalkImageGeneratorConstants.MarkerSize.radius
     let innerRadius = WalkImageGeneratorConstants.MarkerSize.innerRadius
-    
+
     context.setFillColor(UIColor.systemBlue.cgColor)
     context.fillEllipse(in: CGRect(
       x: point.x - markerRadius,
@@ -112,7 +112,7 @@ class WalkMapSnapshotGenerator {
       width: markerRadius * 2,
       height: markerRadius * 2
     ))
-    
+
     context.setFillColor(UIColor.white.cgColor)
     context.fillEllipse(in: CGRect(
       x: point.x - innerRadius,
@@ -121,7 +121,7 @@ class WalkMapSnapshotGenerator {
       height: innerRadius * 2
     ))
   }
-  
+
   /// ポリラインを描画
   private static func drawPolyline(
     context: CGContext,
@@ -132,18 +132,18 @@ class WalkMapSnapshotGenerator {
     context.setLineWidth(8.0)
     context.setLineCap(.round)
     context.setLineJoin(.round)
-    
+
     let firstPoint = snapshot.point(for: locations[0].coordinate)
     context.move(to: firstPoint)
-    
+
     for i in 1..<locations.count {
       let point = snapshot.point(for: locations[i].coordinate)
       context.addLine(to: point)
     }
-    
+
     context.strokePath()
   }
-  
+
   /// 散歩ルートに適したマップリージョンを計算します
   ///
   /// - Parameter locations: 散歩の位置情報配列
@@ -158,7 +158,7 @@ class WalkMapSnapshotGenerator {
         )
       )
     }
-    
+
     if locations.count == 1 {
       return MKCoordinateRegion(
         center: locations[0].coordinate,
@@ -168,26 +168,26 @@ class WalkMapSnapshotGenerator {
         )
       )
     }
-    
+
     let coordinates = locations.map { $0.coordinate }
     let minLat = coordinates.map { $0.latitude }.min()!
     let maxLat = coordinates.map { $0.latitude }.max()!
     let minLon = coordinates.map { $0.longitude }.min()!
     let maxLon = coordinates.map { $0.longitude }.max()!
-    
+
     let center = CLLocationCoordinate2D(
       latitude: (minLat + maxLat) / 2,
       longitude: (minLon + maxLon) / 2
     )
-    
+
     let span = MKCoordinateSpan(
       latitudeDelta: (maxLat - minLat) * WalkImageGeneratorConstants.MapSpan.multiPointPadding / WalkImageGeneratorConstants.mapScaleFactor,
       longitudeDelta: (maxLon - minLon) * WalkImageGeneratorConstants.MapSpan.multiPointPadding / WalkImageGeneratorConstants.mapScaleFactor
     )
-    
+
     return MKCoordinateRegion(center: center, span: span)
   }
-  
+
   /// リージョンに適したカメラ高度を計算します
   ///
   /// - Parameter region: マップリージョン
@@ -195,7 +195,7 @@ class WalkMapSnapshotGenerator {
   private static func altitudeForRegion(_ region: MKCoordinateRegion) -> CLLocationDistance {
     let latitudeDelta = region.span.latitudeDelta
     let baseAltitude: CLLocationDistance = 50000
-    
+
     return baseAltitude * latitudeDelta / 0.01
   }
 }

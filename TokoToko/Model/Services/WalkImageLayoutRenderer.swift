@@ -11,7 +11,7 @@ import FirebaseAuth
 
 /// 散歩画像のレイアウトとオーバーレイ描画を担当するクラス
 class WalkImageLayoutRenderer {
-  
+
   /// マップ画像と散歩データを合成して最終画像を作成します
   ///
   /// - Parameters:
@@ -28,18 +28,18 @@ class WalkImageLayoutRenderer {
     let format = UIGraphicsImageRendererFormat()
     format.scale = 1.0
     format.opaque = true
-    
+
     let renderer = UIGraphicsImageRenderer(size: size, format: format)
-    
+
     let image = renderer.image { context in
       let cgContext = context.cgContext
-      
+
       cgContext.setFillColor(WalkImageGeneratorConstants.backgroundColor.cgColor)
       cgContext.fill(CGRect(origin: .zero, size: size))
-      
+
       let mapRect = CGRect(x: 0, y: 0, width: size.width, height: size.height)
       mapImage.draw(in: mapRect)
-      
+
       drawTopOverlay(
         in: CGRect(
           x: 0,
@@ -50,7 +50,7 @@ class WalkImageLayoutRenderer {
         walk: walk,
         context: cgContext
       )
-      
+
       drawBottomOverlay(
         in: CGRect(
           x: 0,
@@ -62,10 +62,10 @@ class WalkImageLayoutRenderer {
         context: cgContext
       )
     }
-    
+
     return image
   }
-  
+
   /// 上部オーバーレイ（ユーザー情報とタイトル）を描画
   ///
   /// - Parameters:
@@ -78,7 +78,7 @@ class WalkImageLayoutRenderer {
     context: CGContext
   ) {
     drawSemiTransparentBackground(in: rect, context: context)
-    
+
     let iconSize: CGFloat = 80
     let iconRect = CGRect(
       x: rect.minX + WalkImageGeneratorConstants.Padding.standard,
@@ -86,14 +86,14 @@ class WalkImageLayoutRenderer {
       width: iconSize,
       height: iconSize
     )
-    
+
     let currentUser = Auth.auth().currentUser
     let userName = currentUser?.displayName ?? "ユーザー"
-    
+
     if let photoURL = currentUser?.photoURL,
        let imageData = try? Data(contentsOf: photoURL),
        let profileImage = UIImage(data: imageData) {
-      
+
       let renderer = UIGraphicsImageRenderer(size: iconRect.size)
       let circularImage = renderer.image { _ in
         let path = UIBezierPath(ovalIn: CGRect(origin: .zero, size: iconRect.size))
@@ -101,7 +101,7 @@ class WalkImageLayoutRenderer {
         profileImage.draw(in: CGRect(origin: .zero, size: iconRect.size))
       }
       circularImage.draw(in: iconRect)
-      
+
       context.setStrokeColor(UIColor.systemGray4.cgColor)
       context.setLineWidth(2.0)
       context.strokeEllipse(in: iconRect)
@@ -112,7 +112,7 @@ class WalkImageLayoutRenderer {
       context.setLineWidth(2.0)
       context.strokeEllipse(in: iconRect)
     }
-    
+
     let userNameFont = UIFont.systemFont(
       ofSize: WalkImageGeneratorConstants.FontSize.userName,
       weight: .medium
@@ -124,13 +124,13 @@ class WalkImageLayoutRenderer {
       at: CGPoint(x: iconRect.minX, y: iconRect.maxY + 24),
       context: context
     )
-    
+
     let titleFont = UIFont.systemFont(
       ofSize: WalkImageGeneratorConstants.FontSize.title,
       weight: .bold
     )
     let titleSize = walk.title.size(withAttributes: [.font: titleFont])
-    
+
     drawTextWithShadow(
       walk.title,
       font: titleFont,
@@ -142,7 +142,7 @@ class WalkImageLayoutRenderer {
       context: context
     )
   }
-  
+
   /// 下部オーバーレイ（アプリ情報と統計情報）を描画
   ///
   /// - Parameters:
@@ -155,9 +155,9 @@ class WalkImageLayoutRenderer {
     context: CGContext
   ) {
     let padding: CGFloat = 30
-    
+
     drawSemiTransparentBackground(in: rect, context: context)
-    
+
     let appAreaHeight: CGFloat = 100
     let appRect = CGRect(
       x: rect.minX,
@@ -166,7 +166,7 @@ class WalkImageLayoutRenderer {
       height: appAreaHeight
     )
     drawAppInfo(in: appRect, context: context)
-    
+
     let statsAreaHeight: CGFloat = 120
     let statsRect = CGRect(
       x: rect.minX,
@@ -175,15 +175,15 @@ class WalkImageLayoutRenderer {
       height: statsAreaHeight
     )
     drawStatisticsInfo(in: statsRect, walk: walk, context: context)
-    
+
     if let startTime = walk.startTime {
       let formatter = DateFormatter()
       formatter.dateFormat = "yyyy/MM/dd HH:mm"
       let timeString = formatter.string(from: startTime)
-      
+
       let timeFont = UIFont.systemFont(ofSize: 32, weight: .regular)
       let timeSize = timeString.size(withAttributes: [.font: timeFont])
-      
+
       drawTextWithShadow(
         timeString,
         font: timeFont,
@@ -196,7 +196,7 @@ class WalkImageLayoutRenderer {
       )
     }
   }
-  
+
   /// 半透明背景を描画
   private static func drawSemiTransparentBackground(
     in rect: CGRect,
@@ -211,20 +211,20 @@ class WalkImageLayoutRenderer {
     context.setFillColor(backgroundColor.cgColor)
     context.fill(rect)
   }
-  
+
   /// アプリ情報（アイコンとアプリ名）を中央に描画
   private static func drawAppInfo(in rect: CGRect, context: CGContext) {
     let iconSize: CGFloat = 120
     let totalWidth: CGFloat = iconSize + 20 + 350
     let startX = rect.midX - totalWidth / 2
-    
+
     let iconRect = CGRect(
       x: startX,
       y: rect.midY - iconSize / 2,
       width: iconSize,
       height: iconSize
     )
-    
+
     if let iconName = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any],
        let primaryIcon = iconName["CFBundlePrimaryIcon"] as? [String: Any],
        let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
@@ -241,7 +241,7 @@ class WalkImageLayoutRenderer {
       }
       roundedIcon.draw(in: iconRect)
     }
-    
+
     let appName = "とことこ-お散歩SNS"
     drawTextWithShadow(
       appName,
@@ -251,7 +251,7 @@ class WalkImageLayoutRenderer {
       context: context
     )
   }
-  
+
   /// 統計情報（距離、時間、歩数）を横並びで描画
   private static func drawStatisticsInfo(
     in rect: CGRect,
@@ -260,7 +260,7 @@ class WalkImageLayoutRenderer {
   ) {
     let columnWidth = rect.width / 3
     let iconSize: CGFloat = 48
-    
+
     drawStatisticWithIconAndShadow(
       value: walk.distanceString,
       systemIconName: "point.topleft.down.curvedto.point.bottomright.up",
@@ -268,7 +268,7 @@ class WalkImageLayoutRenderer {
       iconSize: iconSize,
       context: context
     )
-    
+
     drawStatisticWithIconAndShadow(
       value: walk.durationString,
       systemIconName: "clock",
@@ -276,7 +276,7 @@ class WalkImageLayoutRenderer {
       iconSize: iconSize,
       context: context
     )
-    
+
     drawStatisticWithIconAndShadow(
       value: formatStepsForDisplay(walk.totalSteps),
       systemIconName: "figure.walk",
@@ -285,7 +285,7 @@ class WalkImageLayoutRenderer {
       context: context
     )
   }
-  
+
   /// シンプルなテキストを描画
   private static func drawTextWithShadow(
     _ text: String,
@@ -298,10 +298,10 @@ class WalkImageLayoutRenderer {
       .font: font,
       .foregroundColor: color
     ]
-    
+
     text.draw(at: point, withAttributes: attributes)
   }
-  
+
   /// アイコン付き統計情報を描画
   private static func drawStatisticWithIconAndShadow(
     value: String,
@@ -312,14 +312,14 @@ class WalkImageLayoutRenderer {
   ) {
     let valueFont = UIFont.systemFont(ofSize: 38, weight: .bold)
     let valueSize = value.size(withAttributes: [.font: valueFont])
-    
+
     drawSystemIconWithoutShadow(
       systemIconName,
       at: CGPoint(x: center.x, y: center.y - 30),
       size: iconSize,
       context: context
     )
-    
+
     drawTextWithShadow(
       value,
       font: valueFont,
@@ -328,7 +328,7 @@ class WalkImageLayoutRenderer {
       context: context
     )
   }
-  
+
   /// シンプルなシステムアイコンを描画
   private static func drawSystemIconWithoutShadow(
     _ systemName: String,
@@ -345,11 +345,11 @@ class WalkImageLayoutRenderer {
         width: iconSize.width,
         height: iconSize.height
       )
-      
+
       icon.withTintColor(.black).draw(in: iconRect)
     }
   }
-  
+
   /// 歩数を表示用フォーマットに変換
   ///
   /// - Parameter totalSteps: 総歩数
