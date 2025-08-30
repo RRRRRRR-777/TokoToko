@@ -58,17 +58,14 @@ struct AppInfoView: View {
   }
 
   var body: some View {
-    NavigationView {
-      appInfoListView
-        .navigationTitle("このアプリについて")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-    .accentColor(.black)
-    .background(Color("BackgroundColor").ignoresSafeArea())
-    .onAppear {
-      // 統一されたナビゲーションバー外観設定を適用
-      NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
-    }
+    appInfoListView
+      .navigationTitle("このアプリについて")
+      .navigationBarTitleDisplayMode(.inline)
+      .background(Color("BackgroundColor"))
+      .onAppear {
+        // 統一されたナビゲーションバー外観設定を適用
+        NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
+      }
   }
   
   /// アプリ情報リストビューの共通実装
