@@ -121,12 +121,12 @@ class WalkRepository {
   ///
   /// 散歩データの保存と取得に使用するFirestoreインスタンスです。
   private let db: Firestore
-  
+
   /// 設定済みFirestoreインスタンスを他のサービスで共有するためのアクセサ
   ///
   /// アプリ全体で同一の設定を持つFirestoreインスタンスを使用するために提供されます。
   var sharedFirestore: Firestore {
-    return db
+    db
   }
 
   /// Firebase Storageの参照
@@ -157,7 +157,7 @@ class WalkRepository {
   private init() {
     // Firestoreの設定
     self.db = Self.configureFirestore()
-    
+
     // 初期化完了後にネットワーク設定
     setupNetworkConfiguration()
   }
@@ -170,14 +170,14 @@ class WalkRepository {
     // Firestoreの設定を先に行う
     let settings = FirestoreSettings()
     settings.cacheSettings = PersistentCacheSettings()
-    
+
     // Firestoreインスタンスを取得して設定を適用
     let firestore = Firestore.firestore()
     firestore.settings = settings
-    
+
     return firestore
   }
-  
+
   /// ネットワーク設定のセットアップ
   ///
   /// Firestoreのネットワーク接続設定とログ記録を行います。
@@ -982,51 +982,70 @@ class WalkRepository {
       "operation": "saveSharedImage"
     ])
 
-    // Firebase認証ヘルパーを使用した認証確認
-    switch FirebaseAuthHelper.requireAuthentication() {
-    case .success(let userId):
-      // 認証済み、処理続行
-      break
-    case .failure(let authError):
-      logger.warning(
-        operation: "saveSharedImage",
-        message: "認証エラー: \(authError.localizedDescription)",
-        context: ["walk_id": walk.id.uuidString],
-        humanNote: "ユーザーが認証されていません",
-        aiTodo: "認証状態を確認してください"
-      )
+    guard let userId = validateAuthenticationForImage() else {
       completion(.failure(.authenticationRequired))
       return
     }
 
-    let userId = FirebaseAuthHelper.getCurrentUserId()!
-
-    // 画像をJPEGデータに変換（設定値を使用）
-    guard let imageData = image.jpegData(compressionQuality: FirebaseStorageConfig.jpegCompressionQuality) else {
-      logger.warning(
-        operation: "saveSharedImage",
-        message: "画像のJPEGデータ変換に失敗",
-        context: ["walk_id": walk.id.uuidString],
-        humanNote: "画像の変換に失敗",
-        aiTodo: "画像データの整合性を確認"
-      )
+    guard let imageData = prepareImageData(image, walkId: walk.id.uuidString) else {
       completion(.failure(.invalidData))
       return
     }
 
-    // Storage参照を作成（設定値を使用）
-    let sharedImagePath = FirebaseStorageConfig.sharedImagePath(userId: userId, walkId: walk.id.uuidString)
-    let imageRef = storage.reference().child(sharedImagePath)
+    uploadSharedImage(
+      imageData: imageData,
+      walk: walk,
+      userId: userId,
+      completion: completion
+    )
+  }
 
-    // メタデータを設定（設定値を使用）
-    let metadata = StorageMetadata()
-    metadata.contentType = "image/jpeg"
-    var commonMetadata = FirebaseStorageConfig.commonMetadata(walkId: walk.id.uuidString, userId: userId)
-    commonMetadata["walk_title"] = walk.title
-    metadata.customMetadata = commonMetadata
+  private func validateAuthenticationForImage() -> String? {
+    switch FirebaseAuthHelper.requireAuthentication() {
+    case .success(let userId):
+      return FirebaseAuthHelper.getCurrentUserId()
+    case .failure(let authError):
+      logger.warning(
+        operation: "validateAuthenticationForImage",
+        message: "認証エラー: \(authError.localizedDescription)",
+        humanNote: "ユーザーが認証されていません",
+        aiTodo: "認証状態を確認してください"
+      )
+      return nil
+    }
+  }
+
+  private func prepareImageData(_ image: UIImage, walkId: String) -> Data? {
+    guard let imageData = image.jpegData(
+      compressionQuality: FirebaseStorageConfig.jpegCompressionQuality
+    ) else {
+      logger.warning(
+        operation: "prepareImageData",
+        message: "画像のJPEGデータ変換に失敗",
+        context: ["walk_id": walkId],
+        humanNote: "画像の変換に失敗",
+        aiTodo: "画像データの整合性を確認"
+      )
+      return nil
+    }
+    return imageData
+  }
+
+  private func uploadSharedImage(
+    imageData: Data,
+    walk: Walk,
+    userId: String,
+    completion: @escaping (Result<String, WalkRepositoryError>) -> Void
+  ) {
+    let sharedImagePath = FirebaseStorageConfig.sharedImagePath(
+      userId: userId,
+      walkId: walk.id.uuidString
+    )
+    let imageRef = storage.reference().child(sharedImagePath)
+    let metadata = createImageMetadata(walk: walk, userId: userId)
 
     logger.info(
-      operation: "saveSharedImage",
+      operation: "uploadSharedImage",
       message: "画像アップロード開始",
       context: [
         "walk_id": walk.id.uuidString,
@@ -1036,12 +1055,11 @@ class WalkRepository {
       ]
     )
 
-    // 画像をアップロード
     imageRef.putData(imageData, metadata: metadata) { [weak self] _, error in
       if let error = error {
         self?.logger.logError(
           error,
-          operation: "saveSharedImage:putData",
+          operation: "uploadSharedImage",
           humanNote: "Firebase Storageへのアップロードに失敗",
           aiTodo: "ネットワーク接続とFirebase Storage設定を確認"
         )
@@ -1049,52 +1067,83 @@ class WalkRepository {
         return
       }
 
-      // ダウンロードURLを取得
-      imageRef.downloadURL { [weak self] url, error in
-        if let error = error {
-          self?.logger.logError(
-            error,
-            operation: "saveSharedImage:downloadURL",
-            humanNote: "ダウンロードURL取得に失敗",
-            aiTodo: "Firebase Storage設定とアクセス権限を確認"
-          )
-          completion(.failure(.storageError(error)))
-          return
-        }
+      self?.getDownloadURLAndUpdateWalk(
+        imageRef: imageRef,
+        walk: walk,
+        userId: userId,
+        imageDataSize: imageData.count,
+        completion: completion
+      )
+    }
+  }
 
-        guard let downloadURL = url else {
-          self?.logger.warning(
-            operation: "saveSharedImage:downloadURL",
-            message: "ダウンロードURLが取得できませんでした",
-            context: ["walk_id": walk.id.uuidString],
-            humanNote: "URLの取得に失敗",
-            aiTodo: "Firebase Storage設定を確認"
-          )
-          completion(.failure(.storageError(NSError(domain: "WalkRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗"]))))
-          return
-        }
+  private func createImageMetadata(walk: Walk, userId: String) -> StorageMetadata {
+    let metadata = StorageMetadata()
+    metadata.contentType = "image/jpeg"
+    var commonMetadata = FirebaseStorageConfig.commonMetadata(
+      walkId: walk.id.uuidString,
+      userId: userId
+    )
+    commonMetadata["walk_title"] = walk.title
+    metadata.customMetadata = commonMetadata
+    return metadata
+  }
 
-        let urlString = downloadURL.absoluteString
-
-        self?.logger.info(
-          operation: "saveSharedImage:downloadURL",
-          message: "画像アップロード成功",
-          context: [
-            "walk_id": walk.id.uuidString,
-            "user_id": userId,
-            "download_url": urlString,
-            "file_size": String(imageData.count)
-          ]
+  private func getDownloadURLAndUpdateWalk(
+    imageRef: StorageReference,
+    walk: Walk,
+    userId: String,
+    imageDataSize: Int,
+    completion: @escaping (Result<String, WalkRepositoryError>) -> Void
+  ) {
+    imageRef.downloadURL { [weak self] url, error in
+      if let error = error {
+        self?.logger.logError(
+          error,
+          operation: "getDownloadURLAndUpdateWalk",
+          humanNote: "ダウンロードURL取得に失敗",
+          aiTodo: "Firebase Storage設定とアクセス権限を確認"
         )
+        completion(.failure(.storageError(error)))
+        return
+      }
 
-        // WalkデータにURLを保存
-        self?.updateWalkWithSharedImageURL(walk, imageURL: urlString) { result in
-          switch result {
-          case .success:
-            completion(.success(urlString))
-          case .failure(let error):
-            completion(.failure(error))
-          }
+      guard let downloadURL = url else {
+        self?.logger.warning(
+          operation: "getDownloadURLAndUpdateWalk",
+          message: "ダウンロードURLが取得できませんでした",
+          context: ["walk_id": walk.id.uuidString],
+          humanNote: "URLの取得に失敗",
+          aiTodo: "Firebase Storage設定を確認"
+        )
+        let error = NSError(
+          domain: "WalkRepository",
+          code: -1,
+          userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗"]
+        )
+        completion(.failure(.storageError(error)))
+        return
+      }
+
+      let urlString = downloadURL.absoluteString
+
+      self?.logger.info(
+        operation: "getDownloadURLAndUpdateWalk",
+        message: "画像アップロード成功",
+        context: [
+          "walk_id": walk.id.uuidString,
+          "user_id": userId,
+          "download_url": urlString,
+          "file_size": String(imageDataSize)
+        ]
+      )
+
+      self?.updateWalkWithSharedImageURL(walk, imageURL: urlString) { result in
+        switch result {
+        case .success:
+          completion(.success(urlString))
+        case .failure(let error):
+          completion(.failure(error))
         }
       }
     }
