@@ -58,17 +58,14 @@ struct AppInfoView: View {
   }
 
   var body: some View {
-    NavigationView {
-      appInfoListView
-        .navigationTitle("このアプリについて")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-    .accentColor(.black)
-    .background(Color("BackgroundColor").ignoresSafeArea())
-    .onAppear {
-      // 統一されたナビゲーションバー外観設定を適用
-      NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
-    }
+    appInfoListView
+      .navigationTitle("このアプリについて")
+      .navigationBarTitleDisplayMode(.inline)
+      .background(Color("BackgroundColor"))
+      .onAppear {
+        // 統一されたナビゲーションバー外観設定を適用
+        NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .appInfoScreen)
+      }
   }
   
   /// アプリ情報リストビューの共通実装
@@ -225,14 +222,6 @@ struct AppInfoView: View {
     .listStyle(PlainListStyle())
     .foregroundColor(.black)
     .background(Color("BackgroundColor"))
-    .onAppear {
-      // iOS 15対応: リストの背景色を完全に制御
-      UITableView.appearance().backgroundColor = UIColor.clear
-      UITableView.appearance().separatorStyle = .none
-      UITableViewCell.appearance().backgroundColor = UIColor.clear
-      UITableViewHeaderFooterView.appearance().backgroundView = UIView()
-      UITableViewHeaderFooterView.appearance().backgroundView?.backgroundColor = UIColor.clear
-    }
     .modifier(ScrollContentBackgroundModifier())
   }
 }
