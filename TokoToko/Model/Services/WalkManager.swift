@@ -354,18 +354,18 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     guard var walk = currentWalk else { return }
     walk.addLocation(location)
     currentWalk = walk
-    distance = walk.distance
+    distance = walk.totalDistance
   }
 
   private func saveCurrentWalk() {
     guard let walk = currentWalk else { return }
 
-    Task {
-      do {
-        try await walkRepository.saveWalk(walk)
-        logger.info(operation: "saveWalk", message: "散歩データを保存しました")
-      } catch {
-        logger.logError(error, operation: "saveWalk")
+    walkRepository.saveWalk(walk) { [weak self] result in
+      switch result {
+      case .success(let savedWalk):
+        self?.logger.info(operation: "saveWalk", message: "散歩データを保存しました", context: ["walkId": savedWalk.id.uuidString])
+      case .failure(let error):
+        self?.logger.logError(error, operation: "saveWalk")
       }
     }
   }
@@ -383,7 +383,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   private func updateElapsedTime() {
     guard let walk = currentWalk, walk.status == .inProgress else { return }
-    elapsedTime = walk.elapsedTime
+    elapsedTime = walk.duration
   }
 
   private func defaultWalkTitle() -> String {
