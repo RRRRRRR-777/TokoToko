@@ -97,129 +97,163 @@ class GoogleAuthService {
   func signInWithGoogle(completion: @escaping (AuthResult) -> Void) {
     logger.logMethodStart()
 
+    guard let clientID = configureGoogleSignIn() else {
+      completion(.failure("Firebase設定エラー"))
+      return
+    }
+
+    guard let rootViewController = getRootViewController() else {
+      completion(.failure("ウィンドウシーンの取得に失敗しました"))
+      return
+    }
+
+    performGoogleSignIn(rootViewController: rootViewController, completion: completion)
+  }
+
+  private func configureGoogleSignIn() -> String? {
     guard let clientID = FirebaseApp.app()?.options.clientID else {
       logger.logError(
         NSError(
           domain: "GoogleAuthService", code: 1001,
           userInfo: [NSLocalizedDescriptionKey: "Firebase設定エラー"]),
-        operation: "signInWithGoogle",
+        operation: "configureGoogleSignIn",
         humanNote: "Firebase設定の取得に失敗",
         aiTodo: "GoogleService-Info.plistの設定を確認"
       )
-      completion(.failure("Firebase設定エラー"))
-      return
+      return nil
     }
 
     logger.info(
-      operation: "signInWithGoogle",
-      message: "Google認証開始",
+      operation: "configureGoogleSignIn",
+      message: "Google認証設定完了",
       context: ["client_id_exists": "true"]
     )
 
-    // Google Sign In configuration
     let config = GIDConfiguration(clientID: clientID)
     GIDSignIn.sharedInstance.configuration = config
+    return clientID
+  }
 
+  private func getRootViewController() -> UIViewController? {
     guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
       let rootViewController = windowScene.windows.first?.rootViewController
     else {
       logger.warning(
-        operation: "signInWithGoogle",
+        operation: "getRootViewController",
         message: "ウィンドウシーンの取得に失敗",
         humanNote: "UIの準備ができていません",
         aiTodo: "UI状態を確認してください"
       )
-      completion(.failure("ウィンドウシーンの取得に失敗しました"))
-      return
+      return nil
     }
 
+    return rootViewController
+  }
+
+  private func performGoogleSignIn(
+    rootViewController: UIViewController,
+    completion: @escaping (AuthResult) -> Void
+  ) {
     logger.info(
-      operation: "signInWithGoogle",
+      operation: "performGoogleSignIn",
       message: "Google Sign In開始",
       context: ["has_root_view_controller": "true"]
     )
 
-    // Start the sign in flow
     GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) {
       [weak self] result, error in
+      self?.handleGoogleSignInResult(result: result, error: error, completion: completion)
+    }
+  }
+
+  private func handleGoogleSignInResult(
+    result: GIDSignInResult?,
+    error: Error?,
+    completion: @escaping (AuthResult) -> Void
+  ) {
+    if let error = error {
+      logger.logError(
+        error,
+        operation: "handleGoogleSignInResult",
+        humanNote: "Google Sign Inプロセスでエラー発生",
+        aiTodo: "ネットワーク接続とGoogle設定を確認"
+      )
+      completion(.failure("Googleログインエラー: \(error.localizedDescription)"))
+      return
+    }
+
+    guard let user = result?.user,
+      let idToken = user.idToken?.tokenString
+    else {
+      logger.warning(
+        operation: "handleGoogleSignInResult",
+        message: "ユーザー情報の取得に失敗",
+        humanNote: "Google Sign Inの結果が不正",
+        aiTodo: "Google Sign Inの設定を確認"
+      )
+      completion(.failure("ユーザー情報の取得に失敗しました"))
+      return
+    }
+
+    logger.info(
+      operation: "handleGoogleSignInResult",
+      message: "Google Sign In成功",
+      context: [
+        "has_id_token": "true",
+        "has_access_token": "true"
+      ]
+    )
+
+    signInWithFirebase(
+      idToken: idToken,
+      accessToken: user.accessToken.tokenString,
+      displayName: user.profile?.name,
+      completion: completion
+    )
+  }
+
+  private func signInWithFirebase(
+    idToken: String,
+    accessToken: String,
+    displayName: String?,
+    completion: @escaping (AuthResult) -> Void
+  ) {
+    let credential = GoogleAuthProvider.credential(
+      withIDToken: idToken,
+      accessToken: accessToken
+    )
+
+    logger.info(
+      operation: "signInWithFirebase",
+      message: "Firebase認証開始",
+      context: ["credential_type": "google"]
+    )
+
+    Auth.auth().signIn(with: credential) { [weak self] _, error in
       if let error = error {
         self?.logger.logError(
           error,
-          operation: "signInWithGoogle:googleSignIn",
-          humanNote: "Google Sign Inプロセスでエラー発生",
-          aiTodo: "ネットワーク接続とGoogle設定を確認"
+          operation: "signInWithFirebase",
+          humanNote: "Firebase認証でエラー発生",
+          aiTodo: "Firebase設定とネットワーク接続を確認"
         )
-        completion(.failure("Googleログインエラー: \(error.localizedDescription)"))
-        return
-      }
-
-      guard let user = result?.user,
-        let idToken = user.idToken?.tokenString
-      else {
-        self?.logger.warning(
-          operation: "signInWithGoogle:googleSignIn",
-          message: "ユーザー情報の取得に失敗",
-          humanNote: "Google Sign Inの結果が不正",
-          aiTodo: "Google Sign Inの設定を確認"
-        )
-        completion(.failure("ユーザー情報の取得に失敗しました"))
+        completion(.failure("Firebase認証エラー: \(error.localizedDescription)"))
         return
       }
 
       self?.logger.info(
-        operation: "signInWithGoogle:googleSignIn",
-        message: "Google Sign In成功",
-        context: [
-          "has_id_token": "true",
-          "has_access_token": "true"
-        ]
+        operation: "signInWithFirebase",
+        message: "Firebase認証成功",
+        context: ["display_name": displayName ?? "unknown"]
       )
-
-      // Firebaseの認証情報を作成
-      let credential = GoogleAuthProvider.credential(
-        withIDToken: idToken,
-        accessToken: user.accessToken.tokenString)
 
       self?.logger.info(
-        operation: "signInWithGoogle:firebaseAuth",
-        message: "Firebase認証開始",
-        context: [
-          "credential_type": "google"
-        ]
+        operation: "signInWithGoogle",
+        message: "Google認証プロセス完了",
+        context: ["result": "success"]
       )
 
-      // Firebaseで認証
-      Auth.auth().signIn(with: credential) { [weak self] authResult, error in
-        if let error = error {
-          self?.logger.logError(
-            error,
-            operation: "signInWithGoogle:firebaseAuth",
-            humanNote: "Firebase認証でエラー発生",
-            aiTodo: "Firebase設定とネットワーク接続を確認"
-          )
-          completion(.failure("Firebase認証エラー: \(error.localizedDescription)"))
-          return
-        }
-
-        // 認証成功
-        self?.logger.info(
-          operation: "signInWithGoogle:firebaseAuth",
-          message: "Firebase認証成功",
-          context: [
-            "display_name": user.profile?.name ?? "unknown"
-          ]
-        )
-
-        self?.logger.info(
-          operation: "signInWithGoogle",
-          message: "Google認証プロセス完了",
-          context: [
-            "result": "success",
-          ]
-        )
-
-        completion(.success)
-      }
+      completion(.success)
     }
   }
 }

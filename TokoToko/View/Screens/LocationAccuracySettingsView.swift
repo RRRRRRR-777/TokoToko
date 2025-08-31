@@ -54,12 +54,12 @@ struct LocationAccuracySettingsView: View {
         updateAuthorizationStatus()
       }
   }
-  
+
   /// 設定リストビューの共通実装
   private var settingsListView: some View {
     List {
       // 精度モード選択セクション
-      Section(header: 
+      Section(header:
         HStack {
           Text("位置情報の精度")
             .foregroundColor(.gray)
@@ -79,7 +79,7 @@ struct LocationAccuracySettingsView: View {
           .listRowBackground(Color("BackgroundColor"))
         }
       }
-      
+
       // バックグラウンド更新セクション
       Section(header:
         HStack {
@@ -103,13 +103,13 @@ struct LocationAccuracySettingsView: View {
           .accessibilityIdentifier("background_update_toggle")
         }
         .listRowBackground(Color("BackgroundColor"))
-        
+
         Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
           .font(.caption)
           .foregroundColor(.black)
           .listRowBackground(Color("BackgroundColor"))
       }
-      
+
       // 権限状態セクション
       Section(header:
         HStack {
@@ -121,7 +121,7 @@ struct LocationAccuracySettingsView: View {
       ) {
         PermissionStatusRow(status: authorizationStatus)
           .listRowBackground(Color("BackgroundColor"))
-        
+
         Button("設定アプリを開く") {
           openSettingsApp()
         }

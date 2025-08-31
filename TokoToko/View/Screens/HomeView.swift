@@ -97,7 +97,7 @@ struct HomeView: View {
   }
 
   // MARK: - タイミング制御定数
-  
+
   /// UIアニメーション関連の定数
   private enum AnimationTiming {
     /// 初期状態変更アニメーションの時間
@@ -250,7 +250,7 @@ struct HomeView: View {
     .onChange(of: walkManager.isWalking) { isWalking in
       // 散歩状態の変更に応じてアニメーション状態を同期
       updateRecordingAnimationState()
-      
+
       #if DEBUG
       print("散歩状態変更: \(isWalking)")
       print("  - アニメーション状態: \(shouldAnimateRecording)")
@@ -263,11 +263,10 @@ struct HomeView: View {
         if showOnboarding, let content = onboardingManager.currentContent {
           OnboardingModalView(
             content: content,
-            isPresented: $showOnboarding,
-            onDismiss: {
+            isPresented: $showOnboarding
+          )            {
               onboardingManager.markOnboardingAsShown(for: .firstLaunch)
             }
-          )
           .animation(.easeInOut(duration: 0.3), value: showOnboarding)
         }
       }
@@ -586,7 +585,7 @@ struct HomeView: View {
   private func checkLocationPermissionStatus() {
     // 状態管理を強化
     let initialState = isLocationPermissionCheckCompleted
-    
+
     // アニメーション付きの状態変更（最適化されたタイミング）
     withAnimation(.easeOut(duration: AnimationTiming.initialStateChange)) {
       isLocationPermissionCheckCompleted = false
@@ -594,11 +593,11 @@ struct HomeView: View {
 
     // 許可状態を即座に確認（同期的処理）
     let status = locationManager.checkAuthorizationStatus()
-    
+
     // 非同期で許可状態更新処理を実行
     performLocationPermissionUpdate(initialState: initialState, status: status)
   }
-  
+
   /// 位置情報許可状態の更新処理
   ///
   /// 許可状態チェック後の非同期更新処理を分離したメソッドです。
@@ -619,7 +618,7 @@ struct HomeView: View {
       if self.isLocationAuthorized(status) {
         self.setupLocationManager()
       }
-      
+
       // 統合テスト用の状態ログ
       #if DEBUG
       print("位置情報許可状態チェック完了")
@@ -683,7 +682,7 @@ struct HomeView: View {
     .scaleEffect(isLoading ? 0.98 : 1.0)
     .animation(.easeInOut(duration: 0.1), value: isLoading)
   }
-  
+
   /// ボタン背景の最適化されたグラデーション生成
   ///
   /// グラデーションキャッシュとメモリ最適化
@@ -698,19 +697,19 @@ struct HomeView: View {
       endPoint: .trailing
     )
   }
-  
+
   // MARK: - アニメーションライフサイクル管理
-  
+
   /// アニメーション状態の初期化
   ///
   /// ビュー表示時にアニメーション制御フラグを適切に設定します。
   /// メモリリーク防止とパフォーマンス最適化を目的としています。
   private func initializeAnimationStates() {
     DispatchQueue.main.async {
-      self.shouldAnimateRecording = self.walkManager.isWalking && 
+      self.shouldAnimateRecording = self.walkManager.isWalking &&
                                   self.walkManager.currentWalk?.status != .paused
       self.shouldAnimateUnknownState = true
-      
+
       #if DEBUG
       print("アニメーション初期化:")
       print("  - 記録アニメーション: \(self.shouldAnimateRecording)")
@@ -718,7 +717,7 @@ struct HomeView: View {
       #endif
     }
   }
-  
+
   /// すべてのアニメーションを停止
   ///
   /// ビューが非表示になる際にrepeatForeverアニメーションを停止し、
@@ -729,22 +728,22 @@ struct HomeView: View {
         self.shouldAnimateRecording = false
         self.shouldAnimateUnknownState = false
       }
-      
+
       #if DEBUG
       print("全アニメーション停止完了")
       #endif
     }
   }
-  
+
   /// 記録アニメーション状態の更新
   ///
   /// 散歩状態の変更に応じてアニメーション状態を同期します。
   /// 一時停止時や停止時には適切にアニメーションを停止します。
   private func updateRecordingAnimationState() {
     DispatchQueue.main.async {
-      let newState = self.walkManager.isWalking && 
+      let newState = self.walkManager.isWalking &&
                      self.walkManager.currentWalk?.status != .paused
-      
+
       if self.shouldAnimateRecording != newState {
         withAnimation(.easeInOut(duration: 0.3)) {
           self.shouldAnimateRecording = newState
@@ -794,15 +793,15 @@ extension HomeView {
   func testCheckLocationPermissionStatus() {
     checkLocationPermissionStatus()
   }
-  
+
   /// テスト用：位置情報許可状態判定ヘルパーのアクセス
   ///
   /// 位置情報許可状態の判定ロジックをテストから呼び出すためのメソッドです。
   /// 各種許可状態での判定動作を検証します。
   func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
-    return isLocationAuthorized(status)
+    isLocationAuthorized(status)
   }
-  
+
   /// テスト用：統合テスト用の包括的状態アクセス
   ///
   /// 統合テスト用の状態確認メソッドです。
@@ -813,7 +812,7 @@ extension HomeView {
     let locationManager = LocationManager.shared
     let canAccess = locationManager.checkAuthorizationStatus() == .authorizedWhenInUse ||
                    locationManager.checkAuthorizationStatus() == .authorizedAlways
-    
+
     return (isCheckCompleted: isCompleted, canAccessLocation: canAccess)
   }
 }

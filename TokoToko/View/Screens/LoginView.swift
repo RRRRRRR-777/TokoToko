@@ -58,7 +58,7 @@ struct LoginView: View {
 
   /// キャッシュされたポリシー
   @State private var cachedPolicy: Policy?
-  
+
   /// ポリシー読み込み状態
   @State private var isPolicyLoading = false
 
@@ -133,15 +133,15 @@ struct LoginView: View {
         .resizable()
         .aspectRatio(contentMode: .fit)
         .frame(width: 240, height: 240)
-      
+
       Text("とことこへようこそ")
         .font(.largeTitle)
-        .foregroundColor(Color(red: 40/255, green: 115/255, blue: 80/255))
+        .foregroundColor(Color(red: 40 / 255, green: 115 / 255, blue: 80 / 255))
         .fontWeight(.bold)
 
       Text("今日の散歩を、明日の思い出にシェアしよう")
         .font(.subheadline)
-        .foregroundColor(Color(red: 120/255, green: 110/255, blue: 100/255))
+        .foregroundColor(Color(red: 120 / 255, green: 110 / 255, blue: 100 / 255))
         .multilineTextAlignment(.center)
         .padding(.horizontal)
 

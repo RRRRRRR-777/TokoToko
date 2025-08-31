@@ -8,32 +8,6 @@
 import SwiftUI
 import UIKit
 import CoreLocation
-import UIKit
-
-/// 散歩履歴のリスト表示とタブ管理画面
-///
-/// `WalkListView`は自分の散歩履歴とフレンドの履歴を切り替えて表示する
-/// タブ形式のビューです。現在は自分の履歴のみが実装されており、
-/// フレンドの履歴は将来実装予定の機能として表示されます。
-///
-/// ## Overview
-///
-/// - **タブインターフェース**: セグメントコントロールとTabViewによる切り替え
-/// - **散歩履歴表示**: 完了した散歩のリスト表示と詳細ナビゲーション
-/// - **データ更新**: プルトゥリフレッシュによる手動更新機能
-/// - **状態管理**: ローディング、空の状態、エラー状態の適切な表示
-///
-/// ## Topics
-///
-/// ### Properties
-/// - ``selectedTab``
-/// - ``walks``
-/// - ``isLoading``
-/// - ``walkRepository``
-///
-/// ### Methods
-/// - ``loadMyWalks()``
-/// - ``handleWalkDeletion(_:)``
 struct WalkListView: View {
   /// 現在選択されているタブのインデックス
   ///
@@ -64,7 +38,7 @@ struct WalkListView: View {
   /// - Parameter selectedTab: 初期選択タブのインデックス（デフォルト: 0）
   init(selectedTab: Int = 0) {
     self._selectedTab = State(initialValue: selectedTab)
-    
+
     // 統一されたナビゲーションバー外観設定を適用
     NavigationBarStyleManager.shared.configureForSwiftUI(customizations: .walkListScreen)
   }

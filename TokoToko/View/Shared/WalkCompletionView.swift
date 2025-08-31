@@ -304,7 +304,7 @@ struct WalkCompletionView: View {
     }
 
     // MARK: - Private Methods
-    
+
     /// NavigationBarの背景色を設定
     private func setupNavigationBarAppearance() {
         let appearance = UINavigationBarAppearance()
@@ -312,7 +312,7 @@ struct WalkCompletionView: View {
         appearance.backgroundColor = UIColor(named: "BackgroundColor")
         appearance.titleTextAttributes = [.foregroundColor: UIColor.black]
         appearance.shadowColor = UIColor.clear
-        
+
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance

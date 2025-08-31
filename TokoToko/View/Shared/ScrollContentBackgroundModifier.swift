@@ -22,7 +22,7 @@ import SwiftUI
 /// - iOS 16+: `.scrollContentBackground(.hidden)`を使用
 /// - iOS 15: ViewModifierのパススルー（従来の背景制御方法を維持）
 public struct ScrollContentBackgroundModifier: ViewModifier {
-  
+
   /// ViewModifierの本体実装
   ///
   /// iOS版別の条件分岐によりスクロール背景を適切に制御します。
@@ -52,7 +52,7 @@ public struct ScrollContentBackgroundModifier: ViewModifier {
 // MARK: - View Extension
 
 extension View {
-  
+
   /// ScrollContentBackgroundModifierを適用するための便利メソッド
   ///
   /// より簡潔な記述でスクロール背景制御を適用できます。

@@ -67,7 +67,7 @@ class ConsentManager: ObservableObject {
     /// ポリシーの更新による再同意の必要性をチェックします。
     func checkForReConsentNeeded() async {
         guard !isLoading else { return }
-        
+
         // UIテストモードの場合は何もしない
         if testingHelper.isUITesting {
             return

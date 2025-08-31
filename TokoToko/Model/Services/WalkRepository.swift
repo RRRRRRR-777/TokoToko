@@ -20,63 +20,7 @@ import UIKit
 /// ## Topics
 ///
 /// ### Error Cases
-/// - ``notFound``
-/// - ``firestoreError(_:)``
-/// - ``networkError``
-/// - ``authenticationRequired``
-/// - ``invalidData``
-enum WalkRepositoryError: Error, Equatable {
-  /// 指定されたWalkが見つからない
-  ///
-  /// リクエストされたWalkIDが存在しない、または現在のユーザーがアクセス権限を持たない場合に発生します。
-  case notFound
-
-  /// Firestoreでの操作エラー
-  ///
-  /// Firebase Firestoreとの通信やデータ操作で発生したエラーです。
-  /// - Parameter Error: 発生した具体的なFirestoreエラー
-  case firestoreError(Error)
-
-  /// ネットワーク接続エラー
-  ///
-  /// インターネット接続の問題やタイムアウトで発生するエラーです。
-  case networkError
-
-  /// 認証が必要
-  ///
-  /// Firebase Authenticationでの認証が必要な操作でユーザーが未認証の場合に発生します。
-  case authenticationRequired
-
-  /// 無効なデータ
-  ///
-  /// データの変換やバリデーションに失敗した場合に発生するエラーです。
-  case invalidData
-
-  /// ストレージエラー
-  ///
-  /// Firebase Storageでの画像アップロードやダウンロードで発生するエラーです。
-  case storageError(Error)
-
-  /// Equatableプロトコルの実装
-  ///
-  /// エラータイプ同士の等価比較を行います。Errorプロトコルの制約により、
-  /// firestoreErrorの場合はエラー内容ではなくタイプのみを比較します。
-  static func == (lhs: WalkRepositoryError, rhs: WalkRepositoryError) -> Bool {
-    switch (lhs, rhs) {
-    case (.notFound, .notFound),
-      (.networkError, .networkError),
-      (.authenticationRequired, .authenticationRequired),
-      (.invalidData, .invalidData):
-      return true
-    case (.firestoreError, .firestoreError),
-         (.storageError, .storageError):
-      // Errorは等価比較が困難なため、同じタイプであることのみチェック
-      return true
-    default:
-      return false
-    }
-  }
-}
+/// WalkRepositoryErrorの詳細はWalkRepositoryCoreファイルを参照してください。
 
 /// 散歩データの永続化とFirestore連携を管理するリポジトリクラス
 ///
@@ -110,108 +54,8 @@ enum WalkRepositoryError: Error, Equatable {
 /// - ``fetchWalksFromFirestore(userId:completion:)``
 /// - ``updateWalkInFirestore(_:completion:)``
 /// - ``deleteWalkFromFirestore(walkId:userId:completion:)``
-class WalkRepository {
-  /// WalkRepositoryのシングルトンインスタンス
-  ///
-  /// アプリ全体で単一のリポジトリインスタンスを使用し、
-  /// キャッシュとFirestore接続状態の一貫性を保証します。
-  static let shared = WalkRepository()
-
-  /// Firebase Firestoreのデータベース参照
-  ///
-  /// 散歩データの保存と取得に使用するFirestoreインスタンスです。
-  private let db: Firestore
-  
-  /// 設定済みFirestoreインスタンスを他のサービスで共有するためのアクセサ
-  ///
-  /// アプリ全体で同一の設定を持つFirestoreインスタンスを使用するために提供されます。
-  var sharedFirestore: Firestore {
-    return db
-  }
-
-  /// Firebase Storageの参照
-  ///
-  /// 共有画像の保存に使用するFirebase Storageインスタンスです。
-  private let storage = Storage.storage()
-
-  /// Firestoreコレクション名
-  ///
-  /// 散歩データが格納されるFirestoreコレクションの名前です。
-  private let collectionName = "walks"
-
-  /// オフライン対応用のローカルキャッシュ
-  ///
-  /// ネットワーク接続がない場合の読み取りパフォーマンス向上と
-  /// オフライン機能を提供するためのメモリ内キャッシュです。
-  private var cachedWalks: [Walk] = []
-
-  /// ログ出力用のEnhancedVibeLoggerインスタンス
-  ///
-  /// データ操作、Firestore通信、エラー状況の詳細ログ記録に使用します。
-  private let logger = EnhancedVibeLogger.shared
-
-  /// WalkRepositoryのプライベート初期化メソッド
-  ///
-  /// シングルトンパターンによりプライベート初期化子を定義します。
-  /// 初期化時にFirestoreの設定とオフライン永続化の設定を行います。
-  private init() {
-    // Firestoreの設定
-    self.db = Self.configureFirestore()
-    
-    // 初期化完了後にネットワーク設定
-    setupNetworkConfiguration()
-  }
-
-  /// Firestoreの初期設定を実行（スタティックメソッド）
-  ///
-  /// オフライン永続化、キャッシュ設定を行います。
-  /// 初期化中のため、loggerは使用せずに設定のみ行います。
-  private static func configureFirestore() -> Firestore {
-    // Firestoreの設定を先に行う
-    let settings = FirestoreSettings()
-    settings.cacheSettings = PersistentCacheSettings()
-    
-    // Firestoreインスタンスを取得して設定を適用
-    let firestore = Firestore.firestore()
-    firestore.settings = settings
-    
-    return firestore
-  }
-  
-  /// ネットワーク設定のセットアップ
-  ///
-  /// Firestoreのネットワーク接続設定とログ記録を行います。
-  private func setupNetworkConfiguration() {
-    logger.logMethodStart()
-
-    // オフライン時の自動再試行設定
-    db.enableNetwork { [weak self] error in
-      if let error = error {
-        self?.logger.logError(
-          error,
-          operation: "configureFirestore:enableNetwork",
-          humanNote: "Firestoreネットワーク接続に失敗",
-          aiTodo: "ネットワーク接続状態とFirebase設定を確認"
-        )
-      } else {
-        self?.logger.info(
-          operation: "configureFirestore:enableNetwork",
-          message: "Firestoreネットワーク接続が確立されました",
-          context: ["cache_size": "50MB", "persistence": "enabled"]
-        )
-      }
-    }
-
-    logger.info(
-      operation: "setupNetworkConfiguration",
-      message: "Firestore設定完了",
-      context: [
-        "persistence_enabled": "true",  // PersistentCacheSettings.unlimited を使用しているため常にtrue
-        "cache_size_bytes": "unlimited"  // PersistentCacheSettings.unlimited を使用しているため
-      ]
-    )
-  }
-
+// WalkRepositoryクラスの定義はWalkRepositoryCoreファイルにあります
+extension WalkRepository {
   // MARK: - Public Methods (既存のインターフェース互換性を保持)
 
   /// 現在の認証済みユーザーのWalkリストを取得
@@ -982,51 +826,70 @@ class WalkRepository {
       "operation": "saveSharedImage"
     ])
 
-    // Firebase認証ヘルパーを使用した認証確認
-    switch FirebaseAuthHelper.requireAuthentication() {
-    case .success(let userId):
-      // 認証済み、処理続行
-      break
-    case .failure(let authError):
-      logger.warning(
-        operation: "saveSharedImage",
-        message: "認証エラー: \(authError.localizedDescription)",
-        context: ["walk_id": walk.id.uuidString],
-        humanNote: "ユーザーが認証されていません",
-        aiTodo: "認証状態を確認してください"
-      )
+    guard let userId = validateAuthenticationForImage() else {
       completion(.failure(.authenticationRequired))
       return
     }
 
-    let userId = FirebaseAuthHelper.getCurrentUserId()!
-
-    // 画像をJPEGデータに変換（設定値を使用）
-    guard let imageData = image.jpegData(compressionQuality: FirebaseStorageConfig.jpegCompressionQuality) else {
-      logger.warning(
-        operation: "saveSharedImage",
-        message: "画像のJPEGデータ変換に失敗",
-        context: ["walk_id": walk.id.uuidString],
-        humanNote: "画像の変換に失敗",
-        aiTodo: "画像データの整合性を確認"
-      )
+    guard let imageData = prepareImageData(image, walkId: walk.id.uuidString) else {
       completion(.failure(.invalidData))
       return
     }
 
-    // Storage参照を作成（設定値を使用）
-    let sharedImagePath = FirebaseStorageConfig.sharedImagePath(userId: userId, walkId: walk.id.uuidString)
-    let imageRef = storage.reference().child(sharedImagePath)
+    uploadSharedImage(
+      imageData: imageData,
+      walk: walk,
+      userId: userId,
+      completion: completion
+    )
+  }
 
-    // メタデータを設定（設定値を使用）
-    let metadata = StorageMetadata()
-    metadata.contentType = "image/jpeg"
-    var commonMetadata = FirebaseStorageConfig.commonMetadata(walkId: walk.id.uuidString, userId: userId)
-    commonMetadata["walk_title"] = walk.title
-    metadata.customMetadata = commonMetadata
+  private func validateAuthenticationForImage() -> String? {
+    switch FirebaseAuthHelper.requireAuthentication() {
+    case .success(let userId):
+      return FirebaseAuthHelper.getCurrentUserId()
+    case .failure(let authError):
+      logger.warning(
+        operation: "validateAuthenticationForImage",
+        message: "認証エラー: \(authError.localizedDescription)",
+        humanNote: "ユーザーが認証されていません",
+        aiTodo: "認証状態を確認してください"
+      )
+      return nil
+    }
+  }
+
+  private func prepareImageData(_ image: UIImage, walkId: String) -> Data? {
+    guard let imageData = image.jpegData(
+      compressionQuality: FirebaseStorageConfig.jpegCompressionQuality
+    ) else {
+      logger.warning(
+        operation: "prepareImageData",
+        message: "画像のJPEGデータ変換に失敗",
+        context: ["walk_id": walkId],
+        humanNote: "画像の変換に失敗",
+        aiTodo: "画像データの整合性を確認"
+      )
+      return nil
+    }
+    return imageData
+  }
+
+  private func uploadSharedImage(
+    imageData: Data,
+    walk: Walk,
+    userId: String,
+    completion: @escaping (Result<String, WalkRepositoryError>) -> Void
+  ) {
+    let sharedImagePath = FirebaseStorageConfig.sharedImagePath(
+      userId: userId,
+      walkId: walk.id.uuidString
+    )
+    let imageRef = storage.reference().child(sharedImagePath)
+    let metadata = createImageMetadata(walk: walk, userId: userId)
 
     logger.info(
-      operation: "saveSharedImage",
+      operation: "uploadSharedImage",
       message: "画像アップロード開始",
       context: [
         "walk_id": walk.id.uuidString,
@@ -1036,12 +899,11 @@ class WalkRepository {
       ]
     )
 
-    // 画像をアップロード
     imageRef.putData(imageData, metadata: metadata) { [weak self] _, error in
       if let error = error {
         self?.logger.logError(
           error,
-          operation: "saveSharedImage:putData",
+          operation: "uploadSharedImage",
           humanNote: "Firebase Storageへのアップロードに失敗",
           aiTodo: "ネットワーク接続とFirebase Storage設定を確認"
         )
@@ -1049,52 +911,83 @@ class WalkRepository {
         return
       }
 
-      // ダウンロードURLを取得
-      imageRef.downloadURL { [weak self] url, error in
-        if let error = error {
-          self?.logger.logError(
-            error,
-            operation: "saveSharedImage:downloadURL",
-            humanNote: "ダウンロードURL取得に失敗",
-            aiTodo: "Firebase Storage設定とアクセス権限を確認"
-          )
-          completion(.failure(.storageError(error)))
-          return
-        }
+      self?.getDownloadURLAndUpdateWalk(
+        imageRef: imageRef,
+        walk: walk,
+        userId: userId,
+        imageDataSize: imageData.count,
+        completion: completion
+      )
+    }
+  }
 
-        guard let downloadURL = url else {
-          self?.logger.warning(
-            operation: "saveSharedImage:downloadURL",
-            message: "ダウンロードURLが取得できませんでした",
-            context: ["walk_id": walk.id.uuidString],
-            humanNote: "URLの取得に失敗",
-            aiTodo: "Firebase Storage設定を確認"
-          )
-          completion(.failure(.storageError(NSError(domain: "WalkRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗"]))))
-          return
-        }
+  private func createImageMetadata(walk: Walk, userId: String) -> StorageMetadata {
+    let metadata = StorageMetadata()
+    metadata.contentType = "image/jpeg"
+    var commonMetadata = FirebaseStorageConfig.commonMetadata(
+      walkId: walk.id.uuidString,
+      userId: userId
+    )
+    commonMetadata["walk_title"] = walk.title
+    metadata.customMetadata = commonMetadata
+    return metadata
+  }
 
-        let urlString = downloadURL.absoluteString
-
-        self?.logger.info(
-          operation: "saveSharedImage:downloadURL",
-          message: "画像アップロード成功",
-          context: [
-            "walk_id": walk.id.uuidString,
-            "user_id": userId,
-            "download_url": urlString,
-            "file_size": String(imageData.count)
-          ]
+  private func getDownloadURLAndUpdateWalk(
+    imageRef: StorageReference,
+    walk: Walk,
+    userId: String,
+    imageDataSize: Int,
+    completion: @escaping (Result<String, WalkRepositoryError>) -> Void
+  ) {
+    imageRef.downloadURL { [weak self] url, error in
+      if let error = error {
+        self?.logger.logError(
+          error,
+          operation: "getDownloadURLAndUpdateWalk",
+          humanNote: "ダウンロードURL取得に失敗",
+          aiTodo: "Firebase Storage設定とアクセス権限を確認"
         )
+        completion(.failure(.storageError(error)))
+        return
+      }
 
-        // WalkデータにURLを保存
-        self?.updateWalkWithSharedImageURL(walk, imageURL: urlString) { result in
-          switch result {
-          case .success:
-            completion(.success(urlString))
-          case .failure(let error):
-            completion(.failure(error))
-          }
+      guard let downloadURL = url else {
+        self?.logger.warning(
+          operation: "getDownloadURLAndUpdateWalk",
+          message: "ダウンロードURLが取得できませんでした",
+          context: ["walk_id": walk.id.uuidString],
+          humanNote: "URLの取得に失敗",
+          aiTodo: "Firebase Storage設定を確認"
+        )
+        let error = NSError(
+          domain: "WalkRepository",
+          code: -1,
+          userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗"]
+        )
+        completion(.failure(.storageError(error)))
+        return
+      }
+
+      let urlString = downloadURL.absoluteString
+
+      self?.logger.info(
+        operation: "getDownloadURLAndUpdateWalk",
+        message: "画像アップロード成功",
+        context: [
+          "walk_id": walk.id.uuidString,
+          "user_id": userId,
+          "download_url": urlString,
+          "file_size": String(imageDataSize)
+        ]
+      )
+
+      self?.updateWalkWithSharedImageURL(walk, imageURL: urlString) { result in
+        switch result {
+        case .success:
+          completion(.success(urlString))
+        case .failure(let error):
+          completion(.failure(error))
         }
       }
     }

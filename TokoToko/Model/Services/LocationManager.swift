@@ -131,10 +131,10 @@ class LocationManager: NSObject, ObservableObject {
   /// 注入された設定適用オブジェクトから設定を読み込み、ユーザーが選択した精度モードを適用します。
   private func setupLocationManager() {
     locationManager.delegate = self
-    
+
     // 注入された設定適用オブジェクトから設定を適用
     settingsApplicator.applySettingsToLocationManager(locationManager)
-    
+
     // 自動停止は常に無効化
     locationManager.pausesLocationUpdatesAutomatically = false
   }
@@ -178,7 +178,7 @@ class LocationManager: NSObject, ObservableObject {
 
     // 注入された設定適用オブジェクトから最新の設定を適用
     settingsApplicator.applySettingsToLocationManager(locationManager)
-    
+
     // バックグラウンド更新の設定を確認
     configureBackgroundLocationUpdates()
     locationManager.startUpdatingLocation()

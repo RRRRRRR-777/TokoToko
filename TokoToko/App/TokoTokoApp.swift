@@ -385,7 +385,7 @@ struct MainTabView: View {
     // if onboardingManager.shouldShowOnboarding(for: .firstLaunch) {
     //   showOnboardingModal = true
     // }
-    
+
     // 将来的にはバージョンアップのオンボーディングも判定可能
     // TODO: アプリバージョンが更新された場合のオンボーディング判定を追加
   }

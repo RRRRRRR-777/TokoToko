@@ -139,7 +139,7 @@ struct ConsentFlowView: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                  .fill(Color(red: 234/255, green: 234/255, blue: 234/255))
+                  .fill(Color(red: 234 / 255, green: 234 / 255, blue: 234 / 255))
             )
         }
         .buttonStyle(PlainButtonStyle())

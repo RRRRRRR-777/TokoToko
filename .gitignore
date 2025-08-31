@@ -104,3 +104,6 @@ docs_*/
 DerivedData/
 GEMINI.md
 .serena/
+
+# Backup files
+*.backup

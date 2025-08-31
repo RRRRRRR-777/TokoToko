@@ -42,9 +42,12 @@ private struct ShareWalkSheet: View {
             errorView
         }
         .onAppear {
-            // sharingManagerがnilの場合のみ開始（重複実行防止）
-            if sharingManager == nil {
-                startSharing()
+            startSharing()
+        }
+        .onChange(of: isPresented) { newValue in
+            // シートが閉じられた時に状態をリセット
+            if !newValue {
+                resetState()
             }
         }
     }
@@ -80,6 +83,11 @@ private struct ShareWalkSheet: View {
     }
 
     private func startSharing() {
+        // 既に共有処理が実行中の場合は重複実行を防止
+        guard sharingManager == nil else {
+            return
+        }
+
         let manager = SharingProcessManager(
             walk: walk,
             onProgressUpdate: { message in
@@ -106,6 +114,13 @@ private struct ShareWalkSheet: View {
         self.sharingManager = manager
         isSharing = true
         manager.startSharing()
+    }
+
+    private func resetState() {
+        isSharing = false
+        errorMessage = nil
+        sharingManager = nil
+        loadingMessage = "共有用画像を生成中..."
     }
 
     private func handleError(_ error: Error) {
@@ -302,15 +317,17 @@ private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerD
         return activityViewController
     }
 
-    /// 完了ハンドラーを設定します（ログ出力のみ）
+    /// 完了ハンドラーを設定します
     private func setupCompletionHandler(for activityViewController: UIActivityViewController) {
-        activityViewController.completionWithItemsHandler = { _, _, _, error in
+        activityViewController.completionWithItemsHandler = { [weak self] _, completed, _, error in
             DispatchQueue.main.async {
                 if let error = error {
                     print("❌ 共有エラー: \(error.localizedDescription)")
                 } else {
-                    print("✅ 共有処理完了")
+                    print("✅ 共有処理完了 - completed: \(completed)")
                 }
+                // completionWithItemsHandlerが呼ばれた場合も確実に完了処理を実行
+                self?.triggerCompletion()
             }
         }
     }
