@@ -13,83 +13,107 @@ struct WalkRow: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 12) {
-        // 散歩情報
-        VStack(alignment: .leading, spacing: 4) {
-          Text(walk.title)
-            .font(.headline)
-            .foregroundColor(.black)
-
-          if !walk.description.isEmpty {
-            Text(walk.description)
-              .font(.caption)
-              .foregroundColor(.gray)
-              .lineLimit(2)
-          }
-
-          HStack(spacing: 16) {
-            if walk.isCompleted {
-              // 完了した散歩の情報
-              HStack(spacing: 4) {
-                Image(systemName: "clock")
-                  .font(.caption)
-                  .foregroundColor(.gray)
-                Text(walk.durationString)
-                  .font(.caption)
-                  .foregroundColor(.gray)
-                  .fixedSize(horizontal: true, vertical: false)
-                  .lineLimit(1)
-              }
-
-              HStack(spacing: 4) {
-                Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-                  .font(.caption)
-                  .foregroundColor(.gray)
-                Text(walk.distanceString)
-                  .font(.caption)
-                  .foregroundColor(.gray)
-                  .fixedSize(horizontal: true, vertical: false)
-                  .lineLimit(1)
-              }
-
-              if walk.totalSteps > 0 {
-                HStack(spacing: 4) {
-                  Image(systemName: "figure.walk")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                  Text("\(walk.totalSteps) 歩")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .lineLimit(1)
-                }
-              }
-            } else {
-              // 進行中または未開始の散歩
-              Text(walk.status.displayName)
-                .font(.caption)
-                .foregroundColor(.orange)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(Color.orange.opacity(0.1))
-                .cornerRadius(4)
-            }
-          }
-        }
-
+        walkInfoSection
         Spacer()
-
-        // 日時表示
-        VStack(alignment: .trailing, spacing: 2) {
-          Text(dateString)
-            .font(.caption)
-            .foregroundColor(.gray)
-
-        }
+        dateSection
       }
-
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 4)
+  }
+
+  // MARK: - Walk Information Section
+
+  /// 散歩情報セクション
+  private var walkInfoSection: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      titleAndDescription
+      statusOrMetricsSection
+    }
+  }
+
+  /// タイトルと説明
+  private var titleAndDescription: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(walk.title)
+        .font(.headline)
+        .foregroundColor(.black)
+
+      if !walk.description.isEmpty {
+        Text(walk.description)
+          .font(.caption)
+          .foregroundColor(.gray)
+          .lineLimit(2)
+      }
+    }
+  }
+
+  /// ステータスまたは統計情報セクション
+  private var statusOrMetricsSection: some View {
+    HStack(spacing: 16) {
+      if walk.isCompleted {
+        completedWalkMetrics
+      } else {
+        statusBadge
+      }
+    }
+  }
+
+  /// 完了済み散歩の統計情報
+  private var completedWalkMetrics: some View {
+    Group {
+      durationMetric
+      distanceMetric
+      if walk.totalSteps > 0 {
+        stepsMetric
+      }
+    }
+  }
+
+  /// 時間統計
+  private var durationMetric: some View {
+    MetricView(
+      iconName: "clock",
+      value: walk.durationString
+    )
+  }
+
+  /// 距離統計
+  private var distanceMetric: some View {
+    MetricView(
+      iconName: "point.topleft.down.curvedto.point.bottomright.up",
+      value: walk.distanceString
+    )
+  }
+
+  /// 歩数統計
+  private var stepsMetric: some View {
+    MetricView(
+      iconName: "figure.walk",
+      value: "\(walk.totalSteps) 歩"
+    )
+  }
+
+  /// ステータスバッジ（進行中・未開始）
+  private var statusBadge: some View {
+    Text(walk.status.displayName)
+      .font(.caption)
+      .foregroundColor(.orange)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 2)
+      .background(Color.orange.opacity(0.1))
+      .cornerRadius(4)
+  }
+
+  // MARK: - Date Section
+
+  /// 日時表示セクション
+  private var dateSection: some View {
+    VStack(alignment: .trailing, spacing: 2) {
+      Text(dateString)
+        .font(.caption)
+        .foregroundColor(.gray)
+    }
   }
 
   // 日時文字列
@@ -103,6 +127,27 @@ struct WalkRow: View {
       return formatter.string(from: startTime)
     } else {
       return formatter.string(from: walk.createdAt)
+    }
+  }
+}
+
+// MARK: - Helper Views
+
+/// 統計情報表示用のヘルパービュー
+private struct MetricView: View {
+  let iconName: String
+  let value: String
+
+  var body: some View {
+    HStack(spacing: 4) {
+      Image(systemName: iconName)
+        .font(.caption)
+        .foregroundColor(.gray)
+      Text(value)
+        .font(.caption)
+        .foregroundColor(.gray)
+        .fixedSize(horizontal: true, vertical: false)
+        .lineLimit(1)
     }
   }
 }
