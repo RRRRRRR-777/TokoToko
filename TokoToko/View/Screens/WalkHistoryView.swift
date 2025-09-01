@@ -171,74 +171,96 @@ struct WalkHistoryView: View {
 
   private var headerView: some View {
     HStack {
-      VStack(alignment: .leading, spacing: 4) {
-        Text(viewModel.currentWalk.title)
-          .font(.title2)
-          .fontWeight(.bold)
-          .foregroundColor(.black)
-
-        if let startTime = viewModel.currentWalk.startTime {
-          Text(startTime.formatted(date: .abbreviated, time: .shortened))
-            .font(.caption)
-            .foregroundColor(.black)
-        }
-      }
-
+      walkInfoSection
       Spacer()
-
-      // 共有ボタンとユーザー情報表示
-      HStack(spacing: 12) {
-        // 共有ボタン
-        Button(action: {
-          showingShareSheet = true
-        }) {
-          Image(systemName: "square.and.arrow.up")
-            .font(.system(size: 24, weight: .medium))
-            .foregroundColor(Color(red: 68 / 255, green: 136 / 255, blue: 77 / 255))
-            .frame(width: 60, height: 60)
-        }
-
-        // ユーザー情報表示
-        VStack(alignment: .trailing, spacing: 4) {
-          // ユーザーアイコン
-          if let user = Auth.auth().currentUser,
-             let photoURL = user.photoURL {
-            AsyncImage(url: photoURL) { image in
-              image
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-            } placeholder: {
-              Image(systemName: "person.crop.circle.fill")
-                .foregroundColor(.gray)
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
-          } else {
-            Image(systemName: "person.crop.circle.fill")
-              .foregroundColor(.gray)
-              .frame(width: 40, height: 40)
-          }
-
-          // ユーザー名（コメントアウト - ユーザー名登録機能未実装のため）
-          // Text(user.displayName ?? "ユーザー")
-          //   .font(.caption)
-          //   .fontWeight(.medium)
-          //   .foregroundColor(.black)
-        }
-      }
+      actionButtonsSection
     }
     .padding()
-    .background(
-      LinearGradient(
-        colors: [
-          backgroundGradientColor.opacity(0.8),
-          backgroundGradientColor.opacity(0.7),
-          backgroundGradientColor.opacity(0.6),
-          Color.clear
-        ],
-        startPoint: .top,
-        endPoint: .bottom
-      )
+    .background(headerBackground)
+  }
+
+  /// 散歩情報セクション（タイトルと日時）
+  private var walkInfoSection: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(viewModel.currentWalk.title)
+        .font(.title2)
+        .fontWeight(.bold)
+        .foregroundColor(.black)
+
+      if let startTime = viewModel.currentWalk.startTime {
+        Text(startTime.formatted(date: .abbreviated, time: .shortened))
+          .font(.caption)
+          .foregroundColor(.black)
+      }
+    }
+  }
+
+  /// アクションボタンセクション（共有とユーザー情報）
+  private var actionButtonsSection: some View {
+    HStack(spacing: 12) {
+      shareButton
+      userProfileView
+    }
+  }
+
+  /// 共有ボタン
+  private var shareButton: some View {
+    Button(action: {
+      showingShareSheet = true
+    }) {
+      Image(systemName: "square.and.arrow.up")
+        .font(.system(size: 24, weight: .medium))
+        .foregroundColor(Color(red: 68 / 255, green: 136 / 255, blue: 77 / 255))
+        .frame(width: 60, height: 60)
+    }
+  }
+
+  /// ユーザープロフィール表示
+  private var userProfileView: some View {
+    VStack(alignment: .trailing, spacing: 4) {
+      userAvatarImage
+      // ユーザー名（コメントアウト - ユーザー名登録機能未実装のため）
+      // Text(user.displayName ?? "ユーザー")
+      //   .font(.caption)
+      //   .fontWeight(.medium)
+      //   .foregroundColor(.black)
+    }
+  }
+
+  /// ユーザーアバター画像
+  private var userAvatarImage: some View {
+    Group {
+      if let user = Auth.auth().currentUser,
+         let photoURL = user.photoURL {
+        AsyncImage(url: photoURL) { image in
+          image
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+        } placeholder: {
+          Image(systemName: "person.crop.circle.fill")
+            .foregroundColor(.gray)
+        }
+        .frame(width: 40, height: 40)
+        .clipShape(Circle())
+      } else {
+        Image(systemName: "person.crop.circle.fill")
+          .foregroundColor(.gray)
+          .frame(width: 40, height: 40)
+      }
+    }
+  }
+
+  /// ヘッダー背景グラデーション
+  private var headerBackground: some View {
+    LinearGradient(
+      colors: [
+        backgroundGradientColor.opacity(0.8),
+        backgroundGradientColor.opacity(0.7),
+        backgroundGradientColor.opacity(0.6),
+        Color.clear
+      ],
+      startPoint: .top,
+      endPoint: .bottom
     )
   }
 
@@ -339,41 +361,70 @@ extension Array {
   }
 }
 
+// MARK: - Preview Helpers
+
+/// プレビュー用のサンプル散歩データ生成
+private enum PreviewData {
+  static var sampleWalks: [Walk] {
+    [
+      createMorningWalk(),
+      createEveningWalk()
+    ]
+  }
+
+  /// 朝の散歩サンプルデータ
+  private static func createMorningWalk() -> Walk {
+    Walk(
+      title: "朝の散歩",
+      description: "公園を歩きました",
+      startTime: Date().addingTimeInterval(-3600),
+      endTime: Date().addingTimeInterval(-3000),
+      totalDistance: 1200,
+      totalSteps: 1500,
+      status: .completed,
+      locations: morningWalkLocations()
+    )
+  }
+
+  /// 夕方の散歩サンプルデータ
+  private static func createEveningWalk() -> Walk {
+    Walk(
+      title: "夕方の散歩",
+      description: "川沿いを歩きました",
+      startTime: Date().addingTimeInterval(-7200),
+      endTime: Date().addingTimeInterval(-6600),
+      totalDistance: 800,
+      totalSteps: 1000,
+      status: .completed,
+      locations: eveningWalkLocations()
+    )
+  }
+
+  /// 朝の散歩ルート座標
+  private static func morningWalkLocations() -> [CLLocation] {
+    [
+      CLLocation(latitude: 35.6812, longitude: 139.7671),
+      CLLocation(latitude: 35.6815, longitude: 139.7675),
+      CLLocation(latitude: 35.6820, longitude: 139.7680),
+      CLLocation(latitude: 35.6825, longitude: 139.7690)
+    ]
+  }
+
+  /// 夕方の散歩ルート座標
+  private static func eveningWalkLocations() -> [CLLocation] {
+    [
+      CLLocation(latitude: 35.6700, longitude: 139.7500),
+      CLLocation(latitude: 35.6720, longitude: 139.7520),
+      CLLocation(latitude: 35.6740, longitude: 139.7540),
+      CLLocation(latitude: 35.6760, longitude: 139.7560),
+      CLLocation(latitude: 35.6780, longitude: 139.7580)
+    ]
+  }
+}
+
 #Preview {
   WalkHistoryView(
-    walks: [
-      Walk(
-        title: "朝の散歩",
-        description: "公園を歩きました",
-        startTime: Date().addingTimeInterval(-3600),
-        endTime: Date().addingTimeInterval(-3000),
-        totalDistance: 1200,
-        totalSteps: 1500,
-        status: .completed,
-        locations: [
-          CLLocation(latitude: 35.6812, longitude: 139.7671),
-          CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6820, longitude: 139.7680),
-          CLLocation(latitude: 35.6825, longitude: 139.7690)
-        ]
-      ),
-      Walk(
-        title: "夕方の散歩",
-        description: "川沿いを歩きました",
-        startTime: Date().addingTimeInterval(-7200),
-        endTime: Date().addingTimeInterval(-6600),
-        totalDistance: 800,
-        totalSteps: 1000,
-        status: .completed,
-        locations: [
-          CLLocation(latitude: 35.6700, longitude: 139.7500),
-          CLLocation(latitude: 35.6720, longitude: 139.7520),
-          CLLocation(latitude: 35.6740, longitude: 139.7540),
-          CLLocation(latitude: 35.6760, longitude: 139.7560),
-          CLLocation(latitude: 35.6780, longitude: 139.7580)
-        ]
-      )
-    ],
+    walks: PreviewData.sampleWalks,
     initialIndex: 0
   )
 }
