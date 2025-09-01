@@ -175,8 +175,13 @@ struct WalkHistoryView: View {
       Spacer()
       actionButtonsSection
     }
-    .padding()
-    .background(headerBackground)
+    .padding(.horizontal)
+    .padding(.top, 2)
+    .padding(.bottom, 12)
+    .background(
+      headerBackground
+        .ignoresSafeArea(.all, edges: .top)
+    )
   }
 
   /// 散歩情報セクション（タイトルと日時）
