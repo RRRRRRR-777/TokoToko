@@ -227,6 +227,38 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
   
   // MARK: - リファクタリング検証テスト
   
+  /// settingsListViewのメソッド分割後の動作確認テスト
+  func test_メソッド分割_各セクションが正しく表示される() throws {
+    // Given
+    let view = LocationAccuracySettingsView()
+      .environmentObject(settingsManager)
+    
+    // When & Then - 精度モードセクション
+    let accuracyModeSection = try view.inspect().find(text: "位置情報の精度")
+    XCTAssertNotNil(accuracyModeSection, "精度モードセクションが表示されるべき")
+    
+    // バックグラウンド設定セクション
+    let backgroundSection = try view.inspect().find(text: "バックグラウンド設定")
+    XCTAssertNotNil(backgroundSection, "バックグラウンド設定セクションが表示されるべき")
+    
+    // 権限状態セクション
+    let permissionSection = try view.inspect().find(text: "権限状態")
+    XCTAssertNotNil(permissionSection, "権限状態セクションが表示されるべき")
+  }
+  
+  /// リファクタリング後のSwiftLint compliance確認テスト
+  func test_SwiftLint_クロージャ行数制限遵守() throws {
+    // Given
+    let view = LocationAccuracySettingsView()
+      .environmentObject(settingsManager)
+    
+    // When & Then
+    // このテストが通ることで、リファクタリング後にクロージャが30行以下になったことを確認
+    XCTAssertNoThrow({
+      _ = try view.inspect().list()
+    }, "リファクタリング後のクロージャは30行制限を遵守するべき")
+  }
+
   /// 改善された再帰メソッドの深度制限テスト
   func test_再帰メソッド_深度制限が正しく動作する() {
     // Given

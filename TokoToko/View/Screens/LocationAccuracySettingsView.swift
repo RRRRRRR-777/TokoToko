@@ -58,81 +58,89 @@ struct LocationAccuracySettingsView: View {
   /// 設定リストビューの共通実装
   private var settingsListView: some View {
     List {
-      // 精度モード選択セクション
-      Section(header:
-        HStack {
-          Text("位置情報の精度")
-            .foregroundColor(.gray)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-      ) {
-        ForEach(LocationAccuracyMode.allCases) { mode in
-          AccuracyModeRow(
-            mode: mode,
-            isSelected: settingsManager.currentMode == mode
-          ) {
-            settingsManager.setAccuracyMode(mode)
-            settingsManager.saveSettings()
-          }
-          .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
-          .listRowBackground(Color("BackgroundColor"))
-        }
-      }
-
-      // バックグラウンド更新セクション
-      Section(header:
-        HStack {
-          Text("バックグラウンド設定")
-            .foregroundColor(.gray)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-      ) {
-        HStack {
-          Text("バックグラウンド更新")
-            .foregroundColor(.black)
-          Spacer()
-          Toggle("", isOn: .init(
-            get: { settingsManager.isBackgroundUpdateEnabled },
-            set: { enabled in
-              settingsManager.setBackgroundUpdateEnabled(enabled)
-              settingsManager.saveSettings()
-            }
-          ))
-          .accessibilityIdentifier("background_update_toggle")
-        }
-        .listRowBackground(Color("BackgroundColor"))
-
-        Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
-          .font(.caption)
-          .foregroundColor(.black)
-          .listRowBackground(Color("BackgroundColor"))
-      }
-
-      // 権限状態セクション
-      Section(header:
-        HStack {
-          Text("権限状態")
-            .foregroundColor(.gray)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-      ) {
-        PermissionStatusRow(status: authorizationStatus)
-          .listRowBackground(Color("BackgroundColor"))
-
-        Button("設定アプリを開く") {
-          openSettingsApp()
-        }
-        .foregroundColor(.black)
-        .accessibilityIdentifier("open_settings_app")
-        .listRowBackground(Color("BackgroundColor"))
-      }
+      accuracyModeSection
+      backgroundUpdateSection
+      permissionStatusSection
     }
     .listStyle(PlainListStyle())
     .background(Color("BackgroundColor"))
     .modifier(ScrollContentBackgroundModifier())
+  }
+
+  /// 精度モード選択セクション
+  private var accuracyModeSection: some View {
+    Section(header: sectionHeader("位置情報の精度")) {
+      ForEach(LocationAccuracyMode.allCases) { mode in
+        AccuracyModeRow(
+          mode: mode,
+          isSelected: settingsManager.currentMode == mode
+        ) {
+          settingsManager.setAccuracyMode(mode)
+          settingsManager.saveSettings()
+        }
+        .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
+        .listRowBackground(Color("BackgroundColor"))
+      }
+    }
+  }
+
+  /// バックグラウンド更新セクション
+  private var backgroundUpdateSection: some View {
+    Section(header: sectionHeader("バックグラウンド設定")) {
+      backgroundUpdateToggleRow
+      backgroundUpdateDescriptionRow
+    }
+  }
+
+  /// バックグラウンド更新トグル行
+  private var backgroundUpdateToggleRow: some View {
+    HStack {
+      Text("バックグラウンド更新")
+        .foregroundColor(.black)
+      Spacer()
+      Toggle("", isOn: .init(
+        get: { settingsManager.isBackgroundUpdateEnabled },
+        set: { enabled in
+          settingsManager.setBackgroundUpdateEnabled(enabled)
+          settingsManager.saveSettings()
+        }
+      ))
+      .accessibilityIdentifier("background_update_toggle")
+    }
+    .listRowBackground(Color("BackgroundColor"))
+  }
+
+  /// バックグラウンド更新説明行
+  private var backgroundUpdateDescriptionRow: some View {
+    Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
+      .font(.caption)
+      .foregroundColor(.black)
+      .listRowBackground(Color("BackgroundColor"))
+  }
+
+  /// 権限状態セクション
+  private var permissionStatusSection: some View {
+    Section(header: sectionHeader("権限状態")) {
+      PermissionStatusRow(status: authorizationStatus)
+        .listRowBackground(Color("BackgroundColor"))
+
+      Button("設定アプリを開く") {
+        openSettingsApp()
+      }
+      .foregroundColor(.black)
+      .accessibilityIdentifier("open_settings_app")
+      .listRowBackground(Color("BackgroundColor"))
+    }
+  }
+
+  /// セクションヘッダーの共通実装
+  private func sectionHeader(_ title: String) -> some View {
+    HStack {
+      Text(title)
+        .foregroundColor(.gray)
+      Spacer()
+    }
+    .padding(.horizontal, 16)
   }
 
   // MARK: - Private Methods
