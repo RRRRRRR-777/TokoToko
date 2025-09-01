@@ -88,34 +88,32 @@ struct LocationAccuracySettingsView: View {
   private var backgroundUpdateSection: some View {
     Section(header: sectionHeader("バックグラウンド設定")) {
       backgroundUpdateToggleRow
-      backgroundUpdateDescriptionRow
     }
   }
 
   /// バックグラウンド更新トグル行
   private var backgroundUpdateToggleRow: some View {
-    HStack {
-      Text("バックグラウンド更新")
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Text("バックグラウンド更新")
+          .foregroundColor(.black)
+        Spacer()
+        Toggle("", isOn: .init(
+          get: { settingsManager.isBackgroundUpdateEnabled },
+          set: { enabled in
+            settingsManager.setBackgroundUpdateEnabled(enabled)
+            settingsManager.saveSettings()
+          }
+        ))
+        .accessibilityIdentifier("background_update_toggle")
+      }
+
+      Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
+        .font(.caption)
         .foregroundColor(.black)
-      Spacer()
-      Toggle("", isOn: .init(
-        get: { settingsManager.isBackgroundUpdateEnabled },
-        set: { enabled in
-          settingsManager.setBackgroundUpdateEnabled(enabled)
-          settingsManager.saveSettings()
-        }
-      ))
-      .accessibilityIdentifier("background_update_toggle")
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     .listRowBackground(Color("BackgroundColor"))
-  }
-
-  /// バックグラウンド更新説明行
-  private var backgroundUpdateDescriptionRow: some View {
-    Text("アプリがバックグラウンドで動作中も位置情報を更新します。")
-      .font(.caption)
-      .foregroundColor(.black)
-      .listRowBackground(Color("BackgroundColor"))
   }
 
   /// 権限状態セクション
@@ -135,12 +133,11 @@ struct LocationAccuracySettingsView: View {
 
   /// セクションヘッダーの共通実装
   private func sectionHeader(_ title: String) -> some View {
-    HStack {
-      Text(title)
-        .foregroundColor(.gray)
-      Spacer()
-    }
-    .padding(.horizontal, 16)
+    Text(title)
+      .font(.footnote)
+      .foregroundColor(.gray)
+      .textCase(nil)
+      .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   // MARK: - Private Methods
