@@ -59,7 +59,9 @@ extension EnhancedVibeLogger {
   /// - Parameter interval: フラッシュ間隔（秒）。デフォルトは30秒
   public func startBatchMode(interval: TimeInterval = 30.0) {
     logQueue.async { [weak self] in
-      guard let self = self else { return }
+      guard let self = self else {
+        return
+      }
 
       self.stopBatchMode()
 
@@ -77,7 +79,9 @@ extension EnhancedVibeLogger {
   /// バッチモード終了後は、ログエントリが即座にファイル出力されます。
   public func stopBatchMode() {
     logQueue.async { [weak self] in
-      guard let self = self else { return }
+      guard let self = self else {
+        return
+      }
 
       DispatchQueue.main.async {
         self.batchTimer?.invalidate()
@@ -93,7 +97,9 @@ extension EnhancedVibeLogger {
   /// バッファに蓄積されたすべてのログエントリをファイルに出力し、
   /// バッファをクリアします。バッチ処理の核となるメソッドです。
   internal func flushLogBuffer() {
-    guard !logBuffer.isEmpty else { return }
+    guard !logBuffer.isEmpty else {
+      return
+    }
 
     let currentBuffer = logBuffer
     logBuffer.removeAll()
