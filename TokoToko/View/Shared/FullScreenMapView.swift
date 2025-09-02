@@ -42,7 +42,9 @@ struct FullScreenMapView: View {
   }
 
   private var mapAnnotations: [MapItem] {
-    guard !walk.locations.isEmpty else { return [] }
+    guard !walk.locations.isEmpty else {
+      return []
+    }
 
     var items: [MapItem] = []
 
