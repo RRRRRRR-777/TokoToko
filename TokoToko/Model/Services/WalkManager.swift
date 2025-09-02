@@ -138,7 +138,10 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   // ローカル保存用ディレクトリ
   lazy var documentsDirectory: URL = {
-    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+      fatalError("Documents directory not found")
+    }
+    return url
   }()
   let thumbnailsDirectoryName = "walk_thumbnails"
 
