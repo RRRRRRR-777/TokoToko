@@ -49,7 +49,9 @@ extension WalkManager {
   /// - Parameter stepCount: 更新された歩数データ
   func stepCountDidUpdate(_ stepCount: StepCountSource) {
     DispatchQueue.main.async { [weak self] in
-      guard let self = self else { return }
+      guard let self = self else {
+        return
+      }
 
       self.currentStepCount = stepCount
 
