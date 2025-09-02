@@ -44,6 +44,12 @@ struct LocationAccuracySettingsView: View {
   ///
   /// LocationManagerから取得した権限状態を表示用に保持します。
   @State private var authorizationStatus: CLAuthorizationStatus = .notDetermined
+  
+  /// エラーメッセージ表示用
+  @State private var errorMessage: String?
+  
+  /// エラーアラート表示フラグ
+  @State private var showingErrorAlert = false
 
   var body: some View {
     settingsListView
@@ -52,6 +58,11 @@ struct LocationAccuracySettingsView: View {
       .background(Color("BackgroundColor"))
       .onAppear {
         updateAuthorizationStatus()
+      }
+      .alert("設定エラー", isPresented: $showingErrorAlert) {
+        Button("OK", role: .cancel) {}
+      } message: {
+        Text(errorMessage ?? "設定の保存に失敗しました")
       }
   }
 
@@ -76,7 +87,7 @@ struct LocationAccuracySettingsView: View {
           isSelected: settingsManager.currentMode == mode
         ) {
           settingsManager.setAccuracyMode(mode)
-          settingsManager.saveSettings()
+          saveSettingsWithErrorHandling()
         }
         .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
         .listRowBackground(Color("BackgroundColor"))
@@ -102,7 +113,7 @@ struct LocationAccuracySettingsView: View {
           get: { settingsManager.isBackgroundUpdateEnabled },
           set: { enabled in
             settingsManager.setBackgroundUpdateEnabled(enabled)
-            settingsManager.saveSettings()
+            saveSettingsWithErrorHandling()
           }
         ))
         .accessibilityIdentifier("background_update_toggle")
@@ -155,6 +166,41 @@ struct LocationAccuracySettingsView: View {
   private func openSettingsApp() {
     if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
       UIApplication.shared.open(settingsUrl)
+    }
+  }
+  
+  /// 設定保存処理（エラーハンドリング付き）
+  ///
+  /// 設定をFirestoreに保存し、エラーが発生した場合は
+  /// ユーザーに通知とログ記録を行います。
+  private func saveSettingsWithErrorHandling() {
+    do {
+      try settingsManager.saveSettings()
+      // 成功時のログ
+      EnhancedVibeLogger.shared.info(
+        "位置情報設定を保存しました",
+        additionalInfo: [
+          "accuracyMode": settingsManager.currentMode.rawValue,
+          "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled)
+        ]
+      )
+    } catch {
+      // エラー処理
+      EnhancedVibeLogger.shared.error(
+        "位置情報設定の保存に失敗",
+        error: error,
+        additionalInfo: [
+          "accuracyMode": settingsManager.currentMode.rawValue,
+          "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled)
+        ]
+      )
+      
+      // ユーザーへのフィードバック
+      errorMessage = "設定の保存に失敗しました。\nインターネット接続を確認してください。"
+      showingErrorAlert = true
+      
+      // 設定を元に戻す（オプション）
+      // 必要に応じて前の状態に復元する処理を追加可能
     }
   }
 }
