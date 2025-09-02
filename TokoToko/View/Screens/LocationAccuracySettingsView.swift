@@ -178,8 +178,9 @@ struct LocationAccuracySettingsView: View {
       try settingsManager.saveSettings()
       // 成功時のログ
       EnhancedVibeLogger.shared.info(
-        "位置情報設定を保存しました",
-        additionalInfo: [
+        operation: "saveSettings",
+        message: "位置情報設定を保存しました",
+        context: [
           "accuracyMode": settingsManager.currentMode.rawValue,
           "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled)
         ]
@@ -187,11 +188,12 @@ struct LocationAccuracySettingsView: View {
     } catch {
       // エラー処理
       EnhancedVibeLogger.shared.error(
-        "位置情報設定の保存に失敗",
-        error: error,
-        additionalInfo: [
+        operation: "saveSettings",
+        message: "位置情報設定の保存に失敗: \(error.localizedDescription)",
+        context: [
           "accuracyMode": settingsManager.currentMode.rawValue,
-          "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled)
+          "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled),
+          "error": String(describing: error)
         ]
       )
       

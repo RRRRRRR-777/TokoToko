@@ -95,11 +95,12 @@ struct WalkHistoryView: View {
     } catch {
       // エラーログを記録して安全なフォールバック処理
       EnhancedVibeLogger.shared.error(
-        "WalkHistoryViewModel初期化エラー",
-        error: error,
-        additionalInfo: [
+        operation: "viewModelInit",
+        message: "WalkHistoryViewModel初期化エラー: \(error.localizedDescription)",
+        context: [
           "walksCount": String(safeWalks.count),
-          "initialIndex": String(safeIndex)
+          "initialIndex": String(safeIndex),
+          "error": String(describing: error)
         ]
       )
       
@@ -112,11 +113,14 @@ struct WalkHistoryView: View {
       // 再度初期化を試みる（単純なデータなので成功するはず）
       do {
         viewModel = try WalkHistoryViewModel(walks: [errorWalk], initialIndex: 0)
-      } catch secondError {
+      } catch let secondError {
         // それでも失敗した場合は、最小限のデフォルトViewModelを生成
         EnhancedVibeLogger.shared.critical(
-          "WalkHistoryViewModel初期化の完全な失敗",
-          error: secondError
+          operation: "viewModelInit",
+          message: "WalkHistoryViewModel初期化の完全な失敗: \(secondError.localizedDescription)",
+          context: [
+            "secondError": String(describing: secondError)
+          ]
         )
         // force try は単純なデフォルトデータなので安全
         viewModel = try! WalkHistoryViewModel(
@@ -375,10 +379,9 @@ struct WalkHistoryView: View {
 
     // 散歩が全て削除された場合は画面を閉じる
     if !hasRemainingWalks {
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-        // weak selfで循環参照を防ぐ
-        guard let self = self else { return }
-        self.presentationMode.wrappedValue.dismiss()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // SwiftUIのViewは構造体のため、weakは不要
+        presentationMode.wrappedValue.dismiss()
       }
     }
   }
