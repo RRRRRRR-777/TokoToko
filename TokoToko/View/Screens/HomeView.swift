@@ -264,9 +264,9 @@ struct HomeView: View {
           OnboardingModalView(
             content: content,
             isPresented: $showOnboarding
-          )            {
+          ) {
               onboardingManager.markOnboardingAsShown(for: .firstLaunch)
-            }
+          }
           .animation(.easeInOut(duration: 0.3), value: showOnboarding)
         }
       }
