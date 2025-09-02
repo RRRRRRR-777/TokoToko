@@ -178,8 +178,12 @@ extension WalkManager {
     on snapshot: MKMapSnapshotter.Snapshot,
     coordinates: [CLLocationCoordinate2D]
   ) {
-    guard let context = UIGraphicsGetCurrentContext() else { return }
-    guard !coordinates.isEmpty else { return }
+    guard let context = UIGraphicsGetCurrentContext() else {
+      return
+    }
+    guard !coordinates.isEmpty else {
+      return
+    }
 
     let markerRadius: CGFloat = 6.0
 
@@ -226,7 +230,9 @@ extension WalkManager {
   /// 散歩ルートを描画
   private func drawWalkRoute(in context: CGContext, walk: Walk, size: CGSize) {
     let coordinates = walk.locations.map { $0.coordinate }
-    guard coordinates.count >= 2 else { return }
+    guard coordinates.count >= 2 else {
+      return
+    }
 
     let region = calculateMapRegion(from: walk.locations)
 
