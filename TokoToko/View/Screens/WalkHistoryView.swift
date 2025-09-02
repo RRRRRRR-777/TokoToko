@@ -117,9 +117,9 @@ struct WalkHistoryView: View {
         // それでも失敗した場合は、最小限のデフォルトViewModelを生成
         EnhancedVibeLogger.shared.critical(
           operation: "viewModelInit",
-          message: "WalkHistoryViewModel初期化の完全な失敗: \(secondError.localizedDescription)",
+          message: "WalkHistoryViewModel初期化の完全な失敗: \(error.localizedDescription)",
           context: [
-            "secondError": String(describing: secondError)
+            "secondError": String(describing: error)
           ]
         )
         // force try は単純なデフォルトデータなので安全
