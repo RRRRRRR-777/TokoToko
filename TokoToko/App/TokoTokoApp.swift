@@ -148,7 +148,8 @@ struct TokoTokoApp: App {
   ///
   /// SwiftUI AppでUIApplicationDelegateを使用するためのアダプターです。
   /// Firebase初期化とURL処理を担当するAppDelegateを統合します。
-  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+  @UIApplicationDelegateAdaptor(AppDelegate.self)
+  var delegate
 
   /// 認証状態管理オブジェクト
   ///
