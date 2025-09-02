@@ -325,7 +325,9 @@ extension LocationManager: CLLocationManagerDelegate {
   ///   - manager: 位置情報を送信したCLLocationManagerインスタンス
   ///   - locations: 受信した位置情報の配列（最新が末尾）
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-    guard let location = locations.last else { return }
+    guard let location = locations.last else {
+      return
+    }
     currentLocation = location
 
     logger.logLocationBugPrevention(
