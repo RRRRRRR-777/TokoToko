@@ -43,10 +43,14 @@ extension EnhancedVibeLogger {
 
     let level: LogLevel = {
       switch anomalyResult.severity {
-      case .low: return .info
-      case .medium: return .warning
-      case .high: return .error
-      case .critical: return .critical
+      case .low:
+        return .info
+      case .medium:
+        return .warning
+      case .high:
+        return .error
+      case .critical:
+        return .critical
       }
     }()
 
@@ -128,10 +132,14 @@ extension EnhancedVibeLogger {
 
     let level: LogLevel = {
       switch memoryResult.severity {
-      case .low: return .info
-      case .medium: return .warning
-      case .high: return .error
-      case .critical: return .critical
+      case .low:
+        return .info
+      case .medium:
+        return .warning
+      case .high:
+        return .error
+      case .critical:
+        return .critical
       }
     }()
 
@@ -169,10 +177,14 @@ extension EnhancedVibeLogger {
 
     let level: LogLevel = {
       switch syncResult.severity {
-      case .low: return .info
-      case .medium: return .warning
-      case .high: return .error
-      case .critical: return .critical
+      case .low:
+        return .info
+      case .medium:
+        return .warning
+      case .high:
+        return .error
+      case .critical:
+        return .critical
       }
     }()
 

@@ -10,7 +10,7 @@ import UIKit
 import FirebaseAuth
 
 /// 散歩画像のレイアウトとオーバーレイ描画を担当するクラス
-class WalkImageLayoutRenderer {
+enum WalkImageLayoutRenderer {
 
   /// マップ画像と散歩データを合成して最終画像を作成します
   ///

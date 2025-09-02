@@ -10,7 +10,7 @@ import MapKit
 import UIKit
 
 /// 散歩データからマップスナップショット画像を生成するクラス
-class WalkMapSnapshotGenerator {
+enum WalkMapSnapshotGenerator {
 
   /// 散歩データからマップスナップショット画像を生成します
   ///

@@ -436,8 +436,7 @@ extension WalkRepository {
       let walkRef = db.collection(collectionName).document(walk.id.uuidString)
 
       // タイムアウト付きでデータを保存
-      let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) {
-        [weak self] _ in
+      let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
         self?.logger.warning(
           operation: "saveWalkToFirestore",
           message: "Firestore保存タイムアウト",
@@ -520,8 +519,7 @@ extension WalkRepository {
     )
 
     // タイムアウト設定
-    let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) {
-      [weak self] _ in
+    let timeoutTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: false) { [weak self] _ in
       self?.logger.warning(
         operation: "fetchWalksFromFirestore",
         message: "Firestore取得タイムアウト",

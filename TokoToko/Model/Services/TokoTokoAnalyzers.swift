@@ -12,7 +12,7 @@ public struct LocationAnomalyResult {
   let aiRecommendation: String?
 }
 
-public struct LocationAnomalyDetector {
+public enum LocationAnomalyDetector {
   static func analyze(
     location: CLLocation,
     accuracy: CLLocationAccuracy,
@@ -99,7 +99,7 @@ public struct FirebaseSyncResult {
   let healthScore: String
 }
 
-public struct FirebaseSyncAnalyzer {
+public enum FirebaseSyncAnalyzer {
   static func analyze(
     isOnline: Bool,
     pendingWrites: Int,
@@ -203,7 +203,7 @@ public struct PhotoMemoryResult {
   let aiRecommendation: String?
 }
 
-public struct PhotoMemoryAnalyzer {
+public enum PhotoMemoryAnalyzer {
   static func analyze(
     currentMemoryUsage: Int64,
     photoCount: Int,
@@ -276,11 +276,11 @@ public struct PhotoMemoryAnalyzer {
 // MARK: - Walk State Analysis
 
 public enum WalkState: String, Codable {
-  case notStarted = "notStarted"
-  case inProgress = "inProgress"
-  case paused = "paused"
-  case completed = "completed"
-  case error = "error"
+  case notStarted
+  case inProgress
+  case paused
+  case completed
+  case error
 }
 
 public struct WalkStateTransitionResult {
@@ -295,7 +295,7 @@ public struct WalkStateValidationResult {
   let aiRecommendation: String?
 }
 
-public struct WalkStateValidator {
+public enum WalkStateValidator {
   static func validate(
     fromState: String,
     toState: String,
@@ -352,7 +352,7 @@ public struct WalkStateValidator {
   }
 }
 
-public struct WalkStateTransitionAnalyzer {
+public enum WalkStateTransitionAnalyzer {
   static func analyze(
     walkId: String,
     from: WalkState,
