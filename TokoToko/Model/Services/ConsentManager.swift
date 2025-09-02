@@ -66,7 +66,9 @@ class ConsentManager: ObservableObject {
     /// アプリがアクティブになった際などに呼び出して、
     /// ポリシーの更新による再同意の必要性をチェックします。
     func checkForReConsentNeeded() async {
-        guard !isLoading else { return }
+        guard !isLoading else {
+      return
+    }
 
         // UIテストモードの場合は何もしない
         if testingHelper.isUITesting {
@@ -172,10 +174,14 @@ class ConsentManager: ObservableObject {
     /// ポリシーのバージョンが更新されている場合に再同意が必要になります。
     /// - Returns: 再同意が必要な場合はtrue
     func needsReConsent() async -> Bool {
-        guard let policy = currentPolicy else { return false }
+        guard let policy = currentPolicy else {
+      return false
+    }
 
         let hasConsent = await policyService.hasValidConsent()
-        if !hasConsent { return false }
+        if !hasConsent {
+      return false
+    }
 
         // 現在の同意がポリシーバージョンと一致しているかチェック
         return await policyService.needsReConsent(for: policy.version)
