@@ -103,23 +103,23 @@ struct WalkHistoryView: View {
           "error": String(describing: error)
         ]
       )
-      
+
       // デフォルトのエラー表示用Walkデータを作成
       let errorWalk = Walk(
         title: "読み込みエラー",
         description: "散歩データの読み込みに失敗しました。アプリを再起動してください。"
       )
-      
+
       // 再度初期化を試みる（単純なデータなので成功するはず）
       do {
         viewModel = try WalkHistoryViewModel(walks: [errorWalk], initialIndex: 0)
-      } catch let secondError {
+      } catch {
         // それでも失敗した場合は、最小限のデフォルトViewModelを生成
         EnhancedVibeLogger.shared.critical(
           operation: "viewModelInit",
-          message: "WalkHistoryViewModel初期化の完全な失敗: \(secondError.localizedDescription)",
+          message: "WalkHistoryViewModel初期化の完全な失敗: \(error.localizedDescription)",
           context: [
-            "secondError": String(describing: secondError)
+            "secondError": String(describing: error)
           ]
         )
         // force try は単純なデフォルトデータなので安全

@@ -281,7 +281,8 @@ struct WalkInfoDisplay: View {
   /// カラースキーム環境変数
   ///
   /// ライトモード・ダークモードの判定に使用します。
-  @Environment(\.colorScheme) var colorScheme
+  @Environment(\.colorScheme)
+  var colorScheme
 
   /// ライト・ダークモードに対応した背景色
   ///

@@ -264,9 +264,9 @@ struct HomeView: View {
           OnboardingModalView(
             content: content,
             isPresented: $showOnboarding
-          )            {
+          ) {
               onboardingManager.markOnboardingAsShown(for: .firstLaunch)
-            }
+          }
           .animation(.easeInOut(duration: 0.3), value: showOnboarding)
         }
       }
@@ -401,16 +401,14 @@ struct HomeView: View {
   /// 位置情報許可状態確認中のローディング表示
   ///
   /// Issue #99対応: フラッシュ防止のための専用ローディング画面（SplashView表示）
-  @ViewBuilder
-  private var loadingPermissionCheckView: some View {
+  @ViewBuilder private var loadingPermissionCheckView: some View {
     LoadingView(message: "マップを読み込み中...")
   }
 
   /// 未知の位置情報許可状態表示
   ///
   /// 将来のiOSバージョンでの新しい許可状態に対応
-  @ViewBuilder
-  private var unknownPermissionStateView: some View {
+  @ViewBuilder private var unknownPermissionStateView: some View {
     VStack(spacing: 24) {
       // アニメーション付きエラーアイコン
       Image(systemName: "questionmark.circle.fill")

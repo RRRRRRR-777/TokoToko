@@ -216,7 +216,9 @@ class PolicyService {
         // デバッグモードでは常にfalseを返す（テスト用）
         return false
         #else
-        guard let userID = getCurrentUserID() else { return false }
+        guard let userID = getCurrentUserID() else {
+          return false
+        }
 
         do {
             return !(try await hasValidConsent(userID: userID, policyVersion: policyVersion))

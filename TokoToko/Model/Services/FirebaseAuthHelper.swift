@@ -12,7 +12,7 @@ import Foundation
 ///
 /// WalkManagerとWalkRepositoryで重複していた認証チェック処理を統合し、
 /// 一貫性のある認証処理を提供します。
-class FirebaseAuthHelper {
+enum FirebaseAuthHelper {
 
     /// 認証エラーの種類
     enum AuthError: LocalizedError {

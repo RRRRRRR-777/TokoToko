@@ -248,10 +248,14 @@ public class EnhancedVibeLogger {
     bugReproduction: BugReproductionInfo? = nil,
     anomalyDetection: AnomalyInfo? = nil
   ) {
-    guard level.priority >= logLevel.priority else { return }
+    guard level.priority >= logLevel.priority else {
+      return
+    }
 
     logQueue.async { [weak self] in
-      guard let self = self else { return }
+      guard let self = self else {
+        return
+      }
 
       let logEntry = EnhancedVibeLogEntry(
         level: level,

@@ -59,11 +59,16 @@ public enum LogLevel: String, Codable, CaseIterable {
   /// コンソール出力やUI表示で視覚的な識別を容易にします。
   var emoji: String {
     switch self {
-    case .debug: return "🔧"
-    case .info: return "📊"
-    case .warning: return "⚠️"
-    case .error: return "❌"
-    case .critical: return "🚨"
+    case .debug:
+      return "🔧"
+    case .info:
+      return "📊"
+    case .warning:
+      return "⚠️"
+    case .error:
+      return "❌"
+    case .critical:
+      return "🚨"
     }
   }
 
@@ -73,11 +78,16 @@ public enum LogLevel: String, Codable, CaseIterable {
   /// 値が大きいほど重要度が高くなります。
   var priority: Int {
     switch self {
-    case .debug: return 0
-    case .info: return 1
-    case .warning: return 2
-    case .error: return 3
-    case .critical: return 4
+    case .debug:
+      return 0
+    case .info:
+      return 1
+    case .warning:
+      return 2
+    case .error:
+      return 3
+    case .critical:
+      return 4
     }
   }
 }
@@ -158,7 +168,7 @@ public struct SourceInfo: Codable {
 ///
 /// ### Methods
 /// - ``getCurrentEnvironment()``
-public struct EnvironmentHelper {
+public enum EnvironmentHelper {
   /// 現在の実行環境情報を辞書形式で取得
   ///
   /// デバイス、システム、アプリケーション、プロセスに関する包括的な
@@ -201,11 +211,16 @@ public struct EnvironmentHelper {
 
   private static func batteryStateString(_ state: UIDevice.BatteryState) -> String {
     switch state {
-    case .unknown: return "unknown"
-    case .unplugged: return "unplugged"
-    case .charging: return "charging"
-    case .full: return "full"
-    @unknown default: return "unknown"
+    case .unknown:
+      return "unknown"
+    case .unplugged:
+      return "unplugged"
+    case .charging:
+      return "charging"
+    case .full:
+      return "full"
+    @unknown default:
+      return "unknown"
     }
   }
 }

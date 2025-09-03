@@ -138,7 +138,10 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   // ローカル保存用ディレクトリ
   lazy var documentsDirectory: URL = {
-    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+      fatalError("Documents directory not found")
+    }
+    return url
   }()
   let thumbnailsDirectoryName = "walk_thumbnails"
 
@@ -351,14 +354,18 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   // MARK: - Helper Methods
 
   private func addLocationToCurrentWalk(_ location: CLLocation) {
-    guard var walk = currentWalk else { return }
+    guard var walk = currentWalk else {
+      return
+    }
     walk.addLocation(location)
     currentWalk = walk
     distance = walk.totalDistance
   }
 
   private func saveCurrentWalk() {
-    guard let walk = currentWalk else { return }
+    guard let walk = currentWalk else {
+      return
+    }
 
     walkRepository.saveWalk(walk) { [weak self] result in
       switch result {
@@ -382,7 +389,9 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   }
 
   private func updateElapsedTime() {
-    guard let walk = currentWalk, walk.status == .inProgress else { return }
+    guard let walk = currentWalk, walk.status == .inProgress else {
+      return
+    }
     elapsedTime = walk.duration
   }
 

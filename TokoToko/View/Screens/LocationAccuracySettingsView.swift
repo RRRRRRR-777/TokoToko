@@ -44,10 +44,10 @@ struct LocationAccuracySettingsView: View {
   ///
   /// LocationManagerから取得した権限状態を表示用に保持します。
   @State private var authorizationStatus: CLAuthorizationStatus = .notDetermined
-  
+
   /// エラーメッセージ表示用
   @State private var errorMessage: String?
-  
+
   /// エラーアラート表示フラグ
   @State private var showingErrorAlert = false
 
@@ -168,7 +168,7 @@ struct LocationAccuracySettingsView: View {
       UIApplication.shared.open(settingsUrl)
     }
   }
-  
+
   /// 設定保存処理（エラーハンドリング付き）
   ///
   /// 設定をFirestoreに保存し、エラーが発生した場合は
@@ -196,11 +196,11 @@ struct LocationAccuracySettingsView: View {
           "error": String(describing: error)
         ]
       )
-      
+
       // ユーザーへのフィードバック
       errorMessage = "設定の保存に失敗しました。\nインターネット接続を確認してください。"
       showingErrorAlert = true
-      
+
       // 設定を元に戻す（オプション）
       // 必要に応じて前の状態に復元する処理を追加可能
     }

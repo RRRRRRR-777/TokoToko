@@ -263,7 +263,9 @@ struct Walk: Identifiable, Codable {
   ///
   /// - Returns: 「緯度: XX.XXXX, 経度: XX.XXXX」形式の文字列、または「位置情報なし」
   var locationString: String {
-    guard let location = location else { return "位置情報なし" }
+    guard let location = location else {
+      return "位置情報なし"
+    }
     return "緯度: \(location.latitude), 経度: \(location.longitude)"
   }
 
@@ -274,7 +276,9 @@ struct Walk: Identifiable, Codable {
   ///
   /// - Returns: 実際の散歩時間（秒）
   var duration: TimeInterval {
-    guard let startTime = startTime else { return 0 }
+    guard let startTime = startTime else {
+      return 0
+    }
     let endTime = self.endTime ?? Date()
     let totalTime = endTime.timeIntervalSince(startTime)
 
@@ -383,7 +387,9 @@ struct Walk: Identifiable, Codable {
   /// 散歩が進行中の場合のみ、状態を`paused`に設定し一時停止時刻を記録します。
   /// 進行中でない場合は何もしません。
   mutating func pause() {
-    guard status == .inProgress else { return }
+    guard status == .inProgress else {
+      return
+    }
     status = .paused
     pausedAt = Date()
     updatedAt = Date()
@@ -395,7 +401,9 @@ struct Walk: Identifiable, Codable {
   /// 一時停止時間を累積時間に追加し、一時停止時刻をクリアします。
   /// 一時停止中でない場合は何もしません。
   mutating func resume() {
-    guard status == .paused, let pausedAt = pausedAt else { return }
+    guard status == .paused, let pausedAt = pausedAt else {
+      return
+    }
     status = .inProgress
 
     // 一時停止していた時間を累積に追加

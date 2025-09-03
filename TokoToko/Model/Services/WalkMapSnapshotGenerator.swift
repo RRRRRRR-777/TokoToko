@@ -10,7 +10,7 @@ import MapKit
 import UIKit
 
 /// 散歩データからマップスナップショット画像を生成するクラス
-class WalkMapSnapshotGenerator {
+enum WalkMapSnapshotGenerator {
 
   /// 散歩データからマップスナップショット画像を生成します
   ///
@@ -170,10 +170,19 @@ class WalkMapSnapshotGenerator {
     }
 
     let coordinates = locations.map { $0.coordinate }
-    let minLat = coordinates.map { $0.latitude }.min()!
-    let maxLat = coordinates.map { $0.latitude }.max()!
-    let minLon = coordinates.map { $0.longitude }.min()!
-    let maxLon = coordinates.map { $0.longitude }.max()!
+    guard let minLat = coordinates.map({ $0.latitude }).min(),
+          let maxLat = coordinates.map({ $0.latitude }).max(),
+          let minLon = coordinates.map({ $0.longitude }).min(),
+          let maxLon = coordinates.map({ $0.longitude }).max() else {
+      // 座標計算が失敗した場合はデフォルトリージョン（東京）を返す
+      return MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+        span: MKCoordinateSpan(
+          latitudeDelta: WalkImageGeneratorConstants.MapSpan.defaultRegion,
+          longitudeDelta: WalkImageGeneratorConstants.MapSpan.defaultRegion
+        )
+      )
+    }
 
     let center = CLLocationCoordinate2D(
       latitude: (minLat + maxLat) / 2,

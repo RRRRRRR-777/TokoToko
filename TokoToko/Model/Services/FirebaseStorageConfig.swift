@@ -8,7 +8,7 @@
 import Foundation
 
 /// Firebase Storage操作の設定値を管理するクラス
-struct FirebaseStorageConfig {
+enum FirebaseStorageConfig {
 
     // MARK: - リトライ設定
 

@@ -111,10 +111,16 @@ extension WalkManager {
     }
 
     let coordinates = locations.map { $0.coordinate }
-    let minLat = coordinates.map { $0.latitude }.min()!
-    let maxLat = coordinates.map { $0.latitude }.max()!
-    let minLon = coordinates.map { $0.longitude }.min()!
-    let maxLon = coordinates.map { $0.longitude }.max()!
+    guard let minLat = coordinates.map({ $0.latitude }).min(),
+          let maxLat = coordinates.map({ $0.latitude }).max(),
+          let minLon = coordinates.map({ $0.longitude }).min(),
+          let maxLon = coordinates.map({ $0.longitude }).max() else {
+      // 座標計算が失敗した場合はデフォルトリージョン（東京）を返す
+      return MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+      )
+    }
 
     let center = CLLocationCoordinate2D(
       latitude: (minLat + maxLat) / 2,
@@ -172,8 +178,12 @@ extension WalkManager {
     on snapshot: MKMapSnapshotter.Snapshot,
     coordinates: [CLLocationCoordinate2D]
   ) {
-    guard let context = UIGraphicsGetCurrentContext() else { return }
-    guard !coordinates.isEmpty else { return }
+    guard let context = UIGraphicsGetCurrentContext() else {
+      return
+    }
+    guard !coordinates.isEmpty else {
+      return
+    }
 
     let markerRadius: CGFloat = 6.0
 
@@ -220,7 +230,9 @@ extension WalkManager {
   /// 散歩ルートを描画
   private func drawWalkRoute(in context: CGContext, walk: Walk, size: CGSize) {
     let coordinates = walk.locations.map { $0.coordinate }
-    guard coordinates.count >= 2 else { return }
+    guard coordinates.count >= 2 else {
+      return
+    }
 
     let region = calculateMapRegion(from: walk.locations)
 

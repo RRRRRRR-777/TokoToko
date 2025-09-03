@@ -14,6 +14,7 @@ enum WalkImageGeneratorError: LocalizedError {
   case mapSnapshotFailed
   case imageCompositionFailed
   case imageTooLarge
+  case coordinateCalculationError
 
   var errorDescription: String? {
     switch self {
@@ -25,6 +26,8 @@ enum WalkImageGeneratorError: LocalizedError {
       return "画像の合成に失敗しました"
     case .imageTooLarge:
       return "生成された画像のサイズが大きすぎます"
+    case .coordinateCalculationError:
+      return "座標計算に失敗しました"
     }
   }
 }

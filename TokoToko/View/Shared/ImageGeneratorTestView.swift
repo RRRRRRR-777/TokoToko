@@ -174,7 +174,7 @@ struct TestWalkData {
     let walk: Walk
 }
 
-struct TestWalkFactory {
+enum TestWalkFactory {
     static let allTestCases: [TestWalkData] = [
         TestWalkData(
             title: "短距離散歩",

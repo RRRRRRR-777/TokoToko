@@ -160,8 +160,7 @@ class GoogleAuthService {
       context: ["has_root_view_controller": "true"]
     )
 
-    GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) {
-      [weak self] result, error in
+    GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { [weak self] result, error in
       self?.handleGoogleSignInResult(result: result, error: error, completion: completion)
     }
   }

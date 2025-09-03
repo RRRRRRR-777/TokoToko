@@ -12,7 +12,8 @@ struct DetailView: View {
   @State private var walk: Walk
   @State private var isLoading = false
   @State private var showingDeleteAlert = false
-  @Environment(\.presentationMode) var presentationMode
+  @Environment(\.presentationMode)
+  var presentationMode
 
   // リポジトリ
   private let walkRepository = WalkRepository.shared
@@ -315,7 +316,9 @@ struct MapSectionView: View {
   }
 
   private var mapAnnotations: [MapItem] {
-    guard !walk.locations.isEmpty else { return [] }
+    guard !walk.locations.isEmpty else {
+      return []
+    }
 
     var items: [MapItem] = []
 

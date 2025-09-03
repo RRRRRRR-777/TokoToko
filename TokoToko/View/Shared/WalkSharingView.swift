@@ -54,15 +54,13 @@ private struct ShareWalkSheet: View {
 
     // MARK: - View Components
 
-    @ViewBuilder
-    private var loadingView: some View {
+    @ViewBuilder private var loadingView: some View {
         if isSharing {
             LoadingCard(message: loadingMessage)
         }
     }
 
-    @ViewBuilder
-    private var errorView: some View {
+    @ViewBuilder private var errorView: some View {
         if let errorMessage = errorMessage {
             ErrorCard(
                 message: errorMessage,
