@@ -218,7 +218,7 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
       .environmentObject(settingsManager)
     
     // When & Then
-    let settingsButton = try view.inspect().find(button: "設定アプリで開く")
+    let settingsButton = try view.inspect().find(button: "設定アプリを開く")
     XCTAssertNotNil(settingsButton, "設定アプリへの遷移ボタンが表示されるべき")
     
     let accessibilityId = try settingsButton.accessibilityIdentifier()
