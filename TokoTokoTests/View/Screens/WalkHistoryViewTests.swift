@@ -54,8 +54,11 @@ final class WalkHistoryViewTests: XCTestCase {
     let titleText = try view.inspect().find(text: "朝の散歩")
     XCTAssertNotNil(titleText, "散歩タイトルが表示されるべき")
     
-    // 共有ボタン
-    let shareButton = try view.inspect().find(button: "square.and.arrow.up")
+    // 共有ボタン（accessibilityIdentifierで検証）
+    let buttons = try view.inspect().findAll(ViewType.Button.self)
+    let shareButton = buttons.first { btn in
+      (try? btn.accessibilityIdentifier()) == "share_button"
+    }
     XCTAssertNotNil(shareButton, "共有ボタンが表示されるべき")
   }
   

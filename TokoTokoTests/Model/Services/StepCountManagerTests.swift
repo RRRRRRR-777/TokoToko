@@ -302,6 +302,8 @@ final class StepCountManagerTests: XCTestCase {
   func testWalkManagerIntegration() throws {
     // Arrange - WalkManagerとの連携テスト
     let walkManager = WalkManager.shared
+    // CoreMotion可用性をテスト用に強制有効化
+    stepCountManager.setAvailabilityOverrideForTesting(true)
 
     // 初期状態確認
     XCTAssertNil(walkManager.currentWalk, "初期状態では散歩はnil")
@@ -326,6 +328,9 @@ final class StepCountManagerTests: XCTestCase {
     walkManager.stopWalk()
     // 注意: stopWalk後のcurrentWalkの状態はWalkManagerの実装に依存
     XCTAssertFalse(stepCountManager.isTracking, "完了後はトラッキング停止")
+
+    // 後始末
+    stepCountManager.setAvailabilityOverrideForTesting(nil)
   }
 
   func testRapidPauseResumeCycle() throws {

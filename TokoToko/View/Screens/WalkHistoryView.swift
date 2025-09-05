@@ -252,6 +252,7 @@ struct WalkHistoryView: View {
         .foregroundColor(Color(red: 68 / 255, green: 136 / 255, blue: 77 / 255))
         .frame(width: 60, height: 60)
     }
+    .accessibilityIdentifier("share_button")
   }
 
   /// ユーザープロフィール表示
