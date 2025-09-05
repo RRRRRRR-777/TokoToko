@@ -230,23 +230,21 @@ final class WalkManagerTests: XCTestCase {
     walkManager.elapsedTime = 0
   }
 
-  func testWalkManager_TotalSteps_WithStepCountManager() throws {
+  func testWalkManager_TotalSteps_WhenStepCountUnavailable_ReturnsZero() throws {
     // Arrange
-    let testDistance: Double = 1000 // 1km
-    let testElapsedTime: TimeInterval = 900 // 15分
+    let testDistance: Double = 1000 // 1km（推定は廃止のため無関係）
+    let testElapsedTime: TimeInterval = 900 // 15分（推定は廃止のため無関係）
 
-    // Act - StepCountManager統合による歩数計算のテスト
+    // Act - 推定機能廃止後の期待動作: .unavailable時は常に0
     walkManager.distance = testDistance
     walkManager.elapsedTime = testElapsedTime
-    
-    // currentStepCountが.unavailableの場合は推定歩数が使用される
-    XCTAssertEqual(walkManager.currentStepCount.steps, nil, "初期状態では歩数はnil")
-    
+
+    XCTAssertNil(walkManager.currentStepCount.steps, "初期状態では歩数はnil (unavailable)")
+
     let steps = walkManager.totalSteps
 
-    // Assert - 距離ベース推定（1km = 約1,300歩）
-    let expectedSteps = Int(testDistance / 1000.0 * 1300) // 1,300歩
-    XCTAssertEqual(steps, expectedSteps, "距離ベース推定歩数が正しく計算される")
+    // Assert - 距離ベース推定は使用しないため0
+    XCTAssertEqual(steps, 0, "推定廃止: .unavailable時は0を返す")
 
     // リセット
     walkManager.distance = 0

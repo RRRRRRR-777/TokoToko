@@ -317,6 +317,9 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       return
     }
 
+    // 合意仕様: 実測歩数のみ保存（不可時は0）
+    walk.totalSteps = currentStepCount.steps ?? 0
+
     walk.complete()
     currentWalk = walk
 
