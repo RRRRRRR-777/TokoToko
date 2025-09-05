@@ -191,6 +191,23 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertTrue(debugDescription.contains("currentStepCount"), "現在の歩数が含まれるべき")
   }
 
+  // MARK: - DI: 可用性オーバーライド
+
+  func testAvailabilityOverrideForTesting() throws {
+    // Arrange
+    defer { stepCountManager.setAvailabilityOverrideForTesting(nil) }
+
+    // Act & Assert
+    stepCountManager.setAvailabilityOverrideForTesting(true)
+    XCTAssertTrue(stepCountManager.isStepCountingAvailable(), "オーバーライドtrueで利用可能になるべき")
+
+    stepCountManager.setAvailabilityOverrideForTesting(false)
+    XCTAssertFalse(stepCountManager.isStepCountingAvailable(), "オーバーライドfalseで利用不可になるべき")
+
+    // 解除
+    stepCountManager.setAvailabilityOverrideForTesting(nil)
+  }
+
   // MARK: - 歩数リセットテスト (Issue #106)
 
   func testStepCount_ResetsToZeroOnNewSession() throws {

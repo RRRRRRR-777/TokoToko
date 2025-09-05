@@ -86,6 +86,13 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   private var startDate: Date?
   private var baselineSteps: Int = -1  // -1は未設定を示す
 
+  /// テスト用: CoreMotion可用性のオーバーライド
+  ///
+  /// CI/Simulatorなど環境依存を排除するため、
+  /// isStepCountingAvailable() の戻り値を任意に固定できるテスト用フラグ。
+  /// 通常は `nil`（オーバーライド無効）。
+  private var pedometerAvailabilityOverride: Bool?
+
   // MARK: - Constants
   private let updateInterval: TimeInterval = 1.0  // 1秒間隔で更新
 
@@ -110,11 +117,8 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   ///
   /// - Returns: 歩数計測が利用可能な場合true、利用不可の場合false
   func isStepCountingAvailable() -> Bool {
-    do {
-      return CMPedometer.isStepCountingAvailable()
-    } catch {
-      return false
-    }
+    if let override = pedometerAvailabilityOverride { return override }
+    return CMPedometer.isStepCountingAvailable()
   }
 
   /// 歩数のリアルタイムトラッキングを開始
@@ -247,6 +251,14 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   private func updateStepCount(_ stepCount: StepCountSource) {
     currentStepCount = stepCount
     delegate?.stepCountDidUpdate(stepCount)
+  }
+
+  // MARK: - Testing Helpers
+
+  /// テスト用: CoreMotion可用性のオーバーライドを設定/解除
+  /// - Parameter value: true/falseで固定、nilで解除
+  func setAvailabilityOverrideForTesting(_ value: Bool?) {
+    pedometerAvailabilityOverride = value
   }
 
   // MARK: - CustomDebugStringConvertible
