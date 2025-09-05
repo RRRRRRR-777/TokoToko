@@ -32,7 +32,7 @@ final class AppInfoViewTests: XCTestCase {
     let view = AppInfoView()
     
     // When & Then
-    let appNameText = try view.inspect().find(text: "TokoToko - おさんぽSNS")
+    let appNameText = try view.inspect().find(text: "とことこ - おさんぽSNS")
     XCTAssertNotNil(appNameText, "アプリ名が表示されるべき")
   }
   
@@ -63,8 +63,12 @@ final class AppInfoViewTests: XCTestCase {
     // Given
     let view = AppInfoView()
     
-    // When & Then
-    let copyrightText = try view.inspect().find(text: "© 2024 個人名")
+    // When
+    let currentYear = Calendar.current.component(.year, from: Date())
+    let expected = "© \(currentYear) riku.yamada"
+
+    // Then
+    let copyrightText = try view.inspect().find(text: expected)
     XCTAssertNotNil(copyrightText, "コピーライト表示が存在するべき")
   }
   
@@ -76,7 +80,7 @@ final class AppInfoViewTests: XCTestCase {
     let developerLabelText = try view.inspect().find(text: "開発元")
     XCTAssertNotNil(developerLabelText, "開発元ラベルが表示されるべき")
     
-    let developerNameText = try view.inspect().find(text: "個人名")
+    let developerNameText = try view.inspect().find(text: "riku.yamada")
     XCTAssertNotNil(developerNameText, "開発者名が表示されるべき")
   }
   
@@ -144,7 +148,7 @@ final class AppInfoViewTests: XCTestCase {
     let view = AppInfoView()
     
     // When & Then
-    let appNameText = try view.inspect().find(text: "TokoToko - おさんぽSNS")
+    let appNameText = try view.inspect().find(text: "とことこ - おさんぽSNS")
     let accessibilityId = try appNameText.accessibilityIdentifier()
     XCTAssertEqual(accessibilityId, "app_name", "アプリ名のアクセシビリティ識別子が正しく設定されるべき")
   }
