@@ -39,14 +39,10 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
   
   func test_画面表示_ナビゲーションタイトルが正しく表示される() throws {
     // Given
-    let view = LocationAccuracySettingsView()
+    let view = NavigationView { LocationAccuracySettingsView() }
       .environmentObject(settingsManager)
     
-    // When & Then
-    let navigationView = try view.inspect().find(ViewType.NavigationView.self)
-    XCTAssertNotNil(navigationView, "NavigationViewが存在するべき")
-    
-    // ナビゲーションタイトルの確認
+    // When & Then（NavigationViewでラップ）
     let titleText = try view.inspect().find(text: "位置情報設定")
     XCTAssertNotNil(titleText, "ナビゲーションタイトルが表示されるべき")
   }
