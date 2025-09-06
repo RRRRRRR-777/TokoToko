@@ -34,13 +34,27 @@ final class LoginViewUITests: XCTestCase {
         // アプリを起動
         app.launch()
 
-        // ログイン画面の要素が表示されていることを確認
-        XCTAssertTrue(app.staticTexts["TokoTokoへようこそ"].waitForExistence(timeout: 5), "ウェルカムテキストが表示されていません")
-        XCTAssertTrue(app.staticTexts["位置情報を共有して、友達と繋がりましょう"].waitForExistence(timeout: 2), "サブタイトルが表示されていません")
+        // ログイン画面の要素が表示されていることを確認（実装の文言に合わせる）
+        XCTAssertTrue(
+            app.staticTexts["とことこへようこそ"].waitForExistence(
+                timeout: UITestingExtensions.TimeoutSettings.adjustedStandard
+            ),
+            "ウェルカムテキストが表示されていません"
+        )
+        XCTAssertTrue(
+            app.staticTexts["今日の散歩を、明日の思い出にシェアしよう"].waitForExistence(
+                timeout: UITestingExtensions.TimeoutSettings.adjustedShort
+            ),
+            "サブタイトルが表示されていません"
+        )
 
-        // アプリロゴが表示されていることを確認
-        let appLogo = app.images["mappin.and.ellipse"]
-        XCTAssertTrue(appLogo.waitForExistence(timeout: 2), "アプリロゴが表示されていません")
+        // アプリロゴが表示されていることを確認（アクセシビリティID `AppLogo` を検出対象に）
+        // 注: アプリ側で Image に accessibilityIdentifier("AppLogo") を付与する別PRが必要
+        let appLogo = app.images["AppLogo"]
+        XCTAssertTrue(
+            appLogo.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedShort),
+            "アプリロゴ(AppLogo)が表示されていません"
+        )
 
         // Googleログインボタンが表示されていることを確認
         let googleSignInButton = app.buttons["googleSignInButton"]
@@ -52,8 +66,13 @@ final class LoginViewUITests: XCTestCase {
         // UITestHelpersを使用してエラー状態を強制的に表示
         app.launchWithForcedError(errorType: "テストエラー")
 
-        // ログイン画面が表示されることを確認
-        XCTAssertTrue(app.staticTexts["TokoTokoへようこそ"].waitForExistence(timeout: 5), "ウェルカムテキストが表示されていません")
+        // ログイン画面が表示されることを確認（実装の文言に合わせる）
+        XCTAssertTrue(
+            app.staticTexts["とことこへようこそ"].waitForExistence(
+                timeout: UITestingExtensions.TimeoutSettings.adjustedStandard
+            ),
+            "ウェルカムテキストが表示されていません"
+        )
 
         // エラーメッセージが表示されることを確認
         // エラーメッセージのテキストを探す
@@ -75,8 +94,13 @@ final class LoginViewUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--force-loading-state"]
         app.launch()
 
-        // ログイン画面が表示されることを確認
-        XCTAssertTrue(app.staticTexts["TokoTokoへようこそ"].waitForExistence(timeout: 5), "ウェルカムテキストが表示されていません")
+        // ログイン画面が表示されることを確認（実装の文言に合わせる）
+        XCTAssertTrue(
+            app.staticTexts["とことこへようこそ"].waitForExistence(
+                timeout: UITestingExtensions.TimeoutSettings.adjustedStandard
+            ),
+            "ウェルカムテキストが表示されていません"
+        )
 
         // ローディングインジケータが表示されることを確認
         let loadingIndicator = app.activityIndicators.firstMatch
@@ -118,12 +142,15 @@ final class LoginViewUITests: XCTestCase {
         app.launch()
 
         // ログイン画面の要素がアクセシビリティ対応していることを確認
-        let welcomeText = app.staticTexts["TokoTokoへようこそ"]
-        XCTAssertTrue(welcomeText.waitForExistence(timeout: 5), "ウェルカムテキストが表示されていません")
+        let welcomeText = app.staticTexts["とことこへようこそ"]
+        XCTAssertTrue(
+            welcomeText.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard),
+            "ウェルカムテキストが表示されていません"
+        )
         XCTAssertTrue(welcomeText.isEnabled, "ウェルカムテキストが有効になっていません")
 
-        // アプリロゴがアクセシビリティ対応していることを確認
-        let appLogo = app.images["mappin.and.ellipse"]
+        // アプリロゴがアクセシビリティ対応していることを確認（AppLogo）
+        let appLogo = app.images["AppLogo"]
         if appLogo.exists {
             XCTAssertTrue(appLogo.isEnabled, "アプリロゴが有効になっていません")
         }
@@ -142,8 +169,13 @@ final class LoginViewUITests: XCTestCase {
         // アプリを起動
         app.launch()
 
-        // ログイン画面が表示されることを確認
-        XCTAssertTrue(app.staticTexts["TokoTokoへようこそ"].waitForExistence(timeout: 5), "ウェルカムテキストが表示されていません")
+        // ログイン画面が表示されることを確認（実装の文言に合わせる）
+        XCTAssertTrue(
+            app.staticTexts["とことこへようこそ"].waitForExistence(
+                timeout: UITestingExtensions.TimeoutSettings.adjustedStandard
+            ),
+            "ウェルカムテキストが表示されていません"
+        )
 
         // デバイスを横向きに回転
         XCUIDevice.shared.orientation = .landscapeLeft
