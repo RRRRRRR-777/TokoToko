@@ -191,6 +191,23 @@ final class StepCountManagerTests: XCTestCase {
     XCTAssertTrue(debugDescription.contains("currentStepCount"), "現在の歩数が含まれるべき")
   }
 
+  // MARK: - DI: 可用性オーバーライド
+
+  func testAvailabilityOverrideForTesting() throws {
+    // Arrange
+    defer { stepCountManager.setAvailabilityOverrideForTesting(nil) }
+
+    // Act & Assert
+    stepCountManager.setAvailabilityOverrideForTesting(true)
+    XCTAssertTrue(stepCountManager.isStepCountingAvailable(), "オーバーライドtrueで利用可能になるべき")
+
+    stepCountManager.setAvailabilityOverrideForTesting(false)
+    XCTAssertFalse(stepCountManager.isStepCountingAvailable(), "オーバーライドfalseで利用不可になるべき")
+
+    // 解除
+    stepCountManager.setAvailabilityOverrideForTesting(nil)
+  }
+
   // MARK: - 歩数リセットテスト (Issue #106)
 
   func testStepCount_ResetsToZeroOnNewSession() throws {
@@ -285,6 +302,8 @@ final class StepCountManagerTests: XCTestCase {
   func testWalkManagerIntegration() throws {
     // Arrange - WalkManagerとの連携テスト
     let walkManager = WalkManager.shared
+    // CoreMotion可用性をテスト用に強制有効化
+    stepCountManager.setAvailabilityOverrideForTesting(true)
 
     // 初期状態確認
     XCTAssertNil(walkManager.currentWalk, "初期状態では散歩はnil")
@@ -309,6 +328,9 @@ final class StepCountManagerTests: XCTestCase {
     walkManager.stopWalk()
     // 注意: stopWalk後のcurrentWalkの状態はWalkManagerの実装に依存
     XCTAssertFalse(stepCountManager.isTracking, "完了後はトラッキング停止")
+
+    // 後始末
+    stepCountManager.setAvailabilityOverrideForTesting(nil)
   }
 
   func testRapidPauseResumeCycle() throws {

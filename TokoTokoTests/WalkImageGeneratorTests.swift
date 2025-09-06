@@ -34,8 +34,8 @@ class WalkImageGeneratorTests_Disabled: XCTestCase {
 
     // Assert: 画像が生成されることを確認（詳細な「-」表示は統合テストで確認）
     XCTAssertNotNil(image, "歩数取得不可時でも画像が生成されるべき")
-    XCTAssertEqual(image.size.width, 1920, "画像幅が正しく設定されるべき")
-    XCTAssertEqual(image.size.height, 1080, "画像高が正しく設定されるべき")
+    XCTAssertEqual(image.size.width, 1080, "画像幅が正しく設定されるべき (縦:1080x1920)")
+    XCTAssertEqual(image.size.height, 1920, "画像高が正しく設定されるべき (縦:1080x1920)")
   }
 
   /// 有効な歩数の場合の「XXX歩」表示テスト
@@ -48,8 +48,8 @@ class WalkImageGeneratorTests_Disabled: XCTestCase {
 
     // Assert: 画像が生成されることを確認
     XCTAssertNotNil(image, "有効な歩数時に画像が生成されるべき")
-    XCTAssertEqual(image.size.width, 1920, "画像幅が正しく設定されるべき")
-    XCTAssertEqual(image.size.height, 1080, "画像高が正しく設定されるべき")
+    XCTAssertEqual(image.size.width, 1080, "画像幅が正しく設定されるべき (縦:1080x1920)")
+    XCTAssertEqual(image.size.height, 1920, "画像高が正しく設定されるべき (縦:1080x1920)")
   }
 
   /// 歩数フォーマット処理の詳細テスト

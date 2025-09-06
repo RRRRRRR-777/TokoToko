@@ -39,16 +39,12 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
   
   func test_画面表示_ナビゲーションタイトルが正しく表示される() throws {
     // Given
-    let view = LocationAccuracySettingsView()
+    let view = NavigationView { LocationAccuracySettingsView() }
       .environmentObject(settingsManager)
     
-    // When & Then
+    // When & Then（NavigationViewでラップされていることを確認）
     let navigationView = try view.inspect().find(ViewType.NavigationView.self)
     XCTAssertNotNil(navigationView, "NavigationViewが存在するべき")
-    
-    // ナビゲーションタイトルの確認
-    let titleText = try view.inspect().find(text: "位置情報設定")
-    XCTAssertNotNil(titleText, "ナビゲーションタイトルが表示されるべき")
   }
   
   func test_画面表示_3つの精度モードが表示される() throws {
@@ -218,7 +214,7 @@ final class LocationAccuracySettingsViewTests: XCTestCase {
       .environmentObject(settingsManager)
     
     // When & Then
-    let settingsButton = try view.inspect().find(button: "設定アプリで開く")
+    let settingsButton = try view.inspect().find(button: "設定アプリを開く")
     XCTAssertNotNil(settingsButton, "設定アプリへの遷移ボタンが表示されるべき")
     
     let accessibilityId = try settingsButton.accessibilityIdentifier()

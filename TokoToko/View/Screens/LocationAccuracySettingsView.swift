@@ -243,6 +243,7 @@ private struct AccuracyModeRow: View {
       }
       .contentShape(Rectangle())
     }
+    .accessibilityIdentifier("location_accuracy_\(mode.rawValue)")
     .buttonStyle(PlainButtonStyle())
   }
 }

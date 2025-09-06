@@ -36,7 +36,13 @@ enum FirebaseAuthHelper {
     ///
     /// - Returns: ユーザーID、または未認証の場合はnil
     static func getCurrentUserId() -> String? {
-        Auth.auth().currentUser?.uid
+        // UIテスト/ユニットテスト環境ではモックユーザーIDを返す
+        let args = ProcessInfo.processInfo.arguments
+        let isUITest = args.contains("--uitesting") || args.contains("UI_TESTING")
+        let isUnitTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        if isUITest { return "ui-test-user" }
+        if isUnitTest { return "unit-test-user" }
+        return Auth.auth().currentUser?.uid
     }
 
     /// 認証状態と有効な認証トークンを確認

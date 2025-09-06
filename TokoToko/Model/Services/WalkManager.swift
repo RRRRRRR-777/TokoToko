@@ -197,7 +197,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       return
     }
 
-    guard let userId = Auth.auth().currentUser?.uid else {
+    guard let userId = FirebaseAuthHelper.getCurrentUserId() else {
       logger.error(operation: "startWalk", message: "ユーザー認証が必要です")
       return
     }
@@ -316,6 +316,9 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
       logger.warning(operation: "stopWalk", message: "散歩が開始されていません")
       return
     }
+
+    // 合意仕様: 実測歩数のみ保存（不可時は0）
+    walk.totalSteps = currentStepCount.steps ?? 0
 
     walk.complete()
     currentWalk = walk

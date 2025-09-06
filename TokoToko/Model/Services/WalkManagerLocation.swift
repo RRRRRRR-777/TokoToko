@@ -105,7 +105,8 @@ extension WalkManager {
   ///
   /// - Returns: 総歩数
   var totalSteps: Int {
-    currentWalk?.totalSteps ?? 0
+    // 実測があれば最優先、なければ現在のWalkに保存された歩数、それもなければ0
+    currentStepCount.steps ?? (currentWalk?.totalSteps ?? 0)
   }
 
   /// 経過時間の文字列表現
