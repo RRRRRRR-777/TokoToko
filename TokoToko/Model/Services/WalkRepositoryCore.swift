@@ -123,19 +123,17 @@ class WalkRepository {
   /// Firebase Firestoreのデータベース参照
   ///
   /// 散歩データの保存と取得に使用するFirestoreインスタンスです。
-  internal let db: Firestore
+  internal var db: Firestore!
 
   /// 設定済みFirestoreインスタンスを他のサービスで共有するためのアクセサ
   ///
   /// アプリ全体で同一の設定を持つFirestoreインスタンスを使用するために提供されます。
-  var sharedFirestore: Firestore {
-    db
-  }
+  var sharedFirestore: Firestore { db }
 
   /// Firebase Storageの参照
   ///
   /// 共有画像の保存に使用するFirebase Storageインスタンスです。
-  internal let storage = Storage.storage()
+  internal var storage: Storage!
 
   /// Firestoreコレクション名
   ///
@@ -158,9 +156,16 @@ class WalkRepository {
   /// シングルトンパターンによりプライベート初期化子を定義します。
   /// 初期化時にFirestoreの設定とオフライン永続化の設定を行います。
   private init() {
+    // UIテスト時はFirebaseに触れない
+    if UITestingHelper.shared.isUITesting {
+      self.db = nil
+      self.storage = nil
+      return
+    }
     // Firestoreの設定
     self.db = Self.configureFirestore()
-
+    // Storageの設定
+    self.storage = Storage.storage()
     // 初期化完了後にネットワーク設定
     setupNetworkConfiguration()
   }
@@ -186,7 +191,7 @@ class WalkRepository {
   /// Firestoreのネットワーク接続設定とログ記録を行います。
   private func setupNetworkConfiguration() {
     logger.logMethodStart()
-
+    guard let db else { return }
     // オフライン時の自動再試行設定
     db.enableNetwork { [weak self] error in
       if let error = error {
