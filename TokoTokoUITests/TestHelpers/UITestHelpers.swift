@@ -55,6 +55,25 @@ class UITestHelpers {
             activity.add(attachment)
         }
     }
+
+    /// 起動直後のUIがレンダリングされるまで待機する
+    /// - Returns: レンダリング検出に成功したか
+    @discardableResult
+    static func awaitRootRendered(_ app: XCUIApplication, timeout: TimeInterval = UITestingExtensions.TimeoutSettings.adjustedLong) -> Bool {
+        _ = app.wait(for: .runningForeground, timeout: timeout)
+        let start = Date()
+        while Date().timeIntervalSince(start) < timeout {
+            if app.otherElements["UITestRootWindow"].exists
+                || app.otherElements["LoginView"].exists
+                || app.otherElements["MainTabBar"].exists
+                || app.buttons["おでかけ"].exists {
+                return true
+            }
+            app.activate()
+            usleep(200_000) // 0.2s ポーリング
+        }
+        return false
+    }
 }
 
 /// アプリの起動引数を設定するための拡張

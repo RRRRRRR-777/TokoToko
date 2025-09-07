@@ -14,15 +14,13 @@ final class WalkListViewUITests: XCTestCase {
   override func setUpWithError() throws {
     continueAfterFailure = false
     app = XCUIApplication()
-
-    // UIテストモードを有効化
-    app.launchArguments.append("UI_TESTING")
-    app.launchArguments.append("MOCK_LOGGED_IN")
-
-    // おさんぽタブへのディープリンクを設定
-    app.launchArguments.append("DEEP_LINK_DESTINATION_walk")
-
-    app.launch()
+    
+    // 起動引数の統一（FR3）: --uitesting/--logged-in + DeepLinkをヘルパーから設定
+    UITestingExtensions.launchAppWithDeepLink(app, destination: "walk", isLoggedIn: true)
+    _ = UITestHelpers.awaitRootRendered(app)
+    // 初期同期
+    let mainTabBar = app.otherElements["MainTabBar"]
+    _ = mainTabBar.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong)
   }
 
   override func tearDownWithError() throws {
@@ -36,7 +34,7 @@ final class WalkListViewUITests: XCTestCase {
 
     // When: おさんぽタブが表示される
     let friendTab = app.buttons["おさんぽ"]
-    XCTAssertTrue(friendTab.exists)
+    XCTAssertTrue(friendTab.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
 
     // Then: おさんぽタブが選択状態になっている
     XCTAssertTrue(friendTab.isSelected)
@@ -47,9 +45,7 @@ final class WalkListViewUITests: XCTestCase {
 
     // When: ナビゲーションタイトルを確認
     let navigationTitle = app.navigationBars["おさんぽ"]
-
-    // Then: 正しいタイトルが表示されている
-    XCTAssertTrue(navigationTitle.exists)
+    XCTAssertTrue(navigationTitle.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
   }
 
   // MARK: - 空の状態テスト
@@ -60,10 +56,8 @@ final class WalkListViewUITests: XCTestCase {
     // When: 空の状態を確認
     let emptyMessage = app.staticTexts["散歩履歴がありません"]
     let emptyDescription = app.staticTexts["散歩を完了すると、ここに履歴が表示されます"]
-
-    // Then: 空の状態メッセージが表示される
-    XCTAssertTrue(emptyMessage.exists)
-    XCTAssertTrue(emptyDescription.exists)
+    XCTAssertTrue(emptyMessage.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
+    XCTAssertTrue(emptyDescription.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
   }
 
   func testEmptyStateIcon() throws {
@@ -71,9 +65,7 @@ final class WalkListViewUITests: XCTestCase {
 
     // When: 空の状態のアイコンを確認
     let emptyIcon = app.images["空の散歩履歴アイコン"]
-
-    // Then: 空の状態アイコンが表示される
-    XCTAssertTrue(emptyIcon.exists)
+    XCTAssertTrue(emptyIcon.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
   }
 
   func testNavigationTitleDisplayed() throws {
@@ -81,9 +73,7 @@ final class WalkListViewUITests: XCTestCase {
 
     // When: ナビゲーションタイトルを確認
     let navigationTitle = app.navigationBars["おさんぽ"]
-
-    // Then: 正しいタイトルが表示されている
-    XCTAssertTrue(navigationTitle.exists)
+    XCTAssertTrue(navigationTitle.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
   }
 
   // MARK: - ローディング状態テスト
@@ -106,8 +96,8 @@ final class WalkListViewUITests: XCTestCase {
     // When: アクセシビリティ要素を確認
     let emptyMessage = app.staticTexts["散歩履歴がありません"]
     let emptyDescription = app.staticTexts["散歩を完了すると、ここに履歴が表示されます"]
-
-    // Then: 適切なアクセシビリティプロパティが設定されている
+    XCTAssertTrue(emptyMessage.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
+    XCTAssertTrue(emptyDescription.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedStandard))
     XCTAssertTrue(emptyMessage.isHittable)
     XCTAssertTrue(emptyDescription.isHittable)
   }
@@ -118,7 +108,11 @@ final class WalkListViewUITests: XCTestCase {
     if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
       // このテストは、WalkHistoryViewを含むタブの起動パフォーマンスを測定します
       measure(metrics: [XCTApplicationLaunchMetric()]) {
-        XCUIApplication().launch()
+        // パフォーマンス計測時もUIテスト用の起動引数で起動する
+        // これによりFirebase初期化（FirebaseApp.configure）がスキップされ、
+        // テスト中の不正なAPIキーによるクラッシュを防ぎます。
+        let app = XCUIApplication()
+        UITestingExtensions.launchAppWithDeepLink(app, destination: "walk", isLoggedIn: true)
       }
     }
   }
