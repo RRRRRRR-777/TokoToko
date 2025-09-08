@@ -176,19 +176,24 @@ struct TokoTokoApp: App {
   var body: some Scene {
     WindowGroup {
       if UITestingHelper.shared.isUITesting {
-        // UIテスト時は NavigationView を介さずに直接描画してツリーの安定性を高める
+        // UIテスト時もNavigationViewを維持し、ナビゲーションバー検証の互換性を確保
         ZStack {
-          if authManager.isLoggedIn {
-            MainTabView()
-              .environmentObject(authManager)
-              .environmentObject(consentManager)
-              .environmentObject(locationSettingsManager)
-          } else {
-            LoginView()
-              .environmentObject(authManager)
+          NavigationView {
+            if authManager.isLoggedIn {
+              MainTabView()
+                .environmentObject(authManager)
+                .environmentObject(consentManager)
+                .environmentObject(locationSettingsManager)
+            } else {
+              LoginView()
+                .environmentObject(authManager)
+            }
           }
         }
         .accessibilityIdentifier("UITestRootWindow")
+        .onAppear {
+          configureNavigationBarAppearance()
+        }
       } else {
         NavigationView {
           if authManager.isInitializing || consentManager.isLoading {
