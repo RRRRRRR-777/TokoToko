@@ -96,32 +96,23 @@ extension XCUIApplication {
 
     /// エラー状態を強制してアプリを起動する
     func launchWithForcedError(errorType: String) {
-        let options = UITestingExtensions.LaunchOptions(isUITesting: true)
-        UITestingExtensions.launchApp(self, options: options)
-        // 追加の引数を設定
-        launchArguments.append("--force-error")
-        launchArguments.append("--error-type")
-        launchArguments.append(errorType)
+        terminate()
+        launchArguments = ["--uitesting"]
+        launchArguments.append(contentsOf: ["--force-error", "--error-type", errorType])
         launch()
     }
 
     /// ローディング状態を強制してアプリを起動する
     func launchWithForcedLoadingState() {
-        let options = UITestingExtensions.LaunchOptions(isUITesting: true)
-        UITestingExtensions.launchApp(self, options: options)
-        // 追加の引数を設定
-        launchArguments.append("--force-loading-state")
+        terminate()
+        launchArguments = ["--uitesting", "--force-loading-state"]
         launch()
     }
 
     /// ユーザー情報を設定してアプリを起動する
     func launchWithUserInfo(email: String = "test@example.com") {
-        let options = UITestingExtensions.LaunchOptions(isUITesting: true, isLoggedIn: true)
-        UITestingExtensions.launchApp(self, options: options)
-        // 追加の引数を設定
-        launchArguments.append("--with-user-info")
-        launchArguments.append("--email")
-        launchArguments.append(email)
+        terminate()
+        launchArguments = ["--uitesting", "--logged-in", "--with-user-info", "--email", email]
         launch()
     }
 }
