@@ -137,11 +137,8 @@ final class TokoTokoAppUITests: XCTestCase {
         sleep(2)
         app.activate()
 
-        // ルート再同期
-      let app = XCUIApplication()
-      app.activate()
-      app/*@START_MENU_TOKEN@*/.images["gearshape.fill"]/*[[".buttons[\"設定\"].images.firstMatch",".buttons.images[\"gearshape.fill\"]",".images[\"gearshape.fill\"]"],[[[-1,2],[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
-      app/*@START_MENU_TOKEN@*/.staticTexts["このアプリについて"]/*[[".buttons[\"このアプリについて\"].staticTexts.firstMatch",".buttons.staticTexts[\"このアプリについて\"]",".staticTexts[\"このアプリについて\"]"],[[[-1,2],[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
+        // ルート再同期（未ログインではタブバー操作は不可のため、画面遷移は行わない）
+        app.activate()
         _ = UITestHelpers.awaitRootRendered(app)
 
         // 未ログイン状態が保持されていることを確認（再クエリ＋複合条件）
