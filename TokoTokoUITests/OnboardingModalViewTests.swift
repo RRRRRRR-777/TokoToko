@@ -47,8 +47,12 @@ final class OnboardingModalViewTests: XCTestCase {
         // Then: ページインジケーターが更新されること
         let pageIndicator = app.pageIndicators["OnboardingPageIndicator"]
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 3", "2ページ目に移動すること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 4", "2ページ目に移動すること")
         }
+
+        // 2ページ目タイトルの仕様に合わせて検証
+        let secondPageTitle = app.staticTexts["散歩を始めましょう"]
+        XCTAssertTrue(secondPageTitle.waitForExistence(timeout: 5), "2ページ目タイトル『散歩を始めましょう』が表示されること")
         
         // When: 前ページボタンをタップ
         let prevButton = app.buttons["OnboardingPrevButton"]
@@ -56,7 +60,7 @@ final class OnboardingModalViewTests: XCTestCase {
         
         // Then: 1ページ目に戻ること
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 3", "1ページ目に戻ること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 4", "1ページ目に戻ること")
         }
     }
     
@@ -128,7 +132,7 @@ final class OnboardingModalViewTests: XCTestCase {
             // スワイプ後にページが変わっていることを確認
             sleep(1) // アニメーション待機
             let currentPage = pageIndicator.value as? String
-            XCTAssertNotEqual(currentPage, "page 1 of 3", "スワイプで次ページに移動すること")
+            XCTAssertNotEqual(currentPage, "page 1 of 4", "スワイプで次ページに移動すること")
         }
         
         // When: 右スワイプで前ページへ（コンテンツ領域でスワイプ）
@@ -137,7 +141,7 @@ final class OnboardingModalViewTests: XCTestCase {
         // Then: 前のページに戻ること
         if pageIndicator.exists {
             sleep(1) // アニメーション待機
-            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 3", "スワイプで前ページに戻ること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 4", "スワイプで前ページに戻ること")
         }
     }
     
@@ -150,10 +154,10 @@ final class OnboardingModalViewTests: XCTestCase {
         let closeButton = app.buttons["OnboardingCloseButton"]
         XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
         
-        // Then: YMLファイルから読み込まれた3ページ構成であることを確認
+        // Then: YMLファイルから読み込まれた4ページ構成であることを確認
         let pageIndicator = app.pageIndicators["OnboardingPageIndicator"]
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 3", "YMLファイルから3ページが読み込まれること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 4", "YMLファイルから4ページが読み込まれること")
         }
         
         // When: 全ページを順次確認（YMLコンテンツが適切に表示されることを確認）
@@ -163,14 +167,24 @@ final class OnboardingModalViewTests: XCTestCase {
         nextButton.tap()
         sleep(1)
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 3", "2ページ目が表示されること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 2 of 4", "2ページ目が表示されること")
         }
+        // 2ページ目タイトルの仕様に合わせて検証
+        let secondPageTitle = app.staticTexts["散歩を始めましょう"]
+        XCTAssertTrue(secondPageTitle.waitForExistence(timeout: 5), "2ページ目タイトル『散歩を始めましょう』が表示されること")
         
         // 3ページ目へ
         nextButton.tap()
         sleep(1)
         if pageIndicator.exists {
-            XCTAssertEqual(pageIndicator.value as? String, "page 3 of 3", "3ページ目が表示されること")
+            XCTAssertEqual(pageIndicator.value as? String, "page 3 of 4", "3ページ目が表示されること")
+        }
+        
+        // 4ページ目へ（最終ページ）
+        nextButton.tap()
+        sleep(1)
+        if pageIndicator.exists {
+            XCTAssertEqual(pageIndicator.value as? String, "page 4 of 4", "4ページ目が表示されること")
         }
         
         // Then: 最終ページでは次ページボタンが無効化されること
@@ -178,19 +192,21 @@ final class OnboardingModalViewTests: XCTestCase {
     }
     
     func testOnboardingModalViewPerformanceRequirement() throws {
-        // Given: パフォーマンステスト（YML読み込み時間が500ms以内）
-        let startTime = CFAbsoluteTimeGetCurrent()
-        
-        // When: アプリを起動してYMLコンテンツを読み込む
+        // Given: パフォーマンステスト（NFR1: ローカル≤800ms、CI≤1500ms）
+        // App起動時間は計測対象から除外し、HomeView描画後→オンボーディング表示までを計測
         UITestingExtensions.launchAppWithResetOnboarding(app, isLoggedIn: true)
-        
+        let homeView = app.otherElements["HomeView"]
+        XCTAssertTrue(homeView.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong), "HomeViewが表示されること")
+
+        // When: HomeView描画完了後からオンボーディング表示までの時間を計測
+        let startTime = CFAbsoluteTimeGetCurrent()
         let closeButton = app.buttons["OnboardingCloseButton"]
         XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "オンボーディングモーダルが表示されること")
-        
         let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime
         
-        // Then: YMLファイル読み込みを含む全体の起動時間が500ms以内であること
-        // Note: UI表示までの時間なので、実際のYML読み込みはさらに短時間
-        XCTAssertLessThan(elapsedTime * 1000, 500, "YMLファイル読み込みを含むオンボーディング表示が500ms以内に完了すること")
+        // Then: CI/ローカルで閾値を分岐
+        let isCI = ProcessInfo.processInfo.environment["CI"] == "true"
+        let thresholdMs: Double = isCI ? 1500 : 800
+        XCTAssertLessThan(elapsedTime * 1000, thresholdMs, "YML読み込み+表示がしきい値(\(thresholdMs)ms)以内に完了すること")
     }
 }

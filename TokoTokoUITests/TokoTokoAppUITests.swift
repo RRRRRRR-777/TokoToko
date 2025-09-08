@@ -138,6 +138,10 @@ final class TokoTokoAppUITests: XCTestCase {
         app.activate()
 
         // ルート再同期
+      let app = XCUIApplication()
+      app.activate()
+      app/*@START_MENU_TOKEN@*/.images["gearshape.fill"]/*[[".buttons[\"設定\"].images.firstMatch",".buttons.images[\"gearshape.fill\"]",".images[\"gearshape.fill\"]"],[[[-1,2],[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
+      app/*@START_MENU_TOKEN@*/.staticTexts["このアプリについて"]/*[[".buttons[\"このアプリについて\"].staticTexts.firstMatch",".buttons.staticTexts[\"このアプリについて\"]",".staticTexts[\"このアプリについて\"]"],[[[-1,2],[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
         _ = UITestHelpers.awaitRootRendered(app)
 
         // 未ログイン状態が保持されていることを確認（再クエリ＋複合条件）
