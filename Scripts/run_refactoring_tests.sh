@@ -16,9 +16,9 @@ cd "$(dirname "$0")/.."
 echo "📱 1. NavigationBarStyleManager単体テスト"
 xcodebuild test \
   -project TokoToko.xcodeproj \
-  -scheme TokoToko \
+  -scheme TekuToko \
   -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-  -only-testing:TokoTokoTests/NavigationBarStyleManagerTests \
+  -only-testing:TekuTokoTests/NavigationBarStyleManagerTests \
   | grep -E "(Test Suite|PASS|FAIL|error|✓)" || true
 
 echo ""
@@ -27,9 +27,9 @@ echo ""
 echo "📍 2. LocationAccuracySettingsView改善テスト"
 xcodebuild test \
   -project TokoToko.xcodeproj \
-  -scheme TokoToko \
+  -scheme TekuToko \
   -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-  -only-testing:TokoTokoTests/LocationAccuracySettingsViewTests \
+  -only-testing:TekuTokoTests/LocationAccuracySettingsViewTests \
   | grep -E "(Test Suite|PASS|FAIL|error|✓)" || true
 
 echo ""
@@ -38,17 +38,17 @@ echo ""
 echo "🖼️  3. リファクタリング対象画面テスト"
 
 TARGET_TESTS=(
-  "TokoTokoTests/WalkListViewTests"
-  "TokoTokoTests/AppInfoViewTests" 
-  "TokoTokoTests/PolicyViewTests"
-  "TokoTokoTests/SettingsViewTests"
+  "TekuTokoTests/WalkListViewTests"
+  "TekuTokoTests/AppInfoViewTests" 
+  "TekuTokoTests/PolicyViewTests"
+  "TekuTokoTests/SettingsViewTests"
 )
 
 for test_target in "${TARGET_TESTS[@]}"; do
   echo "   実行中: $test_target"
   xcodebuild test \
     -project TokoToko.xcodeproj \
-    -scheme TokoToko \
+    -scheme TekuToko \
     -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
     -only-testing:$test_target \
     | grep -E "(Test Suite|PASS|FAIL|error|✓)" || true
@@ -59,9 +59,9 @@ done
 echo "🌙 4. ダークモード統一性UIテスト"
 xcodebuild test \
   -project TokoToko.xcodeproj \
-  -scheme TokoToko \
+  -scheme TekuToko \
   -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-  -only-testing:TokoTokoUITests/DarkModeConsistencyTests \
+  -only-testing:TekuTokoUITests/DarkModeConsistencyTests \
   | grep -E "(Test Suite|PASS|FAIL|error|✓)" || true
 
 echo ""
@@ -70,9 +70,9 @@ echo ""
 echo "🔄 5. リファクタリング統合テスト"
 xcodebuild test \
   -project TokoToko.xcodeproj \
-  -scheme TokoToko \
+  -scheme TekuToko \
   -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-  -only-testing:TokoTokoTests/TokoTokoAppTests \
+  -only-testing:TekuTokoTests/TokoTokoAppTests \
   | grep -E "(Test Suite|PASS|FAIL|error|✓)" || true
 
 echo ""

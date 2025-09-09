@@ -115,7 +115,7 @@ jobs:
         run: |
           set -ex
           echo "=== Resolving SwiftPM dependencies ==="
-          xcodebuild -resolvePackageDependencies -scheme TokoToko
+          xcodebuild -resolvePackageDependencies -scheme TekuToko
 
           echo "=== Package resolution completed ==="
           if [ -f "TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
@@ -128,12 +128,12 @@ jobs:
         run: |
           set -ex
           echo "=== Building DocC documentation ==="
-          xcodebuild docbuild -scheme TokoToko \
+          xcodebuild docbuild -scheme TekuToko \
             -sdk iphonesimulator \
             -derivedDataPath ./DerivedData
 
           echo "=== Verifying DocC archive generation ==="
-          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
+          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TekuToko.doccarchive"
           if [ -d "$DOCC_ARCHIVE" ]; then
             echo "✅ DocC archive generated at: $DOCC_ARCHIVE"
             ls -la "$DOCC_ARCHIVE"
@@ -148,7 +148,7 @@ jobs:
         run: |
           set -ex
           echo "=== Converting DocC archive to static site ==="
-          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
+          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TekuToko.doccarchive"
           xcrun docc process-archive transform-for-static-hosting \
             "$DOCC_ARCHIVE" \
             --output-path ./docs \

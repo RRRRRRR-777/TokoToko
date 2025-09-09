@@ -43,7 +43,7 @@ packages:
     url: https://github.com/jpsim/Yams.git
     from: 5.1.0
 targets:
-  TokoToko:
+  TekuToko:
     type: application
     platform: iOS
     deploymentTarget:
@@ -110,10 +110,10 @@ targets:
         ITSAppUsesNonExemptEncryption: false
     scheme:
       testTargets:
-        - TokoTokoTests
-        - TokoTokoUITests
+        - TekuTokoTests
+        - TekuTokoUITests
 
-  TokoTokoTests:
+  TekuTokoTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget:
@@ -132,11 +132,11 @@ targets:
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
     dependencies:
-      - target: TokoToko
+      - target: TekuToko
       - package: ViewInspector
         product: ViewInspector
 
-  TokoTokoUITests:
+  TekuTokoUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget:
@@ -152,4 +152,4 @@ targets:
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
     dependencies:
-      - target: TokoToko
+      - target: TekuToko
