@@ -57,10 +57,10 @@ class AuthManager: ObservableObject {
   private let testingHelper = UITestingHelper.shared
 
   init() {
-    // UIテストモードの場合
-    if testingHelper.isUITesting {
+    // UIテスト、またはFirebase未構成の場合は外部依存を避ける
+    if testingHelper.isUITesting || FirebaseApp.app() == nil {
       // モックログイン状態を設定
-      isLoggedIn = testingHelper.isMockLoggedIn
+      isLoggedIn = testingHelper.isUITesting ? testingHelper.isMockLoggedIn : false
       isInitializing = false
     } else {
       // 通常の動作: Firebase認証状態の変更を監視
@@ -116,7 +116,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     if UITestingHelper.shared.isUITesting {
       return true
     }
+    #if DEBUG
+    // GoogleService-Info.plist がダミー/不正な場合はクラッシュを避けるため初期化をスキップ（DEBUGのみ）
+    if !FirebaseConfigurator.configureIfValid() {
+      print("[Firebase] Skipped configuration due to invalid GoogleService-Info.plist or API key. Running without Firebase.")
+    }
+    #else
     FirebaseApp.configure()
+    #endif
     return true
   }
 
