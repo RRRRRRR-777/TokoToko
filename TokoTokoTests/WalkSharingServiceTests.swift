@@ -62,7 +62,7 @@ final class WalkSharingServiceTests: XCTestCase {
         XCTAssertTrue(shareText.contains(expectedDistance), "距離が含まれていない")
         XCTAssertTrue(shareText.contains(expectedDuration), "時間が含まれていない")
         XCTAssertTrue(shareText.contains("\(expectedSteps)歩"), "歩数が含まれていない")
-        XCTAssertTrue(shareText.contains("#とことこ-お散歩SNS"), "アプリ名のハッシュタグが含まれていない")
+        XCTAssertTrue(shareText.contains("#てくとこ-お散歩SNS"), "アプリ名のハッシュタグが含まれていない")
         XCTAssertTrue(shareText.contains("#散歩"), "散歩のハッシュタグが含まれていない")
         XCTAssertTrue(shareText.contains("#ウォーキング"), "ウォーキングのハッシュタグが含まれていない")
         XCTAssertTrue(shareText.contains("#健康"), "健康のハッシュタグが含まれていない")

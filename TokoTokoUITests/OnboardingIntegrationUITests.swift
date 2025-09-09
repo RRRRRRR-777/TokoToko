@@ -64,7 +64,7 @@ final class OnboardingIntegrationUITests: XCTestCase {
         prevButton.tap()
         
         // Then: 1ページ目に戻ること
-        let firstPageTitle = app.staticTexts["TokoTokoへようこそ"]
+        let firstPageTitle = app.staticTexts["てくとこへようこそ"]
         XCTAssertTrue(firstPageTitle.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedShort), "1ページ目に戻ること")
     }
     

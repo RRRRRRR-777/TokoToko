@@ -85,7 +85,7 @@ struct AppInfoView: View {
       ) {
         // アプリ名
         VStack(alignment: .center, spacing: 8) {
-          Text("とことこ - おさんぽSNS")
+          Text("てくとこ - おさんぽSNS")
             .font(.title2)
             .fontWeight(.semibold)
             .foregroundColor(.black)
@@ -201,7 +201,7 @@ struct AppInfoView: View {
         .listRowInsets(EdgeInsets())
       ) {
         VStack(alignment: .leading, spacing: 12) {
-          Text("とことこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
+          Text("てくとこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")
             .font(.body)
 
           Text("主な機能：")

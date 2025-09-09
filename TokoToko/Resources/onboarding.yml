@@ -1,7 +1,7 @@
 onboarding:
   first_launch:
     pages:
-      - title: "TokoTokoへようこそ"
+      - title: "てくとこへようこそ"
         description: "散歩を記録して、素敵な思い出を作りましょう。"
         image_name: "first_launch_1"
       - title: "散歩を始めましょう"

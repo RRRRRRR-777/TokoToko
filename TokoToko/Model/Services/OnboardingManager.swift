@@ -242,7 +242,7 @@ class OnboardingManager: ObservableObject {
         // フォールバック: ハードコードされた値を使用
         let pages = [
             OnboardingPage(
-                title: "TokoTokoへようこそ",
+                title: "てくとこへようこそ",
                 description: "散歩を記録して、素敵な思い出を作りましょう",
                 imageName: "first_launch_1"
             ),

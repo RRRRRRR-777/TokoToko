@@ -242,7 +242,7 @@ enum WalkImageLayoutRenderer {
       roundedIcon.draw(in: iconRect)
     }
 
-    let appName = "とことこ-お散歩SNS"
+    let appName = "てくとこ-お散歩SNS"
     drawTextWithShadow(
       appName,
       font: UIFont.systemFont(ofSize: 48, weight: .bold),

@@ -32,7 +32,7 @@ final class AppInfoViewTests: XCTestCase {
     let view = AppInfoView()
     
     // When & Then
-    let appNameText = try view.inspect().find(text: "とことこ - おさんぽSNS")
+    let appNameText = try view.inspect().find(text: "てくとこ - おさんぽSNS")
     XCTAssertNotNil(appNameText, "アプリ名が表示されるべき")
   }
   
@@ -144,7 +144,7 @@ final class AppInfoViewTests: XCTestCase {
     let view = AppInfoView()
     
     // When & Then
-    let appNameText = try view.inspect().find(text: "とことこ - おさんぽSNS")
+    let appNameText = try view.inspect().find(text: "てくとこ - おさんぽSNS")
     let accessibilityId = try appNameText.accessibilityIdentifier()
     XCTAssertEqual(accessibilityId, "app_name", "アプリ名のアクセシビリティ識別子が正しく設定されるべき")
   }

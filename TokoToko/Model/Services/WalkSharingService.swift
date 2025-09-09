@@ -78,7 +78,7 @@ class WalkSharingService {
     /// - Returns: 生成された共有テキスト
     func generateShareText(from walk: Walk) -> String {
         let components = ShareTextComponents(
-            appName: "とことこ-お散歩SNS",
+            appName: "てくとこ-お散歩SNS",
             title: walk.title,
             distance: walk.distanceString,
             duration: walk.durationString,

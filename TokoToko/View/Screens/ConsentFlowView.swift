@@ -85,7 +85,7 @@ struct ConsentFlowView: View {
                 .frame(width: 80, height: 80)
                 .foregroundColor(.blue)
 
-            Text("とことこへようこそ")
+            Text("てくとこへようこそ")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .foregroundColor(.black)

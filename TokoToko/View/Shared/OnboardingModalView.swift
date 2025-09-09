@@ -152,7 +152,7 @@ struct OnboardingModalView_Previews: PreviewProvider {
                 type: .firstLaunch,
                 pages: [
                     OnboardingPage(
-                        title: "TokoTokoへようこそ",
+                        title: "てくとこへようこそ",
                         description: "散歩を記録して、素敵な思い出を作りましょう",
                         imageName: "first_launch_1"
                     ),

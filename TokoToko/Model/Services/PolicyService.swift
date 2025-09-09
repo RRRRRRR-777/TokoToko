@@ -61,7 +61,7 @@ class PolicyService {
             ),
             termsOfService: LocalizedContent(
                 ja: """
-                本利用規約は、TokoTokoサービスの利用条件を定めるものです。
+                本利用規約は、てくとこサービスの利用条件を定めるものです。
 
                 1. サービスの利用
                 本サービスを利用するには、本規約に同意していただく必要があります。

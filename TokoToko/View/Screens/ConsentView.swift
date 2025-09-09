@@ -23,7 +23,7 @@ struct ConsentView: View {
                         .fontWeight(.bold)
                         .padding(.horizontal)
 
-                    Text("TokoTokoをご利用いただくには、プライバシーポリシーと利用規約への同意が必要です。以下のリンクから内容をご確認ください。")
+                    Text("てくとこをご利用いただくには、プライバシーポリシーと利用規約への同意が必要です。以下のリンクから内容をご確認ください。")
                         .font(.body)
                         .padding(.horizontal)
 

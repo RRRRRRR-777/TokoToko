@@ -135,7 +135,7 @@ struct LoginView: View {
         .frame(width: 240, height: 240)
         .accessibilityIdentifier("AppLogo")
 
-      Text("とことこへようこそ")
+      Text("てくとこへようこそ")
         .font(.largeTitle)
         .foregroundColor(Color(red: 40 / 255, green: 115 / 255, blue: 80 / 255))
         .fontWeight(.bold)
