@@ -7,7 +7,7 @@
 
 import XCTest
 import CoreLocation
-@testable import TokoToko
+@testable import TekuToko
 
 /// WalkImageGeneratorのテストクラス（一時的に無効化）
 class WalkImageGeneratorTests_Disabled: XCTestCase {

@@ -1,7 +1,7 @@
 import XCTest
 import SwiftUI
 import ViewInspector
-@testable import TokoToko
+@testable import TekuToko
 
 final class ConsentViewTests: XCTestCase {
     

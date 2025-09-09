@@ -7,7 +7,7 @@
 
 import XCTest
 import FirebaseAuth
-@testable import TokoToko
+@testable import TekuToko
 
 /// テスト用のヘルパー関数やモックを提供するクラス
 class TestHelpers {

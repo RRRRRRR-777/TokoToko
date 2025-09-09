@@ -7,7 +7,7 @@
 
 import CoreLocation
 import XCTest
-@testable import TokoToko
+@testable import TekuToko
 
 final class WalkHistoryViewModelTests: XCTestCase {
   

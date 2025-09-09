@@ -8,7 +8,7 @@
 import CoreLocation
 import Foundation
 
-@testable import TokoToko
+@testable import TekuToko
 
 // テスト用のモックWalkRepository
 class MockWalkRepository {

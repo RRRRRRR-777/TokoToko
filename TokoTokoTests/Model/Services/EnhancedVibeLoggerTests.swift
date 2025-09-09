@@ -1,7 +1,7 @@
 import CoreLocation
 import XCTest
 
-@testable import TokoToko
+@testable import TekuToko
 
 class EnhancedVibeLoggerTests: XCTestCase {
   var logger: EnhancedVibeLogger!

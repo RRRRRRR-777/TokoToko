@@ -8,7 +8,7 @@
 import SwiftUI
 import ViewInspector
 import XCTest
-@testable import TokoToko
+@testable import TekuToko
 
 /// AppInfoViewの単体テスト
 ///

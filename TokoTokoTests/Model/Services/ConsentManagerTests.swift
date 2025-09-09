@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import TokoToko
+@testable import TekuToko
 
 @MainActor
 final class ConsentManagerTests: XCTestCase {

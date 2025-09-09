@@ -9,7 +9,7 @@ import CoreLocation
 import SwiftUI
 import ViewInspector
 import XCTest
-@testable import TokoToko
+@testable import TekuToko
 
 /// WalkHistoryViewの単体テスト
 ///

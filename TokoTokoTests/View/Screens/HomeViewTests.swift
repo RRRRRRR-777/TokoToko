@@ -9,7 +9,7 @@ import XCTest
 import SwiftUI
 import CoreLocation
 import ViewInspector
-@testable import TokoToko
+@testable import TekuToko
 
 /// HomeViewの位置情報許可状態チェック機能のテストクラス
 ///

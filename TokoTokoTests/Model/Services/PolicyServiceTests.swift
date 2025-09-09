@@ -1,6 +1,6 @@
 import XCTest
 import FirebaseFirestore
-@testable import TokoToko
+@testable import TekuToko
 
 final class PolicyServiceTests: XCTestCase {
     private var sut: PolicyService!

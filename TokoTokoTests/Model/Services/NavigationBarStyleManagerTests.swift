@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@testable import TokoToko
+@testable import TekuToko
 
 /// NavigationBarStyleManagerの単体テストクラス
 ///

@@ -7,7 +7,7 @@
 
 import XCTest
 import Yams
-@testable import TokoToko
+@testable import TekuToko
 
 final class OnboardingConfigTests: XCTestCase {
 

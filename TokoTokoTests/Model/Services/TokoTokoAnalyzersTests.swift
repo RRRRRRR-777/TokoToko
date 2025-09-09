@@ -7,7 +7,7 @@
 
 import XCTest
 import CoreLocation
-@testable import TokoToko
+@testable import TekuToko
 
 class TokoTokoAnalyzersTests: XCTestCase {
 

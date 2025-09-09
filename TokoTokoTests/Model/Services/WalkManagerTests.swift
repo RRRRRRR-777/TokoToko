@@ -10,7 +10,7 @@ import CoreMotion
 import UIKit
 import XCTest
 
-@testable import TokoToko
+@testable import TekuToko
 
 final class WalkManagerTests: XCTestCase {
   var walkManager: WalkManager!

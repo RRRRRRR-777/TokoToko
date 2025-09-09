@@ -8,7 +8,7 @@
 import XCTest
 import SwiftUI
 import ViewInspector
-@testable import TokoToko
+@testable import TekuToko
 
 @MainActor
 final class ConsentFlowViewTests: XCTestCase {

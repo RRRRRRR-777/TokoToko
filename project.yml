@@ -77,6 +77,7 @@ targets:
         product: Yams
     settings:
       base:
+        PRODUCT_MODULE_NAME: TekuToko
         PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuToko
         INFOPLIST_KEY_CFBundleDisplayName: "てくとこ"
         INFOPLIST_KEY_CFBundleName: "てくとこ - お散歩SNS"

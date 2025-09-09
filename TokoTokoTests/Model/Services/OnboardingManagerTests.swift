@@ -8,7 +8,7 @@
 import XCTest
 import Foundation
 import Combine
-@testable import TokoToko
+@testable import TekuToko
 
 final class OnboardingManagerTests: XCTestCase {
 

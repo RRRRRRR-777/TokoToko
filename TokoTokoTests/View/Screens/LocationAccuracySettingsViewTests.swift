@@ -9,7 +9,7 @@ import SwiftUI
 import ViewInspector
 import XCTest
 import UIKit
-@testable import TokoToko
+@testable import TekuToko
 
 /// LocationAccuracySettingsViewの単体テスト
 ///

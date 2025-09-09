@@ -8,7 +8,7 @@
 import CoreMotion
 import XCTest
 
-@testable import TokoToko
+@testable import TekuToko
 
 final class StepCountManagerTests: XCTestCase {
   var stepCountManager: StepCountManager!

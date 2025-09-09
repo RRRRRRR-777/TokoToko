@@ -8,7 +8,7 @@
 import FirebaseFirestore
 import XCTest
 
-@testable import TokoToko
+@testable import TekuToko
 
 final class WalkRepositoryTests: XCTestCase {
   var repository: WalkRepository!

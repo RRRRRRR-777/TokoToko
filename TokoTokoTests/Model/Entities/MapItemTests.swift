@@ -7,7 +7,7 @@
 
 import XCTest
 import CoreLocation
-@testable import TokoToko
+@testable import TekuToko
 
 final class MapItemTests: XCTestCase {
     
