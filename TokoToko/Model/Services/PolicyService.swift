@@ -20,14 +20,18 @@ enum PolicyServiceError: LocalizedError {
 }
 
 class PolicyService {
-    private let firestore: Firestore
+    // Firestoreは遅延初期化して、UIテスト/DEBUGで未使用なら起動時依存を発火させない
+    private lazy var firestore: Firestore = {
+        WalkRepository.shared.sharedFirestore
+    }()
     private let cacheKey = "TokoTokoPolicyCache"
     private let cacheExpirationKey = "TokoTokoPolicyCacheExpiration"
     private let cacheExpirationHours: TimeInterval = 24
 
     init(firestore: Firestore? = nil) {
-        // WalkRepositoryの設定済みFirestoreインスタンスを使用
-        self.firestore = firestore ?? WalkRepository.shared.sharedFirestore
+        if let firestore {
+            self.firestore = firestore
+        }
     }
 
     // MARK: - Public Methods

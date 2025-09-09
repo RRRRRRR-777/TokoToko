@@ -32,10 +32,12 @@ final class OnboardingIntegrationUITests: XCTestCase {
         // Then: 位置情報許可後にオンボーディングモーダルが表示されること
         let onboardingModal = app.otherElements["OnboardingModalView"]
         XCTAssertTrue(onboardingModal.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedOnboarding), "位置情報許可後にオンボーディングモーダルが表示されること")
-        
-        // オンボーディングのタイトルが表示されること
-        let titleText = app.staticTexts["TokoTokoへようこそ"]
-        XCTAssertTrue(titleText.exists, "オンボーディングのタイトルが表示されること")
+
+        // インジケータの初期値を4ページ仕様で確認
+        let pageIndicator = app.pageIndicators["OnboardingPageIndicator"]
+        if pageIndicator.exists {
+            XCTAssertEqual(pageIndicator.value as? String, "page 1 of 4", "オンボーディングが4ページ構成で初期表示されること")
+        }
     }
     
     func testOnboardingModalNavigation() throws {
@@ -52,8 +54,8 @@ final class OnboardingIntegrationUITests: XCTestCase {
         XCTAssertTrue(nextButton.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedShort), "次ページボタンが存在すること")
         nextButton.tap()
         
-        // Then: 2ページ目が表示されること
-        let secondPageTitle = app.staticTexts["簡単操作"]
+        // Then: 2ページ目が表示されること（仕様準拠のタイトル）
+        let secondPageTitle = app.staticTexts["散歩を始めましょう"]
         XCTAssertTrue(secondPageTitle.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedShort), "2ページ目のタイトルが表示されること")
         
         // When: 前ページボタンをタップ

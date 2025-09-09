@@ -212,7 +212,7 @@ struct SettingsView: View {
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // 通常モードの場合は実際のユーザー情報を使用
-        else if let user = Auth.auth().currentUser {
+        else if !isUITesting, let user = Auth.auth().currentUser {
           HStack {
             Text("メールアドレス")
               .foregroundColor(.black)

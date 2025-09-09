@@ -59,7 +59,8 @@ public class UITestingHelper {
   /// - プロダクションモード: ProductionUITestingProvider を使用
   private init() {
     let args = ProcessInfo.processInfo.arguments
-    let isUITesting = args.contains("--uitesting") || args.contains("UI_TESTING")
+    let isRunningUnderXCTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    let isUITesting = args.contains("--uitesting") || args.contains("UI_TESTING") || isRunningUnderXCTest
     provider = isUITesting ? UITestUITestingProvider() : ProductionUITestingProvider()
   }
 

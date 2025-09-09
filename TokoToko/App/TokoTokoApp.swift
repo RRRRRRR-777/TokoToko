@@ -112,6 +112,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // UIテスト時はFirebase初期化をスキップして外部依存を排除
+    if UITestingHelper.shared.isUITesting {
+      return true
+    }
     FirebaseApp.configure()
     return true
   }
@@ -171,27 +175,45 @@ struct TokoTokoApp: App {
 
   var body: some Scene {
     WindowGroup {
-      NavigationView {
-        if authManager.isInitializing || consentManager.isLoading {
-          SplashView()
-        } else if !authManager.isLoggedIn {
-          // ログインしていない場合は、まずログイン画面を表示
-          LoginView()
-            .environmentObject(authManager)
-        } else if !consentManager.hasValidConsent {
-          // ログイン済みだが同意がない場合は、同意画面を表示
-          ConsentFlowView()
-            .environmentObject(consentManager)
-        } else {
-          // ログイン済みかつ同意済みの場合は、メインタブを表示
-          MainTabView()
-            .environmentObject(authManager)
-            .environmentObject(consentManager)
-            .environmentObject(locationSettingsManager)
+      if UITestingHelper.shared.isUITesting {
+        // UIテスト時もNavigationViewを維持し、ナビゲーションバー検証の互換性を確保
+        ZStack {
+          NavigationView {
+            if authManager.isLoggedIn {
+              MainTabView()
+                .environmentObject(authManager)
+                .environmentObject(consentManager)
+                .environmentObject(locationSettingsManager)
+            } else {
+              LoginView()
+                .environmentObject(authManager)
+            }
+          }
         }
-      }
-      .onAppear {
-        configureNavigationBarAppearance()
+        .accessibilityIdentifier("UITestRootWindow")
+        .onAppear {
+          configureNavigationBarAppearance()
+        }
+      } else {
+        NavigationView {
+          if authManager.isInitializing || consentManager.isLoading {
+            SplashView()
+          } else if !authManager.isLoggedIn {
+            LoginView()
+              .environmentObject(authManager)
+          } else if !consentManager.hasValidConsent {
+            ConsentFlowView()
+              .environmentObject(consentManager)
+          } else {
+            MainTabView()
+              .environmentObject(authManager)
+              .environmentObject(consentManager)
+              .environmentObject(locationSettingsManager)
+          }
+        }
+        .onAppear {
+          configureNavigationBarAppearance()
+        }
       }
     }
   }

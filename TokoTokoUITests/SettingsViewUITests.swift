@@ -157,8 +157,10 @@ final class SettingsViewUITests: XCTestCase {
         // アラートの「ログアウト」ボタンをタップ
         logoutAlert.buttons["ログアウト"].tap()
 
-        // ログイン画面に戻ることを確認
-        XCTAssertTrue(app.staticTexts["TokoTokoへようこそ"].waitForExistence(timeout: 5), "ログイン画面に戻っていません")
+        // ログイン画面に戻ることを確認（実装の文言に合わせる）
+        let welcomePredicate = NSPredicate(format: "label CONTAINS %@", "ようこそ")
+        let welcomeText = app.staticTexts.matching(welcomePredicate).firstMatch
+        XCTAssertTrue(welcomeText.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong), "ログイン画面に戻っていません")
     }
 
     // 設定画面のスクロールテスト

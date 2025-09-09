@@ -155,6 +155,11 @@ extension WalkManager {
     for walkId: UUID,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
+    // UIテスト時は外部依存を避ける（Storage未初期化のため）
+    if UITestingHelper.shared.isUITesting {
+      completion(.failure(ImageStorageError.networkUnavailable))
+      return
+    }
     guard let imageData = image.jpegData(compressionQuality: 0.8) else {
       completion(.failure(ImageStorageError.compressionFailed))
       return
@@ -250,6 +255,11 @@ extension WalkManager {
     for walkId: UUID,
     completion: @escaping (Result<UIImage, Error>) -> Void
   ) {
+    // UIテスト時は外部依存を避ける
+    if UITestingHelper.shared.isUITesting {
+      completion(.failure(ImageStorageError.networkUnavailable))
+      return
+    }
     guard let downloadURL = URL(string: url) else {
       completion(.failure(ImageStorageError.invalidURL))
       return

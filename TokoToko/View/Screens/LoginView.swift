@@ -133,6 +133,7 @@ struct LoginView: View {
         .resizable()
         .aspectRatio(contentMode: .fit)
         .frame(width: 240, height: 240)
+        .accessibilityIdentifier("AppLogo")
 
       Text("とことこへようこそ")
         .font(.largeTitle)
@@ -218,6 +219,7 @@ struct LoginView: View {
       }
       .padding(.bottom, 20)
     }
+    .accessibilityIdentifier("LoginView")
     .padding()
     .background(Color("BackgroundColor"), ignoresSafeAreaEdges: .all)
     // アプリレベルでログイン状態を管理するため、onAppearでの処理は不要
