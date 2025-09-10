@@ -1,6 +1,6 @@
 //
-//  TokoTokoApp.swift
-//  TokoToko
+//  TekuTokoApp.swift
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/16.
 //
@@ -97,7 +97,7 @@ class AuthManager: ObservableObject {
   }
 }
 
-/// TokoTokoアプリケーションのUIApplicationDelegate
+/// TekuTokoアプリケーションのUIApplicationDelegate
 ///
 /// Firebase初期化とGoogle Sign-In URLハンドリングを担当するアプリデリゲートです。
 /// アプリケーションのライフサイクルイベントに対応した初期化処理を行います。
@@ -117,12 +117,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
       return true
     }
     #if DEBUG
-    // GoogleService-Info.plist がダミー/不正な場合はクラッシュを避けるため初期化をスキップ（DEBUGのみ）
-    if !FirebaseConfigurator.configureIfValid() {
-      print("[Firebase] Skipped configuration due to invalid GoogleService-Info.plist or API key. Running without Firebase.")
-    }
+      // GoogleService-Info.plist がダミー/不正な場合はクラッシュを避けるため初期化をスキップ（DEBUGのみ）
+      if !FirebaseConfigurator.configureIfValid() {
+        print(
+          "[Firebase] Skipped configuration due to invalid GoogleService-Info.plist or API key. Running without Firebase."
+        )
+      }
     #else
-    FirebaseApp.configure()
+      FirebaseApp.configure()
     #endif
     return true
   }
@@ -136,9 +138,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
   }
 }
 
-/// TokoTokoアプリケーションのメインエントリーポイント
+/// TekuTokoアプリケーションのメインエントリーポイント
 ///
-/// `TokoTokoApp`はSwiftUI Appプロトコルを実装したメインアプリケーション構造体です。
+/// `TekuTokoApp`はSwiftUI Appプロトコルを実装したメインアプリケーション構造体です。
 /// 認証状態に基づいて適切な画面（スプラッシュ、ログイン、メインタブ）を表示します。
 ///
 /// ## Overview
@@ -154,7 +156,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 /// - ``delegate``
 /// - ``authManager``
 @main
-struct TokoTokoApp: App {
+struct TekuTokoApp: App {
   /// UIApplicationDelegateアダプター
   ///
   /// SwiftUI AppでUIApplicationDelegateを使用するためのアダプターです。
@@ -367,30 +369,31 @@ struct MainTabView: View {
       }
     }
     .ignoresSafeArea(.all, edges: .bottom)
-    .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+    .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification))
+    { _ in
       Task {
         await consentManager.checkForReConsentNeeded()
       }
     }
     .onAppear {
       #if DEBUG
-      // UIテスト時のオンボーディング制御
-      if testingHelper.isUITesting {
-        if testingHelper.shouldResetOnboarding {
-          onboardingManager.resetOnboardingState()
-          // リセット後はオンボーディングを表示する
-          showOnboardingModal = true
-        } else if testingHelper.shouldShowOnboarding {
-          // オンボーディングを強制表示
-          onboardingManager.forceShowOnboarding()
-          showOnboardingModal = true
+        // UIテスト時のオンボーディング制御
+        if testingHelper.isUITesting {
+          if testingHelper.shouldResetOnboarding {
+            onboardingManager.resetOnboardingState()
+            // リセット後はオンボーディングを表示する
+            showOnboardingModal = true
+          } else if testingHelper.shouldShowOnboarding {
+            // オンボーディングを強制表示
+            onboardingManager.forceShowOnboarding()
+            showOnboardingModal = true
+          }
+        } else {
+          checkForOnboarding()
         }
-      } else {
-        checkForOnboarding()
-      }
       #else
-      // 本番環境では常に通常のチェックを実行
-      checkForOnboarding()
+        // 本番環境では常に通常のチェックを実行
+        checkForOnboarding()
       #endif
     }
     .onChange(of: selectedTab) { newTab in
@@ -407,7 +410,7 @@ struct MainTabView: View {
   ///
   /// 初回起動時やバージョンアップ時にオンボーディングを表示するかどうかを判定し、
   /// 必要な場合はモーダル表示フラグをtrueに設定します。
-  /// 
+  ///
   /// **注意**: 位置情報許可フローの変更により、初回起動時のオンボーディングは
   /// HomeViewで位置情報許可後に表示されるようになりました。
   private func checkForOnboarding() {
