@@ -1,6 +1,6 @@
 //
 //  LoadingView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/16.
 //

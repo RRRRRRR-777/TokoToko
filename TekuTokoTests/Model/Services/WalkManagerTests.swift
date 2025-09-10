@@ -1,6 +1,6 @@
 //
 //  WalkManagerTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by bokuyamada on 2025/06/29.
 //
@@ -191,8 +191,8 @@ final class WalkManagerTests: XCTestCase {
 
   func testWalkManager_DistanceString() throws {
     // Arrange - 様々な距離値のテスト
-    let shortDistance: Double = 250.5 // 250m
-    let longDistance: Double = 1500.75 // 1.5km
+    let shortDistance: Double = 250.5  // 250m
+    let longDistance: Double = 1500.75  // 1.5km
 
     // Actのテスト用にWalkManagerのプロパティを一時的に変更
     // 注意: 実際の製品コードではこの方法は推奨されませんが、テスト目的で使用
@@ -212,8 +212,8 @@ final class WalkManagerTests: XCTestCase {
 
   func testWalkManager_ElapsedTimeString() throws {
     // Arrange
-    let shortTime: TimeInterval = 65 // 1分5秒
-    let longTime: TimeInterval = 3665 // 1時間1分5秒
+    let shortTime: TimeInterval = 65  // 1分5秒
+    let longTime: TimeInterval = 3665  // 1時間1分5秒
 
     // Act - 経過時間の設定とフォーマット確認
     walkManager.elapsedTime = shortTime
@@ -232,8 +232,8 @@ final class WalkManagerTests: XCTestCase {
 
   func testWalkManager_TotalSteps_WhenStepCountUnavailable_ReturnsZero() throws {
     // Arrange
-    let testDistance: Double = 1000 // 1km（推定は廃止のため無関係）
-    let testElapsedTime: TimeInterval = 900 // 15分（推定は廃止のため無関係）
+    let testDistance: Double = 1000  // 1km（推定は廃止のため無関係）
+    let testElapsedTime: TimeInterval = 900  // 15分（推定は廃止のため無関係）
 
     // Act - 推定機能廃止後の期待動作: .unavailable時は常に0
     walkManager.distance = testDistance
@@ -316,8 +316,8 @@ final class WalkManagerTests: XCTestCase {
   func testWalkManager_StepCountErrorHandling() throws {
     // Arrange
     let testError = StepCountError.sensorUnavailable
-    walkManager.distance = 2000 // 2km - フォールバック用
-    walkManager.elapsedTime = 1800 // 30分
+    walkManager.distance = 2000  // 2km - フォールバック用
+    walkManager.elapsedTime = 1800  // 30分
 
     // Act - エラーハンドリングの確認
     walkManager.stepCountDidFailWithError(testError)
@@ -325,7 +325,7 @@ final class WalkManagerTests: XCTestCase {
     // Assert - エラーハンドリング機能のテスト
     // エラー処理が正常に動作することを確認（具体的な値のテストは実装に依存）
     XCTAssertNotNil(walkManager.currentStepCount, "エラー後も歩数管理機能が動作している")
-    
+
     // エラーケースでもアプリがクラッシュしないことを確認
     walkManager.stepCountDidFailWithError(StepCountError.notAuthorized)
     XCTAssertNotNil(walkManager, "エラーハンドリング後もWalkManagerが正常")

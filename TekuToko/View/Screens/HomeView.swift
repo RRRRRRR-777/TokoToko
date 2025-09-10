@@ -1,6 +1,6 @@
 //
 //  HomeView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/16.
 //
@@ -10,7 +10,7 @@ import CoreMotion
 import MapKit
 import SwiftUI
 
-/// TokoTokoアプリのメイン画面を表示するSwiftUIビュー
+/// TekuTokoアプリのメイン画面を表示するSwiftUIビュー
 ///
 /// `HomeView`は散歩アプリケーションの中核となる画面で、以下の主要機能を提供します：
 /// - インタラクティブなマップ表示と現在位置の追跡
@@ -102,7 +102,7 @@ struct HomeView: View {
   private enum AnimationTiming {
     /// 初期状態変更アニメーションの時間
     static let initialStateChange: Double = 0.12
-    /// 完了状態アニメーションの時間  
+    /// 完了状態アニメーションの時間
     static let completionStateChange: Double = 0.2
     /// UIレンダリング完了保証のための最小遅延
     static let uiRenderingDelay: Double = 0.001
@@ -165,7 +165,7 @@ struct HomeView: View {
                   LinearGradient(
                     gradient: Gradient(colors: [
                       Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255),
-                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
+                      Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255),
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing
@@ -205,7 +205,7 @@ struct HomeView: View {
     .onAppear {
       // Issue #99対応: 位置情報許可状態を事前にチェック（フラッシュ防止）
       #if DEBUG
-      print("HomeView onAppear - 位置情報許可状態チェック開始")
+        print("HomeView onAppear - 位置情報許可状態チェック開始")
       #endif
       checkLocationPermissionStatus()
 
@@ -216,11 +216,11 @@ struct HomeView: View {
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
       if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {
         #if DEBUG
-        print("HomeView: --show-onboarding 引数が検出されました")
+          print("HomeView: --show-onboarding 引数が検出されました")
         #endif
         DispatchQueue.main.async {
           #if DEBUG
-          print("HomeView: オンボーディング表示を true に設定")
+            print("HomeView: オンボーディング表示を true に設定")
           #endif
           self.showOnboarding = true
         }
@@ -232,7 +232,7 @@ struct HomeView: View {
     }
     .onChange(of: locationManager.authorizationStatus) { status in
       #if DEBUG
-      print("位置情報許可状態が変更されました: \(status)")
+        print("位置情報許可状態が変更されました: \(status)")
       #endif
       setupLocationManager()
 
@@ -252,8 +252,8 @@ struct HomeView: View {
       updateRecordingAnimationState()
 
       #if DEBUG
-      print("散歩状態変更: \(isWalking)")
-      print("  - アニメーション状態: \(shouldAnimateRecording)")
+        print("散歩状態変更: \(isWalking)")
+        print("  - アニメーション状態: \(shouldAnimateRecording)")
       #endif
     }
     .loadingOverlay(isLoading: isLoading)
@@ -265,7 +265,7 @@ struct HomeView: View {
             content: content,
             isPresented: $showOnboarding
           ) {
-              onboardingManager.markOnboardingAsShown(for: .firstLaunch)
+            onboardingManager.markOnboardingAsShown(for: .firstLaunch)
           }
           .animation(.easeInOut(duration: 0.3), value: showOnboarding)
         }
@@ -286,7 +286,7 @@ struct HomeView: View {
         .accessibilityIdentifier("TestMapView")
         .onAppear {
           #if DEBUG
-          print("UIテストモード: MapViewComponentを表示しています")
+            print("UIテストモード: MapViewComponentを表示しています")
           #endif
         }
       } else {
@@ -422,7 +422,8 @@ struct HomeView: View {
         )
         .scaleEffect(shouldAnimateUnknownState ? 0.95 : 1.05)
         .animation(
-          shouldAnimateUnknownState ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .none,
+          shouldAnimateUnknownState
+            ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .none,
           value: shouldAnimateUnknownState
         )
 
@@ -483,7 +484,8 @@ struct HomeView: View {
     currentLocation = locationManager.currentLocation
 
     if locationManager.authorizationStatus == .authorizedWhenInUse
-      || locationManager.authorizationStatus == .authorizedAlways {
+      || locationManager.authorizationStatus == .authorizedAlways
+    {
       locationManager.startUpdatingLocation()
 
       if let location = locationManager.currentLocation {
@@ -619,11 +621,11 @@ struct HomeView: View {
 
       // 統合テスト用の状態ログ
       #if DEBUG
-      print("位置情報許可状態チェック完了")
-      print("  - 初期状態: \(initialState)")
-      print("  - 最終状態: \(self.isLocationPermissionCheckCompleted)")
-      print("  - 許可状態: \(status)")
-      print("  - 許可判定: \(self.isLocationAuthorized(status))")
+        print("位置情報許可状態チェック完了")
+        print("  - 初期状態: \(initialState)")
+        print("  - 最終状態: \(self.isLocationPermissionCheckCompleted)")
+        print("  - 許可状態: \(status)")
+        print("  - 許可判定: \(self.isLocationAuthorized(status))")
       #endif
     }
   }
@@ -640,7 +642,7 @@ struct HomeView: View {
     @unknown default:
       // 将来のiOSバージョンでの新しい状態を安全に処理
       #if DEBUG
-      print("未知の位置情報許可状態: \(status)")
+        print("未知の位置情報許可状態: \(status)")
       #endif
       return false
     }
@@ -689,7 +691,7 @@ struct HomeView: View {
     LinearGradient(
       gradient: Gradient(stops: [
         .init(color: baseColor, location: 0.0),
-        .init(color: baseColor.opacity(0.8), location: 1.0)
+        .init(color: baseColor.opacity(0.8), location: 1.0),
       ]),
       startPoint: .leading,
       endPoint: .trailing
@@ -704,14 +706,14 @@ struct HomeView: View {
   /// メモリリーク防止とパフォーマンス最適化を目的としています。
   private func initializeAnimationStates() {
     DispatchQueue.main.async {
-      self.shouldAnimateRecording = self.walkManager.isWalking &&
-                                  self.walkManager.currentWalk?.status != .paused
+      self.shouldAnimateRecording =
+        self.walkManager.isWalking && self.walkManager.currentWalk?.status != .paused
       self.shouldAnimateUnknownState = true
 
       #if DEBUG
-      print("アニメーション初期化:")
-      print("  - 記録アニメーション: \(self.shouldAnimateRecording)")
-      print("  - 未知状態アニメーション: \(self.shouldAnimateUnknownState)")
+        print("アニメーション初期化:")
+        print("  - 記録アニメーション: \(self.shouldAnimateRecording)")
+        print("  - 未知状態アニメーション: \(self.shouldAnimateUnknownState)")
       #endif
     }
   }
@@ -728,7 +730,7 @@ struct HomeView: View {
       }
 
       #if DEBUG
-      print("全アニメーション停止完了")
+        print("全アニメーション停止完了")
       #endif
     }
   }
@@ -739,8 +741,7 @@ struct HomeView: View {
   /// 一時停止時や停止時には適切にアニメーションを停止します。
   private func updateRecordingAnimationState() {
     DispatchQueue.main.async {
-      let newState = self.walkManager.isWalking &&
-                     self.walkManager.currentWalk?.status != .paused
+      let newState = self.walkManager.isWalking && self.walkManager.currentWalk?.status != .paused
 
       if self.shouldAnimateRecording != newState {
         withAnimation(.easeInOut(duration: 0.3)) {
@@ -775,45 +776,46 @@ struct RoundedCorner: Shape {
 // MARK: - テスト用拡張
 
 #if DEBUG
-extension HomeView {
-  /// テスト用：位置情報許可状態チェック完了フラグのアクセサー
-  ///
-  /// HomeViewの内部状態isLocationPermissionCheckCompletedにアクセスするためのテスト専用プロパティです。
-  /// 位置情報許可状態の事前チェック完了を確認するテストで使用されます。
-  var testIsLocationPermissionCheckCompleted: Bool {
-    isLocationPermissionCheckCompleted
-  }
+  extension HomeView {
+    /// テスト用：位置情報許可状態チェック完了フラグのアクセサー
+    ///
+    /// HomeViewの内部状態isLocationPermissionCheckCompletedにアクセスするためのテスト専用プロパティです。
+    /// 位置情報許可状態の事前チェック完了を確認するテストで使用されます。
+    var testIsLocationPermissionCheckCompleted: Bool {
+      isLocationPermissionCheckCompleted
+    }
 
-  /// テスト用：位置情報許可状態チェックメソッドの呼び出し
-  ///
-  /// HomeViewのcheckLocationPermissionStatus()メソッドをテストから呼び出すためのラッパーメソッドです。
-  /// メソッドの存在確認と動作テストで使用されます。
-  func testCheckLocationPermissionStatus() {
-    checkLocationPermissionStatus()
-  }
+    /// テスト用：位置情報許可状態チェックメソッドの呼び出し
+    ///
+    /// HomeViewのcheckLocationPermissionStatus()メソッドをテストから呼び出すためのラッパーメソッドです。
+    /// メソッドの存在確認と動作テストで使用されます。
+    func testCheckLocationPermissionStatus() {
+      checkLocationPermissionStatus()
+    }
 
-  /// テスト用：位置情報許可状態判定ヘルパーのアクセス
-  ///
-  /// 位置情報許可状態の判定ロジックをテストから呼び出すためのメソッドです。
-  /// 各種許可状態での判定動作を検証します。
-  func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
-    isLocationAuthorized(status)
-  }
+    /// テスト用：位置情報許可状態判定ヘルパーのアクセス
+    ///
+    /// 位置情報許可状態の判定ロジックをテストから呼び出すためのメソッドです。
+    /// 各種許可状態での判定動作を検証します。
+    func testIsLocationAuthorized(_ status: CLAuthorizationStatus) -> Bool {
+      isLocationAuthorized(status)
+    }
 
-  /// テスト用：統合テスト用の包括的状態アクセス
-  ///
-  /// 統合テスト用の状態確認メソッドです。
-  /// アプリ起動フロー全体の検証に使用されます。
-  func testComprehensiveState() -> (isCheckCompleted: Bool, canAccessLocation: Bool) {
-    let isCompleted = isLocationPermissionCheckCompleted
-    // 実際の位置情報マネージャーの状態も確認
-    let locationManager = LocationManager.shared
-    let canAccess = locationManager.checkAuthorizationStatus() == .authorizedWhenInUse ||
-                   locationManager.checkAuthorizationStatus() == .authorizedAlways
+    /// テスト用：統合テスト用の包括的状態アクセス
+    ///
+    /// 統合テスト用の状態確認メソッドです。
+    /// アプリ起動フロー全体の検証に使用されます。
+    func testComprehensiveState() -> (isCheckCompleted: Bool, canAccessLocation: Bool) {
+      let isCompleted = isLocationPermissionCheckCompleted
+      // 実際の位置情報マネージャーの状態も確認
+      let locationManager = LocationManager.shared
+      let canAccess =
+        locationManager.checkAuthorizationStatus() == .authorizedWhenInUse
+        || locationManager.checkAuthorizationStatus() == .authorizedAlways
 
-    return (isCheckCompleted: isCompleted, canAccessLocation: canAccess)
+      return (isCheckCompleted: isCompleted, canAccessLocation: canAccess)
+    }
   }
-}
 #endif
 
 #Preview {

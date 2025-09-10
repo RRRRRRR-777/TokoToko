@@ -1,6 +1,6 @@
 //
 //  EnhancedVibeLoggerBatch.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
@@ -32,7 +32,7 @@ extension EnhancedVibeLogger {
     dateFormatter.dateFormat = "yyyy-MM-dd"
     let dateString = dateFormatter.string(from: Date())
 
-    let fileName = "tokotoko_\(dateString).log"
+    let fileName = "TekuToko_\(dateString).log"
     let filePath = "\(logDirectoryPath)/\(fileName)"
 
     let logLine = "\(jsonString)\n"

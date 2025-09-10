@@ -1,6 +1,6 @@
 //
 //  StatsBarView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude Code on 2025/07/12.
 //
@@ -98,8 +98,9 @@ struct StatsBarView: View {
 
   private var actionButtonsSection: some View {
     HStack {
-      NavigationLink(destination:
-        WalkListView()
+      NavigationLink(
+        destination:
+          WalkListView()
           .navigationBarBackButtonHidden(false)
       ) {
         Image(systemName: "arrow.left.arrow.right")

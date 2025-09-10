@@ -1,13 +1,13 @@
 //
 //  WalkImageLayoutRenderer.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
 
 import CoreLocation
-import UIKit
 import FirebaseAuth
+import UIKit
 
 /// 散歩画像のレイアウトとオーバーレイ描画を担当するクラス
 enum WalkImageLayoutRenderer {
@@ -91,8 +91,9 @@ enum WalkImageLayoutRenderer {
     let userName = currentUser?.displayName ?? "ユーザー"
 
     if let photoURL = currentUser?.photoURL,
-       let imageData = try? Data(contentsOf: photoURL),
-       let profileImage = UIImage(data: imageData) {
+      let imageData = try? Data(contentsOf: photoURL),
+      let profileImage = UIImage(data: imageData)
+    {
 
       let renderer = UIGraphicsImageRenderer(size: iconRect.size)
       let circularImage = renderer.image { _ in
@@ -226,10 +227,11 @@ enum WalkImageLayoutRenderer {
     )
 
     if let iconName = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any],
-       let primaryIcon = iconName["CFBundlePrimaryIcon"] as? [String: Any],
-       let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
-       let iconFileName = iconFiles.first,
-       let appIcon = UIImage(named: iconFileName) {
+      let primaryIcon = iconName["CFBundlePrimaryIcon"] as? [String: Any],
+      let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+      let iconFileName = iconFiles.first,
+      let appIcon = UIImage(named: iconFileName)
+    {
       let renderer = UIGraphicsImageRenderer(size: iconRect.size)
       let roundedIcon = renderer.image { _ in
         let path = UIBezierPath(
@@ -296,7 +298,7 @@ enum WalkImageLayoutRenderer {
   ) {
     let attributes: [NSAttributedString.Key: Any] = [
       .font: font,
-      .foregroundColor: color
+      .foregroundColor: color,
     ]
 
     text.draw(at: point, withAttributes: attributes)

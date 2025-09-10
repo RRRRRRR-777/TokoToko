@@ -1,6 +1,6 @@
 //
 //  WalkHistoryView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/07/19.
 //
@@ -66,7 +66,8 @@ struct WalkHistoryView: View {
   ///
   /// ライトモードでは既存のBackgroundColor、ダークモードではグレーを返します。
   private var backgroundGradientColor: Color {
-    colorScheme == .dark ? Color(red: 120 / 255, green: 120 / 255, blue: 120 / 255) : Color("BackgroundColor")
+    colorScheme == .dark
+      ? Color(red: 120 / 255, green: 120 / 255, blue: 120 / 255) : Color("BackgroundColor")
   }
 
   /// WalkHistoryViewの初期化メソッド
@@ -100,7 +101,7 @@ struct WalkHistoryView: View {
         context: [
           "walksCount": String(safeWalks.count),
           "initialIndex": String(safeIndex),
-          "error": String(describing: error)
+          "error": String(describing: error),
         ]
       )
 
@@ -271,7 +272,8 @@ struct WalkHistoryView: View {
   private var userAvatarImage: some View {
     Group {
       if let user = Auth.auth().currentUser,
-         let photoURL = user.photoURL {
+        let photoURL = user.photoURL
+      {
         AsyncImage(url: photoURL) { image in
           image
             .resizable()
@@ -297,7 +299,7 @@ struct WalkHistoryView: View {
         backgroundGradientColor.opacity(0.8),
         backgroundGradientColor.opacity(0.7),
         backgroundGradientColor.opacity(0.6),
-        Color.clear
+        Color.clear,
       ],
       startPoint: .top,
       endPoint: .bottom
@@ -329,8 +331,9 @@ struct WalkHistoryView: View {
       Spacer()
       HStack {
         Spacer()
-        NavigationLink(destination:
-          WalkListView(selectedTab: 1)
+        NavigationLink(
+          destination:
+            WalkListView(selectedTab: 1)
             .navigationBarBackButtonHidden(false)
         ) {
           Image(systemName: "person.2.fill")
@@ -340,7 +343,7 @@ struct WalkHistoryView: View {
               LinearGradient(
                 gradient: Gradient(colors: [
                   Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-                  Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
+                  Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
                 ]),
                 startPoint: .leading,
                 endPoint: .trailing
@@ -409,7 +412,7 @@ private enum PreviewData {
   static var sampleWalks: [Walk] {
     [
       createMorningWalk(),
-      createEveningWalk()
+      createEveningWalk(),
     ]
   }
 
@@ -447,7 +450,7 @@ private enum PreviewData {
       CLLocation(latitude: 35.6812, longitude: 139.7671),
       CLLocation(latitude: 35.6815, longitude: 139.7675),
       CLLocation(latitude: 35.6820, longitude: 139.7680),
-      CLLocation(latitude: 35.6825, longitude: 139.7690)
+      CLLocation(latitude: 35.6825, longitude: 139.7690),
     ]
   }
 
@@ -458,7 +461,7 @@ private enum PreviewData {
       CLLocation(latitude: 35.6720, longitude: 139.7520),
       CLLocation(latitude: 35.6740, longitude: 139.7540),
       CLLocation(latitude: 35.6760, longitude: 139.7560),
-      CLLocation(latitude: 35.6780, longitude: 139.7580)
+      CLLocation(latitude: 35.6780, longitude: 139.7580),
     ]
   }
 }

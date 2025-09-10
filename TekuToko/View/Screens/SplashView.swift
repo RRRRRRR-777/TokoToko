@@ -1,6 +1,6 @@
 //
 //  SplashView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025/06/24.
 //

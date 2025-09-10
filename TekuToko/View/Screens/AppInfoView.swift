@@ -1,6 +1,6 @@
 //
 //  AppInfoView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025/08/22.
 //
@@ -72,16 +72,17 @@ struct AppInfoView: View {
   private var appInfoListView: some View {
     List {
       // アプリ基本情報セクション
-      Section(header:
-        HStack {
-          Text("アプリ情報")
-            .foregroundColor(.black)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("アプリ情報")
+              .foregroundColor(.black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         // アプリ名
         VStack(alignment: .center, spacing: 8) {
@@ -103,16 +104,17 @@ struct AppInfoView: View {
       }
 
       // バージョン情報セクション
-      Section(header:
-        HStack {
-          Text("バージョン情報")
-            .foregroundColor(.black)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("バージョン情報")
+              .foregroundColor(.black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         InfoRow(
           title: "バージョン",
@@ -133,16 +135,17 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // 開発元情報セクション
-      Section(header:
-        HStack {
-          Text("開発元")
-            .foregroundColor(.black)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("開発元")
+              .foregroundColor(.black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         InfoRow(
           title: "開発元",
@@ -161,16 +164,17 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // 技術情報セクション
-      Section(header:
-        HStack {
-          Text("技術情報")
-            .foregroundColor(.black)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("技術情報")
+              .foregroundColor(.black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         InfoRow(
           title: "フレームワーク",
@@ -189,16 +193,17 @@ struct AppInfoView: View {
       .foregroundColor(.black)
 
       // アプリの説明セクション
-      Section(header:
-        HStack {
-          Text("このアプリについて")
-            .foregroundColor(.black)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("このアプリについて")
+              .foregroundColor(.black)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         VStack(alignment: .leading, spacing: 12) {
           Text("てくとこは、日常の散歩を記録し、友人や家族と散歩体験を共有できるiOSアプリです。")

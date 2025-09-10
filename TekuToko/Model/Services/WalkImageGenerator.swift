@@ -1,15 +1,15 @@
 //
 //  WalkImageGeneratorCore.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
 
 import CoreLocation
+import FirebaseAuth
 import MapKit
 import SwiftUI
 import UIKit
-import FirebaseAuth
 
 /// 散歩記録を画像として生成するサービスクラス
 ///
@@ -32,7 +32,7 @@ import FirebaseAuth
 /// - ``generateMapSnapshot(from:size:)``
 /// - ``createImageLayout(mapImage:walk:size:)``
 ///
-/// ### エラーハンドリング  
+/// ### エラーハンドリング
 /// - ``WalkImageGeneratorError``
 class WalkImageGenerator {
 
@@ -90,14 +90,16 @@ class WalkImageGenerator {
     var imageData = image.jpegData(compressionQuality: quality)
 
     while let data = imageData,
-          data.count > WalkImageGeneratorConstants.maxFileSize && quality > 0.1 {
+      data.count > WalkImageGeneratorConstants.maxFileSize && quality > 0.1
+    {
       quality -= 0.1
       imageData = image.jpegData(compressionQuality: quality)
     }
 
     guard let finalData = imageData,
-          finalData.count <= WalkImageGeneratorConstants.maxFileSize,
-          let compressedImage = UIImage(data: finalData) else {
+      finalData.count <= WalkImageGeneratorConstants.maxFileSize,
+      let compressedImage = UIImage(data: finalData)
+    else {
       throw WalkImageGeneratorError.imageTooLarge
     }
 

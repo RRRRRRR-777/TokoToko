@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/20.
 //
@@ -158,20 +158,21 @@ struct SettingsView: View {
 
   var body: some View {
     List {
-      Section(header:
-        HStack {
-          Text("アカウント")
-            .foregroundColor(.gray)
-            .font(.footnote)
-            .fontWeight(.regular)
-            .textCase(.uppercase)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 6)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("アカウント")
+              .foregroundColor(.gray)
+              .font(.footnote)
+              .fontWeight(.regular)
+              .textCase(.uppercase)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.top, 16)
+          .padding(.bottom, 6)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         // UIテストモードの場合はモックユーザー情報を使用
         if isUITesting && hasUserInfo {
@@ -257,20 +258,21 @@ struct SettingsView: View {
         }
       }
 
-      Section(header:
-        HStack {
-          Text("アプリ設定")
-            .foregroundColor(.gray)
-            .font(.footnote)
-            .fontWeight(.regular)
-            .textCase(.uppercase)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 6)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("アプリ設定")
+              .foregroundColor(.gray)
+              .font(.footnote)
+              .fontWeight(.regular)
+              .textCase(.uppercase)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.top, 16)
+          .padding(.bottom, 6)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         Button(action: {
           Task {
@@ -297,23 +299,26 @@ struct SettingsView: View {
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header:
-        HStack {
-          Text("位置情報")
-            .foregroundColor(.gray)
-            .font(.footnote)
-            .fontWeight(.regular)
-            .textCase(.uppercase)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 6)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("位置情報")
+              .foregroundColor(.gray)
+              .font(.footnote)
+              .fontWeight(.regular)
+              .textCase(.uppercase)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.top, 16)
+          .padding(.bottom, 6)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
-        NavigationLink(destination: LocationAccuracySettingsView()
-          .environmentObject(locationSettingsManager)) {
+        NavigationLink(
+          destination: LocationAccuracySettingsView()
+            .environmentObject(locationSettingsManager)
+        ) {
           HStack {
             Text("位置情報設定")
               .foregroundColor(.black)
@@ -326,20 +331,21 @@ struct SettingsView: View {
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
-      Section(header:
-        HStack {
-          Text("その他")
-            .foregroundColor(.gray)
-            .font(.footnote)
-            .fontWeight(.regular)
-            .textCase(.uppercase)
-          Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 6)
-        .background(Color("BackgroundColor"))
-        .listRowInsets(EdgeInsets())
+      Section(
+        header:
+          HStack {
+            Text("その他")
+              .foregroundColor(.gray)
+              .font(.footnote)
+              .fontWeight(.regular)
+              .textCase(.uppercase)
+            Spacer()
+          }
+          .padding(.horizontal, 16)
+          .padding(.top, 16)
+          .padding(.bottom, 6)
+          .background(Color("BackgroundColor"))
+          .listRowInsets(EdgeInsets())
       ) {
         NavigationLink(destination: AppInfoView()) {
           Text("このアプリについて")

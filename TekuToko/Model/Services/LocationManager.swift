@@ -1,6 +1,6 @@
 //
 //  LocationManager.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/16.
 //
@@ -189,7 +189,7 @@ class LocationManager: NSObject, ObservableObject {
       context: [
         "authorization_status": authorizationStatus.rawValue.description,
         "desired_accuracy": String(locationManager.desiredAccuracy),
-        "distance_filter": String(locationManager.distanceFilter)
+        "distance_filter": String(locationManager.distanceFilter),
       ]
     )
   }
@@ -212,7 +212,7 @@ class LocationManager: NSObject, ObservableObject {
             context: [
               "authorization_status": "authorizedAlways",
               "background_modes": backgroundModes.joined(separator: ","),
-              "background_indicator": "false"
+              "background_indicator": "false",
             ]
           )
         }
@@ -281,7 +281,7 @@ class LocationManager: NSObject, ObservableObject {
       context: [
         "latitude": "\(mockLocation.coordinate.latitude)",
         "longitude": "\(mockLocation.coordinate.longitude)",
-        "authorization_status": "authorizedWhenInUse"
+        "authorization_status": "authorizedWhenInUse",
       ]
     )
   }
@@ -339,7 +339,7 @@ extension LocationManager: CLLocationManagerDelegate {
         "locations_count": String(locations.count),
         "speed": String(location.speed),
         "altitude": String(location.altitude),
-        "course": String(location.course)
+        "course": String(location.course),
       ]
     )
 
@@ -379,7 +379,7 @@ extension LocationManager: CLLocationManagerDelegate {
       message: "位置情報の許可状態が変更されました",
       context: [
         "previous_status": previousStatus.rawValue.description,
-        "new_status": authorizationStatus.rawValue.description
+        "new_status": authorizationStatus.rawValue.description,
       ]
     )
 

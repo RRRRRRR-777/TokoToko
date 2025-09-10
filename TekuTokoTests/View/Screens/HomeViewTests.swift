@@ -1,14 +1,15 @@
 //
 //  HomeViewTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by Claude on 2025/08/17.
 //
 
-import XCTest
-import SwiftUI
 import CoreLocation
+import SwiftUI
 import ViewInspector
+import XCTest
+
 @testable import TekuToko
 
 /// HomeViewの位置情報許可状態チェック機能のテストクラス
@@ -43,8 +44,9 @@ final class HomeViewTests: XCTestCase {
     let homeView = HomeView(showOnboarding: showOnboarding)
 
     // Then: 位置情報許可状態チェック完了フラグは初期値false
-    XCTAssertFalse(homeView.testIsLocationPermissionCheckCompleted,
-                   "位置情報許可状態チェック完了フラグの初期値はfalseである必要があります")
+    XCTAssertFalse(
+      homeView.testIsLocationPermissionCheckCompleted,
+      "位置情報許可状態チェック完了フラグの初期値はfalseである必要があります")
   }
 
   /// 位置情報許可状態チェック機能の存在テスト
@@ -73,12 +75,13 @@ final class HomeViewTests: XCTestCase {
 
     // When: 位置情報許可状態チェック完了フラグの確認
     // Then: 初期状態では許可状態チェック未完了（フラッシュ防止）
-    XCTAssertFalse(homeView.testIsLocationPermissionCheckCompleted,
-                   "初期状態では位置情報許可状態チェックが未完了である必要があります")
+    XCTAssertFalse(
+      homeView.testIsLocationPermissionCheckCompleted,
+      "初期状態では位置情報許可状態チェックが未完了である必要があります")
 
     // 位置情報許可状態チェック実行後の状態確認
     homeView.testCheckLocationPermissionStatus()
-    
+
     // 非同期処理完了後の確認
     let expectation = XCTestExpectation(description: "位置情報許可状態チェック完了")
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -101,11 +104,12 @@ final class HomeViewTests: XCTestCase {
     homeView.testCheckLocationPermissionStatus()
 
     let endTime = CFAbsoluteTimeGetCurrent()
-    let executionTime = (endTime - startTime) * 1000 // ミリ秒変換
+    let executionTime = (endTime - startTime) * 1000  // ミリ秒変換
 
     // Then: 実行時間が50ms以内
-    XCTAssertLessThan(executionTime, 50.0,
-                      "位置情報許可状態チェックは50ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
+    XCTAssertLessThan(
+      executionTime, 50.0,
+      "位置情報許可状態チェックは50ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
   }
 
   // MARK: - アプリ起動フロー総合テスト
@@ -120,14 +124,15 @@ final class HomeViewTests: XCTestCase {
 
     // When: アプリ起動フローのシミュレーション
     // Then: 各段階での適切な状態確認
-    
+
     // Step 1: 初期化直後の状態
-    XCTAssertFalse(homeView.testIsLocationPermissionCheckCompleted,
-                   "起動直後は位置情報許可状態チェックが未完了である必要があります")
-    
+    XCTAssertFalse(
+      homeView.testIsLocationPermissionCheckCompleted,
+      "起動直後は位置情報許可状態チェックが未完了である必要があります")
+
     // Step 2: 位置情報許可状態チェック実行
     homeView.testCheckLocationPermissionStatus()
-    
+
     // Step 3: 非同期処理完了待ちと最終状態確認
     let expectation = XCTestExpectation(description: "アプリ起動フロー完了")
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -137,7 +142,7 @@ final class HomeViewTests: XCTestCase {
       XCTAssertTrue(true, "起動フロー全体が正常に実行されました。最終チェック状態: \(finalState)")
       expectation.fulfill()
     }
-    
+
     wait(for: [expectation], timeout: 1.0)
   }
 
@@ -151,20 +156,20 @@ final class HomeViewTests: XCTestCase {
 
     // When: 各権限状態でのフロー確認
     // Then: 権限状態に応じた適切な処理
-    
+
     // テスト用権限状態リスト
     let permissionStates: [CLAuthorizationStatus] = [
       .notDetermined,
       .authorizedWhenInUse,
       .authorizedAlways,
       .denied,
-      .restricted
+      .restricted,
     ]
-    
+
     for status in permissionStates {
       // 各権限状態での判定テスト
       let isAuthorized = homeView.testIsLocationAuthorized(status)
-      
+
       switch status {
       case .authorizedWhenInUse, .authorizedAlways:
         XCTAssertTrue(isAuthorized, "\(status)は許可済み状態として判定される必要があります")
@@ -186,22 +191,23 @@ final class HomeViewTests: XCTestCase {
 
     // When: 起動フローのパフォーマンス測定
     let startTime = CFAbsoluteTimeGetCurrent()
-    
+
     homeView.testCheckLocationPermissionStatus()
-    
+
     // 非同期処理完了後の測定
     let expectation = XCTestExpectation(description: "パフォーマンス測定完了")
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
       let endTime = CFAbsoluteTimeGetCurrent()
-      let executionTime = (endTime - startTime) * 1000 // ミリ秒変換
-      
+      let executionTime = (endTime - startTime) * 1000  // ミリ秒変換
+
       // Then: パフォーマンス要件確認
-      XCTAssertLessThan(executionTime, 100.0,
-                        "起動フローは100ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
-      
+      XCTAssertLessThan(
+        executionTime, 100.0,
+        "起動フローは100ms以内に完了する必要があります（実行時間: \(executionTime)ms）")
+
       expectation.fulfill()
     }
-    
+
     wait(for: [expectation], timeout: 1.0)
   }
 
@@ -217,8 +223,9 @@ final class HomeViewTests: XCTestCase {
 
     // When: 初期化直後の状態確認（許可状態チェック前）
     // Then: 許可状態チェック完了前は空のビューが表示される
-    XCTAssertFalse(homeView.testIsLocationPermissionCheckCompleted,
-                   "初期状態では許可状態チェックが未完了である必要があります")
+    XCTAssertFalse(
+      homeView.testIsLocationPermissionCheckCompleted,
+      "初期状態では許可状態チェックが未完了である必要があります")
 
     // 許可画面要素が存在しないことを確認
     do {
@@ -239,24 +246,24 @@ final class HomeViewTests: XCTestCase {
     let homeView = HomeView(showOnboarding: showOnboarding)
 
     var flashTimestamps: [CFAbsoluteTime] = []
-    let monitoringDuration = 0.2 // 200ms監視
-    let checkInterval = 0.002 // 2ms間隔でチェック（より高頻度）
-    
+    let monitoringDuration = 0.2  // 200ms監視
+    let checkInterval = 0.002  // 2ms間隔でチェック（より高頻度）
+
     // When: 極めて高頻度でのフラッシュ監視
     let expectation = XCTestExpectation(description: "詳細フラッシュ検証完了")
     let startTime = CFAbsoluteTimeGetCurrent()
-    
+
     homeView.testCheckLocationPermissionStatus()
-    
+
     let timer = Timer.scheduledTimer(withTimeInterval: checkInterval, repeats: true) { timer in
       let currentTime = CFAbsoluteTimeGetCurrent()
-      
+
       if (currentTime - startTime) >= monitoringDuration {
         timer.invalidate()
         expectation.fulfill()
         return
       }
-      
+
       // より詳細なフラッシュ検出
       do {
         let _ = try homeView.inspect().find(text: "位置情報の使用許可が必要です")
@@ -265,12 +272,13 @@ final class HomeViewTests: XCTestCase {
         // 許可画面が見つからない = 正常
       }
     }
-    
+
     wait(for: [expectation], timeout: 1.0)
-    
+
     // Then: フラッシュが完全に排除され、タイムスタンプが記録されていない
-    XCTAssertTrue(flashTimestamps.isEmpty,
-                  "フラッシュは一度も発生してはいけません。検出回数: \(flashTimestamps.count)")
+    XCTAssertTrue(
+      flashTimestamps.isEmpty,
+      "フラッシュは一度も発生してはいけません。検出回数: \(flashTimestamps.count)")
   }
 
   // MARK: - 基本UI表示テスト
@@ -299,7 +307,7 @@ final class HomeViewTests: XCTestCase {
 
     // When & Then: 基本的なUI要素の存在確認
     XCTAssertNoThrow(try homeView.inspect(), "HomeViewが正常に検査可能である必要があります")
-    
+
     // より寛大な要素存在確認（ZStackではなくViewの存在確認）
     do {
       let _ = try homeView.inspect().find(ViewType.ZStack.self)
@@ -351,8 +359,9 @@ final class HomeViewTests: XCTestCase {
     homeView.testCheckLocationPermissionStatus()
 
     // Then: 初期状態が適切に設定されていることを確認
-    XCTAssertFalse(initialStatus,
-                   "初期状態では許可状態チェックフラグがfalseである必要があります")
+    XCTAssertFalse(
+      initialStatus,
+      "初期状態では許可状態チェックフラグがfalseである必要があります")
   }
 
   /// ヘルパーメソッドテスト：isLocationAuthorized関数の動作
@@ -381,8 +390,9 @@ final class HomeViewTests: XCTestCase {
 
     // When & Then: 不完全な状態での実行もクラッシュしない
     // 実際のテストでは適切なエラーハンドリングが必要だが、基本テストとして実行
-    XCTAssertNoThrow(homeView.testCheckLocationPermissionStatus(),
-                     "不完全な状態でもクラッシュせずに処理が継続される必要があります")
+    XCTAssertNoThrow(
+      homeView.testCheckLocationPermissionStatus(),
+      "不完全な状態でもクラッシュせずに処理が継続される必要があります")
   }
 
   /// バックグラウンドからフォアグラウンド復帰時のフラッシュ防止テスト
@@ -395,20 +405,20 @@ final class HomeViewTests: XCTestCase {
 
     // When: バックグラウンドからの復帰をシミュレート
     homeView.testCheckLocationPermissionStatus()
-    
+
     // 短時間待機後に再度チェック（復帰シミュレーション）
     let expectation = XCTestExpectation(description: "復帰時フラッシュ防止確認")
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
       homeView.testCheckLocationPermissionStatus()
-      
+
       // 復帰後の状態確認
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
         expectation.fulfill()
       }
     }
-    
+
     wait(for: [expectation], timeout: 1.0)
-    
+
     // Then: 復帰後も適切に動作している（状態に関わらずテスト成功）
     let finalState = homeView.testIsLocationPermissionCheckCompleted
     XCTAssertTrue(true, "復帰テストが正常に実行されました。最終状態: \(finalState)")
@@ -424,16 +434,16 @@ final class HomeViewTests: XCTestCase {
 
     // When: 実行時の許可状態変更をシミュレート
     homeView.testCheckLocationPermissionStatus()
-    
+
     let expectation = XCTestExpectation(description: "実行時許可変更対応確認")
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
       // 許可状態変更後の再チェック
       homeView.testCheckLocationPermissionStatus()
       expectation.fulfill()
     }
-    
+
     wait(for: [expectation], timeout: 1.0)
-    
+
     // Then: 実行時変更にも適切に対応（状態に関わらずテスト成功）
     let finalState = homeView.testIsLocationPermissionCheckCompleted
     XCTAssertTrue(true, "実行時変更テストが正常に実行されました。最終状態: \(finalState)")
@@ -450,21 +460,21 @@ final class HomeViewTests: XCTestCase {
     var flashDetected = false
     let expectation = XCTestExpectation(description: "フラッシュ検証")
     let startTime = CFAbsoluteTimeGetCurrent()
-    
+
     let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
       let currentTime = CFAbsoluteTimeGetCurrent()
-      
+
       if (currentTime - startTime) >= duration {
         timer.invalidate()
         expectation.fulfill()
         return
       }
-      
+
       do {
         let _ = try homeView.inspect().find(text: "位置情報の使用許可が必要です")
         flashDetected = true
         #if DEBUG
-        print("フラッシュ検出: \((currentTime - startTime) * 1000)ms時点")
+          print("フラッシュ検出: \((currentTime - startTime) * 1000)ms時点")
         #endif
         timer.invalidate()
         expectation.fulfill()
@@ -472,7 +482,7 @@ final class HomeViewTests: XCTestCase {
         // フラッシュなし = 正常
       }
     }
-    
+
     wait(for: [expectation], timeout: duration + 0.5)
     return !flashDetected
   }
@@ -542,8 +552,9 @@ final class HomeViewTests: XCTestCase {
     let endTime = CFAbsoluteTimeGetCurrent()
     let monitoringDuration = (endTime - startTime) * 1000
 
-    XCTAssertFalse(permissionScreenDetected,
-                   "50ms監視期間中に位置情報許可画面が表示されてはいけません（監視時間: \(monitoringDuration)ms）")
+    XCTAssertFalse(
+      permissionScreenDetected,
+      "50ms監視期間中に位置情報許可画面が表示されてはいけません（監視時間: \(monitoringDuration)ms）")
   }
 
   /// 画面遷移の滑らかさテスト

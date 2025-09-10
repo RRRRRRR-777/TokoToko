@@ -1,6 +1,6 @@
 //
 //  LoginView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/20.
 //
@@ -169,9 +169,9 @@ struct LoginView: View {
               .font(.system(size: 16, weight: .medium))
           }
           .frame(maxWidth: .infinity)
-          .frame(height: 44) // iOS標準のボタン高さ
-          .background(Color(red: 0.26, green: 0.52, blue: 0.96)) // Google Blue #4285F4
-          .cornerRadius(6) // Googleガイドライン準拠の角丸
+          .frame(height: 44)  // iOS標準のボタン高さ
+          .background(Color(red: 0.26, green: 0.52, blue: 0.96))  // Google Blue #4285F4
+          .cornerRadius(6)  // Googleガイドライン準拠の角丸
           .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
         }
         .accessibilityIdentifier("googleSignInButton")

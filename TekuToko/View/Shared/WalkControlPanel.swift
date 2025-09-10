@@ -1,6 +1,6 @@
 //
 //  WalkControlPanel.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/06/03.
 //
@@ -216,7 +216,7 @@ struct WalkControlPanel: View {
           LinearGradient(
             gradient: Gradient(colors: [
               Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255)
+              Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
             ]),
             startPoint: .leading,
             endPoint: .trailing

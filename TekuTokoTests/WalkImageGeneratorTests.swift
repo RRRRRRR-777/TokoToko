@@ -1,12 +1,13 @@
 //
 //  WalkImageGeneratorTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by Claude on 2025/08/16.
 //
 
-import XCTest
 import CoreLocation
+import XCTest
+
 @testable import TekuToko
 
 /// WalkImageGeneratorのテストクラス（一時的に無効化）
@@ -72,8 +73,8 @@ class WalkImageGeneratorTests_Disabled: XCTestCase {
   /// テスト用散歩データ作成ヘルパー
   private func createTestWalk(totalSteps: Int) -> Walk {
     let startTime = Date()
-    let endTime = Date().addingTimeInterval(1800) // 30分後
-    
+    let endTime = Date().addingTimeInterval(1800)  // 30分後
+
     var walk = Walk(
       title: "テスト散歩",
       description: "テスト用散歩データ",
@@ -83,7 +84,7 @@ class WalkImageGeneratorTests_Disabled: XCTestCase {
       totalSteps: totalSteps,
       status: .completed
     )
-    
+
     // 位置データを追加
     let startLocation = CLLocation(latitude: 35.6762, longitude: 139.6503)
     let endLocation = CLLocation(latitude: 35.6785, longitude: 139.6512)

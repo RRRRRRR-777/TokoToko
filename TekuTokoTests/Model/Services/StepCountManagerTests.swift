@@ -1,6 +1,6 @@
 //
 //  StepCountManagerTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by Claude on 2025/06/30.
 //
@@ -423,7 +423,8 @@ final class StepCountManagerTests: XCTestCase {
       // 追加検証: 配列にも正しく記録されていることを確認
       XCTAssertEqual(mockDelegate.stepCountUpdates.count, 1, "散歩開始時に1回更新通知が来るべき")
       if let firstUpdate = mockDelegate.stepCountUpdates.first,
-         case .coremotion(let steps) = firstUpdate {
+        case .coremotion(let steps) = firstUpdate
+      {
         XCTAssertEqual(steps, 0, "最初の更新は0歩であるべき")
       } else {
         XCTFail("最初の更新はcoremotion(steps: 0)であるべき")

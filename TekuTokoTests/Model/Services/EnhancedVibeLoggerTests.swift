@@ -78,7 +78,7 @@ class EnhancedVibeLoggerTests: XCTestCase {
     XCTAssertEqual(sourceInfo.fileName, "TestFile.swift")
     XCTAssertEqual(sourceInfo.functionName, functionName)
     XCTAssertEqual(sourceInfo.lineNumber, lineNumber)
-    XCTAssertEqual(sourceInfo.moduleName, "TokoToko")
+    XCTAssertEqual(sourceInfo.moduleName, "TekuToko")
   }
 
   // MARK: - Environment Helper Tests
@@ -97,7 +97,7 @@ class EnhancedVibeLoggerTests: XCTestCase {
     XCTAssertEqual(environment["is_debug"], "true")  // テスト環境では常にtrue
   }
 
-  // MARK: - TokoToko Specialized Logging Tests
+  // MARK: - TekuToko Specialized Logging Tests
   func testLocationBugPrevention() {
     // Given
     let location = CLLocation(latitude: 35.6812, longitude: 139.7671)
@@ -225,40 +225,40 @@ class EnhancedVibeLoggerTests: XCTestCase {
 
   // MARK: - Testing Support Tests (DEBUG only)
   #if DEBUG
-  func testTestingSupport() {
-    // Given
-    let originalLogLevel = logger.getLogLevel()
-    let originalFileOutput = logger.getFileOutput()
+    func testTestingSupport() {
+      // Given
+      let originalLogLevel = logger.getLogLevel()
+      let originalFileOutput = logger.getFileOutput()
 
-    // When
-    logger.setLogLevel(.warning)
-    logger.setFileOutput(false)
+      // When
+      logger.setLogLevel(.warning)
+      logger.setFileOutput(false)
 
-    // Then
-    XCTAssertEqual(logger.getLogLevel(), .warning)
-    XCTAssertEqual(logger.getFileOutput(), false)
+      // Then
+      XCTAssertEqual(logger.getLogLevel(), .warning)
+      XCTAssertEqual(logger.getFileOutput(), false)
 
-    // Reset
-    logger.resetToDefaultSettings()
-    XCTAssertEqual(logger.getLogLevel(), .debug)
-    XCTAssertEqual(logger.getFileOutput(), true)
+      // Reset
+      logger.resetToDefaultSettings()
+      XCTAssertEqual(logger.getLogLevel(), .debug)
+      XCTAssertEqual(logger.getFileOutput(), true)
 
-    // Restore original settings
-    logger.setLogLevel(originalLogLevel)
-    logger.setFileOutput(originalFileOutput)
-  }
+      // Restore original settings
+      logger.setLogLevel(originalLogLevel)
+      logger.setFileOutput(originalFileOutput)
+    }
 
-  func testLogDirectoryPath() {
-    // When
-    let logDirectoryPath = logger.getLogDirectoryPath()
+    func testLogDirectoryPath() {
+      // When
+      let logDirectoryPath = logger.getLogDirectoryPath()
 
-    // Then
-    // 旧/新いずれのログディレクトリでも許容（後方互換移行中）
-    XCTAssertTrue(
-      logDirectoryPath.contains("/RRRRRRR777/TokoToko/logs") ||
-      logDirectoryPath.contains("/RRRRRRR777/TekuToko/logs")
-    )
-  }
+      // Then
+      // 旧/新いずれのログディレクトリでも許容（後方互換移行中）
+      XCTAssertTrue(
+        logDirectoryPath.contains("/RRRRRRR777/TekuToko/logs")
+          || logDirectoryPath.contains("/RRRRRRR777/TekuToko/logs")
+      )
+    }
   #endif
 
   // MARK: - Convenience Methods Tests

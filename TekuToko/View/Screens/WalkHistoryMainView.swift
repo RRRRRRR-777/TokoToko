@@ -1,12 +1,12 @@
 //
 //  WalkHistoryMainView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude Code on 2025/07/18.
 //
 
-import SwiftUI
 import CoreLocation
+import SwiftUI
 
 /// 散歩履歴のメイン画面とデータローディング制御
 ///
@@ -153,41 +153,42 @@ private struct EmptyWalkHistoryView: View {
 
 #Preview("散歩履歴あり") {
   NavigationView {
-    WalkHistoryView(walks: [
-      Walk(
-        title: "朝の散歩",
-        description: "公園を歩きました",
-        id: UUID(),
-        startTime: Date().addingTimeInterval(-3600),
-        endTime: Date().addingTimeInterval(-3000),
-        totalDistance: 1200,
-        totalSteps: 1500,
-        status: .completed,
-        locations: [
-          CLLocation(latitude: 35.6812, longitude: 139.7671),
-          CLLocation(latitude: 35.6815, longitude: 139.7675),
-          CLLocation(latitude: 35.6820, longitude: 139.7680),
-          CLLocation(latitude: 35.6825, longitude: 139.7690)
-        ]
-      ),
-      Walk(
-        title: "夕方の散歩",
-        description: "川沿いを歩きました",
-        id: UUID(),
-        startTime: Date().addingTimeInterval(-7200),
-        endTime: Date().addingTimeInterval(-6600),
-        totalDistance: 800,
-        totalSteps: 1000,
-        status: .completed,
-        locations: [
-          CLLocation(latitude: 35.6700, longitude: 139.7500),
-          CLLocation(latitude: 35.6720, longitude: 139.7520),
-          CLLocation(latitude: 35.6740, longitude: 139.7540),
-          CLLocation(latitude: 35.6760, longitude: 139.7560),
-          CLLocation(latitude: 35.6780, longitude: 139.7580)
-        ]
-      )
-    ], initialIndex: 0)
+    WalkHistoryView(
+      walks: [
+        Walk(
+          title: "朝の散歩",
+          description: "公園を歩きました",
+          id: UUID(),
+          startTime: Date().addingTimeInterval(-3600),
+          endTime: Date().addingTimeInterval(-3000),
+          totalDistance: 1200,
+          totalSteps: 1500,
+          status: .completed,
+          locations: [
+            CLLocation(latitude: 35.6812, longitude: 139.7671),
+            CLLocation(latitude: 35.6815, longitude: 139.7675),
+            CLLocation(latitude: 35.6820, longitude: 139.7680),
+            CLLocation(latitude: 35.6825, longitude: 139.7690),
+          ]
+        ),
+        Walk(
+          title: "夕方の散歩",
+          description: "川沿いを歩きました",
+          id: UUID(),
+          startTime: Date().addingTimeInterval(-7200),
+          endTime: Date().addingTimeInterval(-6600),
+          totalDistance: 800,
+          totalSteps: 1000,
+          status: .completed,
+          locations: [
+            CLLocation(latitude: 35.6700, longitude: 139.7500),
+            CLLocation(latitude: 35.6720, longitude: 139.7520),
+            CLLocation(latitude: 35.6740, longitude: 139.7540),
+            CLLocation(latitude: 35.6760, longitude: 139.7560),
+            CLLocation(latitude: 35.6780, longitude: 139.7580),
+          ]
+        ),
+      ], initialIndex: 0)
   }
 }
 

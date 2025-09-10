@@ -1,6 +1,6 @@
 //
 //  WalkManager.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/06/03.
 //
@@ -138,7 +138,8 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   // ローカル保存用ディレクトリ
   lazy var documentsDirectory: URL = {
-    guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+    guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+    else {
       fatalError("Documents directory not found")
     }
     return url
@@ -373,7 +374,9 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     walkRepository.saveWalk(walk) { [weak self] result in
       switch result {
       case .success(let savedWalk):
-        self?.logger.info(operation: "saveWalk", message: "散歩データを保存しました", context: ["walkId": savedWalk.id.uuidString])
+        self?.logger.info(
+          operation: "saveWalk", message: "散歩データを保存しました",
+          context: ["walkId": savedWalk.id.uuidString])
       case .failure(let error):
         self?.logger.logError(error, operation: "saveWalk")
       }
@@ -407,9 +410,10 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   private func handleAuthorizationStatusChange(_ status: CLAuthorizationStatus) {
     if status == .authorizedAlways,
-       let title = pendingWalkTitle,
-       let description = pendingWalkDescription,
-       let userId = Auth.auth().currentUser?.uid {
+      let title = pendingWalkTitle,
+      let description = pendingWalkDescription,
+      let userId = Auth.auth().currentUser?.uid
+    {
       pendingWalkTitle = nil
       pendingWalkDescription = nil
       performWalkStart(title: title, description: description, userId: userId)

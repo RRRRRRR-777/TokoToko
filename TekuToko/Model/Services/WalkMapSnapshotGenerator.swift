@@ -1,6 +1,6 @@
 //
 //  WalkMapSnapshotGenerator.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
@@ -106,20 +106,22 @@ enum WalkMapSnapshotGenerator {
     let innerRadius = WalkImageGeneratorConstants.MarkerSize.innerRadius
 
     context.setFillColor(UIColor.systemBlue.cgColor)
-    context.fillEllipse(in: CGRect(
-      x: point.x - markerRadius,
-      y: point.y - markerRadius,
-      width: markerRadius * 2,
-      height: markerRadius * 2
-    ))
+    context.fillEllipse(
+      in: CGRect(
+        x: point.x - markerRadius,
+        y: point.y - markerRadius,
+        width: markerRadius * 2,
+        height: markerRadius * 2
+      ))
 
     context.setFillColor(UIColor.white.cgColor)
-    context.fillEllipse(in: CGRect(
-      x: point.x - innerRadius,
-      y: point.y - innerRadius,
-      width: innerRadius * 2,
-      height: innerRadius * 2
-    ))
+    context.fillEllipse(
+      in: CGRect(
+        x: point.x - innerRadius,
+        y: point.y - innerRadius,
+        width: innerRadius * 2,
+        height: innerRadius * 2
+      ))
   }
 
   /// ポリラインを描画
@@ -171,9 +173,10 @@ enum WalkMapSnapshotGenerator {
 
     let coordinates = locations.map { $0.coordinate }
     guard let minLat = coordinates.map({ $0.latitude }).min(),
-          let maxLat = coordinates.map({ $0.latitude }).max(),
-          let minLon = coordinates.map({ $0.longitude }).min(),
-          let maxLon = coordinates.map({ $0.longitude }).max() else {
+      let maxLat = coordinates.map({ $0.latitude }).max(),
+      let minLon = coordinates.map({ $0.longitude }).min(),
+      let maxLon = coordinates.map({ $0.longitude }).max()
+    else {
       // 座標計算が失敗した場合はデフォルトリージョン（東京）を返す
       return MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -190,8 +193,10 @@ enum WalkMapSnapshotGenerator {
     )
 
     let span = MKCoordinateSpan(
-      latitudeDelta: (maxLat - minLat) * WalkImageGeneratorConstants.MapSpan.multiPointPadding / WalkImageGeneratorConstants.mapScaleFactor,
-      longitudeDelta: (maxLon - minLon) * WalkImageGeneratorConstants.MapSpan.multiPointPadding / WalkImageGeneratorConstants.mapScaleFactor
+      latitudeDelta: (maxLat - minLat) * WalkImageGeneratorConstants.MapSpan.multiPointPadding
+        / WalkImageGeneratorConstants.mapScaleFactor,
+      longitudeDelta: (maxLon - minLon) * WalkImageGeneratorConstants.MapSpan.multiPointPadding
+        / WalkImageGeneratorConstants.mapScaleFactor
     )
 
     return MKCoordinateRegion(center: center, span: span)

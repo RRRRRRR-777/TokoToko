@@ -1,6 +1,6 @@
 //
 //  GoogleAuthService.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/05/20.
 //
@@ -160,7 +160,8 @@ class GoogleAuthService {
       context: ["has_root_view_controller": "true"]
     )
 
-    GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { [weak self] result, error in
+    GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) {
+      [weak self] result, error in
       self?.handleGoogleSignInResult(result: result, error: error, completion: completion)
     }
   }
@@ -199,7 +200,7 @@ class GoogleAuthService {
       message: "Google Sign In成功",
       context: [
         "has_id_token": "true",
-        "has_access_token": "true"
+        "has_access_token": "true",
       ]
     )
 

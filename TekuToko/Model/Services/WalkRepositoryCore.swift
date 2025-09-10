@@ -1,6 +1,6 @@
 //
 //  WalkRepositoryCore.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
@@ -69,7 +69,7 @@ enum WalkRepositoryError: Error, Equatable {
       (.invalidData, .invalidData):
       return true
     case (.firestoreError, .firestoreError),
-         (.storageError, .storageError):
+      (.storageError, .storageError):
       // Errorは等価比較が困難なため、同じタイプであることのみチェック
       return true
     default:
@@ -214,7 +214,7 @@ class WalkRepository {
       message: "WalkRepository初期化完了",
       context: [
         "offline_persistence": "enabled",
-        "collection_name": collectionName
+        "collection_name": collectionName,
       ]
     )
   }

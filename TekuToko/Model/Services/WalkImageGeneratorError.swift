@@ -1,6 +1,6 @@
 //
 //  WalkImageGeneratorError.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
@@ -39,7 +39,8 @@ enum WalkImageGeneratorConstants {
   static let imageSize = CGSize(width: 1080, height: 1920)
 
   /// 背景色 (FCF7EF)
-  static let backgroundColor = UIColor(red: 252 / 255, green: 247 / 255, blue: 239 / 255, alpha: 1.0)
+  static let backgroundColor = UIColor(
+    red: 252 / 255, green: 247 / 255, blue: 239 / 255, alpha: 1.0)
 
   /// 最大ファイルサイズ (1MB)
   static let maxFileSize: Int = 1_000_000
@@ -89,9 +90,8 @@ enum WalkImageGeneratorConstants {
 /// Bundle拡張
 extension Bundle {
   var appName: String {
-    object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ??
-    object(forInfoDictionaryKey: "CFBundleName") as? String ??
-    "TekuToko"
+    object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? object(
+      forInfoDictionaryKey: "CFBundleName") as? String ?? "TekuToko"
   }
 }
 

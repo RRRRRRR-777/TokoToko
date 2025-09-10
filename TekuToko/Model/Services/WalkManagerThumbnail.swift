@@ -1,6 +1,6 @@
 //
 //  WalkManagerThumbnail.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
@@ -112,9 +112,10 @@ extension WalkManager {
 
     let coordinates = locations.map { $0.coordinate }
     guard let minLat = coordinates.map({ $0.latitude }).min(),
-          let maxLat = coordinates.map({ $0.latitude }).max(),
-          let minLon = coordinates.map({ $0.longitude }).min(),
-          let maxLon = coordinates.map({ $0.longitude }).max() else {
+      let maxLat = coordinates.map({ $0.latitude }).max(),
+      let minLon = coordinates.map({ $0.longitude }).min(),
+      let maxLon = coordinates.map({ $0.longitude }).max()
+    else {
       // 座標計算が失敗した場合はデフォルトリージョン（東京）を返す
       return MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -190,23 +191,25 @@ extension WalkManager {
     // スタートマーカー（緑）
     let startPoint = snapshot.point(for: coordinates[0])
     context.setFillColor(UIColor.systemGreen.cgColor)
-    context.fillEllipse(in: CGRect(
-      x: startPoint.x - markerRadius,
-      y: startPoint.y - markerRadius,
-      width: markerRadius * 2,
-      height: markerRadius * 2
-    ))
+    context.fillEllipse(
+      in: CGRect(
+        x: startPoint.x - markerRadius,
+        y: startPoint.y - markerRadius,
+        width: markerRadius * 2,
+        height: markerRadius * 2
+      ))
 
     // ゴールマーカー（赤）
     if coordinates.count > 1 {
       let endPoint = snapshot.point(for: coordinates[coordinates.count - 1])
       context.setFillColor(UIColor.systemRed.cgColor)
-      context.fillEllipse(in: CGRect(
-        x: endPoint.x - markerRadius,
-        y: endPoint.y - markerRadius,
-        width: markerRadius * 2,
-        height: markerRadius * 2
-      ))
+      context.fillEllipse(
+        in: CGRect(
+          x: endPoint.x - markerRadius,
+          y: endPoint.y - markerRadius,
+          width: markerRadius * 2,
+          height: markerRadius * 2
+        ))
     }
   }
 
@@ -237,10 +240,12 @@ extension WalkManager {
     let region = calculateMapRegion(from: walk.locations)
 
     func coordinateToPoint(_ coordinate: CLLocationCoordinate2D) -> CGPoint {
-      let x = (coordinate.longitude - region.center.longitude + region.span.longitudeDelta / 2)
-              / region.span.longitudeDelta * size.width
-      let y = (region.center.latitude - coordinate.latitude + region.span.latitudeDelta / 2)
-              / region.span.latitudeDelta * size.height
+      let x =
+        (coordinate.longitude - region.center.longitude + region.span.longitudeDelta / 2)
+        / region.span.longitudeDelta * size.width
+      let y =
+        (region.center.latitude - coordinate.latitude + region.span.latitudeDelta / 2)
+        / region.span.latitudeDelta * size.height
       return CGPoint(x: x, y: y)
     }
 
@@ -263,21 +268,23 @@ extension WalkManager {
 
     let startPoint = coordinateToPoint(coordinates[0])
     context.setFillColor(UIColor.systemGreen.cgColor)
-    context.fillEllipse(in: CGRect(
-      x: startPoint.x - markerRadius,
-      y: startPoint.y - markerRadius,
-      width: markerRadius * 2,
-      height: markerRadius * 2
-    ))
+    context.fillEllipse(
+      in: CGRect(
+        x: startPoint.x - markerRadius,
+        y: startPoint.y - markerRadius,
+        width: markerRadius * 2,
+        height: markerRadius * 2
+      ))
 
     let endPoint = coordinateToPoint(coordinates[coordinates.count - 1])
     context.setFillColor(UIColor.systemRed.cgColor)
-    context.fillEllipse(in: CGRect(
-      x: endPoint.x - markerRadius,
-      y: endPoint.y - markerRadius,
-      width: markerRadius * 2,
-      height: markerRadius * 2
-    ))
+    context.fillEllipse(
+      in: CGRect(
+        x: endPoint.x - markerRadius,
+        y: endPoint.y - markerRadius,
+        width: markerRadius * 2,
+        height: markerRadius * 2
+      ))
   }
 
   /// フォールバック画像を生成
@@ -296,7 +303,7 @@ extension WalkManager {
     let font = UIFont.systemFont(ofSize: 16, weight: .medium)
     let attributes: [NSAttributedString.Key: Any] = [
       .font: font,
-      .foregroundColor: UIColor.systemGray
+      .foregroundColor: UIColor.systemGray,
     ]
 
     let textSize = text.size(withAttributes: attributes)

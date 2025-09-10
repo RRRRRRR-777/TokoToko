@@ -1,6 +1,6 @@
 //
 //  StatsBarViewTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by Claude Code on 2025/07/12.
 //
@@ -29,7 +29,7 @@ final class StatsBarViewTests: XCTestCase {
       status: .completed,
       locations: [
         CLLocation(latitude: 35.6812, longitude: 139.7671),
-        CLLocation(latitude: 35.6815, longitude: 139.7675)
+        CLLocation(latitude: 35.6815, longitude: 139.7675),
       ]
     )
   }
@@ -43,7 +43,8 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと距離が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
+    let view = StatsBarView(
+      walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
 
     // When & Then
     // ViewInspectorの.inspect()呼び出しは潜在的なクラッシュリスクがあるためコメントアウト
@@ -58,7 +59,8 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと時間が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
+    let view = StatsBarView(
+      walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
 
     // When & Then
     // ViewInspectorの.inspect()呼び出しは潜在的なクラッシュリスクがあるためコメントアウト
@@ -74,7 +76,8 @@ final class StatsBarViewTests: XCTestCase {
 
   func test_StatsBarView_Walkデータを渡すと歩数が正しく表示される() throws {
     // Given
-    let view = StatsBarView(walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
+    let view = StatsBarView(
+      walk: mockWalk, isExpanded: .constant(true), onToggle: {}, onWalkDeleted: nil)
 
     // When & Then
     // ViewInspectorの.inspect()呼び出しは潜在的なクラッシュリスクがあるためコメントアウト
@@ -97,14 +100,15 @@ final class StatsBarViewTests: XCTestCase {
       startTime: Date().addingTimeInterval(-3600),
       endTime: Date().addingTimeInterval(-3000),
       totalDistance: 1000,
-      totalSteps: 0, // 歩数取得不可を表現
+      totalSteps: 0,  // 歩数取得不可を表現
       status: .completed
     )
 
     // Act & Assert
     // 歩数取得不可時（totalSteps = 0）は「-」と表示されることを期待
     // 現在の実装では「0歩」と表示されるため、このテストは失敗する
-    let shouldShowDashForSteps = shouldShowDashForUnavailableSteps(totalSteps: walkWithNoSteps.totalSteps)
+    let shouldShowDashForSteps = shouldShowDashForUnavailableSteps(
+      totalSteps: walkWithNoSteps.totalSteps)
     XCTAssertTrue(
       shouldShowDashForSteps,
       "歩数取得不可時（totalSteps = 0）は「-」と表示されるべき"
@@ -119,7 +123,7 @@ final class StatsBarViewTests: XCTestCase {
       startTime: Date().addingTimeInterval(-3600),
       endTime: Date().addingTimeInterval(-3000),
       totalDistance: 1500,
-      totalSteps: 1500, // 有効な歩数
+      totalSteps: 1500,  // 有効な歩数
       status: .completed
     )
 
@@ -147,7 +151,7 @@ final class StatsBarViewTests: XCTestCase {
   /// 歩数取得不可時に「-」表示となることを確認するヘルパー
   private func shouldShowDashForUnavailableSteps(totalSteps: Int) -> Bool {
     // 実装後: totalSteps = 0 の場合に「-」表示となるため true を返す
-    totalSteps == 0 ? true : false // Green Phase: 「-」表示実装後の期待動作
+    totalSteps == 0 ? true : false  // Green Phase: 「-」表示実装後の期待動作
   }
 
   /// 有効歩数時に「XXX歩」形式で表示されることを確認するヘルパー
@@ -160,7 +164,7 @@ final class StatsBarViewTests: XCTestCase {
   private func stepDisplayFormat(for totalSteps: Int) -> String {
     // 実装後: totalSteps = 0 の場合のみ「-」を返す
     if totalSteps == 0 {
-      return "-" // Green Phase: 歩数取得不可時は「-」表示
+      return "-"  // Green Phase: 歩数取得不可時は「-」表示
     } else {
       return "\(totalSteps)歩"
     }

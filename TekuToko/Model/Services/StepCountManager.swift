@@ -1,6 +1,6 @@
 //
 //  StepCountManager.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025/06/30.
 //
@@ -266,11 +266,11 @@ class StepCountManager: ObservableObject, CustomDebugStringConvertible {
   /// デバッグ用の状態情報
   var debugDescription: String {
     """
-      StepCountManager Debug Info:
-      - isTracking: \(isTracking)
-      - isStepCountingAvailable: \(isStepCountingAvailable())
-      - currentStepCount: \(currentStepCount)
-      - startDate: \(startDate?.description ?? "nil")
-      """
+    StepCountManager Debug Info:
+    - isTracking: \(isTracking)
+    - isStepCountingAvailable: \(isStepCountingAvailable())
+    - currentStepCount: \(currentStepCount)
+    - startDate: \(startDate?.description ?? "nil")
+    """
   }
 }

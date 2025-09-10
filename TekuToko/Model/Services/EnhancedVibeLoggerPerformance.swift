@@ -1,12 +1,12 @@
 //
 //  EnhancedVibeLoggerPerformance.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
 
-import Foundation
 import Darwin
+import Foundation
 
 // MARK: - Performance Measurement Extension
 

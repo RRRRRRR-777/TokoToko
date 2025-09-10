@@ -1,6 +1,6 @@
 //
 //  StepCountTypes.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //

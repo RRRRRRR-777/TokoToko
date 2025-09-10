@@ -1,6 +1,6 @@
 //
 //  StoryCarouselView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude Code on 2025/07/12.
 //

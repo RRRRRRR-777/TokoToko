@@ -1,6 +1,6 @@
 //
 //  WalkHistoryViewModelScreenTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by Claude Code on 2025/07/12.
 //

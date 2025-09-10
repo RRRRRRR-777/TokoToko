@@ -1,6 +1,6 @@
 //
 //  WalkControlPanelTests.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by Claude on 2025/08/16.
 //
@@ -198,9 +198,9 @@ final class WalkControlPanelTests: XCTestCase {
     // Green Phase: 実装完了により .unavailable の場合に true を返すよう修正
     switch stepCountSource {
     case .unavailable:
-      return true // Green Phase: 実装により非表示になったため true
+      return true  // Green Phase: 実装により非表示になったため true
     case .coremotion:
-      return false // 歩数取得可能時は表示される
+      return false  // 歩数取得可能時は表示される
     }
   }
 
@@ -209,27 +209,27 @@ final class WalkControlPanelTests: XCTestCase {
     // Green Phase: 実装完了により .unavailable は非表示、.coremotion は表示
     switch stepCountSource {
     case .unavailable:
-      return false // Green Phase: 実装により非表示になったため false
+      return false  // Green Phase: 実装により非表示になったため false
     case .coremotion:
-      return true // 歩数値が表示される
+      return true  // 歩数値が表示される
     }
   }
 
   /// 赤い警告アイコンが表示されないことを確認するヘルパー
   private func shouldNotShowRedWarningIcon() -> Bool {
     // Green Phase: 実装完了により歩数部分自体が非表示になったため true
-    true // Green Phase: 歩数部分非表示により警告アイコンも非表示
+    true  // Green Phase: 歩数部分非表示により警告アイコンも非表示
   }
 
   /// 「計測不可」テキストが表示されないことを確認するヘルパー
   private func shouldNotShowUnavailableText() -> Bool {
     // Green Phase: 実装完了により歩数部分自体が非表示になったため true
-    true // Green Phase: 歩数部分非表示により「計測不可」テキストも非表示
+    true  // Green Phase: 歩数部分非表示により「計測不可」テキストも非表示
   }
 
   /// 歩数関連のアクセシビリティ識別子が存在しないことを確認するヘルパー
   private func shouldNotHaveStepCountAccessibilityIdentifiers() -> Bool {
     // Green Phase: 実装完了により歩数部分自体が非表示になったため true
-    true // Green Phase: 歩数部分非表示によりアクセシビリティ識別子も存在しない
+    true  // Green Phase: 歩数部分非表示によりアクセシビリティ識別子も存在しない
   }
 }

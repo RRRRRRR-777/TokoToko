@@ -1,12 +1,12 @@
 //
 //  EnhancedVibeLoggerSpecialized.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
 
-import Foundation
 import CoreLocation
+import Foundation
 
 // MARK: - TekuToko Specialized Logging Extension
 

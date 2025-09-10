@@ -1,6 +1,6 @@
 //
 //  LocationAccuracyMode.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025/08/22.
 //
@@ -80,7 +80,7 @@ enum LocationAccuracyMode: String, CaseIterable, Identifiable {
   var distanceFilter: CLLocationDistance {
     switch self {
     case .highAccuracy:
-      return 5.0   // 5メートル移動で更新
+      return 5.0  // 5メートル移動で更新
     case .balanced:
       return 20.0  // 20メートル移動で更新（デフォルト）
     case .batterySaving:

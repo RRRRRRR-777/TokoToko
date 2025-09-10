@@ -1,6 +1,6 @@
 //
 //  LocationAccuracySettingsView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025/08/22.
 //
@@ -109,13 +109,16 @@ struct LocationAccuracySettingsView: View {
         Text("バックグラウンド更新")
           .foregroundColor(.black)
         Spacer()
-        Toggle("", isOn: .init(
-          get: { settingsManager.isBackgroundUpdateEnabled },
-          set: { enabled in
-            settingsManager.setBackgroundUpdateEnabled(enabled)
-            saveSettingsWithErrorHandling()
-          }
-        ))
+        Toggle(
+          "",
+          isOn: .init(
+            get: { settingsManager.isBackgroundUpdateEnabled },
+            set: { enabled in
+              settingsManager.setBackgroundUpdateEnabled(enabled)
+              saveSettingsWithErrorHandling()
+            }
+          )
+        )
         .accessibilityIdentifier("background_update_toggle")
       }
 
@@ -182,7 +185,7 @@ struct LocationAccuracySettingsView: View {
         message: "位置情報設定を保存しました",
         context: [
           "accuracyMode": settingsManager.currentMode.rawValue,
-          "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled)
+          "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled),
         ]
       )
     } catch {
@@ -193,7 +196,7 @@ struct LocationAccuracySettingsView: View {
         context: [
           "accuracyMode": settingsManager.currentMode.rawValue,
           "backgroundUpdate": String(settingsManager.isBackgroundUpdateEnabled),
-          "error": String(describing: error)
+          "error": String(describing: error),
         ]
       )
 

@@ -1,6 +1,6 @@
 //
 //  OnboardingConfig.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025-08-11.
 //
@@ -28,7 +28,9 @@ struct OnboardingData: Codable {
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     firstLaunch = try container.decodeIfPresent(OnboardingSection.self, forKey: .firstLaunch)
-    versionUpdates = try container.decodeIfPresent([String: OnboardingSection].self, forKey: .versionUpdates) ?? [:]
+    versionUpdates =
+      try container.decodeIfPresent([String: OnboardingSection].self, forKey: .versionUpdates)
+      ?? [:]
   }
 }
 

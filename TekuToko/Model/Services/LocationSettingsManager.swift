@@ -1,6 +1,6 @@
 //
 //  LocationSettingsManager.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude on 2025/08/22.
 //
@@ -149,7 +149,8 @@ class LocationSettingsManager: ObservableObject, LocationSettingsApplicable {
   func loadSettings() {
     // 精度モードの読み込み
     if let modeString = userDefaults.string(forKey: LocationAccuracyMode.userDefaultsKey),
-       let mode = LocationAccuracyMode(rawValue: modeString) {
+      let mode = LocationAccuracyMode(rawValue: modeString)
+    {
       currentMode = mode
     } else {
       currentMode = .default
@@ -302,41 +303,41 @@ enum LocationSettingsError: LocalizedError {
 // MARK: - Testing Support
 
 #if DEBUG
-/// テスト用のLocationSettingsApplicableモック実装
-///
-/// 単体テストでLocationManagerの動作を検証する際に使用します。
-/// 設定値を固定し、applySettingsToLocationManagerの呼び出しを記録できます。
-///
-/// ## Usage Example
-/// ```swift
-/// let mockSettings = MockLocationSettingsApplicable(
-///   mode: .highAccuracy,
-///   backgroundEnabled: false
-/// )
-/// let locationManager = LocationManager(settingsApplicator: mockSettings)
-/// ```
-class MockLocationSettingsApplicable: LocationSettingsApplicable {
-  let currentMode: LocationAccuracyMode
-  let isBackgroundUpdateEnabled: Bool
+  /// テスト用のLocationSettingsApplicableモック実装
+  ///
+  /// 単体テストでLocationManagerの動作を検証する際に使用します。
+  /// 設定値を固定し、applySettingsToLocationManagerの呼び出しを記録できます。
+  ///
+  /// ## Usage Example
+  /// ```swift
+  /// let mockSettings = MockLocationSettingsApplicable(
+  ///   mode: .highAccuracy,
+  ///   backgroundEnabled: false
+  /// )
+  /// let locationManager = LocationManager(settingsApplicator: mockSettings)
+  /// ```
+  class MockLocationSettingsApplicable: LocationSettingsApplicable {
+    let currentMode: LocationAccuracyMode
+    let isBackgroundUpdateEnabled: Bool
 
-  /// applySettingsToLocationManagerが呼び出された回数
-  private(set) var applySettingsCallCount: Int = 0
+    /// applySettingsToLocationManagerが呼び出された回数
+    private(set) var applySettingsCallCount: Int = 0
 
-  /// 最後にapplySettingsToLocationManagerに渡されたLocationManager
-  private(set) var lastAppliedLocationManager: CLLocationManager?
+    /// 最後にapplySettingsToLocationManagerに渡されたLocationManager
+    private(set) var lastAppliedLocationManager: CLLocationManager?
 
-  init(mode: LocationAccuracyMode, backgroundEnabled: Bool) {
-    self.currentMode = mode
-    self.isBackgroundUpdateEnabled = backgroundEnabled
+    init(mode: LocationAccuracyMode, backgroundEnabled: Bool) {
+      self.currentMode = mode
+      self.isBackgroundUpdateEnabled = backgroundEnabled
+    }
+
+    func applySettingsToLocationManager(_ locationManager: CLLocationManager) {
+      applySettingsCallCount += 1
+      lastAppliedLocationManager = locationManager
+
+      // 基本的な設定のみ適用（テスト用の簡易実装）
+      locationManager.desiredAccuracy = currentMode.desiredAccuracy
+      locationManager.distanceFilter = currentMode.distanceFilter
+    }
   }
-
-  func applySettingsToLocationManager(_ locationManager: CLLocationManager) {
-    applySettingsCallCount += 1
-    lastAppliedLocationManager = locationManager
-
-    // 基本的な設定のみ適用（テスト用の簡易実装）
-    locationManager.desiredAccuracy = currentMode.desiredAccuracy
-    locationManager.distanceFilter = currentMode.distanceFilter
-  }
-}
 #endif

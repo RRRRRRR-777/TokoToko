@@ -1,6 +1,6 @@
 //
 //  WalkHistoryViewModel.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Claude Code on 2025/07/12.
 //
@@ -167,7 +167,7 @@ class WalkHistoryViewModel: ObservableObject {
   /// - Returns: 削除成功時はtrue、散歩が全て削除された場合や失敗時はfalse
   func removeWalk(withId walkId: UUID) -> Bool {
     guard let walkIndex = walks.firstIndex(where: { $0.id == walkId }) else {
-      return false // 削除対象が見つからない
+      return false  // 削除対象が見つからない
     }
 
     // 散歩を配列から削除
@@ -175,7 +175,7 @@ class WalkHistoryViewModel: ObservableObject {
 
     // 削除後に散歩が残っていない場合
     if walks.isEmpty {
-      return false // 画面を閉じる必要がある
+      return false  // 画面を閉じる必要がある
     }
 
     // 次に表示する散歩のインデックスを決定
@@ -183,7 +183,7 @@ class WalkHistoryViewModel: ObservableObject {
     currentIndex = nextIndex
     currentWalk = walks[nextIndex]
 
-    return true // 削除成功、他の散歩が存在
+    return true  // 削除成功、他の散歩が存在
   }
 
   /// 削除後に表示する次の散歩のインデックスを決定
@@ -206,11 +206,11 @@ class WalkHistoryViewModel: ObservableObject {
       // 現在の散歩が削除された場合、より新しい散歩を優先
       // インデックスが小さいほど新しい散歩
       if currentIndex > 0 {
-        return currentIndex - 1 // より新しい散歩
+        return currentIndex - 1  // より新しい散歩
       } else if currentIndex < walks.count {
-        return currentIndex // 次のアイテム（削除により1つシフトされた）  
+        return currentIndex  // 次のアイテム（削除により1つシフトされた）
       } else {
-        return walks.count - 1 // 最後のアイテム
+        return walks.count - 1  // 最後のアイテム
       }
     } else {
       // 削除されたインデックスが現在より後の場合、現在のインデックスを維持

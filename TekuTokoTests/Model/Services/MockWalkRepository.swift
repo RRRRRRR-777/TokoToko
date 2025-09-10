@@ -1,6 +1,6 @@
 //
 //  MockWalkRepository.swift
-//  TokoTokoTests
+//  TekuTokoTests
 //
 //  Created by bokuyamada on 2025/06/27.
 //

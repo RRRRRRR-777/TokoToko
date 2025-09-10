@@ -1,13 +1,14 @@
 //
 //  WalkListView.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/06/16.
 //
 
+import CoreLocation
 import SwiftUI
 import UIKit
-import CoreLocation
+
 struct WalkListView: View {
   /// 現在選択されているタブのインデックス
   ///
@@ -75,8 +76,10 @@ struct WalkListView: View {
     .accentColor(.black)
     .onAppear {
       // セグメントコントロールの外観設定
-      UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
-      UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.black], for: .selected)
+      UISegmentedControl.appearance().setTitleTextAttributes(
+        [.foregroundColor: UIColor.black], for: .normal)
+      UISegmentedControl.appearance().setTitleTextAttributes(
+        [.foregroundColor: UIColor.black], for: .selected)
       UISegmentedControl.appearance().selectedSegmentTintColor = UIColor(named: "BackgroundColor")
 
       // List背景の透明化
@@ -176,13 +179,14 @@ struct WalkListView: View {
   private var walkHistoryListView: some View {
     List {
       ForEach(Array(walks.enumerated()), id: \.element.id) { index, walk in
-        NavigationLink(destination:
-          WalkHistoryView(
-            walks: walks,
-            initialIndex: index,
-            onWalkDeleted: handleWalkDeletion
-          )
-          .navigationBarBackButtonHidden(false)
+        NavigationLink(
+          destination:
+            WalkHistoryView(
+              walks: walks,
+              initialIndex: index,
+              onWalkDeleted: handleWalkDeletion
+            )
+            .navigationBarBackButtonHidden(false)
         ) {
           WalkRow(walk: walk)
         }
