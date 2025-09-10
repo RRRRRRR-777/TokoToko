@@ -24,11 +24,11 @@ class PolicyService {
   private lazy var firestore: Firestore = {
     WalkRepository.shared.sharedFirestore
   }()
-  // 後方互換: 旧キー(TokoToko*)から新キー(TekuToko*)へ移行
+  // 後方互換: 旧キー(TekuToko*)から新キー(TekuToko*)へ移行
   private let newCacheKey = "TekuTokoPolicyCache"
   private let newCacheExpirationKey = "TekuTokoPolicyCacheExpiration"
-  private let oldCacheKey = "TokoTokoPolicyCache"
-  private let oldCacheExpirationKey = "TokoTokoPolicyCacheExpiration"
+  private let oldCacheKey = "TekuTokoPolicyCache"
+  private let oldCacheExpirationKey = "TekuTokoPolicyCacheExpiration"
   private let cacheExpirationHours: TimeInterval = 24
 
   init(firestore: Firestore? = nil) {
@@ -181,7 +181,7 @@ class PolicyService {
       let encoder = JSONEncoder()
       let data = try encoder.encode(consent)
       let newKey = "TekuTokoConsentCache_\(userID)"
-      let oldKey = "TokoTokoConsentCache_\(userID)"
+      let oldKey = "TekuTokoConsentCache_\(userID)"
       // 新旧両方に書き込み（短期間の移行を想定）
       UserDefaults.standard.set(data, forKey: newKey)
       UserDefaults.standard.set(data, forKey: oldKey)
@@ -198,7 +198,7 @@ class PolicyService {
     #if DEBUG
       // デバッグモードではUserDefaultsから取得
       let newKey = "TekuTokoConsentCache_\(userID)"
-      let oldKey = "TokoTokoConsentCache_\(userID)"
+      let oldKey = "TekuTokoConsentCache_\(userID)"
       guard
         let data = UserDefaults.standard.data(forKey: newKey)
           ?? UserDefaults.standard.data(forKey: oldKey)

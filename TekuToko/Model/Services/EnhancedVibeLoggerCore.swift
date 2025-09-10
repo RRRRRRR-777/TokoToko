@@ -102,7 +102,7 @@ public class EnhancedVibeLogger {
     // 新パスに移行しつつ、旧パスも後方互換として維持
     let home = NSHomeDirectory()
     let newPath = home + "/RRRRRRR777/TekuToko/logs"
-    let oldPath = home + "/RRRRRRR777/TokoToko/logs"
+    let oldPath = home + "/RRRRRRR777/TekuToko/logs"
     // 旧パスが既に存在し、新パスが未作成なら旧パスを優先（テスト互換のため）
     if FileManager.default.fileExists(atPath: oldPath),
       !FileManager.default.fileExists(atPath: newPath)
