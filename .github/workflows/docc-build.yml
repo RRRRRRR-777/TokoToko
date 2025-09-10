@@ -152,7 +152,7 @@ jobs:
           xcrun docc process-archive transform-for-static-hosting \
             "$DOCC_ARCHIVE" \
             --output-path ./docs \
-            --hosting-base-path TokoToko
+            --hosting-base-path TekuToko
 
           echo "=== Verifying static site generation ==="
           if [ -f "./docs/index.html" ]; then
@@ -168,8 +168,8 @@ jobs:
         run: |
           set -e
           cd docs
-          sed -i '' 's|"/TokoToko/"|"./"|g' index.html
-          sed -i '' 's|var baseUrl = "/TokoToko/"|var baseUrl = "./"|g' index.html
+          sed -i '' 's|"/TekuToko/"|"./"|g' index.html
+          sed -i '' 's|var baseUrl = "/TekuToko/"|var baseUrl = "./"|g' index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

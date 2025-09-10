@@ -97,7 +97,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TekuToko
         DOCC_EXTRACT_OBJC_INFO_FOR_SWIFT_SYMBOLS: YES
-        DOCC_HOSTING_BASE_PATH: TokoToko
+        DOCC_HOSTING_BASE_PATH: TekuToko
     info:
       path: Info.plist
       properties:
