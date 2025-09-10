@@ -1,6 +1,6 @@
 //
 //  EnhancedVibeLogger.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/06/03.
 //
@@ -16,7 +16,7 @@
 /// - ``EnhancedVibeLoggerCore``: 基本ログ機能とコア実装
 /// - ``EnhancedVibeLoggerBatch``: バッチ処理と出力管理
 /// - ``EnhancedVibeLoggerPerformance``: パフォーマンス計測機能
-/// - ``EnhancedVibeLoggerSpecialized``: TokoToko特殊化ログ機能
+/// - ``EnhancedVibeLoggerSpecialized``: TekuToko特殊化ログ機能
 ///
 /// ## 使用方法
 /// ```swift
@@ -30,6 +30,6 @@
 // このファイルは分割されたEnhancedVibeLoggerモジュールの統合ポイントとして機能します
 // 実際の実装は以下のファイルに分割されています：
 // - EnhancedVibeLoggerCore.swift
-// - EnhancedVibeLoggerBatch.swift 
+// - EnhancedVibeLoggerBatch.swift
 // - EnhancedVibeLoggerPerformance.swift
 // - EnhancedVibeLoggerSpecialized.swift

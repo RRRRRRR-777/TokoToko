@@ -1,8 +1,8 @@
-import Foundation
 import CoreLocation
+import Foundation
 import UIKit
 
-// MARK: - TokoToko Specialized Analyzers
+// MARK: - TekuToko Specialized Analyzers
 
 // MARK: - Location Anomaly Detection
 
@@ -39,7 +39,7 @@ public enum LocationAnomalyDetector {
 
     // デバッグ: バッテリーレベルをログ出力
     #if DEBUG
-    print("🔋 [DEBUG] Current batteryLevel: \(batteryLevel) (シミュレーターでは通常-1.0または0.0)")
+      print("🔋 [DEBUG] Current batteryLevel: \(batteryLevel) (シミュレーターでは通常-1.0または0.0)")
     #endif
 
     // バッテリー消費の異常検知

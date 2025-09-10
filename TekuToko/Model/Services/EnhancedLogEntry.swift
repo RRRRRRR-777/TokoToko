@@ -4,7 +4,7 @@ import Foundation
 
 /// 拡張ログエントリの構造体
 ///
-/// `EnhancedVibeLogEntry`はTokoTokoアプリケーション専用に設計された
+/// `EnhancedVibeLogEntry`はTekuTokoアプリケーション専用に設計された
 /// 包括的なログエントリ構造体です。基本的なログ情報に加えて、
 /// AI協働、パフォーマンス分析、バグ排除のための詳細情報を含みます。
 ///

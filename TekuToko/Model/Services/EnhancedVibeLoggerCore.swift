@@ -1,12 +1,12 @@
 //
 //  EnhancedVibeLoggerCore.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by bokuyamada on 2025/08/30.
 //
 
-import Foundation
 import Darwin
+import Foundation
 
 // MARK: - Enhanced Vibe Logger Core Implementation
 
@@ -48,7 +48,7 @@ public class EnhancedVibeLogger {
   ///
   /// ログ出力の順序性を保証し、マルチスレッド環境でのデータ競合を防止します。
   /// QoS.utilityで実行され、メインスレッドをブロックしません。
-  internal let logQueue = DispatchQueue(label: "com.tokotoko.logger", qos: .utility)
+  internal let logQueue = DispatchQueue(label: "com.tekutoko.logger", qos: .utility)
 
   /// 現在のログレベル設定
   ///
@@ -105,7 +105,8 @@ public class EnhancedVibeLogger {
     let oldPath = home + "/RRRRRRR777/TokoToko/logs"
     // 旧パスが既に存在し、新パスが未作成なら旧パスを優先（テスト互換のため）
     if FileManager.default.fileExists(atPath: oldPath),
-       !FileManager.default.fileExists(atPath: newPath) {
+      !FileManager.default.fileExists(atPath: newPath)
+    {
       self.logDirectoryPath = oldPath
     } else {
       self.logDirectoryPath = newPath
@@ -121,30 +122,30 @@ public class EnhancedVibeLogger {
 
   // MARK: - Testing Support
   #if DEBUG
-  public func setLogLevel(_ level: LogLevel) {
-    logLevel = level
-  }
+    public func setLogLevel(_ level: LogLevel) {
+      logLevel = level
+    }
 
-  public func getLogLevel() -> LogLevel {
-    logLevel
-  }
+    public func getLogLevel() -> LogLevel {
+      logLevel
+    }
 
-  public func setFileOutput(_ enabled: Bool) {
-    enableFileOutput = enabled
-  }
+    public func setFileOutput(_ enabled: Bool) {
+      enableFileOutput = enabled
+    }
 
-  public func getFileOutput() -> Bool {
-    enableFileOutput
-  }
+    public func getFileOutput() -> Bool {
+      enableFileOutput
+    }
 
-  public func resetToDefaultSettings() {
-    logLevel = .debug
-    enableFileOutput = true
-  }
+    public func resetToDefaultSettings() {
+      logLevel = .debug
+      enableFileOutput = true
+    }
 
-  public func getLogDirectoryPath() -> String {
-    logDirectoryPath
-  }
+    public func getLogDirectoryPath() -> String {
+      logDirectoryPath
+    }
   #endif
 
   // MARK: - Basic Logging Methods
@@ -344,7 +345,7 @@ public class EnhancedVibeLogger {
       message: "エラー発生: \(error.localizedDescription)",
       context: [
         "error_type": String(describing: type(of: error)),
-        "error_description": error.localizedDescription
+        "error_description": error.localizedDescription,
       ],
       source: SourceInfo(fileName: file, functionName: function, lineNumber: line),
       humanNote: humanNote,
