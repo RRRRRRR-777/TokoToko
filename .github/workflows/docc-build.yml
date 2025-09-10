@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: DerivedData
-          key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-xcode-
 
@@ -79,11 +79,11 @@ jobs:
           xcodegen generate
 
           echo "=== Verifying project generation ==="
-          if [ -f "TokoToko.xcodeproj/project.pbxproj" ]; then
-            echo "✅ TokoToko.xcodeproj generated successfully"
-            ls -la TokoToko.xcodeproj/
+          if [ -f "TekuToko.xcodeproj/project.pbxproj" ]; then
+            echo "✅ TekuToko.xcodeproj generated successfully"
+            ls -la TekuToko.xcodeproj/
           else
-            echo "❌ TokoToko.xcodeproj generation failed"
+            echo "❌ TekuToko.xcodeproj generation failed"
             exit 1
           fi
 
@@ -91,7 +91,7 @@ jobs:
         run: |
           set -ex
           echo "=== Checking Package.resolved compatibility ==="
-          PACKAGE_RESOLVED="TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+          PACKAGE_RESOLVED="TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
           if [ -f "$PACKAGE_RESOLVED" ]; then
             echo "Package.resolved found, checking version compatibility..."
             if grep -q '"version" : 3' "$PACKAGE_RESOLVED" 2>/dev/null; then
@@ -118,7 +118,7 @@ jobs:
           xcodebuild -resolvePackageDependencies -scheme TekuToko
 
           echo "=== Package resolution completed ==="
-          if [ -f "TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
+          if [ -f "TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
             echo "✅ Package.resolved generated"
           else
             echo "⚠️  Package.resolved not found, continuing..."

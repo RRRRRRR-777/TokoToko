@@ -12,7 +12,7 @@
 	"argv": [
 		"/opt/homebrew/bin/xcode-build-server"
 	],
-	"workspace": "/Users/bokuyamada/RRRRRRR777/TokoToko/TokoToko.xcodeproj",
+        "workspace": "/Users/bokuyamada/RRRRRRR777/TokoToko/TekuToko.xcodeproj",
 	"build_root": "/Users/bokuyamada/Library/Developer/Xcode/DerivedData/TokoToko-coausqmjrcbjwpdsbcsxmxzespkv",
         "scheme": "TekuToko",
 	"kind": "xcode"
