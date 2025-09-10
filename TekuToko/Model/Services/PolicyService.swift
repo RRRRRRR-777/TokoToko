@@ -24,8 +24,11 @@ class PolicyService {
     private lazy var firestore: Firestore = {
         WalkRepository.shared.sharedFirestore
     }()
-    private let cacheKey = "TokoTokoPolicyCache"
-    private let cacheExpirationKey = "TokoTokoPolicyCacheExpiration"
+    // 後方互換: 旧キー(TokoToko*)から新キー(TekuToko*)へ移行
+    private let newCacheKey = "TekuTokoPolicyCache"
+    private let newCacheExpirationKey = "TekuTokoPolicyCacheExpiration"
+    private let oldCacheKey = "TokoTokoPolicyCache"
+    private let oldCacheExpirationKey = "TokoTokoPolicyCacheExpiration"
     private let cacheExpirationHours: TimeInterval = 24
 
     init(firestore: Firestore? = nil) {
@@ -121,18 +124,19 @@ class PolicyService {
         let encoder = JSONEncoder()
         let data = try encoder.encode(policy)
 
-        UserDefaults.standard.set(data, forKey: cacheKey)
-        UserDefaults.standard.set(Date().addingTimeInterval(cacheExpirationHours * 3600), forKey: cacheExpirationKey)
+        UserDefaults.standard.set(data, forKey: newCacheKey)
+        UserDefaults.standard.set(Date().addingTimeInterval(cacheExpirationHours * 3600), forKey: newCacheExpirationKey)
     }
 
     func getCachedPolicy() async throws -> Policy? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey) else {
-            return nil
-        }
+        // 新キー優先、なければ旧キーをフォールバックで参照
+        let data = UserDefaults.standard.data(forKey: newCacheKey)
+            ?? UserDefaults.standard.data(forKey: oldCacheKey)
+        guard let data else { return nil }
 
-        guard let expirationDate = UserDefaults.standard.object(forKey: cacheExpirationKey) as? Date else {
-            return nil
-        }
+        let expirationDate = (UserDefaults.standard.object(forKey: newCacheExpirationKey) as? Date)
+            ?? (UserDefaults.standard.object(forKey: oldCacheExpirationKey) as? Date)
+        guard let expirationDate else { return nil }
 
         guard expirationDate > Date() else {
             return nil
@@ -148,8 +152,10 @@ class PolicyService {
     }
 
     func clearCache() async throws {
-        UserDefaults.standard.removeObject(forKey: cacheKey)
-        UserDefaults.standard.removeObject(forKey: cacheExpirationKey)
+        UserDefaults.standard.removeObject(forKey: newCacheKey)
+        UserDefaults.standard.removeObject(forKey: newCacheExpirationKey)
+        UserDefaults.standard.removeObject(forKey: oldCacheKey)
+        UserDefaults.standard.removeObject(forKey: oldCacheExpirationKey)
     }
 
     // MARK: - 同意記録機能
@@ -168,8 +174,11 @@ class PolicyService {
         #if DEBUG
         let encoder = JSONEncoder()
         let data = try encoder.encode(consent)
-        let key = "TokoTokoConsentCache_\(userID)"
-        UserDefaults.standard.set(data, forKey: key)
+        let newKey = "TekuTokoConsentCache_\(userID)"
+        let oldKey = "TokoTokoConsentCache_\(userID)"
+        // 新旧両方に書き込み（短期間の移行を想定）
+        UserDefaults.standard.set(data, forKey: newKey)
+        UserDefaults.standard.set(data, forKey: oldKey)
         #else
         try await firestore
             .collection("users")
@@ -182,10 +191,10 @@ class PolicyService {
     func getLatestConsent(userID: String) async throws -> Consent? {
         #if DEBUG
         // デバッグモードではUserDefaultsから取得
-        let key = "TokoTokoConsentCache_\(userID)"
-        guard let data = UserDefaults.standard.data(forKey: key) else {
-            return nil
-        }
+        let newKey = "TekuTokoConsentCache_\(userID)"
+        let oldKey = "TokoTokoConsentCache_\(userID)"
+        guard let data = UserDefaults.standard.data(forKey: newKey)
+                ?? UserDefaults.standard.data(forKey: oldKey) else { return nil }
         let decoder = JSONDecoder()
         return try decoder.decode(Consent.self, from: data)
         #else

@@ -253,7 +253,11 @@ class EnhancedVibeLoggerTests: XCTestCase {
     let logDirectoryPath = logger.getLogDirectoryPath()
 
     // Then
-    XCTAssertTrue(logDirectoryPath.contains("/RRRRRRR777/TokoToko/logs"))
+    // 旧/新いずれのログディレクトリでも許容（後方互換移行中）
+    XCTAssertTrue(
+      logDirectoryPath.contains("/RRRRRRR777/TokoToko/logs") ||
+      logDirectoryPath.contains("/RRRRRRR777/TekuToko/logs")
+    )
   }
   #endif
 

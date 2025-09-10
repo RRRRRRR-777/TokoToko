@@ -137,10 +137,10 @@ public struct SourceInfo: Codable {
   ///   - fileName: ソースファイルのフルパス（自動取得）
   ///   - functionName: 関数名（自動取得）
   ///   - lineNumber: 行番号（自動取得）
-  ///   - moduleName: モジュール名（デフォルト: "TokoToko"）
+  ///   - moduleName: モジュール名（デフォルト: "TekuToko"）
   init(
     fileName: String = #file, functionName: String = #function, lineNumber: Int = #line,
-    moduleName: String = "TokoToko"
+    moduleName: String = "TekuToko"
   ) {
     self.fileName = String(fileName.split(separator: "/").last ?? "Unknown")
     self.functionName = functionName

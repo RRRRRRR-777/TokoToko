@@ -99,7 +99,17 @@ public class EnhancedVibeLogger {
       self.enableFileOutput = false
     #endif
 
-    self.logDirectoryPath = NSHomeDirectory() + "/RRRRRRR777/TokoToko/logs"
+    // 新パスに移行しつつ、旧パスも後方互換として維持
+    let home = NSHomeDirectory()
+    let newPath = home + "/RRRRRRR777/TekuToko/logs"
+    let oldPath = home + "/RRRRRRR777/TokoToko/logs"
+    // 旧パスが既に存在し、新パスが未作成なら旧パスを優先（テスト互換のため）
+    if FileManager.default.fileExists(atPath: oldPath),
+       !FileManager.default.fileExists(atPath: newPath) {
+      self.logDirectoryPath = oldPath
+    } else {
+      self.logDirectoryPath = newPath
+    }
 
     // ログディレクトリの作成
     try? FileManager.default.createDirectory(
