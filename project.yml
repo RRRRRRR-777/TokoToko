@@ -50,15 +50,15 @@ targets:
       iOS: 15.0
     supportedDestinations: [iOS]
     sources:
-      - path: TokoToko
+      - path: TekuToko
         excludes:
           - "Preview Content"
     resources:
-      - path: TokoToko/Preview Content
-      - path: TokoToko/Assets.xcassets
-      - path: TokoToko/GoogleService-Info.plist
+      - path: TekuToko/Preview Content
+      - path: TekuToko/Assets.xcassets
+      - path: TekuToko/GoogleService-Info.plist
       - path: Documentation.docc
-      - path: TokoToko/Resources
+      - path: TekuToko/Resources
     templates: [CommonSettings]
     dependencies:
       - package: Firebase

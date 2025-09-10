@@ -9,7 +9,7 @@ on:
       - 'dev-*'  # 開発ブランチ
       - 'main'   # メインブランチ
     paths:
-      - 'TokoToko/**/*.swift'
+      - 'TekuToko/**/*.swift'
       - '.github/workflows/docc-build.yml'
       - 'project.yml'
 

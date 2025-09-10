@@ -20,12 +20,12 @@ if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
 fi
 
 # Create GoogleService-Info.plist from environment variable
-echo "$GOOGLE_SERVICE_INFO_PLIST" > TokoToko/GoogleService-Info.plist
+echo "$GOOGLE_SERVICE_INFO_PLIST" > TekuToko/GoogleService-Info.plist
 
 # Verify the file was created
-if [ -f TokoToko/GoogleService-Info.plist ]; then
+if [ -f TekuToko/GoogleService-Info.plist ]; then
     echo "✅ Successfully generated GoogleService-Info.plist"
-    echo "📋 GoogleService-Info.plist file size: $(wc -c < TokoToko/GoogleService-Info.plist) bytes"
+    echo "📋 GoogleService-Info.plist file size: $(wc -c < TekuToko/GoogleService-Info.plist) bytes"
 else
     echo "❌ Error: Failed to generate GoogleService-Info.plist"
     exit 1
