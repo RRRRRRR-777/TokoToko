@@ -1,9 +1,9 @@
 name: DocC Build and Deploy
 
 on:
-  workflow_dispatch:  # 手動実行のみ（コスト効率重視）
+  workflow_dispatch:  # 手動実行を許可
 
-  開発ブランチでの自動実行
+  # 開発ブランチでの自動実行
   push:
     branches: 
       - 'dev-*'  # 開発ブランチ
