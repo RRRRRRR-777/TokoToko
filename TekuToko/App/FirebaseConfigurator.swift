@@ -1,12 +1,12 @@
 //
 //  FirebaseConfigurator.swift
-//  TokoToko
+//  TekuToko
 //
 //  Created by Assistant on 2025/09/09.
 //
 
-import Foundation
 import FirebaseCore
+import Foundation
 
 enum FirebaseConfigurator {
   /// GoogleService-Info.plist の内容が有効な場合のみ Firebase を初期化する
@@ -17,7 +17,8 @@ enum FirebaseConfigurator {
     if FirebaseApp.app() != nil { return true }
 
     guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
-          let options = FirebaseOptions(contentsOfFile: path) else {
+      let options = FirebaseOptions(contentsOfFile: path)
+    else {
       return false
     }
 
