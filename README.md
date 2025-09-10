@@ -5,7 +5,7 @@
 
 
 ## ドキュメント
-### 📚 [**APIドキュメント**](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/)
+### 📚 [**APIドキュメント**](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/)
 > **全SwiftファイルのAPI仕様書をWebサイト形式で確認できます**  
 > Apple公式DocCによる美しいドキュメントサイト
 
@@ -13,7 +13,7 @@
 **詳細情報**:
 * 全Swiftファイルの日本語DocCコメントを自動生成
 * GitHub Actionsで自動更新（Swift 6 + Xcode 16対応）
-* 主要コンポーネント: [Walk](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/walk/), [WalkManager](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/walkmanager/), [LocationManager](https://rrrrrrr-777.github.io/TokoToko/documentation/tokotoko/locationmanager/)
+* 主要コンポーネント: [Walk](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/walk/), [WalkManager](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/walkmanager/), [LocationManager](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/locationmanager/)
 
 ### 📖 技術ドキュメント
 * **[TokoTokoDocs](https://github.com/RRRRRRR-777/TokoTokoDocs)** - 設計・仕様・議事録などの技術ドキュメント管理リポジトリ

@@ -8,12 +8,12 @@
 import Foundation
 import CoreLocation
 
-// MARK: - TokoToko Specialized Logging Extension
+// MARK: - TekuToko Specialized Logging Extension
 
-/// EnhancedVibeLoggerのTokoToko特殊化ログ機能拡張
+/// EnhancedVibeLoggerのTekuToko特殊化ログ機能拡張
 extension EnhancedVibeLogger {
 
-  // MARK: - TokoToko Specialized Logging Methods
+  // MARK: - TekuToko Specialized Logging Methods
 
   /// 位置情報バグ予防ログ
   ///

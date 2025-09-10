@@ -127,7 +127,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoTests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
@@ -147,7 +147,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"

@@ -17,7 +17,7 @@ import UIKit
 /// ## Overview
 ///
 /// 表示される情報：
-/// - **アプリ名**: TokoToko - おさんぽSNS
+/// - **アプリ名**: てくとこ - おさんぽSNS
 /// - **バージョン情報**: CFBundleShortVersionString
 /// - **ビルド番号**: CFBundleVersion
 /// - **開発元**: 個人開発者情報
@@ -49,7 +49,7 @@ struct AppInfoView: View {
   private var appName: String {
     let displayName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
     let bundleName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
-    return displayName ?? bundleName ?? "TokoToko"
+    return displayName ?? bundleName ?? "てくとこ"
   }
 
   /// 現在の年を取得
