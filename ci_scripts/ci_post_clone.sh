@@ -70,13 +70,13 @@ echo "⚙️  Generating Xcode project using XcodeGen..."
 xcodegen generate
 
 # Verify the project was generated
-if [ ! -f TokoToko.xcodeproj/project.pbxproj ]; then
-    echo "❌ Error: Failed to generate TokoToko.xcodeproj"
+if [ ! -f TekuToko.xcodeproj/project.pbxproj ]; then
+    echo "❌ Error: Failed to generate TekuToko.xcodeproj"
     exit 1
 fi
 
-echo "✅ Successfully generated TokoToko.xcodeproj"
+echo "✅ Successfully generated TekuToko.xcodeproj"
 echo "📋 Project contents:"
-ls -la TokoToko.xcodeproj/
+ls -la TekuToko.xcodeproj/
 
 echo "🎉 Pre-action script completed successfully!"
