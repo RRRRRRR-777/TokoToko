@@ -1,4 +1,4 @@
-name: TokoToko
+name: TekuToko
 options:
   bundleIdPrefix: com.RRRRRRR777
   deploymentTarget:
@@ -43,22 +43,22 @@ packages:
     url: https://github.com/jpsim/Yams.git
     from: 5.1.0
 targets:
-  TokoToko:
+  TekuToko:
     type: application
     platform: iOS
     deploymentTarget:
       iOS: 15.0
     supportedDestinations: [iOS]
     sources:
-      - path: TokoToko
+      - path: TekuToko
         excludes:
           - "Preview Content"
     resources:
-      - path: TokoToko/Preview Content
-      - path: TokoToko/Assets.xcassets
-      - path: TokoToko/GoogleService-Info.plist
+      - path: TekuToko/Preview Content
+      - path: TekuToko/Assets.xcassets
+      - path: TekuToko/GoogleService-Info.plist
       - path: Documentation.docc
-      - path: TokoToko/Resources
+      - path: TekuToko/Resources
     templates: [CommonSettings]
     dependencies:
       - package: Firebase
@@ -77,9 +77,10 @@ targets:
         product: Yams
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoToko
-        INFOPLIST_KEY_CFBundleDisplayName: "とことこ"
-        INFOPLIST_KEY_CFBundleName: "とことこ - お散歩SNS"
+        PRODUCT_MODULE_NAME: TekuToko
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuToko
+        INFOPLIST_KEY_CFBundleDisplayName: "てくとこ"
+        INFOPLIST_KEY_CFBundleName: "てくとこ - お散歩SNS"
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
@@ -94,9 +95,9 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
-        DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TokoToko
+        DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TekuToko
         DOCC_EXTRACT_OBJC_INFO_FOR_SWIFT_SYMBOLS: YES
-        DOCC_HOSTING_BASE_PATH: TokoToko
+        DOCC_HOSTING_BASE_PATH: TekuToko
     info:
       path: Info.plist
       properties:
@@ -109,43 +110,46 @@ targets:
         ITSAppUsesNonExemptEncryption: false
     scheme:
       testTargets:
-        - TokoTokoTests
-        - TokoTokoUITests
+        - TekuTokoTests
+        - TekuTokoUITests
 
-  TokoTokoTests:
+  TekuTokoTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget:
       iOS: 15.0
     supportedDestinations: [iOS]
     sources:
-      - path: TokoTokoTests
+      - path: TekuTokoTests
+    resources:
+      - path: project.yml
+        optional: false
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoTests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
     dependencies:
-      - target: TokoToko
+      - target: TekuToko
       - package: ViewInspector
         product: ViewInspector
 
-  TokoTokoUITests:
+  TekuTokoUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget:
       iOS: 15.0
     supportedDestinations: [iOS]
     sources:
-      - path: TokoTokoUITests
+      - path: TekuTokoUITests
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
     dependencies:
-      - target: TokoToko
+      - target: TekuToko

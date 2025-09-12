@@ -1,15 +1,15 @@
 name: DocC Build and Deploy
 
 on:
-  workflow_dispatch:  # 手動実行のみ（コスト効率重視）
+  workflow_dispatch:  # 手動実行を許可
 
-  開発ブランチでの自動実行
+  # 開発ブランチでの自動実行
   push:
     branches: 
       - 'dev-*'  # 開発ブランチ
       - 'main'   # メインブランチ
     paths:
-      - 'TokoToko/**/*.swift'
+      - 'TekuToko/**/*.swift'
       - '.github/workflows/docc-build.yml'
       - 'project.yml'
 
@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: DerivedData
-          key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-xcode-
 
@@ -79,11 +79,11 @@ jobs:
           xcodegen generate
 
           echo "=== Verifying project generation ==="
-          if [ -f "TokoToko.xcodeproj/project.pbxproj" ]; then
-            echo "✅ TokoToko.xcodeproj generated successfully"
-            ls -la TokoToko.xcodeproj/
+          if [ -f "TekuToko.xcodeproj/project.pbxproj" ]; then
+            echo "✅ TekuToko.xcodeproj generated successfully"
+            ls -la TekuToko.xcodeproj/
           else
-            echo "❌ TokoToko.xcodeproj generation failed"
+            echo "❌ TekuToko.xcodeproj generation failed"
             exit 1
           fi
 
@@ -91,7 +91,7 @@ jobs:
         run: |
           set -ex
           echo "=== Checking Package.resolved compatibility ==="
-          PACKAGE_RESOLVED="TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+          PACKAGE_RESOLVED="TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
           if [ -f "$PACKAGE_RESOLVED" ]; then
             echo "Package.resolved found, checking version compatibility..."
             if grep -q '"version" : 3' "$PACKAGE_RESOLVED" 2>/dev/null; then
@@ -115,10 +115,10 @@ jobs:
         run: |
           set -ex
           echo "=== Resolving SwiftPM dependencies ==="
-          xcodebuild -resolvePackageDependencies -scheme TokoToko
+          xcodebuild -resolvePackageDependencies -scheme TekuToko
 
           echo "=== Package resolution completed ==="
-          if [ -f "TokoToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
+          if [ -f "TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
             echo "✅ Package.resolved generated"
           else
             echo "⚠️  Package.resolved not found, continuing..."
@@ -128,12 +128,12 @@ jobs:
         run: |
           set -ex
           echo "=== Building DocC documentation ==="
-          xcodebuild docbuild -scheme TokoToko \
+          xcodebuild docbuild -scheme TekuToko \
             -sdk iphonesimulator \
             -derivedDataPath ./DerivedData
 
           echo "=== Verifying DocC archive generation ==="
-          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
+          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TekuToko.doccarchive"
           if [ -d "$DOCC_ARCHIVE" ]; then
             echo "✅ DocC archive generated at: $DOCC_ARCHIVE"
             ls -la "$DOCC_ARCHIVE"
@@ -148,11 +148,11 @@ jobs:
         run: |
           set -ex
           echo "=== Converting DocC archive to static site ==="
-          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TokoToko.doccarchive"
+          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TekuToko.doccarchive"
           xcrun docc process-archive transform-for-static-hosting \
             "$DOCC_ARCHIVE" \
             --output-path ./docs \
-            --hosting-base-path TokoToko
+            --hosting-base-path TekuToko
 
           echo "=== Verifying static site generation ==="
           if [ -f "./docs/index.html" ]; then
@@ -168,8 +168,8 @@ jobs:
         run: |
           set -e
           cd docs
-          sed -i '' 's|"/TokoToko/"|"./"|g' index.html
-          sed -i '' 's|var baseUrl = "/TokoToko/"|var baseUrl = "./"|g' index.html
+          sed -i '' 's|"/TekuToko/"|"./"|g' index.html
+          sed -i '' 's|var baseUrl = "/TekuToko/"|var baseUrl = "./"|g' index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
