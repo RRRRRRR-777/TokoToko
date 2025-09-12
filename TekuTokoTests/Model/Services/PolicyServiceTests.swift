@@ -183,8 +183,9 @@ final class PolicyServiceTests: XCTestCase {
     let policyVersion = "1.0.0"
     let userID = "testUser123"
 
-    // 確実にキャッシュをクリア
+    // 確実にキャッシュをクリア（新旧両方のキー）
     UserDefaults.standard.removeObject(forKey: "TekuTokoConsentCache_\(userID)")
+    UserDefaults.standard.removeObject(forKey: "TokoTokoConsentCache_\(userID)")
 
     // When
     let hasValidConsent = try await sut.hasValidConsent(
