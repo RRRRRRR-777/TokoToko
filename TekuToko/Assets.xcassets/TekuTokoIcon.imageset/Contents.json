@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "TekuTokoIcon.png",
+      "filename" : "teku-toko 1.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "TekuTokoIcon_2.png",
+      "filename" : "teku-toko.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "TekuTokoIcon_3.png",
+      "filename" : "teku-toko 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
