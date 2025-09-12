@@ -22,7 +22,7 @@ Claude は CLAUDE.md を毎回読み込み、以下のルールに従って動�
 
 ### ディレクトリ構造
 ```
-TokoToko/
+TekuToko/
 ├── Model/
 │   ├── Entities/          # データ構造
 │   ├── Services/          # ビジネスロジック・サービス層
@@ -33,7 +33,7 @@ TokoToko/
 │   └── Shared/            # 再利用可能なコンポーネント
 ├── Assets.xcassets/       # アプリアイコン、カラーパレット
 ├── Preview Content/       # SwiftUIプレビュー用のアセット
-└── App/                   # エントリーポイント（TokoTokoApp.swift）
+└── App/                   # エントリーポイント（TekuTokoApp.swift）
 ```
 
 ### コアコンポーネント
@@ -58,7 +58,7 @@ TokoToko/
 #### システム・ユーティリティ
 - **EnhancedVibeLogger**: 拡張ログシステム
 - **AnomalyDetection**: 異常検知システム
-- **TokoTokoAnalyzers**: アプリケーション分析ツール
+- **TekuTokoAnalyzers**: アプリケーション分析ツール
 - **PerformanceMetrics**: パフォーマンス計測
 - **FirebaseStorageConfig**: Firebaseストレージ設定
 
@@ -130,7 +130,7 @@ TokoToko/
 
 ## プロダクト概要
 
-TokoTokoは、ユーザーが散歩を記録し、友人や家族と散歩体験を共有できるiOS散歩・SNSアプリ（「とことこ - おさんぽSNS」）です。「散歩」×「記録」×「共有」を組み合わせ、日常の中で見つけた小さな発見を散歩を通じて共有することをコンセプトとしています。
+てくとこは、ユーザーが散歩を記録し、友人や家族と散歩体験を共有できるiOS散歩・SNSアプリ（「てくとこ - おさんぽSNS」）です。「散歩」×「記録」×「共有」を組み合わせ、日常の中で見つけた小さな発見を散歩を通じて共有することをコンセプトとしています。
 
 ### 主要機能（初期リリース）
 - **散歩記録**: ボタンタップで開始・停止、バックグラウンド位置追跡
@@ -264,8 +264,8 @@ TokoTokoは、ユーザーが散歩を記録し、友人や家族と散歩体験
 ## 品質管理
 
 ### テスト種類と配置
-- **単体テスト**: `TokoTokoTests/` - ビジネスロジック、データモデル、サービス層
-- **UIテスト**: `TokoTokoUITests/` - 画面遷移、ユーザーインタラクション
+- **単体テスト**: `TekuTokoTests/` - ビジネスロジック、データモデル、サービス層
+- **UIテスト**: `TekuTokoUITests/` - 画面遷移、ユーザーインタラクション
 - **統合テスト**: Firebase連携、位置情報サービス等の外部システム連携
 
 ### テストツール
@@ -276,13 +276,13 @@ TokoTokoは、ユーザーが散歩を記録し、友人や家族と散歩体験
 ### テスト実行コマンド
 ```bash
 # 全体テスト実行
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+xcodebuild test -project TekuToko.xcodeproj -scheme TekuToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
 
 # 特定テストクラス実行（推奨）
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:TokoTokoTests/[TestClassName]
+xcodebuild test -project TekuToko.xcodeproj -scheme TekuToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:TekuTokoTests/[TestClassName]
 
 # UIテスト実行
-xcodebuild test -project TokoToko.xcodeproj -scheme TokoToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:TokoTokoUITests
+xcodebuild test -project TekuToko.xcodeproj -scheme TekuToko -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:TekuTokoUITests
 ```
 
 ### リンティングとフォーマッティング
@@ -361,7 +361,7 @@ xcodegen
 
 ### 新規Firebaseプロジェクト作成タスク
 * Firebase DatabaseとAuthentication連携の初期セットアップを進める
-* Firebase Project ID: TokoToko-iOS
+* Firebase Project ID: TekuToko-iOS
 * プロジェクトの初期セットアップを行う
 
 ## AI協業システム
@@ -400,7 +400,7 @@ Claude は **Gemini CLI** を随時呼び出しながら、複数ターンにわ
    - ユーザーからの要求に対する処理が完了した時
    - 問題解決や設計決定が完了した時
 
-2. **記録場所**: `~/RRRRRRR777/TokoTokoDocs/AIAgentLogs/` 配下
+2. **記録場所**: `~/RRRRRRR777/TekuTokoDocs/AIAgentLogs/` 配下
    - ディレクトリが存在しない場合は作成する
    - ファイル名: `[MMDD]_[成果物概要20文字以内].md`
 
@@ -467,4 +467,3 @@ Claude は **Gemini CLI** を随時呼び出しながら、複数ターンにわ
 - Firebase（Analytics, Auth, Firestore, Core）
 - GoogleSignIn
 - ViewInspector（テスト用）
-
