@@ -57,18 +57,42 @@ class AuthManager: ObservableObject {
   private let testingHelper = UITestingHelper.shared
 
   init() {
-    // UIテスト、またはFirebase未構成の場合は外部依存を避ける
-    if testingHelper.isUITesting || FirebaseApp.app() == nil {
-      // モックログイン状態を設定
-      isLoggedIn = testingHelper.isUITesting ? testingHelper.isMockLoggedIn : false
-      isInitializing = false
-    } else {
-      // 通常の動作: Firebase認証状態の変更を監視
-      authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-        DispatchQueue.main.async {
-          self?.isLoggedIn = user != nil
-          self?.isInitializing = false
-        }
+    configureAuthentication()
+  }
+
+  /// 認証状態の初期設定を行う
+  ///
+  /// UIテストモード時はモック状態を設定し、通常モード時はFirebase認証リスナーを設定します。
+  /// 早期リターンパターンにより条件分岐を簡潔化し、可読性を向上させています。
+  private func configureAuthentication() {
+    // UIテストモードまたはFirebase未構成の場合は外部依存を避ける
+    guard !testingHelper.isUITesting && FirebaseApp.app() != nil else {
+      setupMockAuthState()
+      return
+    }
+    
+    // 通常の動作: Firebase認証状態リスナーを設定
+    setupFirebaseAuthListener()
+  }
+
+  /// モック認証状態を設定する
+  ///
+  /// UIテスト実行時やFirebase未構成時に使用する認証状態設定です。
+  /// テストの安定性確保と外部依存関係の排除を目的としています。
+  private func setupMockAuthState() {
+    isLoggedIn = testingHelper.isUITesting ? testingHelper.isMockLoggedIn : false
+    isInitializing = false
+  }
+
+  /// Firebase認証リスナーを設定する
+  ///
+  /// Firebase Authの認証状態変更を監視し、アプリ全体の認証状態を更新します。
+  /// メモリリークを防ぐため、weak self参照を使用しています。
+  private func setupFirebaseAuthListener() {
+    authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+      DispatchQueue.main.async {
+        self?.isLoggedIn = user != nil
+        self?.isInitializing = false
       }
     }
   }
