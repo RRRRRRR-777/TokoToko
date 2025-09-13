@@ -331,35 +331,48 @@ struct WalkHistoryView: View {
       Spacer()
       HStack {
         Spacer()
-        NavigationLink(
-          destination:
-            WalkListView(selectedTab: 1)
-            .navigationBarBackButtonHidden(false)
-        ) {
-          Image(systemName: "person.2.fill")
-            .font(.title)
-            .frame(width: 60, height: 60)
-            .background(
-              LinearGradient(
-                gradient: Gradient(colors: [
-                  Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
-                  Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
-                ]),
-                startPoint: .leading,
-                endPoint: .trailing
-              )
-            )
-            .foregroundColor(.white)
-            .clipShape(Circle())
-            .shadow(
-              color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4),
-              radius: 8, x: 0, y: 4
-            )
-        }
-        .accessibilityIdentifier("フレンドの履歴を表示")
-        .padding(.trailing, 20)
+        friendHistoryNavigationLink
       }
     }
+  }
+
+  /// フレンド履歴表示用のナビゲーションリンク
+  private var friendHistoryNavigationLink: some View {
+    NavigationLink(
+      destination:
+        WalkListView(selectedTab: 1)
+        .navigationBarBackButtonHidden(false)
+    ) {
+      friendHistoryButtonIcon
+    }
+    .accessibilityIdentifier("フレンドの履歴を表示")
+    .padding(.trailing, 20)
+  }
+
+  /// フレンド履歴ボタンのアイコンとスタイル
+  private var friendHistoryButtonIcon: some View {
+    Image(systemName: "person.2.fill")
+      .font(.title)
+      .frame(width: 60, height: 60)
+      .background(friendHistoryButtonGradient)
+      .foregroundColor(.white)
+      .clipShape(Circle())
+      .shadow(
+        color: Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255).opacity(0.4),
+        radius: 8, x: 0, y: 4
+      )
+  }
+
+  /// フレンド履歴ボタンのグラデーション背景
+  private var friendHistoryButtonGradient: some View {
+    LinearGradient(
+      gradient: Gradient(colors: [
+        Color(red: 0 / 255, green: 163 / 255, blue: 129 / 255),
+        Color(red: 0 / 255, green: 143 / 255, blue: 109 / 255),
+      ]),
+      startPoint: .leading,
+      endPoint: .trailing
+    )
   }
 
   // MARK: - Private Methods
