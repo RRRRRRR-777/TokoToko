@@ -9,6 +9,7 @@ import CoreLocation
 import SwiftUI
 import ViewInspector
 import XCTest
+import FirebaseCore
 
 @testable import TekuToko
 
@@ -21,6 +22,16 @@ final class WalkHistoryViewTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
+    
+    // Firebase初期化（テスト環境用）
+    if FirebaseApp.app() == nil {
+      // テスト環境用の最小限の設定でFirebaseを初期化
+      let options = FirebaseOptions(googleAppID: "test-app-id", gcmSenderID: "test-sender-id")
+      options.projectID = "test-project"
+      options.apiKey = "test-api-key"
+      FirebaseApp.configure(options: options)
+    }
+    
     // テスト用の散歩データを作成
     sampleWalks = [
       Walk(
