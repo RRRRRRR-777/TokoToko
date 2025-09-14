@@ -1,6 +1,7 @@
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
+import Yams
 
 enum PolicyServiceError: LocalizedError {
   case noPolicyFound
@@ -40,85 +41,22 @@ class PolicyService {
   // MARK: - Public Methods
 
   func fetchPolicy() async throws -> Policy {
-    #if DEBUG
-      // デバッグモードではテストポリシーを返す
-      return Policy(
-        version: "1.0.0",
-        privacyPolicy: LocalizedContent(
-          ja: """
-            本アプリケーションは、お客様のプライバシーを尊重し、個人情報の保護に努めます。
+    // 新しいフォールバック順序: YMLファイル → キャッシュ → エラー
 
-            1. 収集する情報
-            - 位置情報：散歩ルートの記録
-            - 写真：お客様が選択した写真
-            - アカウント情報：メールアドレス、表示名
+    // 1. YMLファイルから読み込みを試行
+    if let ymlPolicy = try? await loadPolicyFromYML() {
+      // YML読み込み成功時はキャッシュに保存
+      try await cachePolicy(ymlPolicy)
+      return ymlPolicy
+    }
 
-            2. 情報の利用目的
-            - サービスの提供と改善
-            - お客様サポート
+    // 2. キャッシュから読み込みを試行
+    if let cachedPolicy = try? await getCachedPolicy() {
+      return cachedPolicy
+    }
 
-            3. 情報の共有
-            お客様の同意なく第三者に個人情報を提供することはありません。
-            """,
-          en: "Privacy Policy content in English..."
-        ),
-        termsOfService: LocalizedContent(
-          ja: """
-            本利用規約は、てくとこサービスの利用条件を定めるものです。
-
-            1. サービスの利用
-            本サービスを利用するには、本規約に同意していただく必要があります。
-
-            2. 禁止事項
-            - 他者への迷惑行為
-            - 不正アクセス
-            - 著作権侵害
-
-            3. 免責事項
-            当社は、本サービスの利用により生じた損害について責任を負いません。
-            """,
-          en: "Terms of Service content in English..."
-        ),
-        updatedAt: Date(),
-        effectiveDate: Date()
-      )
-    #else
-      // 本番モードではFirestoreから取得
-      do {
-        let document =
-          try await firestore
-          .collection("policies")
-          .document("current")
-          .getDocument()
-
-        guard document.exists, let data = document.data() else {
-          // ドキュメントが存在しない場合は、キャッシュを確認
-          if let cachedPolicy = try? await getCachedPolicy() {
-            return cachedPolicy
-          }
-          throw PolicyServiceError.noPolicyFound
-        }
-
-        let policy = try parsePolicyFromFirestore(data)
-
-        // キャッシュに保存
-        try await cachePolicy(policy)
-
-        return policy
-      } catch {
-        // エラーの場合、キャッシュから取得を試みる
-        if let cachedPolicy = try? await getCachedPolicy() {
-          return cachedPolicy
-        }
-
-        // 元のエラーを再スロー
-        if error is PolicyServiceError {
-          throw error
-        } else {
-          throw PolicyServiceError.networkError
-        }
-      }
-    #endif
+    // 3. すべて失敗した場合はエラー
+    throw PolicyServiceError.noPolicyFound
   }
 
   func cachePolicy(_ policy: Policy) async throws {
@@ -273,6 +211,82 @@ class PolicyService {
 
   // MARK: - Private Methods
 
+  /// YMLファイルからポリシー情報を読み込む
+  private func loadPolicyFromYML() async throws -> Policy {
+    guard let url = Bundle.main.url(forResource: "policy", withExtension: "yml") else {
+      throw PolicyServiceError.noPolicyFound
+    }
+
+    let yamlString = try String(contentsOf: url, encoding: .utf8)
+    let yamlData = try Yams.load(yaml: yamlString)
+
+    guard let rootData = yamlData as? [String: Any],
+          let policyData = rootData["policy"] as? [String: Any] else {
+      throw PolicyServiceError.noPolicyFound
+    }
+
+    return try parsePolicyFromYML(policyData)
+  }
+
+  /// YMLデータをPolicyオブジェクトに変換
+  private func parsePolicyFromYML(_ data: [String: Any]) throws -> Policy {
+    // 必須フィールドの検証
+    guard let version = data["version"] as? String,
+          !version.isEmpty
+    else {
+      throw PolicyServiceError.noPolicyFound
+    }
+
+    guard let privacyPolicyData = data["privacy_policy"] as? [String: Any],
+          let privacyPolicyJa = privacyPolicyData["ja"] as? String,
+          !privacyPolicyJa.isEmpty
+    else {
+      throw PolicyServiceError.noPolicyFound
+    }
+
+    guard let termsOfServiceData = data["terms_of_service"] as? [String: Any],
+          let termsOfServiceJa = termsOfServiceData["ja"] as? String,
+          !termsOfServiceJa.isEmpty
+    else {
+      throw PolicyServiceError.noPolicyFound
+    }
+
+    // 日付の解析
+    let updatedAt: Date
+    if let updatedAtString = data["updated_at"] as? String {
+      let formatter = ISO8601DateFormatter()
+      updatedAt = formatter.date(from: updatedAtString) ?? Date()
+    } else {
+      updatedAt = Date()
+    }
+
+    let effectiveDate: Date
+    if let effectiveDateString = data["effective_date"] as? String {
+      let formatter = ISO8601DateFormatter()
+      effectiveDate = formatter.date(from: effectiveDateString) ?? Date()
+    } else {
+      effectiveDate = Date()
+    }
+
+    let privacyPolicy = LocalizedContent(
+      ja: privacyPolicyJa,
+      en: privacyPolicyData["en"] as? String
+    )
+
+    let termsOfService = LocalizedContent(
+      ja: termsOfServiceJa,
+      en: termsOfServiceData["en"] as? String
+    )
+
+    return Policy(
+      version: version,
+      privacyPolicy: privacyPolicy,
+      termsOfService: termsOfService,
+      updatedAt: updatedAt,
+      effectiveDate: effectiveDate
+    )
+  }
+
   private func parsePolicyFromFirestore(_ data: [String: Any]) throws -> Policy {
     // 必須フィールドの検証
     guard let version = data["version"] as? String,
@@ -335,14 +349,14 @@ class PolicyService {
     var data: [String: Any] = [
       "policyVersion": consent.policyVersion,
       "consentedAt": Timestamp(date: consent.consentedAt),
-      "consentType": consent.consentType.rawValue,
+      "consentType": consent.consentType.rawValue
     ]
 
     if let deviceInfo = consent.deviceInfo {
       data["deviceInfo"] = [
         "platform": deviceInfo.platform,
         "osVersion": deviceInfo.osVersion,
-        "appVersion": deviceInfo.appVersion,
+        "appVersion": deviceInfo.appVersion
       ]
     }
 
@@ -373,8 +387,8 @@ class PolicyService {
       let platform = deviceInfoData["platform"] as? String,
       let osVersion = deviceInfoData["osVersion"] as? String,
       let appVersion = deviceInfoData["appVersion"] as? String,
-      !platform.isEmpty, !osVersion.isEmpty, !appVersion.isEmpty
-    {
+      !platform.isEmpty, !osVersion.isEmpty, !appVersion.isEmpty {
+
       deviceInfo = DeviceInfo(
         platform: platform,
         osVersion: osVersion,
