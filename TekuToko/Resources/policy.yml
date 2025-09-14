@@ -1,0 +1,288 @@
+policy:
+  version: "1.0.0"
+  updated_at: "2025-09-14T00:00:00Z"
+  effective_date: "2025-09-14T00:00:00Z"
+  privacy_policy:
+    ja: |
+      てくとこ プライバシーポリシー
+
+      「てくとこ - おさんぽSNS」（以下「本アプリ」）の運営者（以下「当方」）は、本アプリをご利用いただくお客様のプライバシーを尊重し、個人情報の保護に努めております。本プライバシーポリシーでは、当方がどのような個人情報を収集し、どのように利用・保護しているかについてご説明いたします。
+
+      1. 収集する情報について
+
+      当方は以下の情報を収集いたします。
+
+      お客様にご提供いただく情報：
+      ・アカウント情報（メールアドレス、表示名、プロフィール写真）
+
+      自動的に収集される情報：
+      ・散歩記録（開始・終了時刻、所要時間、歩数）
+      ・位置情報（散歩中のルート記録のためのGPS位置データ）
+      ・端末情報（端末の種類、OSバージョン、アプリのバージョン）
+      ・利用状況（アプリの利用頻度、機能の利用状況）
+
+      2. 情報の利用目的
+
+      収集した情報は以下の目的で利用いたします：
+      ・散歩記録の保存と表示
+      ・マップ上での散歩ルートの表示
+      ・共有リンクの生成と配信
+      ・アプリの向上と新機能の開発
+      ・お客様サポートの提供
+      ・法的要請への対応
+
+      3. 情報の共有と開示について
+
+      お客様による共有：
+      共有リンクを生成された場合、以下の情報が公開されます：
+      ・散歩ルート（マップ上のパス）
+      ・選択された写真
+      ・散歩の日時と統計情報
+
+      第三者との共有：
+      以下の場合を除き、お客様の個人情報を第三者と共有することはありません：
+      ・お客様の同意がある場合
+      ・法的要請がある場合
+      ・生命、身体または財産の保護のため必要な場合
+
+      4. データの保持と削除について
+
+      ・データの保持：アカウントが有効な間、データを保持いたします
+      ・データの削除：お客様はいつでもデータの削除をご請求いただけます
+      ・アカウント削除：お客様はいつでもアカウントの削除ができます
+
+      5. セキュリティについて
+
+      当方では適切な技術的・組織的措置を講じております：
+      ・SSL/TLS暗号化
+      ・アクセス制御
+      ・定期的なセキュリティ監査
+
+      6. 13歳未満のお客様について
+
+      本アプリは13歳未満のお客様を対象としておりません。13歳未満のお客様から故意に個人情報を収集することはございません。
+
+      7. プライバシーポリシーの変更について
+
+      必要に応じて本プライバシーポリシーを更新する場合があります。重要な変更については、アプリ内でお知らせいたします。
+
+      8. お問い合わせ
+
+      本プライバシーポリシーについてご質問がございましたら、以下までお問い合わせください：
+      メール：tekutoko.walk@gmail.com
+
+    en: |
+      TekuToko Privacy Policy
+
+      The operator of "TekuToko - Walking SNS" app ("we", "our", or "us") respects the privacy of users ("you") of the app ("the App"). This Privacy Policy explains how we collect, use, and protect your personal information.
+
+      1. Information We Collect
+
+      We collect the following information:
+
+      Information You Provide:
+      - Account Information: Email address, display name, profile picture
+
+      Information Collected Automatically:
+      - Walk Records: Start/end times, duration, step count
+      - Location Data: GPS location data for route tracking during walks
+      - Device Information: Device type, OS version, app version
+      - Usage Data: App usage frequency, feature utilization
+
+      2. How We Use Your Information
+
+      We use collected information for:
+      - Saving and displaying walk records
+      - Displaying walk routes on maps
+      - Generating and distributing share links
+      - Improving the app and developing new features
+      - Providing user support
+      - Complying with legal requirements
+
+      3. Information Sharing and Disclosure
+
+      User-Initiated Sharing:
+      When you generate a share link, the following information becomes public:
+      - Walk route (path on map)
+      - Selected photos
+      - Walk date/time and statistics
+
+      Third-Party Sharing:
+      We do not share your personal information with third parties except:
+      - With your consent
+      - As required by law
+      - To protect life, body, or property
+
+      4. Data Retention and Deletion
+
+      - Data Retention: Data is retained while your account is active
+      - Data Deletion: You can request deletion of your data at any time
+      - Account Deletion: You can delete your account at any time
+
+      5. Security
+
+      We implement appropriate technical and organizational measures:
+      - SSL/TLS encryption
+      - Access controls
+      - Regular security audits
+
+      6. Children's Privacy
+
+      The App is not intended for children under 13. We do not knowingly collect personal information from children under 13.
+
+      7. Changes to This Policy
+
+      We may update this Privacy Policy as needed. Significant changes will be notified through the App.
+
+      8. Contact Us
+
+      For questions about this Privacy Policy:
+      Email: tekutoko.walk@gmail.com
+
+  terms_of_service:
+    ja: |
+      てくとこ 利用規約
+
+      第1条（適用）
+      本利用規約（以下「本規約」）は、「てくとこ - おさんぽSNS」（以下「本アプリ」）の運営者（以下「当方」）が提供する本アプリの利用条件を定めるものです。登録ユーザーの皆さま（以下「ユーザー」）には、本規約に従って本アプリをご利用いただきます。
+
+      第2条（利用登録）
+      1. 利用登録を希望する方は、本規約に同意の上、当方の定める方法によって利用登録を申請するものとします。
+      2. 当方は、以下の場合には登録を承認しないことがあります：
+         ・登録申請に際して虚偽の事項を届け出た場合
+         ・本規約に違反したことがある者からの申請である場合
+         ・その他、当方が利用登録を相当でないと判断した場合
+
+      第3条（アカウント管理）
+      1. ユーザーは、自己の責任においてアカウント情報を管理するものとします。
+      2. ユーザーは、いかなる場合にも、アカウントを第三者に譲渡または貸与することはできません。
+      3. 当方は、ログイン情報が一致した場合には、そのアカウントを保有するユーザー自身による利用とみなします。
+
+      第4条（利用料金）
+      本アプリの基本機能は無料でご利用いただけます。将来的に有料機能を追加する場合は、事前にお知らせします。
+
+      第5条（禁止事項）
+      ユーザーは、本アプリの利用にあたり、以下の行為をしてはなりません：
+      1. 法令または公序良俗に違反する行為
+      2. 犯罪行為に関連する行為
+      3. 当社、他のユーザー、その他第三者の知的財産権、肖像権、プライバシー、名誉その他の権利を侵害する行為
+      4. 過度に暴力的な表現、性的な表現、その他不適切な内容を投稿する行為
+      5. 営業、宣伝、広告、勧誘、その他営利を目的とする行為
+      6. 虚偽の情報を投稿する行為
+      7. 不正アクセス、またはこれを試みる行為
+      8. 他のユーザーに成りすます行為
+      9. 当方のアプリの運営を妨害するおそれのある行為
+      10. その他、当方が不適切と判断する行為
+
+      第6条（本アプリの提供の停止等）
+      1. 当方は、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本アプリの全部または一部の提供を停止または中断することができるものとします：
+         ・本アプリにかかるコンピュータシステムの保守点検または更新を行う場合
+         ・地震、落雷、火災、停電または天災などの不可抗力により、本アプリの提供が困難となった場合
+         ・その他、当方が本アプリの提供が困難と判断した場合
+      2. 当方は、本アプリの提供の停止または中断により、ユーザーまたは第三者が被ったいかなる不利益または損害についても、一切の責任を負わないものとします。
+
+      第7条（著作権）
+      1. ユーザーが本アプリを利用して投稿した写真、テキスト、その他のコンテンツの著作権は、ユーザーに帰属します。
+      2. ユーザーは、本アプリに投稿したコンテンツについて、当方が本アプリの運営、改善、プロモーションのために必要な範囲で使用することを許諾するものとします。
+
+      第8条（免責事項）
+      1. 当方は、本アプリに関して、ユーザーと他のユーザーまたは第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
+      2. 当方は、本アプリの提供の中断、停止、終了、利用不能または変更、ユーザーが本アプリに送信したメッセージまたは情報の削除または消失、ユーザーの登録の抹消、本アプリの利用によるデータの消失または機器の故障もしくは損傷、その他本アプリに関してユーザーが被った損害につき、賠償する責任を一切負わないものとします。
+      3. 本アプリに関連してユーザーが被った損害について、当方の責に帰すべき事由による場合であっても、当方は、付随的損害、間接損害、特別損害、将来の損害および逸失利益にかかる損害については、賠償する責任を負わないものとします。
+
+      第9条（アプリ内容の変更等）
+      当方は、ユーザーに通知することなく、本アプリの内容を変更しまたは本アプリの提供を中止することができるものとし、これによってユーザーに生じた損害について一切の責任を負いません。
+
+      第10条（利用規約の変更）
+      1. 当方は、必要と判断した場合には、ユーザーに通知することなくいつでも本規約を変更することができるものとします。
+      2. 変更後の本規約は、アプリ内で通知された時点から効力を生じるものとします。
+      3. 本規約の変更後、本アプリの利用を継続したユーザーは、変更後の本規約に同意したものとみなします。
+
+      第11条（個人情報の取扱い）
+      当方は、本アプリの利用によって取得する個人情報については、当方の「プライバシーポリシー」に従い適切に取り扱うものとします。
+
+      第12条（通知または連絡）
+      ユーザーと当方との間の通知または連絡は、当方の定める方法によって行うものとします。当方は、ユーザーから、当方が別途定める方式に従った変更届け出がない限り、現在登録されている連絡先が有効なものとみなして当該連絡先へ通知または連絡を行い、これらは、発信時にユーザーへ到達したものとみなします。
+
+      第13条（権利義務の譲渡の禁止）
+      ユーザーは、当方の書面による事前の承諾なく、利用契約上の地位または本規約に基づく権利もしくは義務を第三者に譲渡し、または担保に供することはできません。
+
+      第14条（準拠法・裁判管轄）
+      1. 本規約の解釈にあたっては、日本法を準拠法とします。
+      2. 本アプリに関して紛争が生じた場合には、当方の所在地を管轄する裁判所を専属的合意管轄とします。
+
+      以上
+
+    en: |
+      TekuToko Terms of Service
+
+      Article 1 (Application)
+      These Terms of Service ("Terms") set forth the conditions for use of the "TekuToko - Walking SNS" app ("App") provided by the app operator ("we", "our", or "us"). Registered users ("Users") shall use the App in accordance with these Terms.
+
+      Article 2 (Registration)
+      1. Those wishing to register shall apply for registration according to the method prescribed by us after agreeing to these Terms.
+      2. We may not approve registration in the following cases:
+         - False information was provided during registration
+         - Application is from someone who has violated these Terms
+         - We otherwise deem registration inappropriate
+
+      Article 3 (Account Management)
+      1. Users shall manage their account information at their own responsibility.
+      2. Users may not transfer or lend their account to third parties under any circumstances.
+      3. We will consider any use with matching login information as use by the account holder.
+
+      Article 4 (Usage Fees)
+      Basic features of the App are free to use. We will notify you in advance if paid features are added in the future.
+
+      Article 5 (Prohibited Actions)
+      Users must not engage in the following actions:
+      1. Actions that violate laws or public order and morals
+      2. Actions related to criminal activity
+      3. Actions that infringe on intellectual property rights, portrait rights, privacy, honor, or other rights
+      4. Posting excessively violent, sexual, or other inappropriate content
+      5. Commercial activities including sales, advertising, solicitation
+      6. Posting false information
+      7. Unauthorized access or attempts thereof
+      8. Impersonating other users
+      9. Actions that may interfere with App operations
+      10. Other actions deemed inappropriate by us
+
+      Article 6 (Suspension of App)
+      1. We may suspend or interrupt all or part of the App without prior notice to Users when:
+         - Performing maintenance or updates on the App systems
+         - App provision becomes difficult due to force majeure
+         - We otherwise determine App provision is difficult
+      2. We bear no responsibility for any disadvantage or damage suffered by Users or third parties due to suspension or interruption of the App.
+
+      Article 7 (Copyright)
+      1. Copyright for photos, text, and other content posted by Users remains with the Users.
+      2. Users grant us permission to use posted content to the extent necessary for App operation, improvement, and promotion.
+
+      Article 8 (Disclaimer)
+      1. We bear no responsibility for transactions, communications, or disputes between Users and other Users or third parties.
+      2. We bear no responsibility for damages related to App interruption, suspension, termination, unavailability, changes, deletion of messages or information, account deletion, data loss, equipment failure or damage.
+      3. Even when damages are attributable to us, we bear no responsibility for incidental, indirect, special, future damages or lost profits.
+
+      Article 9 (App Changes)
+      We may change App content or discontinue the App without notice to Users and bear no responsibility for resulting damages.
+
+      Article 10 (Changes to Terms)
+      1. We may change these Terms at any time without notice when deemed necessary.
+      2. Changed Terms become effective when notified within the App.
+      3. Users who continue using the App after changes are deemed to have agreed to the changed Terms.
+
+      Article 11 (Handling of Personal Information)
+      We shall appropriately handle personal information obtained through App use according to our Privacy Policy.
+
+      Article 12 (Notifications)
+      Notifications between Users and us shall be made according to methods prescribed by us. We will consider currently registered contact information valid unless change notification is received.
+
+      Article 13 (Prohibition of Assignment)
+      Users may not assign or pledge their position under the usage contract or rights and obligations under these Terms to third parties without prior written consent from us.
+
+      Article 14 (Governing Law and Jurisdiction)
+      1. These Terms shall be governed by Japanese law.
+      2. Courts with jurisdiction over our location shall have exclusive jurisdiction over disputes related to the App.
+
+      End
+
