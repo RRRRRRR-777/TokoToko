@@ -10,16 +10,45 @@ final class PolicyServiceTests: XCTestCase {
     try super.setUpWithError()
     sut = PolicyService()
     // 同意キャッシュをクリア（同期的に実行）
-    for key in UserDefaults.standard.dictionaryRepresentation().keys {
-      if key.hasPrefix("TekuTokoConsentCache_") {
-        UserDefaults.standard.removeObject(forKey: key)
-      }
+    for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("TekuTokoConsentCache_") {
+      UserDefaults.standard.removeObject(forKey: key)
     }
   }
 
   override func tearDown() {
     sut = nil
     super.tearDown()
+  }
+
+  // MARK: - YMLファイル読み込みテスト
+
+  func test_fetchPolicy_YMLファイルから読み込み() async throws {
+    // When
+    let policy = try await sut.fetchPolicy()
+
+    // Then
+    XCTAssertEqual(policy.version, "1.0.0")
+    XCTAssertFalse(policy.privacyPolicy.ja.isEmpty)
+    XCTAssertFalse(policy.termsOfService.ja.isEmpty)
+    XCTAssertNotNil(policy.privacyPolicy.en)
+    XCTAssertNotNil(policy.termsOfService.en)
+    // プライバシーポリシーの内容確認
+    XCTAssertTrue(policy.privacyPolicy.ja.contains("てくとこ プライバシーポリシー"))
+    XCTAssertTrue(policy.termsOfService.ja.contains("てくとこ 利用規約"))
+  }
+
+  func test_fetchPolicy_YMLファイル読み込み後のキャッシュ確認() async throws {
+    // Given
+    try await sut.clearCache()
+
+    // When
+    let policy = try await sut.fetchPolicy()
+
+    // Then - YMLから読み込み後にキャッシュされていることを確認
+    let cachedPolicy = try await sut.getCachedPolicy()
+    XCTAssertNotNil(cachedPolicy)
+    XCTAssertEqual(cachedPolicy?.version, policy.version)
+    XCTAssertEqual(cachedPolicy?.privacyPolicy.ja, policy.privacyPolicy.ja)
   }
 
   // MARK: - キャッシュテスト
@@ -46,6 +75,9 @@ final class PolicyServiceTests: XCTestCase {
   }
 
   func test_getCachedPolicy_キャッシュなしの場合() async throws {
+    // Given - キャッシュを確実にクリア
+    try await sut.clearCache()
+
     // When
     let cachedPolicy = try await sut.getCachedPolicy()
 
