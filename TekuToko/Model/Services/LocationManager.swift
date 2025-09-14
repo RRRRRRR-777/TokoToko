@@ -256,7 +256,7 @@ class LocationManager: NSObject, ObservableObject {
   func checkAuthorizationStatus() -> CLAuthorizationStatus {
     // UIテストモードの場合はモック状態を返す
     if testingHelper.isUITesting {
-      return .authorizedWhenInUse
+      return .authorizedAlways
     }
     return locationManager.authorizationStatus
   }
@@ -268,12 +268,12 @@ class LocationManager: NSObject, ObservableObject {
   ///
   /// ## Mock Settings
   /// - 位置: 東京駅（35.6812, 139.7671）
-  /// - 許可状態: authorizedWhenInUse
+  /// - 許可状態: authorizedAlways
   private func setupMockLocationForTesting() {
     // 東京駅の座標をモック位置として設定
     let mockLocation = CLLocation(latitude: 35.6812, longitude: 139.7671)
     currentLocation = mockLocation
-    authorizationStatus = .authorizedWhenInUse
+    authorizationStatus = .authorizedAlways
 
     logger.info(
       operation: "setupMockLocationForTesting",
@@ -281,7 +281,7 @@ class LocationManager: NSObject, ObservableObject {
       context: [
         "latitude": "\(mockLocation.coordinate.latitude)",
         "longitude": "\(mockLocation.coordinate.longitude)",
-        "authorization_status": "authorizedWhenInUse",
+        "authorization_status": "authorizedAlways",
       ]
     )
   }

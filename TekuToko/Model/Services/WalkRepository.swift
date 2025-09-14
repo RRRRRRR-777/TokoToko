@@ -131,6 +131,16 @@ extension WalkRepository {
       return
     }
 
+    // UIテスト時はモックデータまたはエラーを返す
+    if UITestingHelper.shared.isUITesting {
+      logger.info(
+        operation: "fetchWalk",
+        message: "UIテストモード: 散歩が見つかりませんでした"
+      )
+      completion(.failure(.notFound))
+      return
+    }
+
     db.collection(collectionName)
       .document(id.uuidString)
       .getDocument { [weak self] document, error in
@@ -422,6 +432,16 @@ extension WalkRepository {
       "operation": "saveWalkToFirestore",
     ])
 
+    // UIテスト時はFirebase操作をスキップして成功を返す
+    if UITestingHelper.shared.isUITesting {
+      logger.info(
+        operation: "saveWalkToFirestore",
+        message: "UIテストモード: Firebase操作をスキップしています"
+      )
+      completion(.success(walk))
+      return
+    }
+
     logger.logFirebaseSyncBugPrevention(
       isOnline: true,  // 仮定
       pendingWrites: 0,  // 仮定
@@ -509,6 +529,16 @@ extension WalkRepository {
       "user_id": userId,
       "operation": "fetchWalksFromFirestore",
     ])
+
+    // UIテスト時は空の配列を返す
+    if UITestingHelper.shared.isUITesting {
+      logger.info(
+        operation: "fetchWalksFromFirestore",
+        message: "UIテストモード: 空の散歩リストを返しています"
+      )
+      completion(.success([]))
+      return
+    }
 
     logger.logFirebaseSyncBugPrevention(
       isOnline: true,  // 仮定
@@ -615,6 +645,16 @@ extension WalkRepository {
       "operation": "updateWalkInFirestore",
     ])
 
+    // UIテスト時はFirebase操作をスキップして成功を返す
+    if UITestingHelper.shared.isUITesting {
+      logger.info(
+        operation: "updateWalkInFirestore",
+        message: "UIテストモード: Firebase操作をスキップしています"
+      )
+      completion(.success(walk))
+      return
+    }
+
     guard walk.userId == getCurrentUserId() else {
       logger.warning(
         operation: "updateWalkInFirestore",
@@ -704,6 +744,16 @@ extension WalkRepository {
       "user_id": userId,
       "operation": "deleteWalkFromFirestore",
     ])
+
+    // UIテスト時はFirebase操作をスキップして成功を返す
+    if UITestingHelper.shared.isUITesting {
+      logger.info(
+        operation: "deleteWalkFromFirestore",
+        message: "UIテストモード: Firebase操作をスキップしています"
+      )
+      completion(.success(true))
+      return
+    }
 
     logger.logFirebaseSyncBugPrevention(
       isOnline: true,  // 仮定

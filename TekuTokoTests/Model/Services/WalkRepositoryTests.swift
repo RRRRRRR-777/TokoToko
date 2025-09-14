@@ -11,19 +11,15 @@ import XCTest
 @testable import TekuToko
 
 final class WalkRepositoryTests: XCTestCase {
-  var repository: WalkRepository!
   var mockRepository: MockWalkRepository!
 
   override func setUpWithError() throws {
     super.setUp()
-    // 実際のFirestoreインスタンスを設定（統合テスト用）
-    repository = WalkRepository.shared
     // モックリポジトリを設定（ユニットテスト用）
     mockRepository = MockWalkRepository()
   }
 
   override func tearDownWithError() throws {
-    repository = nil
     mockRepository = nil
     super.tearDown()
   }
@@ -329,23 +325,23 @@ final class WalkRepositoryTests: XCTestCase {
   func testFirestoreConnectionError() async throws {
     // Arrange
     let walk = Walk(title: "エラーテスト", description: "接続エラーテスト")
+    mockRepository.simulateError(WalkRepositoryError.networkError)
     let expectation = XCTestExpectation(description: "Should handle connection error")
 
     // Act & Assert
     // ネットワークエラーをシミュレートするテスト
-    repository.saveWalkToFirestore(walk) { result in
+    mockRepository.saveWalk(walk) { result in
       switch result {
       case .success:
-        // 成功する場合もあるが、エラーハンドリングの準備ができていることを確認
-        expectation.fulfill()
+        XCTFail("Should simulate network error")
       case .failure(let error):
         // エラーが適切に処理されることを確認
-        XCTAssertTrue(error is WalkRepositoryError)
+        XCTAssertEqual(error, WalkRepositoryError.networkError)
         expectation.fulfill()
       }
     }
 
-    await fulfillment(of: [expectation], timeout: 5.0)
+    await fulfillment(of: [expectation], timeout: 1.0)
   }
 
   func testAuthenticationRequiredErrorMock() async throws {
