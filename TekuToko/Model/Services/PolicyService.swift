@@ -73,12 +73,16 @@ class PolicyService {
     let data =
       UserDefaults.standard.data(forKey: newCacheKey)
       ?? UserDefaults.standard.data(forKey: oldCacheKey)
-    guard let data else { return nil }
+    guard let data else {
+      return nil
+    }
 
     let expirationDate =
       (UserDefaults.standard.object(forKey: newCacheExpirationKey) as? Date)
       ?? (UserDefaults.standard.object(forKey: oldCacheExpirationKey) as? Date)
-    guard let expirationDate else { return nil }
+    guard let expirationDate else {
+      return nil
+    }
 
     guard expirationDate > Date() else {
       return nil
