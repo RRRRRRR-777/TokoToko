@@ -90,8 +90,6 @@ iOSInjectionProject/
 # Xcodegen
 *.xcodeproj
 *.xcworkspace
-# But keep Package.resolved for XcodeCloud
-!*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 project.local.yml
 Pods/*
