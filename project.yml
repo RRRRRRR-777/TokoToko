@@ -20,7 +20,6 @@ fileGroups:
   - firestore.indexes.json
   - firestore.rules
   - storage.rules
-  - Info.plist
   - ci_scripts
 
 targetTemplates:
