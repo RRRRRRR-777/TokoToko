@@ -7,6 +7,7 @@
 
 import FirebaseAuth
 import FirebaseCore
+import FirebaseFirestore
 import GoogleSignIn
 import SwiftUI
 import UIKit
@@ -140,17 +141,37 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     if UITestingHelper.shared.isUITesting {
       return true
     }
+
     #if DEBUG
       // GoogleService-Info.plist がダミー/不正な場合はクラッシュを避けるため初期化をスキップ（DEBUGのみ）
       if !FirebaseConfigurator.configureIfValid() {
         print(
           "[Firebase] Skipped configuration due to invalid GoogleService-Info.plist or API key. Running without Firebase."
         )
+        return true
       }
     #else
       FirebaseApp.configure()
     #endif
+
+    // Firestore設定を早期実行（重複設定クラッシュを防ぐため）
+    configureFirestoreSettings()
+
     return true
+  }
+
+  /// Firestoreの初期設定を実行
+  ///
+  /// アプリ起動時にFirestore設定を一度だけ実行し、WalkRepositoryでの重複設定を防ぎます。
+  /// オフライン永続化とキャッシュ設定を含む完全な初期化を行います。
+  private func configureFirestoreSettings() {
+    let settings = FirestoreSettings()
+    settings.cacheSettings = PersistentCacheSettings()
+
+    let firestore = Firestore.firestore()
+    firestore.settings = settings
+
+    print("[Firebase] Firestore settings configured successfully in AppDelegate")
   }
 
   func application(

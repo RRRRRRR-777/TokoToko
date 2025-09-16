@@ -170,19 +170,13 @@ class WalkRepository {
     setupNetworkConfiguration()
   }
 
-  /// Firestoreの初期設定を実行（スタティックメソッド）
+  /// 設定済みFirestoreインスタンスを取得（スタティックメソッド）
   ///
-  /// オフライン永続化、キャッシュ設定を行います。
-  /// 初期化中のため、loggerは使用せずに設定のみ行います。
+  /// AppDelegateで既に設定済みのFirestoreインスタンスを返します。
+  /// 重複設定によるクラッシュを防ぐため、設定は行わずインスタンスの取得のみ行います。
   private static func configureFirestore() -> Firestore {
-    // Firestoreの設定を先に行う
-    let settings = FirestoreSettings()
-    settings.cacheSettings = PersistentCacheSettings()
-
-    // Firestoreインスタンスを取得して設定を適用
+    // AppDelegateで既に設定済みのFirestoreインスタンスを取得
     let firestore = Firestore.firestore()
-    firestore.settings = settings
-
     return firestore
   }
 
