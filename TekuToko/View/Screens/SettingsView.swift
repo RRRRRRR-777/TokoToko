@@ -367,6 +367,7 @@ struct SettingsView: View {
     .modifier(BackgroundColorModifier())
     .background(Color("BackgroundColor").ignoresSafeArea())
     .navigationTitle("設定")
+    .navigationBarTitleDisplayMode(.inline)
     .accentColor(.black)
     .alert("ログアウトしますか？", isPresented: $showingLogoutAlert) {
       Button("キャンセル", role: .cancel) {}
