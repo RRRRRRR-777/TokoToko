@@ -352,6 +352,12 @@ struct SettingsView: View {
             .foregroundColor(.black)
         }
         .listRowBackground(Color("BackgroundColor").opacity(0.8))
+
+        NavigationLink(destination: OpenSourceLicensesView()) {
+          Text("オープンソースライセンス")
+            .foregroundColor(.black)
+        }
+        .listRowBackground(Color("BackgroundColor").opacity(0.8))
       }
 
       if let errorMessage = errorMessage {
