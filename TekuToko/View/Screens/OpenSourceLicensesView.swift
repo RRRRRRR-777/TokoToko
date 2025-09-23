@@ -95,10 +95,6 @@ struct LicenseDetailView: View {
 
       ScrollView {
         VStack(alignment: .leading, spacing: 12) {
-          Text(item.displayName)
-            .font(.title3).bold()
-            .foregroundColor(.black)
-
           Text(loadLicenseText())
             .font(.system(.footnote, design: .monospaced))
             .foregroundColor(.black)
@@ -109,6 +105,7 @@ struct LicenseDetailView: View {
         .padding(16)
       }
     }
+    .navigationTitle(item.displayName)
     .navigationBarTitleDisplayMode(.inline)
   }
 }
