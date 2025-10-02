@@ -5,6 +5,7 @@
 //  Created by bokuyamada on 2025/05/20.
 //
 
+import AuthenticationServices
 import FirebaseAuth
 import FirebaseCore
 import GoogleSignIn
@@ -65,7 +66,12 @@ struct LoginView: View {
   /// Google認証サービス
   ///
   /// Google Sign-In処理を担当するサービスクラスのインスタンスです。
-  private let authService = GoogleAuthService()
+  private let googleAuthService = GoogleAuthService()
+
+  /// Apple認証サービス
+  ///
+  /// Sign in with Apple処理を担当するサービスクラスのインスタンスです。
+  private let appleAuthService = AppleAuthService()
 
   /// UIテスト実行中かどうかを判定
   ///
@@ -156,25 +162,45 @@ struct LoginView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 80)
       } else {
-        // カスタムGoogleサインインボタン
-        // GoogleSignInButtonの代替実装（hiraginosans-w6フォントエラー回避のため）
-        // GoogleブランディングガイドラインとiOSヒューマンインターフェースガイドラインに準拠
-        Button(action: signInWithGoogle) {
-          HStack {
-            Image(systemName: "globe")
-              .foregroundColor(.white)
-              .font(.system(size: 16, weight: .medium))
-            Text("Googleでサインイン")
-              .foregroundColor(.white)
-              .font(.system(size: 16, weight: .medium))
+        VStack(spacing: 12) {
+          // Sign in with Appleボタン（カスタム実装）
+          Button(action: signInWithApple) {
+            HStack {
+              Image(systemName: "applelogo")
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium))
+              Text("Appleでサインイン")
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(Color.black)
+            .cornerRadius(6)
+            .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
           }
-          .frame(maxWidth: .infinity)
-          .frame(height: 44)  // iOS標準のボタン高さ
-          .background(Color(red: 0.26, green: 0.52, blue: 0.96))  // Google Blue #4285F4
-          .cornerRadius(6)  // Googleガイドライン準拠の角丸
-          .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
+          .accessibilityIdentifier("appleSignInButton")
+
+          // カスタムGoogleサインインボタン
+          // GoogleSignInButtonの代替実装（hiraginosans-w6フォントエラー回避のため）
+          // GoogleブランディングガイドラインとiOSヒューマンインターフェースガイドラインに準拠
+          Button(action: signInWithGoogle) {
+            HStack {
+              Image(systemName: "globe")
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium))
+              Text("Googleでサインイン")
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)  // iOS標準のボタン高さ
+            .background(Color(red: 0.26, green: 0.52, blue: 0.96))  // Google Blue #4285F4
+            .cornerRadius(6)  // Googleガイドライン準拠の角丸
+            .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
+          }
+          .accessibilityIdentifier("googleSignInButton")
         }
-        .accessibilityIdentifier("googleSignInButton")
         .padding(.horizontal)
       }
 
@@ -288,7 +314,36 @@ struct LoginView: View {
     isLoading = true
     errorMessage = nil
 
-    authService.signInWithGoogle { result in
+    googleAuthService.signInWithGoogle { result in
+      DispatchQueue.main.async {
+        self.isLoading = false
+
+        switch result {
+        case .success:
+          // 認証成功 - AuthManagerのリスナーが自動的にログイン状態を更新する
+          break
+        case .failure(let message):
+          self.errorMessage = message
+        }
+      }
+    }
+  }
+
+  /// Sign in with Appleによる認証処理を実行
+  ///
+  /// AppleAuthServiceを使用してSign in with Apple認証を開始します。
+  /// 認証中はローディング状態を表示し、結果に応じて成功またはエラーを処理します。
+  ///
+  /// ## Process Flow
+  /// 1. ローディング状態をtrueに設定
+  /// 2. エラーメッセージをクリア
+  /// 3. AppleAuthService.signInWithApple()を呼び出し
+  /// 4. 結果に応じてUI状態を更新
+  private func signInWithApple() {
+    isLoading = true
+    errorMessage = nil
+
+    appleAuthService.signInWithApple { result in
       DispatchQueue.main.async {
         self.isLoading = false
 
