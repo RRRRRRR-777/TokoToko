@@ -58,6 +58,8 @@ targets:
       - path: TekuToko/GoogleService-Info.plist
       - path: Documentation.docc
       - path: TekuToko/Resources
+    entitlements:
+      path: TekuToko/TekuToko.entitlements
     templates: [CommonSettings]
     dependencies:
       - package: Firebase
