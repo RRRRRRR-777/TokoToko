@@ -158,4 +158,134 @@ final class SettingsViewTests: XCTestCase {
     // SettingsViewが正常に初期化されることを確認
     XCTAssertNotNil(sut)
   }
+
+  // MARK: - アカウント削除UI表示テスト
+
+  func test_アカウント削除ボタンが表示される() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When & Then
+    let deleteButton = try sut.inspect().find(text: "アカウント削除")
+    XCTAssertNotNil(deleteButton, "アカウント削除ボタンが表示されるべき")
+  }
+
+  func test_アカウント削除ボタンが赤色で表示される() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When & Then
+    // アカウント削除ボタンのテキストを検索
+    let deleteButtonText = try sut.inspect().find(text: "アカウント削除")
+
+    // 色が赤色であることを確認
+    let foregroundColor = try deleteButtonText.foregroundColor()
+    XCTAssertEqual(foregroundColor, Color.red, "アカウント削除ボタンは赤色で表示されるべき")
+  }
+
+  func test_アカウント削除確認ダイアログが表示される() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When
+    // アカウント削除ボタンをタップ
+    let deleteButton = try sut.inspect().find(button: "アカウント削除")
+    try deleteButton.tap()
+
+    // Then
+    // 確認ダイアログのメッセージが表示されることを確認
+    let alert = try sut.inspect().find(ViewType.Alert.self)
+    XCTAssertNotNil(alert, "アカウント削除確認ダイアログが表示されるべき")
+  }
+
+  func test_アカウント削除確認ダイアログのメッセージが正しい() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When
+    // アカウント削除ボタンをタップ
+    let deleteButton = try sut.inspect().find(button: "アカウント削除")
+    try deleteButton.tap()
+
+    // Then
+    // 確認ダイアログのメッセージ内容を確認
+    let alertMessage = try sut.inspect().find(
+      text: "この操作は取り消せません。アカウントと全てのデータが削除されます。")
+    XCTAssertNotNil(alertMessage, "アカウント削除の警告メッセージが表示されるべき")
+  }
+
+  func test_アカウント削除確認ダイアログにキャンセルボタンがある() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When
+    let deleteButton = try sut.inspect().find(button: "アカウント削除")
+    try deleteButton.tap()
+
+    // Then
+    let cancelButton = try sut.inspect().find(button: "キャンセル")
+    XCTAssertNotNil(cancelButton, "キャンセルボタンが表示されるべき")
+  }
+
+  func test_アカウント削除確認ダイアログに削除ボタンがある() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When
+    let deleteButton = try sut.inspect().find(button: "アカウント削除")
+    try deleteButton.tap()
+
+    // Then
+    // 確認ダイアログ内の「削除」ボタンを検索
+    let confirmDeleteButton = try sut.inspect().find(button: "削除")
+    XCTAssertNotNil(confirmDeleteButton, "削除ボタンが表示されるべき")
+  }
+
+  func test_アカウント削除処理中はローディングインジケーターが表示される() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When
+    // アカウント削除処理を開始
+    let deleteButton = try sut.inspect().find(button: "アカウント削除")
+    try deleteButton.tap()
+
+    let confirmButton = try sut.inspect().find(button: "削除")
+    try confirmButton.tap()
+
+    // Then
+    // ローディングインジケーターが表示されることを確認
+    let progressView = try sut.inspect().find(ViewType.ProgressView.self)
+    XCTAssertNotNil(progressView, "削除処理中はローディングインジケーターが表示されるべき")
+  }
+
+  func test_アカウント削除エラー時にメッセージが表示される() throws {
+    // Given
+    let sut = SettingsView()
+      .environmentObject(authManager)
+      .environmentObject(LocationSettingsManager())
+
+    // When
+    // アカウント削除でエラーが発生した場合のシミュレーション
+    // （実際にはモックを使用して強制的にエラーを発生させる）
+
+    // Then
+    // エラーメッセージが表示されることを確認
+    let errorMessage = try? sut.inspect().find(text: "アカウント削除に失敗しました")
+    XCTAssertNotNil(errorMessage, "エラー時にはエラーメッセージが表示されるべき")
+  }
 }
