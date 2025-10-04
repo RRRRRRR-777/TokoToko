@@ -57,8 +57,8 @@ final class LoginViewTests: XCTestCase {
 
     // 反射を使用してモックサービスを注入
     let mirror = Mirror(reflecting: sut)
-    let authServiceProperty = mirror.children.first { $0.label == "authService" }
-    XCTAssertNotNil(authServiceProperty, "authServiceプロパティが見つかりません")
+    let authServiceProperty = mirror.children.first { $0.label == "googleAuthService" }
+    XCTAssertNotNil(authServiceProperty, "googleAuthServiceプロパティが見つかりません")
   }
 
   // サインイン失敗時のテスト
@@ -72,8 +72,8 @@ final class LoginViewTests: XCTestCase {
 
     // 反射を使用してモックサービスを注入
     let mirror = Mirror(reflecting: sut)
-    let authServiceProperty = mirror.children.first { $0.label == "authService" }
-    XCTAssertNotNil(authServiceProperty, "authServiceプロパティが見つかりません")
+    let authServiceProperty = mirror.children.first { $0.label == "googleAuthService" }
+    XCTAssertNotNil(authServiceProperty, "googleAuthServiceプロパティが見つかりません")
   }
 
   // ビューの初期状態をテスト
@@ -92,8 +92,8 @@ final class LoginViewTests: XCTestCase {
     XCTAssertNotNil(errorMessageProperty, "errorMessageプロパティが見つかりません")
 
     // authServiceプロパティの存在を確認
-    let authServiceProperty = mirror.children.first { $0.label == "authService" }
-    XCTAssertNotNil(authServiceProperty, "authServiceプロパティが見つかりません")
+    let authServiceProperty = mirror.children.first { $0.label == "googleAuthService" }
+    XCTAssertNotNil(authServiceProperty, "googleAuthServiceプロパティが見つかりません")
   }
 
   // ビューの表示要素をテスト
