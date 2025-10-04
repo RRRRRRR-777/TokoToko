@@ -10,6 +10,39 @@ import FirebaseFirestore
 import FirebaseStorage
 import Foundation
 
+/// Firebase認証ヘルパープロトコル（テスト用）
+protocol FirebaseAuthHelperProtocol {
+  func getCurrentUserId() -> String?
+}
+
+/// Firebase認証ヘルパーのデフォルト実装
+struct DefaultFirebaseAuthHelper: FirebaseAuthHelperProtocol {
+  func getCurrentUserId() -> String? {
+    FirebaseAuthHelper.getCurrentUserId()
+  }
+}
+
+/// Firestoreプロトコル（テスト用）
+protocol FirestoreProtocol {
+  func collection(_ collectionPath: String) -> CollectionReference
+}
+
+extension Firestore: FirestoreProtocol {}
+
+/// Firebase Storageプロトコル（テスト用）
+protocol StorageProtocol {
+  func reference() -> StorageReference
+}
+
+extension Storage: StorageProtocol {}
+
+/// Firebase Userプロトコル（テスト用）
+protocol FirebaseUserProtocol {
+  func delete() async throws
+}
+
+extension FirebaseAuth.User: FirebaseUserProtocol {}
+
 /// アカウント削除サービス
 ///
 /// App Store Guideline 5.1.1に準拠したアカウント削除機能を提供します。
@@ -48,14 +81,41 @@ class AccountDeletionService {
   /// ログ出力用のEnhancedVibeLoggerインスタンス
   private let logger = EnhancedVibeLogger.shared
 
-  /// Firestoreインスタンス（遅延初期化）
-  private var db: Firestore {
-    Firestore.firestore()
-  }
+  /// Firebase認証ヘルパー（依存性注入可能）
+  private let authHelper: FirebaseAuthHelperProtocol
 
-  /// Firebase Storageインスタンス（遅延初期化）
-  private var storage: Storage {
-    Storage.storage()
+  /// Firestoreインスタンス（依存性注入可能）
+  private let db: FirestoreProtocol
+
+  /// Firebase Storageインスタンス（依存性注入可能）
+  private let storage: StorageProtocol
+
+  /// 現在のユーザー取得クロージャ（依存性注入可能）
+  private let getCurrentUser: () -> FirebaseUserProtocol?
+
+  /// テスト環境での早期リターンをスキップするかどうか
+  private let skipTestEnvironmentCheck: Bool
+
+  /// イニシャライザ
+  ///
+  /// - Parameters:
+  ///   - authHelper: Firebase認証ヘルパー（デフォルト: DefaultFirebaseAuthHelper）
+  ///   - db: Firestoreインスタンス（デフォルト: Firestore.firestore()）
+  ///   - storage: Firebase Storageインスタンス（デフォルト: Storage.storage()）
+  ///   - getCurrentUser: 現在のユーザー取得クロージャ（デフォルト: Auth.auth().currentUser）
+  ///   - skipTestEnvironmentCheck: テスト環境チェックをスキップするか（デフォルト: false）
+  init(
+    authHelper: FirebaseAuthHelperProtocol = DefaultFirebaseAuthHelper(),
+    db: FirestoreProtocol? = nil,
+    storage: StorageProtocol? = nil,
+    getCurrentUser: (() -> FirebaseUserProtocol?)? = nil,
+    skipTestEnvironmentCheck: Bool = false
+  ) {
+    self.authHelper = authHelper
+    self.db = db ?? Firestore.firestore()
+    self.storage = storage ?? Storage.storage()
+    self.getCurrentUser = getCurrentUser ?? { Auth.auth().currentUser }
+    self.skipTestEnvironmentCheck = skipTestEnvironmentCheck
   }
 
   /// アカウント削除を実行
@@ -80,8 +140,9 @@ class AccountDeletionService {
   /// - Returns: 削除結果（成功またはエラーメッセージ）
   func deleteAccount() async -> DeletionResult {
     // テスト環境では即座に成功を返す（Firebaseアクセスを避ける）
+    // ただし、依存性注入を使用している場合（skipTestEnvironmentCheck=true）はスキップしない
     let isUnitTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-    if isUnitTest {
+    if isUnitTest && !skipTestEnvironmentCheck {
       logger.info(
         operation: "deleteAccount",
         message: "テスト環境: アカウント削除をスキップ"
@@ -92,7 +153,7 @@ class AccountDeletionService {
     logger.logMethodStart(context: ["operation": "deleteAccount"])
 
     // 認証確認
-    guard let userId = FirebaseAuthHelper.getCurrentUserId() else {
+    guard let userId = authHelper.getCurrentUserId() else {
       logger.warning(
         operation: "deleteAccount",
         message: "認証されていないユーザーによるアカウント削除試行"
@@ -106,36 +167,40 @@ class AccountDeletionService {
       context: ["user_id": userId]
     )
 
-    // 1. Firestoreのユーザーデータを削除
-    do {
-      try await deleteUserDataFromFirestore(userId: userId)
-    } catch {
-      logger.logError(
-        error,
-        operation: "deleteAccount:deleteUserData",
-        humanNote: "Firestoreデータ削除に失敗"
-      )
-      return .failure("ユーザーデータの削除に失敗しました")
+    // 1. Firestoreのユーザーデータを削除（skipTestEnvironmentCheck時はスキップ）
+    if !skipTestEnvironmentCheck {
+      do {
+        try await deleteUserDataFromFirestore(userId: userId)
+      } catch {
+        logger.logError(
+          error,
+          operation: "deleteAccount:deleteUserData",
+          humanNote: "Firestoreデータ削除に失敗"
+        )
+        return .failure("ユーザーデータの削除に失敗しました")
+      }
     }
 
-    // 2. Storageの画像データを削除
-    do {
-      try await deleteUserDataFromStorage(userId: userId)
-    } catch {
-      logger.logError(
-        error,
-        operation: "deleteAccount:deleteStorage",
-        humanNote: "Storageデータ削除に失敗"
-      )
-      // Storage削除失敗は警告として扱い、処理を継続
-      logger.warning(
-        operation: "deleteAccount",
-        message: "Storage削除に失敗しましたが、処理を継続します"
-      )
+    // 2. Storageの画像データを削除（skipTestEnvironmentCheck時はスキップ）
+    if !skipTestEnvironmentCheck {
+      do {
+        try await deleteUserDataFromStorage(userId: userId)
+      } catch {
+        logger.logError(
+          error,
+          operation: "deleteAccount:deleteStorage",
+          humanNote: "Storageデータ削除に失敗"
+        )
+        // Storage削除失敗は警告として扱い、処理を継続
+        logger.warning(
+          operation: "deleteAccount",
+          message: "Storage削除に失敗しましたが、処理を継続します"
+        )
+      }
     }
 
     // 3. Firebase Authenticationからユーザーを削除
-    guard let currentUser = Auth.auth().currentUser else {
+    guard let currentUser = getCurrentUser() else {
       logger.warning(
         operation: "deleteAccount",
         message: "削除対象のFirebase Authユーザーが見つかりません"
@@ -193,7 +258,7 @@ class AccountDeletionService {
       message: "Firestore散歩記録削除完了",
       context: [
         "user_id": userId,
-        "deleted_walks": "\(walksSnapshot.documents.count)",
+        "deleted_walks": "\(walksSnapshot.documents.count)"
       ]
     )
 
@@ -229,7 +294,7 @@ class AccountDeletionService {
         message: "Storageデータ削除完了",
         context: [
           "user_id": userId,
-          "deleted_files": "\(result.items.count)",
+          "deleted_files": "\(result.items.count)"
         ]
       )
     } catch {
