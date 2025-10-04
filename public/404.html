@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ページが見つかりません | てくとこ</title>
+  <style>
+    :root {
+      --bg: #f6f1e8;
+      --fg: #2e2a24;
+      --accent: #3c7a4a;
+      --border: #d8cfc3;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Noto Sans JP", sans-serif;
+      background: linear-gradient(135deg, rgba(60, 122, 74, 0.12), rgba(239, 224, 201, 0.85));
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      max-width: 520px;
+      width: 100%;
+      padding: 40px 32px;
+      border-radius: 18px;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.12);
+      text-align: center;
+      border: 1px solid rgba(60, 122, 74, 0.12);
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 16px 0 12px;
+      color: var(--accent);
+    }
+
+    p {
+      margin: 12px 0;
+      line-height: 1.7;
+    }
+
+    .code {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(60, 122, 74, 0.1);
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+    }
+
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .actions a {
+      display: inline-block;
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .actions a:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    footer {
+      margin-top: 32px;
+      font-size: 0.85rem;
+      color: rgba(46, 42, 36, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="code">404</span>
+    <h1>お探しのページが見つかりません</h1>
+    <p>URLが間違っているか、ページが移動または削除された可能性があります。</p>
+    <p>トップページか、サポートページをご確認ください。</p>
+    <div class="actions">
+      <a href="/index.html">トップへ戻る</a>
+      <a href="/support.html">サポートを見る</a>
+    </div>
+    <footer>
+      てくとこ - おさんぽSNS
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>てくとこ サポート</title>
+  <style>
+    :root {
+      --bg: #f6f1e8;
+      --fg: #2e2a24;
+      --accent: #3c7a4a;
+      --border: #d8cfc3;
+      --muted: rgba(46, 42, 36, 0.7);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.7;
+    }
+
+    header {
+      background: linear-gradient(135deg, rgba(60, 122, 74, 0.2), rgba(238, 224, 204, 0.75));
+      padding: 48px 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      letter-spacing: 0.05em;
+    }
+
+    main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
+      margin-top: -40px;
+    }
+
+    section + section {
+      margin-top: 32px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      margin: 0 0 16px;
+      color: var(--accent);
+    }
+
+    p, li {
+      margin: 8px 0;
+    }
+
+    ul {
+      padding-left: 1.4em;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      background: rgba(60, 122, 74, 0.05);
+    }
+
+    footer {
+      max-width: 820px;
+      margin: 32px auto 48px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>てくとこ サポート</h1>
+    <p>ご不明点がありましたら、以下の情報をご確認いただくか、お気軽にお問い合わせください。</p>
+  </header>
+  <main>
+    <section>
+      <h2>サポート窓口</h2>
+      <p>メール：<a href="mailto:tekutoko.walk@gmail.com">tekutoko.walk@gmail.com</a></p>
+    </section>
+
+    <section>
+      <h2>よくある質問</h2>
+      <div class="card">
+        <h3>ログインできない場合</h3>
+        <p>Googleアカウントでのサインインに失敗する際は、一度サインアウトしてから再ログインをお試しください。ブラウザのポップアップ許可やネットワークの安定性もご確認ください。</p>
+      </div>
+      <div class="card">
+        <h3>散歩の記録が開始できません</h3>
+        <p>位置情報の利用許可が「常に許可」になっているかご確認ください。設定アプリ &gt;てくとこ &gt; 位置情報 から変更できます。</p>
+      </div>
+      <div class="card">
+        <h3>歩数や距離が0のままです</h3>
+        <p>設定アプリ &gt; プライバシーとセキュリティ &gt; モーションとフィットネス で「てくとこ」がオンになっているか確認し、位置情報の許可を「常に許可」に設定してください。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>関連リソース</h2>
+      <ul>
+        <li><a href="/privacy-policy.html">プライバシーポリシー</a></li>
+        <li><a href="/terms-of-service.html">利用規約</a></li>
+      </ul>
+    </section>
+  </main>
+  <footer>
+    てくとこ - おさんぽSNS / サポートページ最終更新日: 2025年9月14日
+  </footer>
+</body>
+</html>
