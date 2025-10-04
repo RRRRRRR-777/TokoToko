@@ -6,6 +6,7 @@
 //
 
 import AuthenticationServices
+import CryptoKit
 import FirebaseAuth
 import Foundation
 
@@ -32,6 +33,13 @@ class AppleAuthService: NSObject {
   ///
   /// Apple Sign-In完了時に呼び出されるクロージャを保持します。
   private var completionHandler: ((AuthResult) -> Void)?
+
+  /// 現在の認証リクエストで使用するnonce値
+  ///
+  /// リプレイ攻撃を防ぐため、認証リクエストごとに一意のランダム文字列を生成して保持します。
+  /// このnonce値のSHA256ハッシュをAppleに送信し、返されたID Tokenに含まれるnonceと照合することで、
+  /// トークンの正当性を検証します。
+  private var currentNonce: String?
 
   /// Apple認証処理の結果を表す列挙型
   ///
@@ -95,17 +103,21 @@ class AppleAuthService: NSObject {
 
   /// Apple ID認証リクエストを作成
   ///
-  /// フルネームとメールアドレスのスコープを要求します。
+  /// フルネームとメールアドレスのスコープを要求し、リプレイ攻撃防止のためnonceを生成・設定します。
   /// - Returns: 設定済みのASAuthorizationAppleIDRequest
   private func createAppleIDRequest() -> ASAuthorizationAppleIDRequest {
+    let nonce = randomNonceString()
+    currentNonce = nonce
+
     let appleIDProvider = ASAuthorizationAppleIDProvider()
     let request = appleIDProvider.createRequest()
     request.requestedScopes = [.fullName, .email]
+    request.nonce = sha256(nonce)
 
     logger.info(
       operation: "createAppleIDRequest",
       message: "Apple ID認証リクエスト作成完了",
-      context: ["scopes": "fullName, email"]
+      context: ["scopes": "fullName, email", "nonce_generated": "true"]
     )
 
     return request
@@ -230,9 +242,20 @@ extension AppleAuthService: ASAuthorizationControllerDelegate {
       displayName = nameComponents.joined(separator: " ")
     }
 
+    // Nonce検証
+    guard let nonce = currentNonce else {
+      logger.warning(
+        operation: "authorizationController",
+        message: "Nonceが見つかりません",
+        humanNote: "セキュリティエラー",
+        aiTodo: "Nonce生成処理を確認"
+      )
+      completionHandler?(.failure("認証エラーが発生しました"))
+      return
+    }
+
     // Firebase認証を実行
-    // Note: 本来はnonceを使用すべきだが、簡易実装として省略
-    signInWithFirebase(idToken: idToken, nonce: "", displayName: displayName)
+    signInWithFirebase(idToken: idToken, nonce: nonce, displayName: displayName)
   }
 
   /// Apple認証が失敗した際のデリゲートメソッド
@@ -281,5 +304,86 @@ extension AppleAuthService: ASAuthorizationControllerPresentationContextProvidin
     }
 
     return window
+  }
+}
+
+// MARK: - Nonce Generation (Security)
+// swiftlint:disable:next no_grouping_extension
+extension AppleAuthService {
+
+  /// ランダムなnonce文字列を生成
+  ///
+  /// リプレイ攻撃を防ぐため、認証リクエストごとに一意のランダム文字列を生成します。
+  /// SecRandomCopyBytesを使用して暗号学的に安全な乱数を生成し、
+  /// 指定された文字セットから文字列を構築します。
+  ///
+  /// ## Security Notes
+  ///
+  /// - SecRandomCopyBytesは暗号学的に安全な乱数生成器
+  /// - 文字セットは英数字とハイフン、ピリオド、アンダースコアで構成
+  /// - デフォルト長は32文字（256ビット相当のエントロピー）
+  ///
+  /// - Parameter length: 生成する文字列の長さ（デフォルト: 32）
+  /// - Returns: ランダムなnonce文字列
+  private func randomNonceString(length: Int = 32) -> String {
+    precondition(length > 0)
+    let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+    var result = ""
+    var remainingLength = length
+
+    while remainingLength > 0 {
+      let randoms: [UInt8] = (0..<16).map { _ in
+        var random: UInt8 = 0
+        let errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+        if errorCode != errSecSuccess {
+          logger.logError(
+            NSError(
+              domain: "AppleAuthService",
+              code: Int(errorCode),
+              userInfo: [NSLocalizedDescriptionKey: "Unable to generate nonce"]
+            ),
+            operation: "randomNonceString",
+            humanNote: "乱数生成に失敗しました",
+            aiTodo: "SecRandomCopyBytesのエラーを確認"
+          )
+          fatalError(
+            "Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)")
+        }
+        return random
+      }
+
+      randoms.forEach { random in
+        if remainingLength == 0 {
+          return
+        }
+        if random < charset.count {
+          result.append(charset[Int(random)])
+          remainingLength -= 1
+        }
+      }
+    }
+
+    return result
+  }
+
+  /// 文字列のSHA256ハッシュ値を計算
+  ///
+  /// CryptoKitのSHA256を使用して、入力文字列のハッシュ値を16進数文字列として返します。
+  /// このハッシュ値はAppleに送信され、返されたID Tokenに含まれるnonce値と照合されます。
+  ///
+  /// ## Security Notes
+  ///
+  /// - SHA256は暗号学的に安全なハッシュ関数
+  /// - 一方向性: ハッシュ値から元の文字列を復元できない
+  /// - 衝突耐性: 異なる入力から同じハッシュ値が生成される確率が極めて低い
+  ///
+  /// - Parameter input: ハッシュ化する文字列
+  /// - Returns: SHA256ハッシュ値の16進数表現
+  private func sha256(_ input: String) -> String {
+    let inputData = Data(input.utf8)
+    let hashedData = SHA256.hash(data: inputData)
+    let hashString = hashedData.compactMap { String(format: "%02x", $0) }.joined()
+
+    return hashString
   }
 }
