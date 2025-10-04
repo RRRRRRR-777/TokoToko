@@ -102,7 +102,6 @@ targets:
         DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TokoToko
         DOCC_EXTRACT_OBJC_INFO_FOR_SWIFT_SYMBOLS: YES
         DOCC_HOSTING_BASE_PATH: TekuToko
-        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
     info:
       path: Info.plist
       properties:
