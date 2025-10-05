@@ -33,6 +33,12 @@ service firebase.storage {
         && request.resource.size < 10 * 1024 * 1024;
     }
 
+    // ユーザーデータの包括的削除用（アカウント削除時）
+    match /users/{userId}/{allPaths=**} {
+      allow read, write, delete: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
     // デフォルトルール
     match /{allPaths=**} {
       allow read, write: if false;

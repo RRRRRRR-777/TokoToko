@@ -518,6 +518,7 @@ struct SettingsView: View {
   /// 2. エラーメッセージをクリア
   /// 3. AccountDeletionService.deleteAccount()を呼び出し
   /// 4. 結果に応じてUI状態を更新
+  /// 5. 再認証が必要な場合はログアウトして再ログインを促す
   private func deleteAccount() {
     Task {
       isDeletingAccount = true
@@ -535,8 +536,13 @@ struct SettingsView: View {
           // 削除成功時はログアウト状態になるため、AuthManagerを通じて状態をリセット
           authManager.logout()
         case .failure(let message):
-          // エラーメッセージを表示
-          errorMessage = message
+          // 再認証が必要な場合はログアウト
+          if message.contains("再度ログイン") {
+            authManager.logout()
+          } else {
+            // その他のエラーメッセージを表示
+            errorMessage = message
+          }
         }
       }
     }
