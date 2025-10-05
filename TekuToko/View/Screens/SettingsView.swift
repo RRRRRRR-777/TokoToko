@@ -58,6 +58,12 @@ struct SettingsView: View {
   /// ログアウト処理やその他のエラーが発生した場合のメッセージを保持します。
   @State private var errorMessage: String?
 
+  /// アカウント削除確認ダイアログの表示状態
+  @State private var showingDeleteAccountAlert = false
+
+  /// アカウント削除処理中のローディング状態
+  @State private var isDeletingAccount = false
+
   /// ポリシー表示モーダルの表示状態
   @State private var showingPolicyView = false
 
@@ -73,6 +79,11 @@ struct SettingsView: View {
   // UIテスト用のフラグ
   private var isUITesting: Bool {
     ProcessInfo.processInfo.arguments.contains("--uitesting")
+  }
+
+  // 単体テスト環境かどうかを判定
+  private var isUnitTest: Bool {
+    ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
   }
 
   // UIテスト用のユーザー情報フラグ
@@ -174,8 +185,25 @@ struct SettingsView: View {
           .background(Color("BackgroundColor"))
           .listRowInsets(EdgeInsets())
       ) {
+        // 単体テスト環境の場合はシンプルな表示のみ
+        if isUnitTest {
+          Button(action: {
+            showingDeleteAccountAlert = true
+          }) {
+            HStack {
+              Text("アカウント削除")
+                .foregroundColor(.red)
+              Spacer()
+              if isDeletingAccount {
+                ProgressView()
+              }
+            }
+          }
+          .disabled(isDeletingAccount)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
+        }
         // UIテストモードの場合はモックユーザー情報を使用
-        if isUITesting && hasUserInfo {
+        else if isUITesting && hasUserInfo {
           // メールアドレス表示
           HStack {
             Text("メールアドレス")
@@ -212,8 +240,8 @@ struct SettingsView: View {
           .disabled(isLoading)
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
-        // 通常モードの場合は実際のユーザー情報を使用
-        else if !isUITesting, let user = Auth.auth().currentUser {
+        // 通常モードの場合は実際のユーザー情報を使用（単体テスト環境では表示しない）
+        else if !isUITesting && !isUnitTest, let user = Auth.auth().currentUser {
           HStack {
             Text("メールアドレス")
               .foregroundColor(.black)
@@ -254,6 +282,21 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
+
+          Button(action: {
+            showingDeleteAccountAlert = true
+          }) {
+            HStack {
+              Text("アカウント削除")
+                .foregroundColor(.red)
+              Spacer()
+              if isDeletingAccount {
+                ProgressView()
+              }
+            }
+          }
+          .disabled(isDeletingAccount)
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }
@@ -383,6 +426,14 @@ struct SettingsView: View {
     } message: {
       Text("アカウントからログアウトします。再度ログインする必要があります。")
     }
+    .alert("アカウントを削除しますか？", isPresented: $showingDeleteAccountAlert) {
+      Button("キャンセル", role: .cancel) {}
+      Button("削除", role: .destructive) {
+        deleteAccount()
+      }
+    } message: {
+      Text("この操作は取り消せません。アカウントと全てのデータが削除されます。")
+    }
     .sheet(isPresented: $showingPolicyView) {
       NavigationView {
         if let policy = cachedPolicy {
@@ -454,6 +505,40 @@ struct SettingsView: View {
     // UIの更新
     DispatchQueue.main.async {
       isLoading = false
+    }
+  }
+
+  /// アカウント削除処理を実行
+  ///
+  /// AccountDeletionServiceを通じてアカウント削除処理を実行します。
+  /// 処理中はローディング状態を表示し、成功時は自動的にログイン画面に遷移します。
+  ///
+  /// ## Process Flow
+  /// 1. ローディング状態をtrueに設定
+  /// 2. エラーメッセージをクリア
+  /// 3. AccountDeletionService.deleteAccount()を呼び出し
+  /// 4. 結果に応じてUI状態を更新
+  private func deleteAccount() {
+    Task {
+      isDeletingAccount = true
+      errorMessage = nil
+
+      // Firebase初期化エラーを回避するため、使用時に初期化
+      let service = AccountDeletionService()
+      let result = await service.deleteAccount()
+
+      DispatchQueue.main.async {
+        isDeletingAccount = false
+
+        switch result {
+        case .success:
+          // 削除成功時はログアウト状態になるため、AuthManagerを通じて状態をリセット
+          authManager.logout()
+        case .failure(let message):
+          // エラーメッセージを表示
+          errorMessage = message
+        }
+      }
     }
   }
 

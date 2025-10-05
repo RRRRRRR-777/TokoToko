@@ -1,7 +1,7 @@
 policy:
-  version: "1.0.0"
-  updated_at: "2025-10-02T00:00:00Z"
-  effective_date: "2025-10-02T00:00:00Z"
+  version: "1.1.0"
+  updated_at: "2025-10-05T00:00:00Z"
+  effective_date: "2025-10-05T00:00:00Z"
   privacy_policy:
     ja: |
       てくとこ プライバシーポリシー
@@ -58,9 +58,23 @@ policy:
 
       4. データの保持と削除について
 
-      ・データの保持：アカウントが有効な間、データを保持いたします
-      ・データの削除：お客様はいつでもデータの削除をご請求いただけます
-      ・アカウント削除：お客様はいつでもアカウントの削除ができます
+      データの保持：
+      アカウントが有効な間、お客様の散歩記録、位置情報、写真などのデータを保持いたします。
+
+      アカウント削除：
+      お客様はアプリ内からいつでもアカウントを削除できます。アカウント削除は以下の手順で行えます：
+      ・削除方法：アプリ内の「設定」画面から「アカウント削除」を選択し、確認ダイアログで削除を実行
+      ・削除範囲：アカウント削除により、以下のデータが恒久的に削除されます
+        - Firebase Authenticationのアカウント情報
+        - Firestoreに保存された全ての散歩記録（日時、距離、時間、歩数、ルート情報）
+        - Firebase Storageに保存された散歩に関連する全ての写真・画像データ
+        - 共有リンクで公開された情報
+      ・復元不可：一度削除されたデータは復元できません。削除前に必要なデータはバックアップしてください
+      ・処理時間：削除処理は即座に実行され、完了後はログアウト状態になります
+      ・再認証：セキュリティ上の理由により、アカウント削除時に再度ログインを求められる場合があります
+
+      個別データの削除：
+      アカウント全体を削除せず、個別の散歩記録のみを削除することも可能です。削除された散歩記録は復元できません。
 
       5. セキュリティについて
 
@@ -137,9 +151,23 @@ policy:
 
       4. Data Retention and Deletion
 
-      - Data Retention: Data is retained while your account is active
-      - Data Deletion: You can request deletion of your data at any time
-      - Account Deletion: You can delete your account at any time
+      Data Retention:
+      We retain your walk records, location data, photos, and other data while your account is active.
+
+      Account Deletion:
+      You can delete your account from within the app at any time. Account deletion can be performed as follows:
+      - Deletion Method: Navigate to the "Settings" screen in the app, select "Delete Account," and confirm the deletion in the dialog
+      - Scope of Deletion: Account deletion permanently removes the following data:
+        - Firebase Authentication account information
+        - All walk records stored in Firestore (date/time, distance, duration, step count, route information)
+        - All photos and image data related to walks stored in Firebase Storage
+        - Information published through share links
+      - Irreversible: Once deleted, data cannot be recovered. Please back up any necessary data before deletion
+      - Processing Time: Deletion is executed immediately, and you will be logged out upon completion
+      - Re-authentication: For security reasons, you may be required to re-authenticate when deleting your account
+
+      Individual Data Deletion:
+      You can also delete individual walk records without deleting your entire account. Deleted walk records cannot be recovered.
 
       5. Security
 
@@ -179,6 +207,13 @@ policy:
       1. ユーザーは、自己の責任においてアカウント情報を管理するものとします。
       2. ユーザーは、いかなる場合にも、アカウントを第三者に譲渡または貸与することはできません。
       3. 当方は、ログイン情報が一致した場合には、そのアカウントを保有するユーザー自身による利用とみなします。
+      4. ユーザーは、アプリ内の「設定」画面からいつでもアカウントを削除できます。アカウント削除により、以下の処理が実行されます：
+         ・Firebase Authenticationのアカウント情報の恒久的削除
+         ・Firestoreに保存された全ての散歩記録の恒久的削除
+         ・Firebase Storageに保存された全ての写真・画像データの恒久的削除
+         ・共有リンクを通じて公開された情報の削除
+      5. アカウント削除後、削除されたデータの復元はできません。削除前に必要なデータはバックアップすることを推奨します。
+      6. セキュリティ上の理由により、アカウント削除時に再度ログインを求める場合があります。
 
       第4条（利用料金）
       本アプリの基本機能は無料でご利用いただけます。将来的に有料機能を追加する場合は、事前にお知らせします。
@@ -252,6 +287,13 @@ policy:
       1. Users shall manage their account information at their own responsibility.
       2. Users may not transfer or lend their account to third parties under any circumstances.
       3. We will consider any use with matching login information as use by the account holder.
+      4. Users may delete their account at any time from the "Settings" screen within the App. Account deletion performs the following actions:
+         - Permanent deletion of Firebase Authentication account information
+         - Permanent deletion of all walk records stored in Firestore
+         - Permanent deletion of all photos and image data stored in Firebase Storage
+         - Deletion of information published through share links
+      5. Deleted data cannot be restored after account deletion. We recommend backing up necessary data before deletion.
+      6. For security reasons, re-authentication may be required when deleting an account.
 
       Article 4 (Usage Fees)
       Basic features of the App are free to use. We will notify you in advance if paid features are added in the future.

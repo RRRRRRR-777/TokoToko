@@ -122,6 +122,16 @@
         <li>ユーザーは、自己の責任においてアカウント情報を管理するものとします。</li>
         <li>ユーザーはいかなる場合にも、アカウントを第三者に譲渡または貸与することはできません。</li>
         <li>当方は、ログイン情報が一致した場合には、そのアカウントを保有するユーザー自身による利用とみなします。</li>
+        <li>ユーザーは、アプリ内の「設定」画面からいつでもアカウントを削除できます。アカウント削除により、以下の処理が実行されます。
+          <ul>
+            <li>Firebase Authenticationのアカウント情報の恒久的削除</li>
+            <li>Firestoreに保存された全ての散歩記録の恒久的削除</li>
+            <li>Firebase Storageに保存された全ての写真・画像データの恒久的削除</li>
+            <li>共有リンクを通じて公開された情報の削除</li>
+          </ul>
+        </li>
+        <li>アカウント削除後、削除されたデータの復元はできません。削除前に必要なデータはバックアップすることを推奨します。</li>
+        <li>セキュリティ上の理由により、アカウント削除時に再度ログインを求める場合があります。</li>
       </ol>
     </section>
 
@@ -242,6 +252,16 @@
         <li>Users shall manage their account information at their own responsibility.</li>
         <li>Users may not transfer or lend their account to third parties.</li>
         <li>We treat use with matching login information as use by the account holder.</li>
+        <li>Users may delete their account at any time from the "Settings" screen within the App. Account deletion performs the following actions:
+          <ul>
+            <li>Permanent deletion of Firebase Authentication account information</li>
+            <li>Permanent deletion of all walk records stored in Firestore</li>
+            <li>Permanent deletion of all photos and image data stored in Firebase Storage</li>
+            <li>Deletion of information published through share links</li>
+          </ul>
+        </li>
+        <li>Deleted data cannot be restored after account deletion. We recommend backing up necessary data before deletion.</li>
+        <li>For security reasons, re-authentication may be required when deleting an account.</li>
       </ol>
 
       <h3>Article 4 (Usage Fees)</h3>
@@ -308,7 +328,7 @@
     </section>
   </main>
   <footer>
-    バージョン: 1.0.0 / 最終更新日: 2025年9月14日
+    バージョン: 1.1.0 / 最終更新日: 2025年10月5日
   </footer>
 </body>
 </html>

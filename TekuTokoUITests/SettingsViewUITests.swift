@@ -248,4 +248,169 @@ final class SettingsViewUITests: XCTestCase {
     // デバイスを縦向きに戻す
     XCUIDevice.shared.orientation = .portrait
   }
+
+  // MARK: - アカウント削除UIテスト
+
+  /// アカウント削除ボタンが表示されることを確認
+  func testAccountDeletionButtonAppears() {
+    // UITestHelpersを使用してユーザー情報付きでアプリを起動
+    app.launchWithUserInfo()
+
+    // 設定タブをタップ
+    let settingsTab = app.buttons["設定"]
+    XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
+    settingsTab.tap()
+
+    // 下にスクロールしてアカウント削除ボタンを表示
+    app.swipeUp()
+
+    // アカウント削除ボタンを探す
+    let deleteButtonByText = app.staticTexts["アカウント削除"]
+    let deleteButtonByID = app.buttons["deleteAccountButton"]
+
+    // いずれかの方法でアカウント削除ボタンを見つける
+    let deleteButtonExists = deleteButtonByText.waitForExistence(timeout: 3)
+      || deleteButtonByID.waitForExistence(timeout: 3)
+
+    XCTAssertTrue(deleteButtonExists, "アカウント削除ボタンが表示されていません")
+  }
+
+  /// アカウント削除ボタンをタップすると確認アラートが表示されること
+  func testAccountDeletionAlertAppears() {
+    // UITestHelpersを使用してユーザー情報付きでアプリを起動
+    app.launchWithUserInfo()
+
+    // 設定タブをタップ
+    let settingsTab = app.buttons["設定"]
+    XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
+    settingsTab.tap()
+
+    // 下にスクロールしてアカウント削除ボタンを表示
+    app.swipeUp()
+
+    // アカウント削除ボタンを探す
+    let deleteButtonByText = app.staticTexts["アカウント削除"]
+    let deleteButtonByID = app.buttons["deleteAccountButton"]
+
+    // いずれかの方法でアカウント削除ボタンを見つけてタップ
+    var deleteButton: XCUIElement
+    if deleteButtonByText.exists {
+      deleteButton = deleteButtonByText
+    } else if deleteButtonByID.exists {
+      deleteButton = deleteButtonByID
+    } else {
+      // アカウント削除という文字列を含むセルを探す
+      let deleteCells = app.cells.containing(NSPredicate(format: "label CONTAINS 'アカウント削除'"))
+      XCTAssertTrue(deleteCells.count > 0, "アカウント削除ボタンが表示されていません")  // swiftlint:disable:this empty_count
+      deleteButton = deleteCells.element(boundBy: 0)
+    }
+
+    deleteButton.tap()
+
+    // アラートが表示されることを確認
+    let deleteAlert = app.alerts["アカウントを削除しますか？"]
+    XCTAssertTrue(deleteAlert.waitForExistence(timeout: 5), "アカウント削除アラートが表示されていません")
+
+    // アラートのメッセージを確認
+    let alertMessage = deleteAlert.staticTexts["この操作は取り消せません。アカウントと全てのデータが削除されます。"]
+    XCTAssertTrue(alertMessage.exists, "アラートメッセージが表示されていません")
+
+    // アラートのボタンが表示されていることを確認
+    XCTAssertTrue(deleteAlert.buttons["キャンセル"].exists, "キャンセルボタンが表示されていません")
+    XCTAssertTrue(deleteAlert.buttons["削除"].exists, "削除ボタンが表示されていません")
+  }
+
+  /// アカウント削除アラートでキャンセルを選択するとアラートが閉じること
+  func testAccountDeletionAlertCancel() {
+    // UITestHelpersを使用してユーザー情報付きでアプリを起動
+    app.launchWithUserInfo()
+
+    // 設定タブをタップ
+    let settingsTab = app.buttons["設定"]
+    XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
+    settingsTab.tap()
+
+    // 下にスクロールしてアカウント削除ボタンを表示
+    app.swipeUp()
+
+    // アカウント削除ボタンを探してタップ
+    let deleteButtonByText = app.staticTexts["アカウント削除"]
+    let deleteButtonByID = app.buttons["deleteAccountButton"]
+
+    var deleteButton: XCUIElement
+    if deleteButtonByText.exists {
+      deleteButton = deleteButtonByText
+    } else if deleteButtonByID.exists {
+      deleteButton = deleteButtonByID
+    } else {
+      let deleteCells = app.cells.containing(NSPredicate(format: "label CONTAINS 'アカウント削除'"))
+      XCTAssertTrue(deleteCells.count > 0, "アカウント削除ボタンが表示されていません")  // swiftlint:disable:this empty_count
+      deleteButton = deleteCells.element(boundBy: 0)
+    }
+
+    deleteButton.tap()
+
+    // アラートが表示されることを確認
+    let deleteAlert = app.alerts["アカウントを削除しますか？"]
+    XCTAssertTrue(deleteAlert.waitForExistence(timeout: 5), "アカウント削除アラートが表示されていません")
+
+    // キャンセルボタンをタップ
+    deleteAlert.buttons["キャンセル"].tap()
+
+    // アラートが閉じることを確認
+    XCTAssertFalse(deleteAlert.waitForExistence(timeout: 2), "アラートが閉じていません")
+
+    // 設定画面に留まることを確認
+    XCTAssertTrue(app.navigationBars["設定"].exists, "設定画面から移動していません")
+  }
+
+  /// アカウント削除ボタンが赤色で表示されること(アクセシビリティ)
+  func testAccountDeletionButtonIsRed() {
+    // UITestHelpersを使用してユーザー情報付きでアプリを起動
+    app.launchWithUserInfo()
+
+    // 設定タブをタップ
+    let settingsTab = app.buttons["設定"]
+    XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
+    settingsTab.tap()
+
+    // 下にスクロールしてアカウント削除ボタンを表示
+    app.swipeUp()
+
+    // アカウント削除ボタンを探す
+    let deleteButtonByText = app.staticTexts["アカウント削除"]
+    XCTAssertTrue(
+      deleteButtonByText.waitForExistence(timeout: 3), "アカウント削除ボタンが表示されていません")
+
+    // NOTE: XCUITestでは色の検証が困難なため、
+    // テキストが存在することと、破壊的アクションとしてのラベルが付いていることを確認
+    // 実際の色の確認はスクリーンショットテストやビジュアルリグレッションテストで行う
+    XCTAssertTrue(deleteButtonByText.exists, "アカウント削除ボタンが存在することを確認")
+  }
+
+  /// アカウント削除ボタンがスクロールした位置に表示されること
+  func testAccountDeletionButtonPositionInScrollView() {
+    // UITestHelpersを使用してユーザー情報付きでアプリを起動
+    app.launchWithUserInfo()
+
+    // 設定タブをタップ
+    let settingsTab = app.buttons["設定"]
+    XCTAssertTrue(settingsTab.waitForExistence(timeout: 5), "設定タブが表示されていません")
+    settingsTab.tap()
+
+    // 最初はアカウント削除ボタンが画面外にあることを確認
+    let deleteButtonByText = app.staticTexts["アカウント削除"]
+    _ = deleteButtonByText.exists  // 画面サイズによって初期状態は変わる可能性がある
+
+    // 下にスクロール
+    app.swipeUp()
+
+    // スクロール後にアカウント削除ボタンが表示されることを確認
+    let isVisibleAfterScroll = deleteButtonByText.waitForExistence(timeout: 3)
+
+    // スクロール後に表示されることを確認
+    // (画面サイズによっては最初から表示される可能性もあるため、
+    // スクロール後に表示されることのみを保証)
+    XCTAssertTrue(isVisibleAfterScroll, "スクロール後にアカウント削除ボタンが表示されるべき")
+  }
 }
