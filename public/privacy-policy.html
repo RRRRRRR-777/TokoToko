@@ -141,11 +141,28 @@
 
     <section>
       <h2>4. データの保持と削除について</h2>
+      <h3>データの保持</h3>
+      <p>アカウントが有効な間、お客様の散歩記録、位置情報、写真などのデータを保持いたします。</p>
+
+      <h3>アカウント削除</h3>
+      <p>お客様はアプリ内からいつでもアカウントを削除できます。アカウント削除は以下の手順で行えます：</p>
       <ul>
-        <li>データの保持：アカウントが有効な間、データを保持いたします。</li>
-        <li>データの削除：お客様はいつでもデータの削除をご請求いただけます。</li>
-        <li>アカウント削除：お客様はいつでもアカウントの削除ができます。</li>
+        <li><strong>削除方法：</strong>アプリ内の「設定」画面から「アカウント削除」を選択し、確認ダイアログで削除を実行</li>
+        <li><strong>削除範囲：</strong>アカウント削除により、以下のデータが恒久的に削除されます
+          <ul>
+            <li>Firebase Authenticationのアカウント情報</li>
+            <li>Firestoreに保存された全ての散歩記録（日時、距離、時間、歩数、ルート情報）</li>
+            <li>Firebase Storageに保存された散歩に関連する全ての写真・画像データ</li>
+            <li>共有リンクで公開された情報</li>
+          </ul>
+        </li>
+        <li><strong>復元不可：</strong>一度削除されたデータは復元できません。削除前に必要なデータはバックアップしてください</li>
+        <li><strong>処理時間：</strong>削除処理は即座に実行され、完了後はログアウト状態になります</li>
+        <li><strong>再認証：</strong>セキュリティ上の理由により、アカウント削除時に再度ログインを求められる場合があります</li>
       </ul>
+
+      <h3>個別データの削除</h3>
+      <p>アカウント全体を削除せず、個別の散歩記録のみを削除することも可能です。削除された散歩記録は復元できません。</p>
     </section>
 
     <section>
@@ -211,11 +228,25 @@
       <p>We do not share your personal information with third parties except with your consent, as required by law, or to protect life, body, or property.</p>
 
       <h3>4. Data Retention and Deletion</h3>
+      <p><strong>Data Retention:</strong> We retain your walk records, location data, photos, and other data while your account is active.</p>
+
+      <p><strong>Account Deletion:</strong> You can delete your account from within the app at any time. Account deletion can be performed as follows:</p>
       <ul>
-        <li>Data is retained while your account is active.</li>
-        <li>You can request deletion of your data at any time.</li>
-        <li>You may delete your account at any time.</li>
+        <li><strong>Deletion Method:</strong> Navigate to the "Settings" screen in the app, select "Delete Account," and confirm the deletion in the dialog</li>
+        <li><strong>Scope of Deletion:</strong> Account deletion permanently removes the following data:
+          <ul>
+            <li>Firebase Authentication account information</li>
+            <li>All walk records stored in Firestore (date/time, distance, duration, step count, route information)</li>
+            <li>All photos and image data related to walks stored in Firebase Storage</li>
+            <li>Information published through share links</li>
+          </ul>
+        </li>
+        <li><strong>Irreversible:</strong> Once deleted, data cannot be recovered. Please back up any necessary data before deletion</li>
+        <li><strong>Processing Time:</strong> Deletion is executed immediately, and you will be logged out upon completion</li>
+        <li><strong>Re-authentication:</strong> For security reasons, you may be required to re-authenticate when deleting your account</li>
       </ul>
+
+      <p><strong>Individual Data Deletion:</strong> You can also delete individual walk records without deleting your entire account. Deleted walk records cannot be recovered.</p>
 
       <h3>5. Security</h3>
       <ul>
@@ -235,7 +266,7 @@
     </section>
   </main>
   <footer>
-    バージョン: 1.0.0 / 最終更新日: 2025年9月14日
+    バージョン: 1.1.0 / 最終更新日: 2025年10月5日
   </footer>
 </body>
 </html>
