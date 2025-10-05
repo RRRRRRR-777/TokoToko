@@ -249,8 +249,28 @@ class AccountDeletionService {
     let walksQuery = db.collection("walks").whereField("userId", isEqualTo: userId)
     let walksSnapshot = try await walksQuery.getDocuments()
 
-    for document in walksSnapshot.documents {
-      try await document.reference.delete()
+    let walkIds = walksSnapshot.documents.map { $0.documentID }
+
+    logger.info(
+      operation: "deleteUserDataFromFirestore",
+      message: "散歩記録削除対象を特定",
+      context: [
+        "user_id": userId,
+        "walk_count": "\(walksSnapshot.documents.count)",
+        "walk_ids": walkIds.joined(separator: ", ")
+      ]
+    )
+
+    // 並列削除でパフォーマンス向上
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for document in walksSnapshot.documents {
+        group.addTask {
+          try await document.reference.delete()
+        }
+      }
+
+      // 全ての削除タスクが完了するまで待つ
+      try await group.waitForAll()
     }
 
     logger.info(
@@ -258,7 +278,8 @@ class AccountDeletionService {
       message: "Firestore散歩記録削除完了",
       context: [
         "user_id": userId,
-        "deleted_walks": "\(walksSnapshot.documents.count)"
+        "deleted_walks": "\(walksSnapshot.documents.count)",
+        "deleted_walk_ids": walkIds.joined(separator: ", ")
       ]
     )
 
@@ -285,8 +306,29 @@ class AccountDeletionService {
     do {
       // Storage内の全ファイルを列挙して削除
       let result = try await userStorageRef.listAll()
-      for item in result.items {
-        try await item.delete()
+
+      let fileNames = result.items.map { $0.name }
+
+      logger.info(
+        operation: "deleteUserDataFromStorage",
+        message: "Storage削除対象を特定",
+        context: [
+          "user_id": userId,
+          "file_count": "\(result.items.count)",
+          "file_names": fileNames.joined(separator: ", ")
+        ]
+      )
+
+      // 並列削除でパフォーマンス向上
+      try await withThrowingTaskGroup(of: Void.self) { group in
+        for item in result.items {
+          group.addTask {
+            try await item.delete()
+          }
+        }
+
+        // 全ての削除タスクが完了するまで待つ
+        try await group.waitForAll()
       }
 
       logger.info(
@@ -294,7 +336,8 @@ class AccountDeletionService {
         message: "Storageデータ削除完了",
         context: [
           "user_id": userId,
-          "deleted_files": "\(result.items.count)"
+          "deleted_files": "\(result.items.count)",
+          "deleted_file_names": fileNames.joined(separator: ", ")
         ]
       )
     } catch {
