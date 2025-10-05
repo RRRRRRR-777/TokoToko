@@ -200,6 +200,7 @@ struct SettingsView: View {
             }
           }
           .disabled(isDeletingAccount)
+          .accessibilityIdentifier("deleteAccountButton")
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // UIテストモードの場合はモックユーザー情報を使用
@@ -238,6 +239,22 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
+
+          Button(action: {
+            showingDeleteAccountAlert = true
+          }) {
+            HStack {
+              Text("アカウント削除")
+                .foregroundColor(.red)
+              Spacer()
+              if isDeletingAccount {
+                ProgressView()
+              }
+            }
+          }
+          .disabled(isDeletingAccount)
+          .accessibilityIdentifier("deleteAccountButton")
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // 通常モードの場合は実際のユーザー情報を使用（単体テスト環境では表示しない）
@@ -297,6 +314,7 @@ struct SettingsView: View {
             }
           }
           .disabled(isDeletingAccount)
+          .accessibilityIdentifier("deleteAccountButton")
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }

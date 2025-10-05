@@ -378,14 +378,14 @@ final class SettingsViewUITests: XCTestCase {
     app.swipeUp()
 
     // アカウント削除ボタンを探す
-    let deleteButtonByText = app.staticTexts["アカウント削除"]
+    let deleteButton = app.buttons["deleteAccountButton"]
     XCTAssertTrue(
-      deleteButtonByText.waitForExistence(timeout: 3), "アカウント削除ボタンが表示されていません")
+      deleteButton.waitForExistence(timeout: 3), "アカウント削除ボタンが表示されていません")
 
     // NOTE: XCUITestでは色の検証が困難なため、
     // テキストが存在することと、破壊的アクションとしてのラベルが付いていることを確認
     // 実際の色の確認はスクリーンショットテストやビジュアルリグレッションテストで行う
-    XCTAssertTrue(deleteButtonByText.exists, "アカウント削除ボタンが存在することを確認")
+    XCTAssertTrue(deleteButton.exists, "アカウント削除ボタンが存在することを確認")
   }
 
   /// アカウント削除ボタンがスクロールした位置に表示されること
@@ -399,14 +399,14 @@ final class SettingsViewUITests: XCTestCase {
     settingsTab.tap()
 
     // 最初はアカウント削除ボタンが画面外にあることを確認
-    let deleteButtonByText = app.staticTexts["アカウント削除"]
-    _ = deleteButtonByText.exists  // 画面サイズによって初期状態は変わる可能性がある
+    let deleteButton = app.buttons["deleteAccountButton"]
+    _ = deleteButton.exists  // 画面サイズによって初期状態は変わる可能性がある
 
     // 下にスクロール
     app.swipeUp()
 
     // スクロール後にアカウント削除ボタンが表示されることを確認
-    let isVisibleAfterScroll = deleteButtonByText.waitForExistence(timeout: 3)
+    let isVisibleAfterScroll = deleteButton.waitForExistence(timeout: 3)
 
     // スクロール後に表示されることを確認
     // (画面サイズによっては最初から表示される可能性もあるため、
