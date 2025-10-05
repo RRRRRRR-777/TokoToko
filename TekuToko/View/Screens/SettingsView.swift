@@ -64,9 +64,6 @@ struct SettingsView: View {
   /// アカウント削除処理中のローディング状態
   @State private var isDeletingAccount = false
 
-  /// アカウント削除サービス
-  private let accountDeletionService = AccountDeletionService()
-
   /// ポリシー表示モーダルの表示状態
   @State private var showingPolicyView = false
 
@@ -526,7 +523,9 @@ struct SettingsView: View {
       isDeletingAccount = true
       errorMessage = nil
 
-      let result = await accountDeletionService.deleteAccount()
+      // Firebase初期化エラーを回避するため、使用時に初期化
+      let service = AccountDeletionService()
+      let result = await service.deleteAccount()
 
       DispatchQueue.main.async {
         isDeletingAccount = false
