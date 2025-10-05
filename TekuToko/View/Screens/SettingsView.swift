@@ -200,6 +200,7 @@ struct SettingsView: View {
             }
           }
           .disabled(isDeletingAccount)
+          .accessibilityIdentifier("deleteAccountButton")
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // UIテストモードの場合はモックユーザー情報を使用
@@ -238,6 +239,22 @@ struct SettingsView: View {
             }
           }
           .disabled(isLoading)
+          .listRowBackground(Color("BackgroundColor").opacity(0.8))
+
+          Button(action: {
+            showingDeleteAccountAlert = true
+          }) {
+            HStack {
+              Text("アカウント削除")
+                .foregroundColor(.red)
+              Spacer()
+              if isDeletingAccount {
+                ProgressView()
+              }
+            }
+          }
+          .disabled(isDeletingAccount)
+          .accessibilityIdentifier("deleteAccountButton")
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
         // 通常モードの場合は実際のユーザー情報を使用（単体テスト環境では表示しない）
@@ -297,6 +314,7 @@ struct SettingsView: View {
             }
           }
           .disabled(isDeletingAccount)
+          .accessibilityIdentifier("deleteAccountButton")
           .listRowBackground(Color("BackgroundColor").opacity(0.8))
         }
       }
@@ -518,6 +536,7 @@ struct SettingsView: View {
   /// 2. エラーメッセージをクリア
   /// 3. AccountDeletionService.deleteAccount()を呼び出し
   /// 4. 結果に応じてUI状態を更新
+  /// 5. 再認証が必要な場合はログアウトして再ログインを促す
   private func deleteAccount() {
     Task {
       isDeletingAccount = true
@@ -535,8 +554,13 @@ struct SettingsView: View {
           // 削除成功時はログアウト状態になるため、AuthManagerを通じて状態をリセット
           authManager.logout()
         case .failure(let message):
-          // エラーメッセージを表示
-          errorMessage = message
+          // 再認証が必要な場合はログアウト
+          if message.contains("再度ログイン") {
+            authManager.logout()
+          } else {
+            // その他のエラーメッセージを表示
+            errorMessage = message
+          }
         }
       }
     }

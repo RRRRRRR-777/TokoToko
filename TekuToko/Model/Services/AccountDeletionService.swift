@@ -223,11 +223,6 @@ class AccountDeletionService {
         humanNote: "Firebase Authentication削除に失敗"
       )
 
-      // 再認証が必要な場合
-      if error.code == AuthErrorCode.requiresRecentLogin.rawValue {
-        return .failure("セキュリティのため、再度ログインしてから削除してください")
-      }
-
       return .failure("アカウント削除に失敗しました")
     }
   }
@@ -246,7 +241,7 @@ class AccountDeletionService {
     )
 
     // ユーザーの散歩記録を削除
-    let walksQuery = db.collection("walks").whereField("userId", isEqualTo: userId)
+    let walksQuery = db.collection("walks").whereField("user_id", isEqualTo: userId)
     let walksSnapshot = try await walksQuery.getDocuments()
 
     let walkIds = walksSnapshot.documents.map { $0.documentID }
@@ -283,8 +278,72 @@ class AccountDeletionService {
       ]
     )
 
-    // 必要に応じて他のコレクションも削除
-    // 例: ユーザー情報、設定など
+    // 写真データを削除
+    let photosQuery = db.collection("photos").whereField("user_id", isEqualTo: userId)
+    let photosSnapshot = try await photosQuery.getDocuments()
+
+    let photoIds = photosSnapshot.documents.map { $0.documentID }
+
+    logger.info(
+      operation: "deleteUserDataFromFirestore",
+      message: "写真データ削除対象を特定",
+      context: [
+        "user_id": userId,
+        "photo_count": "\(photosSnapshot.documents.count)",
+        "photo_ids": photoIds.joined(separator: ", ")
+      ]
+    )
+
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for document in photosSnapshot.documents {
+        group.addTask {
+          try await document.reference.delete()
+        }
+      }
+      try await group.waitForAll()
+    }
+
+    // 共有リンクを削除
+    let sharedLinksQuery = db.collection("shared_links").whereField("user_id", isEqualTo: userId)
+    let sharedLinksSnapshot = try await sharedLinksQuery.getDocuments()
+
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for document in sharedLinksSnapshot.documents {
+        group.addTask {
+          try await document.reference.delete()
+        }
+      }
+      try await group.waitForAll()
+    }
+
+    // ユーザー情報と同意記録を削除
+    let userRef = db.collection("users").document(userId)
+
+    // サブコレクション（consents）を削除
+    let consentsSnapshot = try await userRef.collection("consents").getDocuments()
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for document in consentsSnapshot.documents {
+        group.addTask {
+          try await document.reference.delete()
+        }
+      }
+      try await group.waitForAll()
+    }
+
+    // ユーザードキュメント本体を削除
+    try await userRef.delete()
+
+    logger.info(
+      operation: "deleteUserDataFromFirestore",
+      message: "Firestoreデータ削除完了",
+      context: [
+        "user_id": userId,
+        "deleted_walks": "\(walksSnapshot.documents.count)",
+        "deleted_photos": "\(photosSnapshot.documents.count)",
+        "deleted_shared_links": "\(sharedLinksSnapshot.documents.count)",
+        "deleted_consents": "\(consentsSnapshot.documents.count)"
+      ]
+    )
   }
 
   /// Firebase Storageからユーザーデータを削除
