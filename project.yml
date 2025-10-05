@@ -82,7 +82,7 @@ targets:
     settings:
       base:
         PRODUCT_MODULE_NAME: TekuToko
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuToko
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoToko
         INFOPLIST_KEY_CFBundleDisplayName: "てくとこ"
         INFOPLIST_KEY_CFBundleName: "てくとこ - お散歩SNS"
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
@@ -99,7 +99,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
-        DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TekuToko
+        DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TokoToko
         DOCC_EXTRACT_OBJC_INFO_FOR_SWIFT_SYMBOLS: YES
         DOCC_HOSTING_BASE_PATH: TekuToko
     info:
@@ -131,7 +131,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoTests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
@@ -151,7 +151,7 @@ targets:
     templates: [CommonSettings]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TokoTokoUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
