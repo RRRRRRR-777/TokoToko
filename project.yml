@@ -108,7 +108,7 @@ targets:
         CFBundleURLTypes:
           - CFBundleTypeRole: Editor
             CFBundleURLSchemes:
-              - com.googleusercontent.apps.730739320416-rjs5ngp3np3b4d8hd4fmn4c6o05ppoek
+              - com.googleusercontent.apps.730739320416-46gaaeff63k5fu0bctd7d0c0p46a4drn
         UIBackgroundModes:
           - location
         ITSAppUsesNonExemptEncryption: false
