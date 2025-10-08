@@ -355,7 +355,7 @@ struct HomeView: View {
           .foregroundColor(.secondary)
       }
 
-      Button("位置情報を許可する") {
+      Button("続ける") {
         locationManager.requestWhenInUseAuthorization()
       }
       .padding(.horizontal, 20)
