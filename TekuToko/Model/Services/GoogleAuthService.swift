@@ -125,12 +125,27 @@ class GoogleAuthService {
 
     logger.info(
       operation: "configureGoogleSignIn",
-      message: "Google認証設定完了",
-      context: ["client_id_exists": "true"]
+      message: "ClientID取得成功",
+      context: [
+        "client_id_prefix": String(clientID.prefix(20)),
+        "client_id_length": "\(clientID.count)"
+      ]
     )
 
     let config = GIDConfiguration(clientID: clientID)
     GIDSignIn.sharedInstance.configuration = config
+
+    // 設定が正しく適用されたか検証
+    let configApplied = GIDSignIn.sharedInstance.configuration != nil
+    logger.info(
+      operation: "configureGoogleSignIn",
+      message: "Google認証設定完了",
+      context: [
+        "configuration_applied": "\(configApplied)",
+        "client_id_exists": "true"
+      ]
+    )
+
     return clientID
   }
 
@@ -159,6 +174,20 @@ class GoogleAuthService {
       message: "Google Sign In開始",
       context: ["has_root_view_controller": "true"]
     )
+
+    // GIDSignIn設定の検証
+    guard GIDSignIn.sharedInstance.configuration != nil else {
+      logger.logError(
+        NSError(
+          domain: "GoogleAuthService", code: 1002,
+          userInfo: [NSLocalizedDescriptionKey: "Google Sign-In設定エラー"]),
+        operation: "performGoogleSignIn",
+        humanNote: "GIDConfigurationが未設定",
+        aiTodo: "configureGoogleSignInの実行を確認"
+      )
+      completion(.failure("Google Sign-In設定エラー。アプリを再起動してください。"))
+      return
+    }
 
     GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) {
       [weak self] result, error in

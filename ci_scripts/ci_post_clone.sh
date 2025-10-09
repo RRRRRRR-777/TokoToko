@@ -26,6 +26,22 @@ echo "$GOOGLE_SERVICE_INFO_PLIST" > TekuToko/GoogleService-Info.plist
 if [ -f TekuToko/GoogleService-Info.plist ]; then
     echo "✅ Successfully generated GoogleService-Info.plist"
     echo "📋 GoogleService-Info.plist file size: $(wc -c < TekuToko/GoogleService-Info.plist) bytes"
+
+    # Validate plist file format
+    if /usr/libexec/PlistBuddy -c "Print CLIENT_ID" TekuToko/GoogleService-Info.plist > /dev/null 2>&1; then
+        CLIENT_ID=$(/usr/libexec/PlistBuddy -c "Print CLIENT_ID" TekuToko/GoogleService-Info.plist)
+        echo "📋 CLIENT_ID found: ${CLIENT_ID:0:20}..."
+    else
+        echo "⚠️  Warning: CLIENT_ID not found in GoogleService-Info.plist"
+    fi
+
+    # Validate plist XML format
+    if plutil -lint TekuToko/GoogleService-Info.plist > /dev/null 2>&1; then
+        echo "✅ GoogleService-Info.plist format is valid"
+    else
+        echo "❌ Error: GoogleService-Info.plist is not a valid plist file"
+        exit 1
+    fi
 else
     echo "❌ Error: Failed to generate GoogleService-Info.plist"
     exit 1
