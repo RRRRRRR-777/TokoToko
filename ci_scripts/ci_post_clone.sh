@@ -92,6 +92,27 @@ if [ ! -f TekuToko.xcodeproj/project.pbxproj ]; then
 fi
 
 echo "✅ Successfully generated TekuToko.xcodeproj"
+
+# Add GIDClientID to Info.plist
+echo "🔧 Adding GIDClientID to Info.plist..."
+if [ -f TekuToko/GoogleService-Info.plist ]; then
+    CLIENT_ID=$(/usr/libexec/PlistBuddy -c "Print CLIENT_ID" TekuToko/GoogleService-Info.plist)
+    if [ ! -f Info.plist ]; then
+        echo "⚠️  Warning: Info.plist not found, creating from template"
+        echo '<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+</dict>
+</plist>' > Info.plist
+    fi
+    /usr/libexec/PlistBuddy -c "Add :GIDClientID string $CLIENT_ID" Info.plist 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Set :GIDClientID $CLIENT_ID" Info.plist
+    echo "✅ Added GIDClientID to Info.plist: ${CLIENT_ID:0:30}..."
+else
+    echo "⚠️  Warning: GoogleService-Info.plist not found, skipping GIDClientID setup"
+fi
+
 echo "📋 Project contents:"
 ls -la TekuToko.xcodeproj/
 

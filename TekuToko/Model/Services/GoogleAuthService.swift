@@ -111,7 +111,11 @@ class GoogleAuthService {
   }
 
   private func configureGoogleSignIn() -> String? {
-    guard let clientID = FirebaseApp.app()?.options.clientID else {
+    // Info.plistからGIDClientIDを取得
+    let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String
+      ?? FirebaseApp.app()?.options.clientID
+
+    guard let clientID = clientID else {
       logger.logError(
         NSError(
           domain: "GoogleAuthService", code: 1001,
@@ -126,26 +130,11 @@ class GoogleAuthService {
     logger.info(
       operation: "configureGoogleSignIn",
       message: "ClientID取得成功",
-      context: [
-        "client_id_prefix": String(clientID.prefix(20)),
-        "client_id_length": "\(clientID.count)"
-      ]
+      context: ["client_id_prefix": String(clientID.prefix(20))]
     )
 
     let config = GIDConfiguration(clientID: clientID)
     GIDSignIn.sharedInstance.configuration = config
-
-    // 設定が正しく適用されたか検証
-    let configApplied = GIDSignIn.sharedInstance.configuration != nil
-    logger.info(
-      operation: "configureGoogleSignIn",
-      message: "Google認証設定完了",
-      context: [
-        "configuration_applied": "\(configApplied)",
-        "client_id_exists": "true"
-      ]
-    )
-
     return clientID
   }
 
