@@ -230,15 +230,15 @@ struct TekuTokoApp: App {
   var body: some Scene {
     WindowGroup {
       if UITestingHelper.shared.isUITesting {
-        // UIテスト時もNavigationViewを維持し、ナビゲーションバー検証の互換性を確保
+        // UIテスト時もナビゲーションバー検証の互換性を確保
         ZStack {
-          NavigationView {
-            if authManager.isLoggedIn {
-              MainTabView()
-                .environmentObject(authManager)
-                .environmentObject(consentManager)
-                .environmentObject(locationSettingsManager)
-            } else {
+          if authManager.isLoggedIn {
+            MainTabView()
+              .environmentObject(authManager)
+              .environmentObject(consentManager)
+              .environmentObject(locationSettingsManager)
+          } else {
+            NavigationView {
               LoginView()
                 .environmentObject(authManager)
             }
@@ -249,26 +249,35 @@ struct TekuTokoApp: App {
           configureNavigationBarAppearance()
         }
       } else {
-        NavigationView {
-          if authManager.isInitializing || consentManager.isLoading {
-            SplashView()
-          } else if !authManager.isLoggedIn {
-            LoginView()
-              .environmentObject(authManager)
-          } else if !consentManager.hasValidConsent {
-            ConsentFlowView()
-              .environmentObject(consentManager)
-          } else {
-            MainTabView()
-              .environmentObject(authManager)
-              .environmentObject(consentManager)
-              .environmentObject(locationSettingsManager)
+        rootAppView
+          .onAppear {
+            configureNavigationBarAppearance()
           }
-        }
-        .onAppear {
-          configureNavigationBarAppearance()
-        }
       }
+    }
+  }
+
+  /// 通常時の表示コンテンツを構築
+  /// - Note: MainTabView表示時は重複NavigationViewを避け、画面全体の余白を抑制
+  @ViewBuilder
+  private var rootAppView: some View {
+    if authManager.isInitializing || consentManager.isLoading {
+      SplashView()
+    } else if !authManager.isLoggedIn {
+      NavigationView {
+        LoginView()
+          .environmentObject(authManager)
+      }
+    } else if !consentManager.hasValidConsent {
+      NavigationView {
+        ConsentFlowView()
+          .environmentObject(consentManager)
+      }
+    } else {
+      MainTabView()
+        .environmentObject(authManager)
+        .environmentObject(consentManager)
+        .environmentObject(locationSettingsManager)
     }
   }
 
