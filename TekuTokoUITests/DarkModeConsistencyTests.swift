@@ -53,8 +53,9 @@ final class DarkModeConsistencyTests: XCTestCase {
   /// システム設定を変更して両モードでの外観を比較テストします。
   func testHomeViewDarkLightModeConsistency() throws {
     // 初期同期（タブバーが出るまで）
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong))
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app),
+      "メインタブバーが表示されていません")
     
     // ホーム画面に移動
     navigateToHomeTab()
@@ -82,8 +83,9 @@ final class DarkModeConsistencyTests: XCTestCase {
   /// 設定画面でのNavigation Bar、リスト背景、テキスト色の統一性を検証します。
   func testSettingsViewDarkLightModeConsistency() throws {
     app.launch()
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong))
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app),
+      "メインタブバーが表示されていません")
     
     // 設定画面に移動
     navigateToSettingsTab()
@@ -113,8 +115,9 @@ final class DarkModeConsistencyTests: XCTestCase {
   /// 散歩履歴画面（おさんぽタブ）でのSegmentedControlとリスト表示の統一性を検証します。
   func testWalkHistoryViewDarkLightModeConsistency() throws {
     app.launch()
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong))
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app),
+      "メインタブバーが表示されていません")
     
     // 散歩履歴画面に移動
     navigateToWalkHistoryTab()
@@ -149,8 +152,9 @@ final class DarkModeConsistencyTests: XCTestCase {
   /// 設定 → このアプリについて の画面遷移での外観統一性を検証します。
   func testAppInfoViewDarkLightModeConsistency() throws {
     app.launch()
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong))
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app),
+      "メインタブバーが表示されていません")
     
     // 設定 → このアプリについて に移動
     navigateToSettingsTab()
@@ -189,8 +193,9 @@ final class DarkModeConsistencyTests: XCTestCase {
   /// 設定 → 位置情報設定 の画面での統一性を検証します。
   func testLocationSettingsViewDarkLightModeConsistency() throws {
     app.launch()
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: UITestingExtensions.TimeoutSettings.adjustedLong))
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app),
+      "メインタブバーが表示されていません")
     
     // 設定 → 位置情報設定 に移動
     navigateToSettingsTab()
@@ -305,6 +310,7 @@ final class DarkModeConsistencyTests: XCTestCase {
     app.launchArguments = ["--uitesting", "--logged-in", "-uiuserinterfacestyle", style]
     app.launch()
     _ = UITestHelpers.awaitRootRendered(app)
+    UITestHelpers.waitForMainTabInterface(app)
   }
   
   /// Navigation Barの外観を検証
