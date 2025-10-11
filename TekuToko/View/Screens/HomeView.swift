@@ -111,6 +111,14 @@ struct HomeView: View {
     return UIScreen.main.bounds.height > 667 ? 60 : 90
   }
 
+  /// 画面幅に応じた横方向の余白を算出
+  ///
+  /// 端末サイズごとに見た目のバランスが崩れないよう、画面幅の一定割合と最小値を組み合わせる。
+  private var horizontalPadding: CGFloat {
+    let base = UIScreen.main.bounds.width * 0.06
+    return max(20, base)
+  }
+
   // MARK: - タイミング制御定数
 
   /// UIアニメーション関連の定数
@@ -197,7 +205,7 @@ struct HomeView: View {
               .accessibilityIdentifier("散歩再開ボタン")
             }
           }
-          .padding(.horizontal, 10)
+          .padding(.horizontal, horizontalPadding)
           .padding(.bottom, bottomPadding)
         }
       }
