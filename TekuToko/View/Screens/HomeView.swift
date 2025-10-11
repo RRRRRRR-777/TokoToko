@@ -9,6 +9,7 @@ import CoreLocation
 import CoreMotion
 import MapKit
 import SwiftUI
+import UIKit
 
 /// TekuTokoアプリのメイン画面を表示するSwiftUIビュー
 ///
@@ -94,6 +95,20 @@ struct HomeView: View {
   /// 計算コストの高い要素をキャッシュし、不要な再描画を防止します。
   private var optimizedProgressViewStyle: CircularProgressViewStyle {
     CircularProgressViewStyle(tint: Color(red: 0.2, green: 0.7, blue: 0.9))
+  }
+
+  /// セーフエリア下端に応じたボトムパディング量を算出
+  ///
+  /// セーフエリア下端が 0 の場合は物理ホームボタン端末とみなして 90pt、
+  /// それ以外はホームインジケータ端末として 60pt を返します。
+  private var bottomPadding: CGFloat {
+    let bottomInset = getSafeAreaInsets().bottom
+    if bottomInset > 0 {
+      return 60
+    }
+
+    // セーフエリア情報が取得できない初期表示などでは画面高さでフォールバック
+    return UIScreen.main.bounds.height > 667 ? 60 : 90
   }
 
   // MARK: - タイミング制御定数
@@ -182,8 +197,8 @@ struct HomeView: View {
               .accessibilityIdentifier("散歩再開ボタン")
             }
           }
-          .padding(.bottom, getSafeAreaInsets().bottom + 30)
           .padding(.horizontal, 10)
+          .padding(.bottom, bottomPadding)
         }
       }
 
