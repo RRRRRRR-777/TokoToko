@@ -204,18 +204,23 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
 
     let authStatus = locationManager.checkAuthorizationStatus()
-    if authStatus != .authorizedAlways {
-      handleLocationPermissionRequest(title: title, description: description)
-      return
-    }
 
-    performWalkStart(title: title, description: description, userId: userId)
+    // Issue #157: authorizedWhenInUse または authorizedAlways の場合は散歩を開始
+    // フォアグラウンドでの散歩記録は WhenInUse で可能、バックグラウンド追跡は Always で有効
+    switch authStatus {
+    case .authorizedWhenInUse, .authorizedAlways:
+      performWalkStart(title: title, description: description, userId: userId)
+    case .notDetermined, .denied, .restricted:
+      handleLocationPermissionRequest(title: title, description: description)
+    @unknown default:
+      handleLocationPermissionRequest(title: title, description: description)
+    }
   }
 
   private func handleLocationPermissionRequest(title: String, description: String) {
     logger.info(
       operation: "startWalk",
-      message: "バックグラウンド位置情報権限を要求します"
+      message: "位置情報権限を要求します"
     )
     pendingWalkTitle = title
     pendingWalkDescription = description
@@ -409,11 +414,11 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   }
 
   private func handleAuthorizationStatusChange(_ status: CLAuthorizationStatus) {
-    if status == .authorizedAlways,
+    // Issue #157: authorizedWhenInUseでも散歩を開始できるように対応
+    if status == .authorizedAlways || status == .authorizedWhenInUse,
       let title = pendingWalkTitle,
       let description = pendingWalkDescription,
-      let userId = Auth.auth().currentUser?.uid
-    {
+      let userId = Auth.auth().currentUser?.uid {
       pendingWalkTitle = nil
       pendingWalkDescription = nil
       performWalkStart(title: title, description: description, userId: userId)
