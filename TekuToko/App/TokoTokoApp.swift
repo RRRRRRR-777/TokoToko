@@ -405,12 +405,28 @@ struct MainTabView: View {
         Spacer()
       }
 
-      // カスタムタブバー
+      // カスタムタブバーと各タブ専用のフローティングボタン
       VStack {
         Spacer()
-        CustomTabBar(selectedTab: $selectedTab)
-          .padding(.horizontal, 20)
-          .padding(.bottom, 20)
+        HStack(alignment: .center, spacing: 16) {
+          CustomTabBar(selectedTab: $selectedTab)
+
+          // ホームタブの場合のみ散歩ボタンを表示
+          if selectedTab == .outing {
+            Spacer(minLength: 0)
+            WalkControlPanel(walkManager: WalkManager.shared, isFloating: true)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+
+          // おさんぽタブの場合のみフレンドボタンを表示
+          if selectedTab == .walk {
+            Spacer(minLength: 0)
+            FriendHistoryButton()
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 20)
       }
     }
     .ignoresSafeArea(.all, edges: .bottom)
@@ -513,7 +529,6 @@ struct CustomTabBar: View {
         .fill(Color("BackgroundColor"))
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
     )
-    .padding(.trailing, 80)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("MainTabBar")
   }

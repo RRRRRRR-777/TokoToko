@@ -210,17 +210,6 @@ struct HomeView: View {
         }
       }
 
-      // 右下固定のコントロールボタン（常に表示）
-      VStack {
-        Spacer()
-        HStack {
-          Spacer()
-          VStack(spacing: 16) {
-            WalkControlPanel(walkManager: walkManager, isFloating: true)
-          }
-          .padding(.trailing, 20)
-        }
-      }
     }
     .accessibilityIdentifier("HomeView")
     .navigationBarHidden(true)
