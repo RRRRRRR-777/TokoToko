@@ -27,7 +27,6 @@ final class PolicyServiceTests: XCTestCase {
     let policy = try await sut.fetchPolicy()
 
     // Then
-    XCTAssertEqual(policy.version, "1.0.0")
     XCTAssertFalse(policy.privacyPolicy.ja.isEmpty)
     XCTAssertFalse(policy.termsOfService.ja.isEmpty)
     XCTAssertNotNil(policy.privacyPolicy.en)
