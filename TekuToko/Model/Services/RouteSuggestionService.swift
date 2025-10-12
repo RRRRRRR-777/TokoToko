@@ -183,7 +183,6 @@ class RouteSuggestionService {
       let duration = max(item.estimatedDuration, 5)
 
       return RouteSuggestion(
-        id: UUID().uuidString,
         title: item.title.trimmingCharacters(in: .whitespacesAndNewlines),
         description: item.description.trimmingCharacters(in: .whitespacesAndNewlines),
         estimatedDistance: roundedDistance,
@@ -203,10 +202,7 @@ class RouteSuggestionService {
 /// 散歩ルート提案
 ///
 /// LLMによって生成される散歩ルートの提案内容を表します。
-struct RouteSuggestion: Identifiable, Codable {
-  /// 一意識別子
-  let id: String
-
+struct RouteSuggestion: Codable {
   /// ルートのタイトル
   let title: String
 
