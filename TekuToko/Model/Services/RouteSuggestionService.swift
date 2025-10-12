@@ -324,19 +324,33 @@ class RouteSuggestionService {
   private func reverseGeocode(location: CLLocation) async throws -> String? {
     let geocoder = CLGeocoder()
 
-    return try await withCheckedThrowingContinuation { continuation in
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String?, Error>) in
+      var isResumed = false
+      let lock = NSLock()
+
       // タイムアウト設定（2秒）
       let timeoutTask = Task {
         try? await Task.sleep(nanoseconds: 2_000_000_000)
-        geocoder.cancelGeocode()
-        continuation.resume(throwing: NSError(
-          domain: "RouteSuggestionService",
-          code: -1,
-          userInfo: [NSLocalizedDescriptionKey: "ジオコーディングタイムアウト"]
-        ))
+        lock.lock()
+        defer { lock.unlock() }
+
+        if !isResumed {
+          isResumed = true
+          geocoder.cancelGeocode()
+          continuation.resume(throwing: NSError(
+            domain: "RouteSuggestionService",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "ジオコーディングタイムアウト"]
+          ))
+        }
       }
 
       geocoder.reverseGeocodeLocation(location) { placemarks, error in
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard !isResumed else { return }
+        isResumed = true
         timeoutTask.cancel()
 
         if let error = error {
