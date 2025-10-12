@@ -63,6 +63,9 @@ struct HomeView: View {
   /// 非同期処理（位置情報取得、散歩開始処理等）の実行中に表示するローディングインジケーターの制御に使用されます。
   @State private var isLoading = false
 
+  /// ルート提案エラー表示用のメッセージ
+  @State private var routeSuggestionErrorMessage: String?
+
   /// Apple Intelligence利用可否フラグ
   ///
   /// 端末がApple Intelligence（Foundation Models）をサポートしているかを示します。
@@ -221,7 +224,17 @@ struct HomeView: View {
       }
 
       // 右下固定の散歩提案ボタン（iOS 26.0以降かつApple Intelligence利用可能な端末のみ表示）
-      if #available(iOS 26.0, *), isAppleIntelligenceAvailable {
+      if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            routeSuggestionButton
+              .padding(.trailing, 20)
+              .padding(.bottom, bottomPadding)
+          }
+        }
+      } else if #available(iOS 26.0, *), isAppleIntelligenceAvailable {
         VStack {
           Spacer()
           HStack {
@@ -294,6 +307,21 @@ struct HomeView: View {
       #endif
     }
     .loadingOverlay(isLoading: isLoading)
+    .alert(
+      "散歩ルート提案エラー",
+      isPresented: Binding(
+        get: { routeSuggestionErrorMessage != nil },
+        set: { if !$0 { routeSuggestionErrorMessage = nil } }
+      ),
+      actions: {
+        Button("閉じる", role: .cancel) {
+          routeSuggestionErrorMessage = nil
+        }
+      },
+      message: {
+        Text(routeSuggestionErrorMessage ?? "")
+      }
+    )
     .overlay(
       // オンボーディングモーダルを背景透明でオーバーレイ表示
       Group {
@@ -332,7 +360,7 @@ struct HomeView: View {
         .clipShape(Circle())
         .shadow(color: Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255).opacity(0.4), radius: 8, x: 0, y: 4)
     }
-    .accessibilityIdentifier("散歩提案ボタン")
+    .accessibilityIdentifier("RouteSuggestionButton")
     .accessibilityLabel("散歩ルートを提案")
   }
 
@@ -596,11 +624,17 @@ struct HomeView: View {
       print("========================================")
     #endif
 
+    if let forcedMessage = forcedRouteSuggestionErrorMessage() {
+      routeSuggestionErrorMessage = forcedMessage
+      return
+    }
+
     // 6. RouteSuggestionServiceを使用してルート提案を生成
     if #available(iOS 26.0, *) {
       Task {
         do {
           isLoading = true
+          routeSuggestionErrorMessage = nil
 
           let service = RouteSuggestionService()
           let suggestions = try await service.generateRouteSuggestions()
@@ -623,6 +657,8 @@ struct HomeView: View {
         } catch {
           isLoading = false
 
+          routeSuggestionErrorMessage = makeRouteSuggestionAlertMessage(from: error)
+
           #if DEBUG
             print("\n❌ ルート提案生成エラー:")
             print("  - エラー: \(error.localizedDescription)")
@@ -631,6 +667,7 @@ struct HomeView: View {
         }
       }
     } else {
+      routeSuggestionErrorMessage = "ルート提案機能はiOS 26.0以降で利用できます。"
       #if DEBUG
         print("\n⚠️ RouteSuggestionServiceはiOS 26.0以降で利用可能です")
         print("========================================")
@@ -651,6 +688,46 @@ struct HomeView: View {
         region = locationManager.region(for: location)
       }
     }
+  }
+
+  private func forcedRouteSuggestionErrorMessage() -> String? {
+    let arguments = ProcessInfo.processInfo.arguments
+    guard arguments.contains("--force-error") else { return nil }
+
+    let type = arguments.firstIndex(of: "--error-type").flatMap { index -> String? in
+      guard index + 1 < arguments.count else { return nil }
+      return arguments[index + 1]
+    }?.lowercased()
+
+    switch type {
+    case "network":
+      return "ネットワーク接続に問題が発生しました。通信環境を確認して再度お試しください。"
+    case "timeout":
+      return "サーバーの応答がタイムアウトしました。しばらくしてから再度お試しください。"
+    case "unauthorized":
+      return "ログイン状態が無効です。再度ログインしてからお試しください。"
+    default:
+      return "ルート提案の取得中にエラーが発生しました。"
+    }
+  }
+
+  private func makeRouteSuggestionAlertMessage(from error: Error) -> String {
+    if let serviceError = error as? RouteSuggestionServiceError {
+      switch serviceError {
+      case .foundationModelUnavailable(let detail):
+        return "Apple Intelligenceが現在利用できないため、ルート提案を生成できません。設定を確認してから再度お試しください。\n詳細: \(detail)"
+      case .generationFailed(let detail):
+        return "ルート提案の生成に失敗しました。時間をおいて再度お試しください。\n詳細: \(detail)"
+      case .databaseUnavailable(let detail):
+        return "散歩履歴の取得に失敗しました。通信環境を確認してから再度お試しください。\n詳細: \(detail)"
+      }
+    }
+
+    let nsError = error as NSError
+    if nsError.domain == NSURLErrorDomain {
+      return "ネットワーク接続に問題が発生しました。（コード: \(nsError.code)）通信環境を確認して再度お試しください。"
+    }
+    return nsError.localizedDescription
   }
 
   /// 位置情報許可状態の変更を処理し、オンボーディング表示を制御

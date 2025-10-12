@@ -15,16 +15,22 @@ import XCTest
 final class RouteSuggestionServiceTests: XCTestCase {
 
   var mockRepository: MockWalkRepository!
+  var mockGeocoder: MockGeocoder!
   var service: RouteSuggestionService!
 
   override func setUp() {
     super.setUp()
     mockRepository = MockWalkRepository()
-    service = RouteSuggestionService(walkRepository: mockRepository)
+    mockGeocoder = MockGeocoder()
+    service = RouteSuggestionService(
+      walkRepository: mockRepository,
+      geocoderFactory: { [weak self] in self?.mockGeocoder ?? MockGeocoder() }
+    )
   }
 
   override func tearDown() {
     service = nil
+    mockGeocoder = nil
     mockRepository = nil
     super.tearDown()
   }
@@ -178,16 +184,122 @@ final class RouteSuggestionServiceTests: XCTestCase {
     XCTAssertEqual(result.count, 0, "空配列が返されること")
   }
 
-  // MARK: - Phase 1: makePrompt() Tests (Indirect)
+  // MARK: - Phase 2: extractVisitedAreas() Tests
 
-  /// makePrompt()がデフォルト値を使用することをテスト
-  /// 注: makePrompt()はprivateメソッドなので、間接的にテストする
-  func testMakePrompt_UsesDefaultArea() {
-    // Given: 空の訪問エリア配列
+  /// extractVisitedAreas()が正常にエリアを抽出できることをテスト
+  func testExtractVisitedAreas_Success() async throws {
+    // Given: 位置情報付きの散歩履歴を2件用意
+    let walks = (1...2).map { index -> Walk in
+      var walk = Walk(
+        title: "テスト散歩 \(index)",
+        description: "テスト用の散歩 \(index)",
+        userId: "mock-user-id"
+      )
+      walk.locations = [
+        CLLocation(latitude: 35.6812, longitude: 139.7671),
+        CLLocation(latitude: 35.6822, longitude: 139.7681),
+        CLLocation(latitude: 35.6832, longitude: 139.7691),
+      ]
+      return walk
+    }
 
-    // When: makePrompt()を呼び出す（間接的にgenerateRouteSuggestions経由）
-    // Then: デフォルト値「東京周辺」が使用される
-    // 注: このテストは統合テスト時に確認する
+    // Given: Geocoderのモックレスポンスを設定
+    mockGeocoder.setMockPlacemark(locality: "渋谷区")
+
+    // When: extractVisitedAreas()を呼び出す
+    let result = await service.extractVisitedAreas(from: walks)
+
+    // Then: エリアが抽出される（6地点 = 2散歩 × 3地点）
+    XCTAssertFalse(result.isEmpty, "エリアが抽出されること")
+    XCTAssertEqual(mockGeocoder.reverseGeocodeCallCount, 6, "6回ジオコーディングが呼ばれること")
+  }
+
+  /// extractVisitedAreas()が重複を除去することをテスト
+  func testExtractVisitedAreas_RemovesDuplicates() async throws {
+    // Given: 同じエリアの散歩履歴を2件用意
+    let walks = (1...2).map { index -> Walk in
+      var walk = Walk(
+        title: "テスト散歩 \(index)",
+        description: "テスト用の散歩 \(index)",
+        userId: "mock-user-id"
+      )
+      walk.locations = [
+        CLLocation(latitude: 35.6812, longitude: 139.7671),
+      ]
+      return walk
+    }
+
+    // Given: 全て同じエリア名を返す
+    mockGeocoder.setMockPlacemark(locality: "渋谷区")
+
+    // When: extractVisitedAreas()を呼び出す
+    let result = await service.extractVisitedAreas(from: walks)
+
+    // Then: 重複が除去されて1件のみ
+    XCTAssertEqual(result.count, 1, "重複が除去されること")
+    XCTAssertEqual(result.first, "渋谷区", "正しいエリア名が返されること")
+  }
+
+  /// extractVisitedAreas()が空の履歴に対して空配列を返すことをテスト
+  func testExtractVisitedAreas_EmptyHistory() async throws {
+    // Given: 空の散歩履歴
+    let walks: [Walk] = []
+
+    // When: extractVisitedAreas()を呼び出す
+    let result = await service.extractVisitedAreas(from: walks)
+
+    // Then: 空配列が返される
+    XCTAssertEqual(result.count, 0, "空配列が返されること")
+    XCTAssertEqual(mockGeocoder.reverseGeocodeCallCount, 0, "ジオコーディングが呼ばれないこと")
+  }
+
+  /// extractVisitedAreas()がジオコーディングエラー時に継続することをテスト
+  func testExtractVisitedAreas_GeocodeError_Continues() async throws {
+    // Given: 位置情報付きの散歩履歴を1件用意
+    var walk = Walk(
+      title: "テスト散歩",
+      description: "テスト用の散歩",
+      userId: "mock-user-id"
+    )
+    walk.locations = [
+      CLLocation(latitude: 35.6812, longitude: 139.7671),
+    ]
+
+    // Given: Geocoderがエラーを返す
+    mockGeocoder.mockError = NSError(
+      domain: kCLErrorDomain,
+      code: CLError.network.rawValue,
+      userInfo: nil
+    )
+
+    // When: extractVisitedAreas()を呼び出す
+    let result = await service.extractVisitedAreas(from: [walk])
+
+    // Then: エラーでも空配列が返される（クラッシュしない）
+    XCTAssertEqual(result.count, 0, "エラー時は空配列が返されること")
+    XCTAssertEqual(mockGeocoder.reverseGeocodeCallCount, 1, "1回ジオコーディングが呼ばれること")
+  }
+
+  // MARK: - Error Handling Tests
+
+  /// fetchWalkHistory()がエラーの場合に適切にハンドリングされることをテスト
+  func testFetchError_ThrowsDatabaseUnavailable() async {
+    // Given: Firestoreエラーをシミュレート
+    mockRepository.simulateError(.networkError)
+
+    // When & Then: fetchWalkHistory()がエラーをスローする
+    do {
+      _ = try await service.fetchWalkHistory()
+      XCTFail("エラーがスローされるべき")
+    } catch let error as RouteSuggestionServiceError {
+      if case .databaseUnavailable = error {
+        // 期待通りのエラー
+      } else {
+        XCTFail("databaseUnavailableエラーがスローされるべき")
+      }
+    } catch {
+      XCTFail("RouteSuggestionServiceErrorがスローされるべき")
+    }
   }
 }
 
@@ -237,5 +349,77 @@ extension RouteSuggestionService {
     }
 
     return points
+  }
+
+  /// テスト用に内部メソッドを公開
+  func extractVisitedAreas(from walks: [Walk]) async -> [String] {
+    var areas: [String] = []
+
+    for walk in walks {
+      let samplingPoints = extractSamplingPoints(from: walk)
+
+      for location in samplingPoints {
+        do {
+          if let areaName = try await reverseGeocode(location: location) {
+            areas.append(areaName)
+          }
+        } catch {
+          // エラーは無視して継続
+        }
+
+        // レート制限対策：0.1秒待機
+        try? await Task.sleep(nanoseconds: 100_000_000)
+      }
+    }
+
+    // 重複除去
+    return Array(Set(areas))
+  }
+
+  /// テスト用に内部メソッドを公開
+  private func reverseGeocode(location: CLLocation) async throws -> String? {
+    let geocoder = geocoderFactory()
+
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String?, Error>) in
+      var isResumed = false
+      let lock = NSLock()
+
+      // タイムアウト設定（2秒）
+      let timeoutTask = Task {
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        lock.lock()
+        defer { lock.unlock() }
+
+        if !isResumed {
+          isResumed = true
+          geocoder.cancelGeocode()
+          continuation.resume(throwing: NSError(
+            domain: "RouteSuggestionService",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "ジオコーディングタイムアウト"]
+          ))
+        }
+      }
+
+      geocoder.reverseGeocodeLocation(location) { placemarks, error in
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard !isResumed else { return }
+        isResumed = true
+        timeoutTask.cancel()
+
+        if let error = error {
+          continuation.resume(throwing: error)
+          return
+        }
+
+        // 市区町村レベルの地名を優先
+        let areaName = placemarks?.first?.locality
+          ?? placemarks?.first?.subLocality
+          ?? placemarks?.first?.administrativeArea
+        continuation.resume(returning: areaName)
+      }
+    }
   }
 }

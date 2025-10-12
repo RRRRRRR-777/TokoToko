@@ -7,8 +7,11 @@
 
 import CoreLocation
 import Foundation
+import MapKit
 
 @testable import TekuToko
+
+// MARK: - MockWalkRepository
 
 // テスト用のモックWalkRepository
 class MockWalkRepository: WalkRepositoryProtocol {
@@ -221,5 +224,69 @@ extension MockWalkRepository {
         userId: userId
       )
     }
+  }
+}
+
+// MARK: - MockGeocoder
+
+/// テスト用のモックGeocoder
+class MockGeocoder: GeocoderProtocol {
+  var mockLocality: String?
+  var mockError: Error?
+  var shouldCancel = false
+  var reverseGeocodeCallCount = 0
+
+  func reverseGeocodeLocation(
+    _ location: CLLocation,
+    completionHandler: @escaping ([CLPlacemark]?, Error?) -> Void
+  ) {
+    reverseGeocodeCallCount += 1
+
+    // キャンセルされた場合
+    if shouldCancel {
+      let error = NSError(
+        domain: kCLErrorDomain,
+        code: CLError.geocodeCanceled.rawValue,
+        userInfo: nil
+      )
+      completionHandler(nil, error)
+      return
+    }
+
+    // エラーをシミュレート
+    if let error = mockError {
+      completionHandler(nil, error)
+      return
+    }
+
+    // 正常系：実際のCLPlacemarkを生成
+    if let locality = mockLocality {
+      // CLPlacemarkを生成するために、座標からジオコーディング結果を作成
+      // Note: テスト環境では実際の値を返す必要があるため、
+      // MKPlacemarkを使って生成する
+      let coordinate = CLLocationCoordinate2D(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+      let addressDict: [String: Any] = [
+        "City": locality,
+        "Country": "日本",
+        "CountryCode": "JP"
+      ]
+
+      if let placemark = MKPlacemark(coordinate: coordinate, addressDictionary: addressDict) as CLPlacemark? {
+        completionHandler([placemark], nil)
+      } else {
+        completionHandler([], nil)
+      }
+    } else {
+      completionHandler([], nil)
+    }
+  }
+
+  func cancelGeocode() {
+    shouldCancel = true
+  }
+
+  // テスト用のヘルパーメソッド
+  func setMockPlacemark(locality: String) {
+    mockLocality = locality
   }
 }

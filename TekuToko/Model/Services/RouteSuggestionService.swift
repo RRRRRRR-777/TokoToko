@@ -19,6 +19,18 @@ protocol WalkRepositoryProtocol {
 /// WalkRepositoryをプロトコルに準拠させる
 extension WalkRepository: WalkRepositoryProtocol {}
 
+/// Geocoderのプロトコル定義（テスタビリティのため）
+protocol GeocoderProtocol {
+  func reverseGeocodeLocation(
+    _ location: CLLocation,
+    completionHandler: @escaping ([CLPlacemark]?, Error?) -> Void
+  )
+  func cancelGeocode()
+}
+
+/// CLGeocoderをプロトコルに準拠させる
+extension CLGeocoder: GeocoderProtocol {}
+
 /// RouteSuggestionService が発生させるエラー
 enum RouteSuggestionServiceError: Error {
   /// 利用可能な Foundation Model が存在しない場合
@@ -44,6 +56,9 @@ class RouteSuggestionService {
   /// 散歩履歴を取得するリポジトリ
   internal let walkRepository: WalkRepositoryProtocol
 
+  /// ジオコーダー（テスト時にモック可能）
+  internal let geocoderFactory: () -> GeocoderProtocol
+
   /// 生成するルート提案数
   private let targetSuggestionCount = 3
 
@@ -65,9 +80,15 @@ class RouteSuggestionService {
 
   /// イニシャライザ
   ///
-  /// - Parameter walkRepository: 散歩履歴を取得するリポジトリ（デフォルトは共有インスタンス）
-  init(walkRepository: WalkRepositoryProtocol = WalkRepository.shared) {
+  /// - Parameters:
+  ///   - walkRepository: 散歩履歴を取得するリポジトリ（デフォルトは共有インスタンス）
+  ///   - geocoderFactory: ジオコーダーを生成するファクトリ（デフォルトはCLGeocoder）
+  init(
+    walkRepository: WalkRepositoryProtocol = WalkRepository.shared,
+    geocoderFactory: @escaping () -> GeocoderProtocol = { CLGeocoder() }
+  ) {
     self.walkRepository = walkRepository
+    self.geocoderFactory = geocoderFactory
     #if DEBUG
       print("[RouteSuggestionService] 初期化されました")
     #endif
@@ -322,7 +343,7 @@ class RouteSuggestionService {
   /// - Returns: 市区町村レベルの地名（取得できない場合はnil）
   /// - Throws: ジオコーディングエラー
   private func reverseGeocode(location: CLLocation) async throws -> String? {
-    let geocoder = CLGeocoder()
+    let geocoder = geocoderFactory()
 
     return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String?, Error>) in
       var isResumed = false
