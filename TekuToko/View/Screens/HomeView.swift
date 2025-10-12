@@ -11,6 +11,10 @@ import MapKit
 import SwiftUI
 import UIKit
 
+#if canImport(FoundationModels)
+  import FoundationModels
+#endif
+
 /// TekuTokoアプリのメイン画面を表示するSwiftUIビュー
 ///
 /// `HomeView`は散歩アプリケーションの中核となる画面で、以下の主要機能を提供します：
@@ -58,6 +62,12 @@ struct HomeView: View {
   ///
   /// 非同期処理（位置情報取得、散歩開始処理等）の実行中に表示するローディングインジケーターの制御に使用されます。
   @State private var isLoading = false
+
+  /// Apple Intelligence利用可否フラグ
+  ///
+  /// 端末がApple Intelligence（Foundation Models）をサポートしているかを示します。
+  /// iOS 26.0以降でSystemLanguageModelの利用可否をチェックして設定されます。
+  @State private var isAppleIntelligenceAvailable = false
 
   /// マップ表示領域の座標範囲
   ///
@@ -210,6 +220,18 @@ struct HomeView: View {
         }
       }
 
+      // 右下固定の散歩提案ボタン（iOS 26.0以降かつApple Intelligence利用可能な端末のみ表示）
+      if #available(iOS 26.0, *), isAppleIntelligenceAvailable {
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            routeSuggestionButton
+              .padding(.trailing, 20)
+              .padding(.bottom, bottomPadding)
+          }
+        }
+      }
     }
     .accessibilityIdentifier("HomeView")
     .navigationBarHidden(true)
@@ -223,6 +245,9 @@ struct HomeView: View {
 
       // アニメーション制御の初期化
       initializeAnimationStates()
+
+      // Apple Intelligence利用可否チェック
+      checkAppleIntelligenceAvailability()
 
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
@@ -283,6 +308,32 @@ struct HomeView: View {
         }
       }
     )
+  }
+
+  // 散歩提案ボタン
+  private var routeSuggestionButton: some View {
+    Button(action: {
+      handleSuggestionButtonTapped()
+    }) {
+      Image(systemName: "sparkles")
+        .font(.system(size: 24, weight: .medium))
+        .foregroundColor(.white)
+        .frame(width: 60, height: 60)
+        .background(
+          LinearGradient(
+            gradient: Gradient(colors: [
+              Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255),
+              Color(red: 138 / 255, green: 55 / 255, blue: 217 / 255)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .clipShape(Circle())
+        .shadow(color: Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255).opacity(0.4), radius: 8, x: 0, y: 4)
+    }
+    .accessibilityIdentifier("散歩提案ボタン")
+    .accessibilityLabel("散歩ルートを提案")
   }
 
   // マップセクション
@@ -489,6 +540,102 @@ struct HomeView: View {
     .padding(.horizontal, 24)
     .accessibilityIdentifier("UnknownPermissionStateView")
     .accessibilityLabel("位置情報の許可状態が不明です")
+  }
+
+  /// 散歩提案ボタンがタップされた時の処理
+  ///
+  /// 現在の位置情報、散歩状態、位置情報許可状態などをログ出力します。
+  /// 将来的にはFoundation Modelsを使用してルート提案を生成します。
+  private func handleSuggestionButtonTapped() {
+    #if DEBUG
+      print("========================================")
+      print("散歩提案ボタンがタップされました")
+      print("========================================")
+
+      // 1. 現在の位置情報をログ出力
+      if let location = currentLocation {
+        print("📍 現在位置:")
+        print("  - 緯度: \(location.coordinate.latitude)")
+        print("  - 経度: \(location.coordinate.longitude)")
+        print("  - 精度: \(location.horizontalAccuracy)m")
+        print("  - タイムスタンプ: \(location.timestamp)")
+      } else {
+        print("📍 現在位置: 取得できていません")
+      }
+
+      // 2. 現在の散歩状態をログ出力
+      print("\n🚶 散歩状態:")
+      print("  - 散歩中: \(walkManager.isWalking)")
+      if let currentWalk = walkManager.currentWalk {
+        print("  - ステータス: \(currentWalk.status)")
+        print("  - 経過時間: \(walkManager.elapsedTimeString)")
+        print("  - 距離: \(walkManager.distanceString)")
+        print("  - 歩数: \(walkManager.totalSteps)")
+        print("  - 記録位置数: \(currentWalk.locations.count)")
+      } else {
+        print("  - 現在散歩中ではありません")
+      }
+
+      // 3. 位置情報許可状態をログ出力
+      print("\n🔐 位置情報許可状態:")
+      print("  - 許可状態: \(locationManager.authorizationStatus)")
+      print("  - チェック完了: \(isLocationPermissionCheckCompleted)")
+
+      // 4. プレースホルダー: 将来的にはここで散歩履歴を取得
+      print("\n📊 散歩履歴（将来実装）:")
+      print("  - 直近の散歩: [未実装 - Firestoreから取得予定]")
+      print("  - 訪問エリア: [未実装]")
+      print("  - 平均距離: [未実装]")
+
+      // 5. プレースホルダー: 将来的にはここでユーザーの気分入力を取得
+      print("\n💭 ユーザー入力（将来実装）:")
+      print("  - 気分: [未実装]")
+      print("  - 希望距離: [未実装]")
+      print("  - 希望時間: [未実装]")
+
+      print("========================================")
+    #endif
+
+    // 6. RouteSuggestionServiceを使用してルート提案を生成
+    if #available(iOS 26.0, *) {
+      Task {
+        do {
+          isLoading = true
+
+          let service = RouteSuggestionService()
+          let suggestions = try await service.generateRouteSuggestions()
+
+          isLoading = false
+
+          #if DEBUG
+            print("\n🎯 生成されたルート提案:")
+            for (index, suggestion) in suggestions.enumerated() {
+              print("[\(index + 1)] \(suggestion.title)")
+              print("   説明: \(suggestion.description)")
+              print("   距離: \(suggestion.estimatedDistance)km")
+              print("   所要時間: \(suggestion.estimatedDuration)分")
+              print("   理由: \(suggestion.recommendationReason)")
+              print("")
+            }
+            print("========================================")
+          #endif
+
+        } catch {
+          isLoading = false
+
+          #if DEBUG
+            print("\n❌ ルート提案生成エラー:")
+            print("  - エラー: \(error.localizedDescription)")
+            print("========================================")
+          #endif
+        }
+      }
+    } else {
+      #if DEBUG
+        print("\n⚠️ RouteSuggestionServiceはiOS 26.0以降で利用可能です")
+        print("========================================")
+      #endif
+    }
   }
 
   // 位置情報マネージャーの設定
@@ -726,6 +873,51 @@ struct HomeView: View {
         print("アニメーション初期化:")
         print("  - 記録アニメーション: \(self.shouldAnimateRecording)")
         print("  - 未知状態アニメーション: \(self.shouldAnimateUnknownState)")
+      #endif
+    }
+  }
+
+  /// Apple Intelligence利用可否をチェック
+  ///
+  /// Foundation ModelsのSystemLanguageModelが利用可能かどうかを確認し、
+  /// 端末がApple Intelligence対応かどうかを判定します。
+  /// iOS 26.0以降でのみ実行され、結果をisAppleIntelligenceAvailableに設定します。
+  private func checkAppleIntelligenceAvailability() {
+    if #available(iOS 26.0, *) {
+      #if canImport(FoundationModels)
+        switch SystemLanguageModel.default.availability {
+        case .available:
+          isAppleIntelligenceAvailable = true
+          #if DEBUG
+            print("✅ Apple Intelligence: 利用可能")
+          #endif
+
+        case .unavailable(let reason):
+          isAppleIntelligenceAvailable = false
+          #if DEBUG
+            print("⚠️ Apple Intelligence: 利用不可")
+            switch reason {
+            case .deviceNotEligible:
+              print("  理由: 端末が非対応（iPhone 15 Pro以降が必要）")
+            case .appleIntelligenceNotEnabled:
+              print("  理由: Apple Intelligenceが無効")
+            case .modelNotReady:
+              print("  理由: モデルが準備中")
+            @unknown default:
+              print("  理由: 不明 (\(reason))")
+            }
+          #endif
+        }
+      #else
+        isAppleIntelligenceAvailable = false
+        #if DEBUG
+          print("⚠️ Apple Intelligence: FoundationModelsフレームワークが利用不可")
+        #endif
+      #endif
+    } else {
+      isAppleIntelligenceAvailable = false
+      #if DEBUG
+        print("⚠️ Apple Intelligence: iOS 26.0以降が必要")
       #endif
     }
   }
