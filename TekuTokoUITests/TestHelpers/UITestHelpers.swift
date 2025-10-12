@@ -15,6 +15,7 @@ class UITestHelpers {
     // テスト用の起動引数を設定
     app.launchArguments = ["--uitesting", "--logged-in"]
     app.launch()
+    _ = awaitRootRendered(app)
   }
 
   /// 指定した要素が表示されるまで待機するヘルパーメソッド
@@ -67,6 +68,7 @@ class UITestHelpers {
     _ = app.wait(for: .runningForeground, timeout: timeout)
     let start = Date()
     while Date().timeIntervalSince(start) < timeout {
+      handleSystemAlertsIfNeeded(app)
       if app.otherElements["UITestRootWindow"].exists
         || app.otherElements["LoginView"].exists
         || app.otherElements["MainTabBar"].exists
@@ -77,6 +79,64 @@ class UITestHelpers {
       app.activate()
       usleep(200_000)  // 0.2s ポーリング
     }
+    return false
+  }
+
+  /// メインタブバー（または主要タブボタン）が表示されるまで待機する
+  /// - Parameters:
+  ///   - app: XCUIApplicationインスタンス
+  ///   - timeout: 待機時間
+  /// - Returns: タブUIが表示された場合はtrue
+  static func waitForMainTabInterface(
+    _ app: XCUIApplication, timeout: TimeInterval = UITestingExtensions.TimeoutSettings.adjustedLong
+  ) -> Bool {
+    let mainTabBar = app.otherElements["MainTabBar"]
+    if mainTabBar.waitForExistence(timeout: timeout) {
+      return true
+    }
+
+    let start = Date()
+    let tabLabels = ["おでかけ", "おさんぽ", "設定"]
+
+    while Date().timeIntervalSince(start) < timeout {
+      handleSystemAlertsIfNeeded(app)
+      if tabLabels.contains(where: { app.buttons[$0].exists }) {
+        return true
+      }
+      usleep(200_000)
+    }
+    return false
+  }
+
+  /// システムアラート（位置情報許可など）を検出して適切なボタンをタップする
+  @discardableResult
+  static func handleSystemAlertsIfNeeded(_ app: XCUIApplication) -> Bool {
+    let alert = app.alerts.firstMatch
+    guard alert.exists else { return false }
+
+    let allowButtonTitles = [
+      "Allow While Using App",
+      "Allow Once",
+      "Allow",
+      "許可",
+      "アプリの使用中は許可",
+      "OK"
+    ]
+
+    for title in allowButtonTitles {
+      let button = alert.buttons[title]
+      if button.exists {
+        button.tap()
+        return true
+      }
+    }
+
+    // fallback: タップ可能な最初のボタンを押す
+    if let firstButton = alert.buttons.allElementsBoundByIndex.first, firstButton.exists {
+      firstButton.tap()
+      return true
+    }
+
     return false
   }
 }

@@ -358,6 +358,146 @@ final class WalkManagerTests: XCTestCase {
     walkManager.currentStepCount = .unavailable
   }
 
+  // MARK: - 位置情報許可テスト
+
+  /// `authorizedWhenInUse`の状態で散歩が開始できることをテスト
+  ///
+  /// Issue #157: 位置情報の許可を「一時的」にした場合に散歩の開始ができない問題の対応
+  /// `authorizedWhenInUse`でもフォアグラウンドでの散歩記録は可能
+  func testStartWalk_WithAuthorizedWhenInUse_ShouldAllowWalkToStart() throws {
+    // Arrange
+    // 散歩開始前の状態確認
+    XCTAssertNil(walkManager.currentWalk, "散歩開始前はcurrentWalkがnilであるべき")
+    XCTAssertFalse(walkManager.isWalking, "散歩開始前はisWalkingがfalseであるべき")
+
+    // LocationManagerの権限が既に許可されている状態を想定
+    // （実際の環境では authorizedWhenInUse または authorizedAlways）
+    let currentAuthStatus = walkManager.locationManager.authorizationStatus
+
+    // Skip test if location permission is not granted
+    guard currentAuthStatus == .authorizedWhenInUse || currentAuthStatus == .authorizedAlways
+    else {
+      throw XCTSkip(
+        "このテストは位置情報権限が必要です。シミュレータで位置情報を許可してください。")
+    }
+
+    // Act
+    walkManager.startWalk(title: "テスト散歩", description: "authorizedWhenInUseでの散歩")
+
+    // Assert
+    // authorizedWhenInUse の状態でも散歩が開始されることを確認
+    XCTAssertNotNil(walkManager.currentWalk, "散歩が開始されcurrentWalkが設定されるべき")
+    XCTAssertTrue(walkManager.isWalking, "散歩開始後はisWalkingがtrueであるべき")
+    XCTAssertEqual(
+      walkManager.currentWalk?.status,
+      .inProgress,
+      "散歩のステータスはinProgressであるべき"
+    )
+
+    // Cleanup
+    walkManager.cancelWalk()
+  }
+
+  /// `authorizedAlways`の状態で散歩が開始できることをテスト
+  ///
+  /// バックグラウンド追跡も有効な状態での散歩記録
+  func testStartWalk_WithAuthorizedAlways_ShouldAllowWalkToStart() throws {
+    // Arrange
+    XCTAssertNil(walkManager.currentWalk, "散歩開始前はcurrentWalkがnilであるべき")
+    XCTAssertFalse(walkManager.isWalking, "散歩開始前はisWalkingがfalseであるべき")
+
+    let currentAuthStatus = walkManager.locationManager.authorizationStatus
+
+    // Skip test if location permission is not "always"
+    guard currentAuthStatus == .authorizedAlways else {
+      throw XCTSkip(
+        "このテストは位置情報の「常に許可」権限が必要です。シミュレータで設定してください。")
+    }
+
+    // Act
+    walkManager.startWalk(title: "テスト散歩", description: "authorizedAlwaysでの散歩")
+
+    // Assert
+    XCTAssertNotNil(walkManager.currentWalk, "散歩が開始されcurrentWalkが設定されるべき")
+    XCTAssertTrue(walkManager.isWalking, "散歩開始後はisWalkingがtrueであるべき")
+    XCTAssertEqual(
+      walkManager.currentWalk?.status,
+      .inProgress,
+      "散歩のステータスはinProgressであるべき"
+    )
+
+    // Cleanup
+    walkManager.cancelWalk()
+  }
+
+  /// `denied`や`restricted`の状態では散歩が開始できないことをテスト
+  ///
+  /// 位置情報の使用が拒否された場合、散歩は開始できない
+  func testStartWalk_WithDeniedOrRestricted_ShouldNotAllowWalkToStart() throws {
+    // Arrange
+    let currentAuthStatus = walkManager.locationManager.authorizationStatus
+
+    // Skip test if location permission is granted (we need denied/restricted status)
+    guard currentAuthStatus == .denied || currentAuthStatus == .restricted else {
+      throw XCTSkip(
+        "このテストは位置情報が拒否されている状態が必要です。シミュレータで設定してください。")
+    }
+
+    XCTAssertNil(walkManager.currentWalk, "散歩開始前はcurrentWalkがnilであるべき")
+
+    // Act
+    walkManager.startWalk(title: "テスト散歩", description: "権限なしでの試行")
+
+    // Assert
+    // denied/restricted の状態では散歩が開始されないことを確認
+    XCTAssertNil(
+      walkManager.currentWalk,
+      "権限が拒否されている場合、散歩は開始されずcurrentWalkはnilのままであるべき"
+    )
+    XCTAssertFalse(walkManager.isWalking, "権限が拒否されている場合、isWalkingはfalseであるべき")
+  }
+
+  /// `notDetermined`の状態では許可リクエストが表示されることをテスト
+  ///
+  /// まだ位置情報の許可が決まっていない場合、許可ダイアログを表示
+  func testStartWalk_WithNotDetermined_ShouldRequestPermission() throws {
+    // Arrange
+    let currentAuthStatus = walkManager.locationManager.authorizationStatus
+
+    // Skip test if location permission is already determined
+    guard currentAuthStatus == .notDetermined else {
+      throw XCTSkip(
+        "このテストは位置情報権限が未決定の状態が必要です。アプリを再インストールしてください。")
+    }
+
+    XCTAssertNil(walkManager.currentWalk, "散歩開始前はcurrentWalkがnilであるべき")
+
+    // Act
+    walkManager.startWalk(title: "テスト散歩", description: "初回権限リクエスト")
+
+    // Assert
+    // notDetermined の状態では権限リクエストが発行され、pending状態になることを確認
+    XCTAssertNotNil(
+      walkManager.pendingWalkTitle,
+      "権限リクエスト中はpendingWalkTitleが設定されているべき"
+    )
+    XCTAssertEqual(
+      walkManager.pendingWalkTitle,
+      "テスト散歩",
+      "保留中の散歩タイトルが正しく保存されているべき"
+    )
+
+    // 権限が許可されるまで散歩は開始されない
+    XCTAssertNil(
+      walkManager.currentWalk,
+      "権限が未確定の間は、散歩は開始されずcurrentWalkはnilであるべき"
+    )
+
+    // Cleanup
+    walkManager.pendingWalkTitle = nil
+    walkManager.pendingWalkDescription = nil
+  }
+
   // MARK: - ヘルパーメソッド
 
   private func createCompletedTestWalk() -> Walk {
@@ -400,7 +540,7 @@ final class WalkManagerTests: XCTestCase {
     let text = "TEST"
     let attributes: [NSAttributedString.Key: Any] = [
       .foregroundColor: UIColor.white,
-      .font: UIFont.systemFont(ofSize: 16, weight: .bold),
+      .font: UIFont.systemFont(ofSize: 16, weight: .bold)
     ]
 
     let textSize = text.size(withAttributes: attributes)

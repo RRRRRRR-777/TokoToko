@@ -279,8 +279,8 @@ final class OnboardingModalViewTests: XCTestCase {
 
     // When: モーダル出現後から、YML反映済みのインジケータ値が取得できるまでの時間を計測
     let pageIndicator = app.otherElements["OnboardingPageIndicator"]
-    let startTime = CFAbsoluteTimeGetCurrent()
     XCTAssertTrue(pageIndicator.waitForExistence(timeout: 5), "ページインジケータが存在すること")
+    let startTime = CFAbsoluteTimeGetCurrent()
     // 値の到達（"page 1 of 4"）を以てYML反映完了とみなす
     let valueOk =
       XCTWaiter.wait(

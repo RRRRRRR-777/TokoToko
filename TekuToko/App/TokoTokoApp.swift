@@ -230,15 +230,15 @@ struct TekuTokoApp: App {
   var body: some Scene {
     WindowGroup {
       if UITestingHelper.shared.isUITesting {
-        // UIテスト時もNavigationViewを維持し、ナビゲーションバー検証の互換性を確保
+        // UIテスト時もナビゲーションバー検証の互換性を確保
         ZStack {
-          NavigationView {
-            if authManager.isLoggedIn {
-              MainTabView()
-                .environmentObject(authManager)
-                .environmentObject(consentManager)
-                .environmentObject(locationSettingsManager)
-            } else {
+          if authManager.isLoggedIn {
+            MainTabView()
+              .environmentObject(authManager)
+              .environmentObject(consentManager)
+              .environmentObject(locationSettingsManager)
+          } else {
+            NavigationView {
               LoginView()
                 .environmentObject(authManager)
             }
@@ -249,26 +249,35 @@ struct TekuTokoApp: App {
           configureNavigationBarAppearance()
         }
       } else {
-        NavigationView {
-          if authManager.isInitializing || consentManager.isLoading {
-            SplashView()
-          } else if !authManager.isLoggedIn {
-            LoginView()
-              .environmentObject(authManager)
-          } else if !consentManager.hasValidConsent {
-            ConsentFlowView()
-              .environmentObject(consentManager)
-          } else {
-            MainTabView()
-              .environmentObject(authManager)
-              .environmentObject(consentManager)
-              .environmentObject(locationSettingsManager)
+        rootAppView
+          .onAppear {
+            configureNavigationBarAppearance()
           }
-        }
-        .onAppear {
-          configureNavigationBarAppearance()
-        }
       }
+    }
+  }
+
+  /// 通常時の表示コンテンツを構築
+  /// - Note: MainTabView表示時は重複NavigationViewを避け、画面全体の余白を抑制
+  @ViewBuilder
+  private var rootAppView: some View {
+    if authManager.isInitializing || consentManager.isLoading {
+      SplashView()
+    } else if !authManager.isLoggedIn {
+      NavigationView {
+        LoginView()
+          .environmentObject(authManager)
+      }
+    } else if !consentManager.hasValidConsent {
+      NavigationView {
+        ConsentFlowView()
+          .environmentObject(consentManager)
+      }
+    } else {
+      MainTabView()
+        .environmentObject(authManager)
+        .environmentObject(consentManager)
+        .environmentObject(locationSettingsManager)
     }
   }
 
@@ -405,12 +414,28 @@ struct MainTabView: View {
         Spacer()
       }
 
-      // カスタムタブバー
+      // カスタムタブバーと各タブ専用のフローティングボタン
       VStack {
         Spacer()
-        CustomTabBar(selectedTab: $selectedTab)
-          .padding(.horizontal, 20)
-          .padding(.bottom, 20)
+        HStack(alignment: .center, spacing: 16) {
+          CustomTabBar(selectedTab: $selectedTab)
+
+          // ホームタブの場合のみ散歩ボタンを表示
+          if selectedTab == .outing {
+            Spacer(minLength: 0)
+            WalkControlPanel(walkManager: WalkManager.shared, isFloating: true)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+
+          // おさんぽタブの場合のみフレンドボタンを表示
+          if selectedTab == .walk {
+            Spacer(minLength: 0)
+            FriendHistoryButton()
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 20)
       }
     }
     .ignoresSafeArea(.all, edges: .bottom)
@@ -513,7 +538,6 @@ struct CustomTabBar: View {
         .fill(Color("BackgroundColor"))
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
     )
-    .padding(.trailing, 80)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("MainTabBar")
   }

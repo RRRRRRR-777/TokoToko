@@ -81,8 +81,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launch()
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // おでかけタブが選択されていることを確認
     let outingTab = app.buttons["おでかけ"]
@@ -180,8 +181,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launch()
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // おでかけタブが表示されることを確認
     let outingTab = app.buttons["おでかけ"]
@@ -213,8 +215,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launchWithDeepLink(to: "walk")
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // ディープリンクによっておさんぽ画面が表示されることを確認
     let walkTab = app.buttons["おさんぽ"]
@@ -226,8 +229,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launchWithDeepLink(to: "settings")
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar2 = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar2.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // 設定タブが選択されていることを確認
     let settingsTab = app.buttons["設定"]
@@ -276,8 +280,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launch()
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // タブバーが表示されることを確認
     XCTAssertTrue(app.buttons["おでかけ"].waitForExistence(timeout: 5), "タブバーが表示されていません")
@@ -329,8 +334,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launch()
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // デバイスを横向きに回転
     XCUIDevice.shared.orientation = .landscapeLeft
@@ -352,8 +358,9 @@ final class TekuTokoAppUITests: XCTestCase {
     app.launch()
 
     // メインタブバーが表示されるまで待機
-    let mainTabBar = app.otherElements["MainTabBar"]
-    XCTAssertTrue(mainTabBar.waitForExistence(timeout: 10), "メインタブバーが表示されていません")
+    XCTAssertTrue(
+      UITestHelpers.waitForMainTabInterface(app, timeout: 10),
+      "メインタブバーが表示されていません")
 
     // タブバーのボタンがアクセシビリティ対応していることを確認
     let outingTab = app.buttons["おでかけ"]
