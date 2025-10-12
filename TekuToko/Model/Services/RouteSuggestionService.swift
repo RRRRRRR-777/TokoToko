@@ -11,6 +11,14 @@ import Foundation
   import FoundationModels
 #endif
 
+/// WalkRepositoryのプロトコル定義（テスタビリティのため）
+protocol WalkRepositoryProtocol {
+  func fetchWalks(completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void)
+}
+
+/// WalkRepositoryをプロトコルに準拠させる
+extension WalkRepository: WalkRepositoryProtocol {}
+
 /// RouteSuggestionService が発生させるエラー
 enum RouteSuggestionServiceError: Error {
   /// 利用可能な Foundation Model が存在しない場合
@@ -34,7 +42,7 @@ class RouteSuggestionService {
   // MARK: - Properties
 
   /// 散歩履歴を取得するリポジトリ
-  private let walkRepository: WalkRepository
+  internal let walkRepository: WalkRepositoryProtocol
 
   /// 生成するルート提案数
   private let targetSuggestionCount = 3
@@ -58,7 +66,7 @@ class RouteSuggestionService {
   /// イニシャライザ
   ///
   /// - Parameter walkRepository: 散歩履歴を取得するリポジトリ（デフォルトは共有インスタンス）
-  init(walkRepository: WalkRepository = WalkRepository.shared) {
+  init(walkRepository: WalkRepositoryProtocol = WalkRepository.shared) {
     self.walkRepository = walkRepository
     #if DEBUG
       print("[RouteSuggestionService] 初期化されました")
@@ -216,11 +224,11 @@ class RouteSuggestionService {
     #endif
 
     return try await withCheckedThrowingContinuation { continuation in
-      walkRepository.fetchWalks { result in
+      self.walkRepository.fetchWalks { result in
         switch result {
         case .success(let walks):
           // 最新15件を取得（作成日時の降順）
-          let recentWalks = Array(walks.sorted { $0.createdAt > $1.createdAt }.prefix(walkHistoryLimit))
+          let recentWalks = Array(walks.sorted { $0.createdAt > $1.createdAt }.prefix(self.walkHistoryLimit))
           #if DEBUG
             print("[RouteSuggestionService] 散歩履歴を\(recentWalks.count)件取得しました")
           #endif
@@ -238,20 +246,111 @@ class RouteSuggestionService {
     }
   }
 
-  // MARK: - Phase 2: Visited Areas Extraction (Placeholder)
+  // MARK: - Phase 2: Visited Areas Extraction
 
-  /// 散歩履歴から訪問エリアを抽出します（Phase 2で実装予定）。
+  /// 散歩履歴から訪問エリアを抽出します。
   ///
   /// - Parameter walks: 散歩履歴の配列
-  /// - Returns: 訪問エリアの配列
+  /// - Returns: 訪問エリアの配列（重複除去済み）
   private func extractVisitedAreas(from walks: [Walk]) async -> [String] {
     #if DEBUG
-      print("[RouteSuggestionService] 訪問エリアの抽出を開始（Phase 2実装予定）")
+      print("[RouteSuggestionService] 訪問エリアの抽出を開始（\(walks.count)件の散歩履歴）")
     #endif
 
-    // Phase 2で実装予定：リバースジオコーディングによるエリア抽出
-    // 現在は空の配列を返す（makePrompt内でデフォルト値が使用される）
-    return []
+    var areas: [String] = []
+
+    for walk in walks {
+      let samplingPoints = extractSamplingPoints(from: walk)
+
+      for location in samplingPoints {
+        do {
+          if let areaName = try await reverseGeocode(location: location) {
+            areas.append(areaName)
+          }
+        } catch {
+          #if DEBUG
+            print("[RouteSuggestionService] ジオコーディング失敗: \(error.localizedDescription)")
+          #endif
+        }
+
+        // レート制限対策：0.1秒待機
+        try? await Task.sleep(nanoseconds: 100_000_000)
+      }
+    }
+
+    // 重複除去
+    let uniqueAreas = Array(Set(areas))
+
+    #if DEBUG
+      print("[RouteSuggestionService] 訪問エリアを\(uniqueAreas.count)件抽出しました: \(uniqueAreas.joined(separator: "、"))")
+    #endif
+
+    return uniqueAreas
+  }
+
+  /// 散歩から3地点（開始+中間+終了）を抽出します。
+  ///
+  /// - Parameter walk: 散歩データ
+  /// - Returns: サンプリングポイントの配列（最大3地点）
+  private func extractSamplingPoints(from walk: Walk) -> [CLLocation] {
+    guard !walk.locations.isEmpty else { return [] }
+
+    var points: [CLLocation] = []
+
+    // 開始地点
+    if let start = walk.locations.first {
+      points.append(start)
+    }
+
+    // 中間地点（位置配列の中央）
+    if walk.locations.count > 2 {
+      let middleIndex = walk.locations.count / 2
+      points.append(walk.locations[middleIndex])
+    }
+
+    // 終了地点
+    if let end = walk.locations.last, walk.locations.count > 1 {
+      points.append(end)
+    }
+
+    return points
+  }
+
+  /// リバースジオコーディングで位置から地名を取得します。
+  ///
+  /// - Parameter location: 位置情報
+  /// - Returns: 市区町村レベルの地名（取得できない場合はnil）
+  /// - Throws: ジオコーディングエラー
+  private func reverseGeocode(location: CLLocation) async throws -> String? {
+    let geocoder = CLGeocoder()
+
+    return try await withCheckedThrowingContinuation { continuation in
+      // タイムアウト設定（2秒）
+      let timeoutTask = Task {
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        geocoder.cancelGeocode()
+        continuation.resume(throwing: NSError(
+          domain: "RouteSuggestionService",
+          code: -1,
+          userInfo: [NSLocalizedDescriptionKey: "ジオコーディングタイムアウト"]
+        ))
+      }
+
+      geocoder.reverseGeocodeLocation(location) { placemarks, error in
+        timeoutTask.cancel()
+
+        if let error = error {
+          continuation.resume(throwing: error)
+          return
+        }
+
+        // 市区町村レベルの地名を優先
+        let areaName = placemarks?.first?.locality
+          ?? placemarks?.first?.subLocality
+          ?? placemarks?.first?.administrativeArea
+        continuation.resume(returning: areaName)
+      }
+    }
   }
 
 #if canImport(FoundationModels)
@@ -260,7 +359,7 @@ class RouteSuggestionService {
   /// - Parameter generated: Foundation Models が生成したルート提案。
   /// - Returns: アプリで扱える`RouteSuggestion`配列。
   private func mapToRouteSuggestions(from generated: [GeneratedRouteSuggestion]) -> [RouteSuggestion] {
-    var normalized = generated.prefix(targetSuggestionCount).map { item -> RouteSuggestion in
+    let normalized = generated.prefix(targetSuggestionCount).map { item -> RouteSuggestion in
       // モデルの出力を UI で扱いやすい値幅に丸める
       let roundedDistance = max((item.estimatedDistance * 10).rounded() / 10, 0.1)
       let duration = max(item.estimatedDuration, 5)

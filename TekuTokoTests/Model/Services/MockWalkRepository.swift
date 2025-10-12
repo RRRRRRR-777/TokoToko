@@ -11,7 +11,7 @@ import Foundation
 @testable import TekuToko
 
 // テスト用のモックWalkRepository
-class MockWalkRepository {
+class MockWalkRepository: WalkRepositoryProtocol {
   // シミュレーション用のストレージ
   private var mockWalks: [Walk] = []
   private var shouldSimulateError = false

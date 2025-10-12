@@ -106,18 +106,76 @@ final class RouteSuggestionServiceTests: XCTestCase {
     XCTAssertEqual(result.count, 0, "空の配列が返されること")
   }
 
-  // MARK: - Phase 1: extractVisitedAreas() Tests (Placeholder)
+  // MARK: - Phase 2: extractSamplingPoints() Tests
 
-  /// extractVisitedAreas()が空の配列を返すことをテスト（Phase 2で実装予定）
-  func testExtractVisitedAreas_ReturnsEmpty() async {
-    // Given: 散歩履歴を用意
-    let walks = MockWalkRepository.createSampleWalks(count: 5, userId: "mock-user-id")
+  /// extractSamplingPoints()が1地点の場合に正しく抽出できることをテスト
+  func testExtractSamplingPoints_OneLocation() {
+    // Given: 1地点のみの散歩
+    let location = CLLocation(latitude: 35.6812, longitude: 139.7671)
+    var walk = Walk(title: "テスト散歩", description: "", userId: "test-user-id")
+    walk.locations = [location]
 
-    // When: extractVisitedAreas()を呼び出す
-    let result = await service.extractVisitedAreas(from: walks)
+    // When: extractSamplingPoints()を呼び出す
+    let result = service.extractSamplingPoints(from: walk)
 
-    // Then: 空の配列が返される（Phase 2で実装予定）
-    XCTAssertEqual(result.count, 0, "Phase 2実装前は空の配列が返されること")
+    // Then: 1地点が返される
+    XCTAssertEqual(result.count, 1, "1地点が返されること")
+    if let first = result.first {
+      XCTAssertEqual(first.coordinate.latitude, location.coordinate.latitude, accuracy: 0.001)
+    }
+  }
+
+  /// extractSamplingPoints()が2地点の場合に正しく抽出できることをテスト
+  func testExtractSamplingPoints_TwoLocations() {
+    // Given: 2地点の散歩
+    let start = CLLocation(latitude: 35.6812, longitude: 139.7671)
+    let end = CLLocation(latitude: 35.6762, longitude: 139.6503)
+    var walk = Walk(title: "テスト散歩", description: "", userId: "test-user-id")
+    walk.locations = [start, end]
+
+    // When: extractSamplingPoints()を呼び出す
+    let result = service.extractSamplingPoints(from: walk)
+
+    // Then: 2地点（開始+終了）が返される
+    XCTAssertEqual(result.count, 2, "2地点が返されること")
+    XCTAssertEqual(result[0].coordinate.latitude, start.coordinate.latitude, accuracy: 0.001)
+    XCTAssertEqual(result[1].coordinate.latitude, end.coordinate.latitude, accuracy: 0.001)
+  }
+
+  /// extractSamplingPoints()が3地点以上の場合に正しく抽出できることをテスト
+  func testExtractSamplingPoints_MultipleLocations() {
+    // Given: 5地点の散歩
+    let locations = [
+      CLLocation(latitude: 35.6812, longitude: 139.7671),  // 開始
+      CLLocation(latitude: 35.6822, longitude: 139.7681),
+      CLLocation(latitude: 35.6832, longitude: 139.7691),  // 中間（index=2）
+      CLLocation(latitude: 35.6842, longitude: 139.7701),
+      CLLocation(latitude: 35.6852, longitude: 139.7711),  // 終了
+    ]
+    var walk = Walk(title: "テスト散歩", description: "", userId: "test-user-id")
+    walk.locations = locations
+
+    // When: extractSamplingPoints()を呼び出す
+    let result = service.extractSamplingPoints(from: walk)
+
+    // Then: 3地点（開始+中間+終了）が返される
+    XCTAssertEqual(result.count, 3, "3地点が返されること")
+    XCTAssertEqual(result[0].coordinate.latitude, locations[0].coordinate.latitude, accuracy: 0.001)
+    XCTAssertEqual(result[1].coordinate.latitude, locations[2].coordinate.latitude, accuracy: 0.001)
+    XCTAssertEqual(result[2].coordinate.latitude, locations[4].coordinate.latitude, accuracy: 0.001)
+  }
+
+  /// extractSamplingPoints()が位置情報なしの場合に空配列を返すことをテスト
+  func testExtractSamplingPoints_NoLocations() {
+    // Given: 位置情報なしの散歩
+    var walk = Walk(title: "テスト散歩", description: "", userId: "test-user-id")
+    walk.locations = []
+
+    // When: extractSamplingPoints()を呼び出す
+    let result = service.extractSamplingPoints(from: walk)
+
+    // Then: 空配列が返される
+    XCTAssertEqual(result.count, 0, "空配列が返されること")
   }
 
   // MARK: - Phase 1: makePrompt() Tests (Indirect)
@@ -157,9 +215,27 @@ extension RouteSuggestionService {
   }
 
   /// テスト用に内部メソッドを公開
-  func extractVisitedAreas(from walks: [Walk]) async -> [String] {
-    // Phase 2で実装予定：リバースジオコーディングによるエリア抽出
-    // 現在は空の配列を返す
-    return []
+  func extractSamplingPoints(from walk: Walk) -> [CLLocation] {
+    guard !walk.locations.isEmpty else { return [] }
+
+    var points: [CLLocation] = []
+
+    // 開始地点
+    if let start = walk.locations.first {
+      points.append(start)
+    }
+
+    // 中間地点（位置配列の中央）
+    if walk.locations.count > 2 {
+      let middleIndex = walk.locations.count / 2
+      points.append(walk.locations[middleIndex])
+    }
+
+    // 終了地点
+    if let end = walk.locations.last, walk.locations.count > 1 {
+      points.append(end)
+    }
+
+    return points
   }
 }
