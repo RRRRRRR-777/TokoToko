@@ -87,7 +87,7 @@ struct RouteSuggestionInputView: View {
           }
           .multilineTextAlignment(.center)
           .padding(.vertical, 20)
-          .padding(.horizontal, 16)
+          .padding(.horizontal, 40)
           .background(
             RoundedRectangle(cornerRadius: 16)
               .fill(Color("BackgroundColor"))
