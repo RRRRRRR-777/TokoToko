@@ -66,6 +66,9 @@ struct HomeView: View {
   /// ルート提案エラー表示用のメッセージ
   @State private var routeSuggestionErrorMessage: String?
 
+  /// ルート提案入力画面の表示状態
+  @State private var showRouteSuggestionInput = false
+
   /// Apple Intelligence利用可否フラグ
   ///
   /// 端末がApple Intelligence（Foundation Models）をサポートしているかを示します。
@@ -336,6 +339,9 @@ struct HomeView: View {
         }
       }
     )
+    .fullScreenCover(isPresented: $showRouteSuggestionInput) {
+      RouteSuggestionInputView()
+    }
   }
 
   // 散歩提案ボタン
@@ -572,107 +578,9 @@ struct HomeView: View {
 
   /// 散歩提案ボタンがタップされた時の処理
   ///
-  /// 現在の位置情報、散歩状態、位置情報許可状態などをログ出力します。
-  /// 将来的にはFoundation Modelsを使用してルート提案を生成します。
+  /// ルート提案入力画面を表示します。
   private func handleSuggestionButtonTapped() {
-    #if DEBUG
-      print("========================================")
-      print("散歩提案ボタンがタップされました")
-      print("========================================")
-
-      // 1. 現在の位置情報をログ出力
-      if let location = currentLocation {
-        print("📍 現在位置:")
-        print("  - 緯度: \(location.coordinate.latitude)")
-        print("  - 経度: \(location.coordinate.longitude)")
-        print("  - 精度: \(location.horizontalAccuracy)m")
-        print("  - タイムスタンプ: \(location.timestamp)")
-      } else {
-        print("📍 現在位置: 取得できていません")
-      }
-
-      // 2. 現在の散歩状態をログ出力
-      print("\n🚶 散歩状態:")
-      print("  - 散歩中: \(walkManager.isWalking)")
-      if let currentWalk = walkManager.currentWalk {
-        print("  - ステータス: \(currentWalk.status)")
-        print("  - 経過時間: \(walkManager.elapsedTimeString)")
-        print("  - 距離: \(walkManager.distanceString)")
-        print("  - 歩数: \(walkManager.totalSteps)")
-        print("  - 記録位置数: \(currentWalk.locations.count)")
-      } else {
-        print("  - 現在散歩中ではありません")
-      }
-
-      // 3. 位置情報許可状態をログ出力
-      print("\n🔐 位置情報許可状態:")
-      print("  - 許可状態: \(locationManager.authorizationStatus)")
-      print("  - チェック完了: \(isLocationPermissionCheckCompleted)")
-
-      // 4. プレースホルダー: 将来的にはここで散歩履歴を取得
-      print("\n📊 散歩履歴（将来実装）:")
-      print("  - 直近の散歩: [未実装 - Firestoreから取得予定]")
-      print("  - 訪問エリア: [未実装]")
-      print("  - 平均距離: [未実装]")
-
-      // 5. プレースホルダー: 将来的にはここでユーザーの気分入力を取得
-      print("\n💭 ユーザー入力（将来実装）:")
-      print("  - 気分: [未実装]")
-      print("  - 希望距離: [未実装]")
-      print("  - 希望時間: [未実装]")
-
-      print("========================================")
-    #endif
-
-    if let forcedMessage = forcedRouteSuggestionErrorMessage() {
-      routeSuggestionErrorMessage = forcedMessage
-      return
-    }
-
-    // 6. RouteSuggestionServiceを使用してルート提案を生成
-    if #available(iOS 26.0, *) {
-      Task {
-        do {
-          isLoading = true
-          routeSuggestionErrorMessage = nil
-
-          let service = RouteSuggestionService()
-          let suggestions = try await service.generateRouteSuggestions()
-
-          isLoading = false
-
-          #if DEBUG
-            print("\n🎯 生成されたルート提案:")
-            for (index, suggestion) in suggestions.enumerated() {
-              print("[\(index + 1)] \(suggestion.title)")
-              print("   説明: \(suggestion.description)")
-              print("   距離: \(suggestion.estimatedDistance)km")
-              print("   所要時間: \(suggestion.estimatedDuration)分")
-              print("   理由: \(suggestion.recommendationReason)")
-              print("")
-            }
-            print("========================================")
-          #endif
-
-        } catch {
-          isLoading = false
-
-          routeSuggestionErrorMessage = makeRouteSuggestionAlertMessage(from: error)
-
-          #if DEBUG
-            print("\n❌ ルート提案生成エラー:")
-            print("  - エラー: \(error.localizedDescription)")
-            print("========================================")
-          #endif
-        }
-      }
-    } else {
-      routeSuggestionErrorMessage = "ルート提案機能はiOS 26.0以降で利用できます。"
-      #if DEBUG
-        print("\n⚠️ RouteSuggestionServiceはiOS 26.0以降で利用可能です")
-        print("========================================")
-      #endif
-    }
+    showRouteSuggestionInput = true
   }
 
   // 位置情報マネージャーの設定
