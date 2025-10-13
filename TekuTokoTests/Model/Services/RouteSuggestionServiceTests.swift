@@ -301,6 +301,52 @@ final class RouteSuggestionServiceTests: XCTestCase {
       XCTFail("RouteSuggestionServiceErrorがスローされるべき")
     }
   }
+
+  // MARK: - User Input Tests
+
+  /// generateRouteSuggestions()がユーザー入力（気分）を受け取れることをテスト
+  func testGenerateRouteSuggestions_WithMoodInput() async throws {
+    // Given: 散歩履歴を用意
+    let walks = MockWalkRepository.createSampleWalks(count: 5, userId: "mock-user-id")
+    walks.forEach { mockRepository.addMockWalk($0) }
+    mockGeocoder.setMockPlacemark(locality: "渋谷区")
+
+    // Given: ユーザー入力
+    let userInput = RouteSuggestionUserInput(
+      mood: "自然を感じたい",
+      walkOption: .time(hours: 2.0),
+      discoveries: ["自然", "景色"]
+    )
+
+    // When: generateRouteSuggestions()を呼び出す
+    let suggestions = try await service.generateRouteSuggestions(userInput: userInput)
+
+    // Then: 提案が生成される
+    XCTAssertFalse(suggestions.isEmpty, "提案が生成されること")
+    XCTAssertLessThanOrEqual(suggestions.count, 3, "最大3件の提案が生成されること")
+  }
+
+  /// generateRouteSuggestions()が距離指定を受け取れることをテスト
+  func testGenerateRouteSuggestions_WithDistanceInput() async throws {
+    // Given: 散歩履歴を用意
+    let walks = MockWalkRepository.createSampleWalks(count: 5, userId: "mock-user-id")
+    walks.forEach { mockRepository.addMockWalk($0) }
+    mockGeocoder.setMockPlacemark(locality: "新宿区")
+
+    // Given: ユーザー入力（距離指定）
+    let userInput = RouteSuggestionUserInput(
+      mood: "",
+      walkOption: .distance(kilometers: 5.0),
+      discoveries: []
+    )
+
+    // When: generateRouteSuggestions()を呼び出す
+    let suggestions = try await service.generateRouteSuggestions(userInput: userInput)
+
+    // Then: 提案が生成される
+    XCTAssertFalse(suggestions.isEmpty, "提案が生成されること")
+    XCTAssertLessThanOrEqual(suggestions.count, 3, "最大3件の提案が生成されること")
+  }
 }
 
 // MARK: - Test Helpers

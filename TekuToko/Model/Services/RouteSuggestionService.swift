@@ -98,13 +98,13 @@ class RouteSuggestionService {
 
   /// 散歩ルート提案を生成します
   ///
-  /// 現在はプロトタイプとして固定の3つの提案を返します。
-  /// 将来的には、ユーザーの散歩履歴と気分入力をもとに
-  /// Foundation Modelsを使用して動的に生成します。
+  /// ユーザーの散歩履歴と入力（気分、時間/距離、発見したいもの）をもとに
+  /// Foundation Modelsを使用してルート提案を動的に生成します。
   ///
+  /// - Parameter userInput: ユーザーからの入力（気分、時間/距離、発見したいもの）
   /// - Returns: ルート提案の配列（最大3件）
   /// - Throws: ルート生成に失敗した場合のエラー
-  func generateRouteSuggestions() async throws -> [RouteSuggestion] {
+  func generateRouteSuggestions(userInput: RouteSuggestionUserInput) async throws -> [RouteSuggestion] {
     #if DEBUG
       print("[RouteSuggestionService] ルート提案生成を開始")
     #endif
@@ -123,10 +123,11 @@ class RouteSuggestionService {
       // Phase 1: 散歩履歴を取得
       let walks = try await fetchWalkHistory()
 
-      // Phase 2: 訪問エリアを抽出（プレースホルダー）
+      // Phase 2: 訪問エリアを抽出
       let visitedAreas = await extractVisitedAreas(from: walks)
 
-      let prompt = makePrompt(visitedAreas: visitedAreas)
+      // Phase 3: プロンプトを生成
+      let prompt = makePrompt(visitedAreas: visitedAreas, userInput: userInput)
       let session = LanguageModelSession(instructions: generationInstructions)
       var lastError: Error?
 
@@ -183,9 +184,11 @@ class RouteSuggestionService {
 
   /// Foundation Models に渡すプロンプトを生成します。
   ///
-  /// - Parameter visitedAreas: 訪問エリアの配列
+  /// - Parameters:
+  ///   - visitedAreas: 訪問エリアの配列
+  ///   - userInput: ユーザーからの入力（気分、時間/距離、発見したいもの）
   /// - Returns: Foundation Modelsに送信するプロンプト文字列
-  private func makePrompt(visitedAreas: [String]) -> String {
+  private func makePrompt(visitedAreas: [String], userInput: RouteSuggestionUserInput) -> String {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "ja_JP")
     formatter.dateStyle = .long
@@ -195,23 +198,49 @@ class RouteSuggestionService {
     // 訪問エリアを整形
     let areasText = visitedAreas.isEmpty ? defaultArea : visitedAreas.joined(separator: "、")
 
-    // 固定の気分（将来的にはユーザー入力に置き換え）
-    let mood = "自然を感じながらリラックスしたい"
+    // ユーザーの気分（空の場合はデフォルト）
+    let mood = userInput.mood.isEmpty ? "散歩を楽しみたい" : userInput.mood
+
+    // 散歩オプション（時間 or 距離）を整形
+    let optionText: String
+    switch userInput.walkOption {
+    case .time(let hours):
+      optionText = "希望時間: \(hours)時間"
+    case .distance(let kilometers):
+      optionText = "希望距離: \(Int(kilometers))km"
+    }
+
+    // 発見したいものを整形
+    let discoveriesText = userInput.discoveries.isEmpty
+      ? ""
+      : "\n- 発見したいもの: \(userInput.discoveries.joined(separator: "、"))"
+
+    // 気分の有無で優先度の指示を変える
+    let priorityInstruction = """
+      【最重要】ユーザーの気分: 「\(mood)」
+      ※ この気分の内容を最優先してください。距離や時間の指定よりも気分の内容が優先されます。
+       例: 気分で「1km程度」と書かれていれば、希望距離が10kmでも1km程度の提案をしてください。
+
+      散歩履歴サマリー:
+      - \(discoveriesText)
+      - \(optionText)
+      - いつも散歩している場所: \(areasText)
+        - ※ 上記と類似するエリア名を提案に使っても構いません
+      - ユーザーの気分: 「\(mood)」
+      """
 
     return """
     今日の日付: \(dateString)
-    散歩履歴サマリー:
-    - 希望時間: \(defaultDuration)分
-    - いつも散歩している場所: \(areasText)
-    ※ 上記と類似するエリア名を提案に使っても構いません
-    ユーザーの気分: 「\(mood)」
+
+    \(priorityInstruction)
 
     上記の文脈を踏まえ、\(targetSuggestionCount)件の散歩ルート候補を提案してください。
+
     各候補には以下のフィールドを含めます:
     - title: 文脈から適切な具体的エリア名を含む3〜6語の短いルート名
     - description: 1〜2文でルートの特徴を説明
-    - estimatedDistance: 1.5〜5.0の範囲の距離 (km)
-    - estimatedDuration: 20〜60の範囲の時間 (分)
+    - estimatedDistance: 適切な距離 (km)
+    - estimatedDuration: 適切な時間 (時間)
     - recommendationReason: 気分やメリットに言及した推奨理由
 
     出力は構造化されたデータとして生成してください。
@@ -227,7 +256,7 @@ class RouteSuggestionService {
     #if DEBUG
       print("[RouteSuggestionService] \(source)から\(suggestions.count)件の提案を取得しました")
       for (index, suggestion) in suggestions.enumerated() {
-        print("  [\(index + 1)] \(suggestion.title) - \(suggestion.estimatedDistance)km, \(suggestion.estimatedDuration)分")
+        print("  [\(index + 1)] \(suggestion.title) - \(suggestion.estimatedDistance)km, \(suggestion.estimatedDuration)時間")
         print("       理由: \(suggestion.recommendationReason)")
       }
     #endif
@@ -397,13 +426,13 @@ class RouteSuggestionService {
     let normalized = generated.prefix(targetSuggestionCount).map { item -> RouteSuggestion in
       // モデルの出力を UI で扱いやすい値幅に丸める
       let roundedDistance = max((item.estimatedDistance * 10).rounded() / 10, 0.1)
-      let duration = max(item.estimatedDuration, 5)
+      let roundedDuration = max((item.estimatedDuration * 10).rounded() / 10, 0.1)
 
       return RouteSuggestion(
         title: item.title.trimmingCharacters(in: .whitespacesAndNewlines),
         description: item.description.trimmingCharacters(in: .whitespacesAndNewlines),
         estimatedDistance: roundedDistance,
-        estimatedDuration: duration,
+        estimatedDuration: roundedDuration,
         recommendationReason: item.recommendationReason
           .trimmingCharacters(in: .whitespacesAndNewlines)
       )
@@ -415,6 +444,29 @@ class RouteSuggestionService {
 }
 
 // MARK: - Data Models
+
+/// ユーザー入力データ
+///
+/// ルート提案を生成するために必要なユーザーからの入力を表します。
+struct RouteSuggestionUserInput {
+  /// 気分や希望（任意、空文字列可）
+  let mood: String
+
+  /// 散歩のオプション（時間 or 距離）
+  let walkOption: WalkOption
+
+  /// 発見したいもの（複数選択可）
+  let discoveries: [String]
+
+  /// 散歩のオプション（時間 or 距離）
+  enum WalkOption {
+    /// 時間指定（時間単位）
+    case time(hours: Double)
+
+    /// 距離指定（km単位）
+    case distance(kilometers: Double)
+  }
+}
 
 /// 散歩ルート提案
 ///
@@ -429,8 +481,8 @@ struct RouteSuggestion: Codable {
   /// 推定距離（km）
   let estimatedDistance: Double
 
-  /// 推定所要時間（分）
-  let estimatedDuration: Int
+  /// 推定所要時間（時間）
+  let estimatedDuration: Double
 
   /// 推奨理由
   let recommendationReason: String
@@ -449,8 +501,8 @@ struct RouteSuggestion: Codable {
     /// 推定距離（km）
     let estimatedDistance: Double
 
-    /// 推定時間（分）
-    let estimatedDuration: Int
+    /// 推定時間（時間）
+    let estimatedDuration: Double
 
     /// 推奨理由
     let recommendationReason: String

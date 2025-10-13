@@ -10,6 +10,8 @@ struct RouteSuggestionInputView: View {
   @State private var timeValue: Double = 2.0
   @State private var distanceValue: Double = 8.0
   @State private var selectedDiscoveries: Set<DiscoveryItem> = []
+  @State private var isGenerating: Bool = false
+  @State private var errorMessage: String?
 
   private let maxMoodCharacters = 200
 
@@ -229,21 +231,38 @@ struct RouteSuggestionInputView: View {
           .background(Color("BackgroundColor"))
           .cornerRadius(24)
 
+          // エラーメッセージ
+          if let errorMessage = errorMessage {
+            Text(errorMessage)
+              .font(.caption)
+              .foregroundColor(.red)
+              .multilineTextAlignment(.center)
+              .padding(.horizontal)
+          }
+
           // きょうのさんぽボタン
           Button(action: {
             submitRouteSuggestion()
           }) {
             HStack(spacing: 8) {
-              Text("おさんぽナビを見る")
-                .font(.system(size: 18, weight: .semibold))
+              if isGenerating {
+                ProgressView()
+                  .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                Text("生成中...")
+                  .font(.system(size: 18, weight: .semibold))
+              } else {
+                Text("おさんぽナビを見る")
+                  .font(.system(size: 18, weight: .semibold))
+              }
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color.blue)
+            .background(isGenerating ? Color.gray : Color.blue)
             .cornerRadius(12)
           }
           .buttonStyle(PlainButtonStyle())
+          .disabled(isGenerating)
         }
         .padding(.horizontal)
         .padding(.bottom, 32)
@@ -262,7 +281,7 @@ struct RouteSuggestionInputView: View {
     }
   }
 
-  /// ルート提案を送信（現在はログ出力のみ）
+  /// ルート提案を送信
   private func submitRouteSuggestion() {
     #if DEBUG
       print("=== Route Suggestion Submitted ===")
@@ -282,8 +301,77 @@ struct RouteSuggestionInputView: View {
       print("==================================")
     #endif
 
-    // TODO: 実際のルート提案処理を実装
-    // ここで RouteSuggestionService を呼び出す
+    // iOS 26.0以降のみ対応
+    if #available(iOS 26.0, *) {
+      Task {
+        await generateRouteSuggestions()
+      }
+    } else {
+      // iOS 26.0未満では未対応メッセージを表示
+      errorMessage = "この機能はiOS 26.0以降で利用可能です"
+    }
+  }
+
+  /// ルート提案を生成する
+  @available(iOS 26.0, *)
+  private func generateRouteSuggestions() async {
+    isGenerating = true
+    errorMessage = nil
+
+    // ユーザー入力を構築
+    let walkOption: RouteSuggestionUserInput.WalkOption
+    if selectedOption == .time {
+      walkOption = .time(hours: timeValue)
+    } else {
+      walkOption = .distance(kilometers: distanceValue)
+    }
+
+    let discoveries = selectedDiscoveries.map { item -> String in
+      // 絵文字を除去してテキストのみを抽出
+      let text = item.rawValue
+        .replacingOccurrences(of: "🌳 ", with: "")
+        .replacingOccurrences(of: "📸 ", with: "")
+        .replacingOccurrences(of: "🍽️ ", with: "")
+        .replacingOccurrences(of: "🌸 ", with: "")
+        .replacingOccurrences(of: "🏛️ ", with: "")
+      return text
+    }
+
+    let userInput = RouteSuggestionUserInput(
+      mood: moodInput,
+      walkOption: walkOption,
+      discoveries: discoveries
+    )
+
+    do {
+      let service = RouteSuggestionService()
+      let suggestions = try await service.generateRouteSuggestions(userInput: userInput)
+
+      #if DEBUG
+        print("=== Route Suggestions Generated ===")
+        for (index, suggestion) in suggestions.enumerated() {
+          print("[\(index + 1)] \(suggestion.title)")
+          print("    説明: \(suggestion.description)")
+          print("    距離: \(suggestion.estimatedDistance)km")
+          print("    時間: \(suggestion.estimatedDuration)時間")
+          print("    理由: \(suggestion.recommendationReason)")
+        }
+        print("===================================")
+      #endif
+
+      isGenerating = false
+      // TODO: 提案結果を表示する画面に遷移
+      dismiss()
+    } catch {
+      #if DEBUG
+        print("=== Route Suggestion Error ===")
+        print("エラー: \(error.localizedDescription)")
+        print("==============================")
+      #endif
+
+      errorMessage = "ルート提案の生成に失敗しました: \(error.localizedDescription)"
+      isGenerating = false
+    }
   }
 }
 
