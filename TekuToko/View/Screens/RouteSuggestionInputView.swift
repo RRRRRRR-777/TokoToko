@@ -12,6 +12,8 @@ struct RouteSuggestionInputView: View {
   @State private var selectedDiscoveries: Set<DiscoveryItem> = []
   @State private var isGenerating: Bool = false
   @State private var errorMessage: String?
+  @State private var generatedSuggestions: [RouteSuggestion] = []
+  @State private var showResultView: Bool = false
 
   private let maxMoodCharacters = 200
 
@@ -268,6 +270,14 @@ struct RouteSuggestionInputView: View {
         .padding(.bottom, 32)
       }
     }
+    .fullScreenCover(isPresented: $showResultView) {
+      RouteSuggestionResultView(
+        suggestions: generatedSuggestions,
+        onClose: {
+          showResultView = false
+        }
+      )
+    }
   }
 
   // MARK: - Private Methods
@@ -359,11 +369,19 @@ struct RouteSuggestionInputView: View {
         print("===================================")
       #endif
 
-      isGenerating = false
-      // TODO: 提案結果を表示する画面に遷移
-      dismiss()
+      guard !suggestions.isEmpty else {
+        errorMessage = "ルート提案の生成に失敗しました: 候補が見つかりませんでした"
+        isGenerating = false
+        return
+      }
+
+      withAnimation(.easeInOut(duration: 0.2)) {
+        generatedSuggestions = suggestions
+        isGenerating = false
+        showResultView = true
+      }
     } catch {
-      #if DEBUG
+#if DEBUG
         print("=== Route Suggestion Error ===")
         print("エラー: \(error.localizedDescription)")
         print("==============================")
