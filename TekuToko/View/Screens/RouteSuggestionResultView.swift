@@ -15,8 +15,8 @@ struct RouteSuggestionResultView: View {
 
   @State private var currentIndex: Int = 0
   @State private var mapRegion: MKCoordinateRegion
-  @State private var mapAnnotations: [MapItem]
   @State private var geocodeTask: Task<Void, Never>? = nil
+  @State private var lastGeocodedAddress: String?
 
   private let cardBackground = Color.white.opacity(0.92)
 
@@ -24,9 +24,8 @@ struct RouteSuggestionResultView: View {
     self.suggestions = suggestions
     self.onClose = onClose
 
-    let mapData = Self.defaultMapData()
-    _mapRegion = State(initialValue: mapData.region)
-    _mapAnnotations = State(initialValue: mapData.annotations)
+    _mapRegion = State(initialValue: Self.fallbackRegion)
+    _lastGeocodedAddress = State(initialValue: nil)
   }
 
   var body: some View {
@@ -45,7 +44,7 @@ struct RouteSuggestionResultView: View {
         VStack(spacing: 16) {
           header()
 
-          textCard(title: suggestion.title, fontSize: 24)
+          textCard(title: suggestion.title, fontSize: 22)
 
           textCard(title: suggestion.description, fontSize: 16)
 
@@ -125,6 +124,8 @@ struct RouteSuggestionResultView: View {
       .font(.system(size: fontSize, weight: .semibold))
       .foregroundColor(.primary)
       .multilineTextAlignment(.leading)
+      .lineLimit(2)
+      .minimumScaleFactor(0.6)
       .padding(.vertical, 12)
       .padding(.horizontal, 24)
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -137,7 +138,7 @@ struct RouteSuggestionResultView: View {
   }
 
   private func mapSection() -> some View {
-    StaticMapView(region: $mapRegion, annotations: mapAnnotations)
+    StaticMapView(region: $mapRegion)
       .frame(height: 230)
       .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
       .overlay(
@@ -243,37 +244,40 @@ struct RouteSuggestionResultView: View {
   private func updateMap(for suggestion: RouteSuggestion?) {
     geocodeTask?.cancel()
 
-    let defaultData = Self.defaultMapData()
-    mapRegion = defaultData.region
-    mapAnnotations = defaultData.annotations
+    guard let suggestion else {
+      mapRegion = Self.fallbackRegion
+      lastGeocodedAddress = nil
+      return
+    }
 
-    guard let suggestion else { return }
+    let rawAddress = suggestion.address.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !rawAddress.isEmpty else {
+      mapRegion = Self.fallbackRegion
+      lastGeocodedAddress = nil
+      return
+    }
 
-    let candidates = areaCandidates(for: suggestion)
-    guard !candidates.isEmpty else { return }
+    if rawAddress == lastGeocodedAddress {
+      return
+    }
+
+    lastGeocodedAddress = rawAddress
+    mapRegion = Self.fallbackRegion
 
     geocodeTask = Task {
-      defer {
-        Task { @MainActor in
-          self.geocodeTask = nil
+      let coordinate = await geocodeAddress(rawAddress)
+      await MainActor.run {
+        defer { self.geocodeTask = nil }
+        guard lastGeocodedAddress == rawAddress else { return }
+        guard let coordinate else {
+          #if DEBUG
+            print("[RouteSuggestionResultView] geocoding failed: \(rawAddress)")
+          #endif
+          lastGeocodedAddress = nil
+          mapRegion = Self.fallbackRegion
+          return
         }
-      }
-      for candidate in candidates {
-        guard !Task.isCancelled else { return }
-        guard let coordinate = await geocodeAddress(candidate) else { continue }
-
-        await MainActor.run {
-          let span = MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
-          mapRegion = MKCoordinateRegion(center: coordinate, span: span)
-          mapAnnotations = [
-            MapItem(
-              coordinate: coordinate,
-              title: candidate,
-              imageName: "mappin.and.ellipse"
-            )
-          ]
-        }
-        return
+        mapRegion = MKCoordinateRegion(center: coordinate, span: Self.fallbackSpan)
       }
     }
   }
@@ -292,72 +296,40 @@ struct RouteSuggestionResultView: View {
     return String(format: "%.1f時間", value)
   }
 
-  private func areaCandidates(for suggestion: RouteSuggestion) -> [String] {
-    var candidates: [String] = []
-
-    let baseTitle = suggestion.title.trimmingCharacters(in: .whitespacesAndNewlines)
-    if !baseTitle.isEmpty {
-      candidates.append(baseTitle)
-    }
-
-    let cleaned = removeCommonSuffixes(from: baseTitle)
-    if !cleaned.isEmpty {
-      candidates.append(cleaned)
-    }
-
-    let splitDelimiters = CharacterSet(charactersIn: "・／/|　 ")
-    let splitComponents = cleaned.components(separatedBy: splitDelimiters)
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .filter { !$0.isEmpty }
-    candidates.append(contentsOf: splitComponents)
-
-    // 重複を排除しつつ、入力順序を維持
-    var unique: [String] = []
-    for candidate in candidates {
-      if !unique.contains(candidate) {
-        unique.append(candidate)
-      }
-    }
-
-    return unique
-  }
-
-  private func removeCommonSuffixes(from text: String) -> String {
-    var result = text
-    let suffixes = ["コース", "散歩", "さんぽ", "ルート", "散策", "プラン", "周辺", "めぐり", "ウォーク"]
-    suffixes.forEach { suffix in
-      if result.hasSuffix(suffix) {
-        result.removeLast(suffix.count)
-      }
-    }
-    return result.trimmingCharacters(in: .whitespacesAndNewlines)
-  }
-
   private func geocodeAddress(_ address: String) async -> CLLocationCoordinate2D? {
     await withCheckedContinuation { continuation in
       let geocoder = CLGeocoder()
-      geocoder.geocodeAddressString(address) { placemarks, error in
-        if error != nil {
+
+      func handleResult(_ placemarks: [CLPlacemark]?, error: Error?) {
+        if let coordinate = placemarks?.first?.location?.coordinate {
+          continuation.resume(returning: coordinate)
+        } else if let error {
+          #if DEBUG
+            print("[RouteSuggestionResultView] geocoding error: \(error.localizedDescription)")
+          #endif
           continuation.resume(returning: nil)
+        } else {
+          continuation.resume(returning: nil)
+        }
+      }
+
+      geocoder.geocodeAddressString(address) { placemarks, error in
+        if let placemarks, !placemarks.isEmpty {
+          handleResult(placemarks, error: error)
           return
         }
-        let coordinate = placemarks?.first?.location?.coordinate
-        continuation.resume(returning: coordinate)
+
+        let secondAttempt = address.contains("日本") ? address : "\(address) 日本"
+        geocoder.geocodeAddressString(secondAttempt) { secondPlacemarks, secondError in
+          handleResult(secondPlacemarks, error: secondError)
+        }
       }
     }
   }
 
-  private static func defaultMapData() -> (region: MKCoordinateRegion, annotations: [MapItem]) {
-    let center = CLLocationCoordinate2D(latitude: 35.6886, longitude: 139.7528)
-    let span = MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
-    let region = MKCoordinateRegion(center: center, span: span)
-    let annotation = MapItem(
-      coordinate: center,
-      title: "北の丸公園",
-      imageName: "mappin.and.ellipse"
-    )
-    return (region, [annotation])
-  }
+  private static let fallbackCenter = CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125) // 東京駅
+  private static let fallbackSpan = MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
+  private static let fallbackRegion = MKCoordinateRegion(center: fallbackCenter, span: fallbackSpan)
 }
 
 #Preview {
@@ -369,14 +341,20 @@ struct RouteSuggestionResultView: View {
           description: "緑豊かな皇居外苑を巡りながら、季節の花々と歴史的建造物を楽しめるコースです。",
           estimatedDistance: 10.0,
           estimatedDuration: 2.5,
-          recommendationReason: "気分をリフレッシュしたい方におすすめ。日比谷公園や北の丸公園で静かな時間を過ごせます。"
+          recommendationReason: "気分をリフレッシュしたい方におすすめ。日比谷公園や北の丸公園で静かな時間を過ごせます。",
+          address: "東京都千代田区皇居外苑1丁目",
+          postalCode: "100-0002",
+          landmark: "皇居外苑"
         ),
         RouteSuggestion(
           title: "神楽坂グルメさんぽ",
           description: "石畳の路地を散策しながら、個性豊かな飲食店を巡るグルメ散歩。",
           estimatedDistance: 5.2,
           estimatedDuration: 1.5,
-          recommendationReason: "新しい味に出会いたい気分に。甘味処やベーカリーを巡りながら街の雰囲気を味わえます。"
+          recommendationReason: "新しい味に出会いたい気分に。甘味処やベーカリーを巡りながら街の雰囲気を味わえます。",
+          address: "東京都新宿区神楽坂6丁目",
+          postalCode: "162-0825",
+          landmark: "神楽坂商店街"
         )
       ]
     )
