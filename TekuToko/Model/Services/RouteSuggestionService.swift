@@ -73,7 +73,16 @@ class RouteSuggestionService {
 
   /// Foundation Models に与える共通指示
   private let generationInstructions = """
-  あなたは散歩コーチAIです。ユーザーの散歩履歴や気分の文脈を踏まえ、安全で多様性のある散歩ルートを日本語で提案してください。各候補のタイトルには、入力で与えられる散歩エリアや頻繁に訪れるスポット名（または同じ特徴を持つ近隣エリア）を含め、公道や公園など一般的にアクセス可能な場所のみを案内します。説明はポジティブで具体的にしつつ、誇張や現実離れした描写は避けてください。
+  あなたは散歩ルート提案AIです。
+
+  【重要】必ず指定された件数（通常3件）の提案を生成してください。
+
+  提案する際のルール：
+  1. ユーザーの気分を最優先し、その気分に合った散歩ルートを提案する
+  2. 提案するエリアは、ユーザーの散歩履歴エリアまたはその近隣から選ぶ
+  3. title・description・landmarkに記載する地名と、addressの市区町村は必ず一致させる
+  4. 全ての必須フィールド（address, postalCode, landmark）を必ず埋める
+  5. 郵便番号は7桁ハイフン付き（例：113-0033）で記載する
   """
 
   // MARK: - Initialization
@@ -140,10 +149,11 @@ class RouteSuggestionService {
 
           let suggestions = mapToRouteSuggestions(from: response.content)
 
+          // 0件の場合のみリトライ
           if suggestions.isEmpty {
             #if DEBUG
               print(
-                "[RouteSuggestionService] FoundationModelsが0件を返したためリトライします (\(attempt)/3)"
+                "[RouteSuggestionService] FoundationModelsが0件を返しました。リトライします (\(attempt)/3)"
               )
             #endif
             if attempt == 3 {
@@ -152,6 +162,15 @@ class RouteSuggestionService {
               )
             }
             continue
+          }
+
+          // 1件以上あれば結果を返す（3件未満の場合は警告ログ）
+          if suggestions.count < targetSuggestionCount {
+            #if DEBUG
+              print(
+                "[RouteSuggestionService] 警告: FoundationModelsが\(suggestions.count)件を返しました（目標\(targetSuggestionCount)件）"
+              )
+            #endif
           }
 
           logGeneratedSuggestions(
@@ -215,38 +234,61 @@ class RouteSuggestionService {
       ? ""
       : "\n- 発見したいもの: \(userInput.discoveries.joined(separator: "、"))"
 
-    // 気分の有無で優先度の指示を変える
-    let priorityInstruction = """
-      【最重要】ユーザーの気分: 「\(mood)」
-      ※ この気分の内容を最優先してください。距離や時間の指定よりも気分の内容が優先されます。
-       例: 気分で「1km程度」と書かれていれば、希望距離が10kmでも1km程度の提案をしてください。
+    let inputPrompt = """
+    【必須】必ず\(targetSuggestionCount)件の散歩ルート提案を生成してください
 
-      散歩履歴サマリー:
-      - \(discoveriesText)
-      - \(optionText)
-      - いつも散歩している場所: \(areasText)
-        - ※ 上記と類似するエリア名を提案に使っても構いません
-      - ユーザーの気分: 「\(mood)」
-      """
+    ■ ユーザー情報
+    - 気分: 「\(mood)」（最優先）
+    - \(optionText)\(discoveriesText)
+    - よく歩くエリア: \(areasText)
 
-    return """
-    今日の日付: \(dateString)
+    ■ 出力条件
+    1. 件数: 必ず\(targetSuggestionCount)件（\(targetSuggestionCount)件未満は不可）
+    2. エリア: ユーザーのよく歩くエリアまたはその近隣から選ぶ
+    3. 必須項目: address（都道府県+市区町村+町名）、postalCode（7桁ハイフン付き）、landmark（具体的な場所名）
+    4. 整合性: title・description・landmarkの地名とaddressの市区町村を一致させる
 
-    \(priorityInstruction)
+    ■ 出力フォーマット（JSON配列）
+    ```json
+    [
+      {
+        "title": "文京区本郷の歴史さんぽ",
+        "description": "下町の風情を感じながら神田川沿いを歩くルートです。",
+        "estimatedDistance": 3.2,
+        "estimatedDuration": 1.5,
+        "recommendationReason": "落ち着いた街並みで、のんびり歩きたい気分にぴったりです。",
+        "address": "東京都文京区本郷3丁目",
+        "postalCode": "113-0033",
+        "landmark": "東京大学本郷キャンパス"
+      },
+      {
+        "title": "千代田区日比谷公園散策",
+        "description": "都会のオアシスで四季の花々を楽しめる癒しのルートです。",
+        "estimatedDistance": 2.5,
+        "estimatedDuration": 1.0,
+        "recommendationReason": "緑豊かな環境で、リフレッシュしたい気分にぴったりです。",
+        "address": "東京都千代田区日比谷公園1",
+        "postalCode": "100-0012",
+        "landmark": "日比谷公園"
+      },
+      {
+        "title": "新宿区神楽坂グルメ巡り",
+        "description": "石畳の路地を散策しながら、個性豊かなお店を巡るルートです。",
+        "estimatedDistance": 4.0,
+        "estimatedDuration": 2.0,
+        "recommendationReason": "新しい発見を楽しみたい気分に最適です。",
+        "address": "東京都新宿区神楽坂6丁目",
+        "postalCode": "162-0825",
+        "landmark": "神楽坂商店街"
+      }
+    ]
+    ```
 
-    上記の文脈を踏まえ、\(targetSuggestionCount)件の散歩ルート候補を提案してください。
-
-    各候補には以下のフィールドを含めます:
-    - title: 文脈から適切な具体的エリア名を含む3〜6語の短いルート名
-    - description: 1〜2文でルートの特徴を説明
-    - estimatedDistance: 適切な距離 (km)
-    - estimatedDuration: 適切な時間 (時間)
-    - recommendationReason: 気分やメリットに言及した推奨理由
-
-    出力は構造化されたデータとして生成してください。
+    上記の形式で\(targetSuggestionCount)件の提案を生成してください。
     """
+    print("入力プロンプト: \(inputPrompt)")
+    return inputPrompt
   }
-
   /// 生成したルート提案をデバッグ出力します。
   ///
   /// - Parameters:
@@ -257,6 +299,9 @@ class RouteSuggestionService {
       print("[RouteSuggestionService] \(source)から\(suggestions.count)件の提案を取得しました")
       for (index, suggestion) in suggestions.enumerated() {
         print("  [\(index + 1)] \(suggestion.title) - \(suggestion.estimatedDistance)km, \(suggestion.estimatedDuration)時間")
+        print("       住所: \(suggestion.address)")
+        print("       郵便番号: \(suggestion.postalCode)")
+        print("       ランドマーク: \(suggestion.landmark)")
         print("       理由: \(suggestion.recommendationReason)")
       }
     #endif
@@ -423,10 +468,23 @@ class RouteSuggestionService {
   /// - Parameter generated: Foundation Models が生成したルート提案。
   /// - Returns: アプリで扱える`RouteSuggestion`配列。
   private func mapToRouteSuggestions(from generated: [GeneratedRouteSuggestion]) -> [RouteSuggestion] {
-    let normalized = generated.prefix(targetSuggestionCount).map { item -> RouteSuggestion in
+    let normalized = generated.prefix(targetSuggestionCount).compactMap { item -> RouteSuggestion? in
       // モデルの出力を UI で扱いやすい値幅に丸める
       let roundedDistance = max((item.estimatedDistance * 10).rounded() / 10, 0.1)
       let roundedDuration = max((item.estimatedDuration * 10).rounded() / 10, 0.1)
+
+      // 必須フィールドのバリデーション
+      let address = item.address.trimmingCharacters(in: .whitespacesAndNewlines)
+      let postalCode = item.postalCode.trimmingCharacters(in: .whitespacesAndNewlines)
+      let landmark = item.landmark.trimmingCharacters(in: .whitespacesAndNewlines)
+
+      // 空文字列チェック: いずれかが空の場合は候補から除外
+      guard !address.isEmpty, !postalCode.isEmpty, !landmark.isEmpty else {
+        #if DEBUG
+          print("[RouteSuggestionService] 必須フィールドが空のため候補を除外: \(item.title)")
+        #endif
+        return nil
+      }
 
       return RouteSuggestion(
         title: item.title.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -434,7 +492,10 @@ class RouteSuggestionService {
         estimatedDistance: roundedDistance,
         estimatedDuration: roundedDuration,
         recommendationReason: item.recommendationReason
-          .trimmingCharacters(in: .whitespacesAndNewlines)
+          .trimmingCharacters(in: .whitespacesAndNewlines),
+        address: address,
+        postalCode: postalCode,
+        landmark: landmark
       )
     }
 
@@ -486,6 +547,15 @@ struct RouteSuggestion: Codable {
 
   /// 推奨理由
   let recommendationReason: String
+
+  /// ルート中心の住所（都道府県＋市区町村＋丁目レベル、例: "東京都文京区本郷3丁目"）
+  let address: String
+
+  /// 郵便番号（7桁ハイフン付き、例: "113-0033"）
+  let postalCode: String
+
+  /// ランドマーク（駅、公園、商店街、寺社、大学など、例: "東京大学本郷キャンパス"）
+  let landmark: String
 }
 
 #if canImport(FoundationModels)
@@ -506,5 +576,14 @@ struct RouteSuggestion: Codable {
 
     /// 推奨理由
     let recommendationReason: String
+
+    /// ルート中心の住所（都道府県＋市区町村＋丁目レベル）
+    let address: String
+
+    /// 郵便番号（7桁ハイフン付き）
+    let postalCode: String
+
+    /// ランドマーク（駅、公園、商店街、寺社、大学など）
+    let landmark: String
   }
 #endif
