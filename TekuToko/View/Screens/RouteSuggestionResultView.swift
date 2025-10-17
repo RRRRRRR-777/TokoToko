@@ -44,17 +44,22 @@ struct RouteSuggestionResultView: View {
         VStack(spacing: 16) {
           header()
 
-          textCard(title: suggestion.title, fontSize: 22)
-
-          textCard(title: suggestion.description, fontSize: 16)
+          titleDescriptionCard(
+            title: suggestion.title,
+            description: suggestion.description
+          )
+          .padding(.bottom, 8)
 
           mapSection()
             .padding(.horizontal, 24)
+            .padding(.bottom, 8)
 
           textCard(title: suggestion.recommendationReason, fontSize: 16)
+            .padding(.bottom, 8)
 
           metricsRow(for: suggestion)
             .padding(.horizontal, 24)
+            .padding(.bottom, 8)
 
           Spacer(minLength: 0)
 
@@ -135,6 +140,33 @@ struct RouteSuggestionResultView: View {
           .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
       )
       .padding(.horizontal, 20)
+  }
+
+  private func titleDescriptionCard(title: String, description: String) -> some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(title)
+        .font(.system(size: 22, weight: .semibold))
+        .foregroundColor(.primary)
+        .multilineTextAlignment(.leading)
+        .lineLimit(2)
+        .minimumScaleFactor(0.6)
+
+      Text(description)
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundColor(.primary)
+        .multilineTextAlignment(.leading)
+        .lineLimit(2)
+        .minimumScaleFactor(0.6)
+    }
+    .padding(.vertical, 12)
+    .padding(.horizontal, 24)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(
+      RoundedRectangle(cornerRadius: 24, style: .continuous)
+        .fill(cardBackground)
+        .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
+    )
+    .padding(.horizontal, 20)
   }
 
   private func mapSection() -> some View {
