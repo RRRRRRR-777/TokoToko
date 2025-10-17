@@ -222,11 +222,18 @@ class RouteSuggestionService {
 
     // 散歩オプション（時間 or 距離）を整形
     let optionText: String
+    let distanceSpec: String
+    let durationSpec: String
+
     switch userInput.walkOption {
     case .time(let hours):
       optionText = "希望時間: \(hours)時間"
+      durationSpec = "\(hours)時間に近い値"
+      distanceSpec = "適切な距離"
     case .distance(let kilometers):
-      optionText = "希望距離: \(Int(kilometers))km"
+      optionText = "希望距離: \(kilometers)km"
+      distanceSpec = "\(kilometers)kmに近い値"
+      durationSpec = "適切な時間"
     }
 
     // 発見したいものを整形
@@ -238,53 +245,29 @@ class RouteSuggestionService {
     【必須】必ず\(targetSuggestionCount)件の散歩ルート提案を生成してください
 
     ■ ユーザー情報
-    - 気分: 「\(mood)」（最優先）
-    - \(optionText)\(discoveriesText)
+    - 気分: 「\(mood)」
+    - \(optionText) ← **この値に近い提案を必ず生成すること**\(discoveriesText)
     - よく歩くエリア: \(areasText)
 
-    ■ 出力条件
-    1. 件数: 必ず\(targetSuggestionCount)件（\(targetSuggestionCount)件未満は不可）
-    2. エリア: ユーザーのよく歩くエリアまたはその近隣から選ぶ
-    3. 必須項目: address（都道府県+市区町村+町名）、postalCode（7桁ハイフン付き）、landmark（具体的な場所名）
-    4. 整合性: title・description・landmarkの地名とaddressの市区町村を一致させる
+    ■ 出力条件（優先順位順）
+    1. 【最重要】件数: 必ず\(targetSuggestionCount)件（\(targetSuggestionCount)件未満は不可）
+    2. 【最重要】\(optionText)に近い値で提案すること（大幅に外れた値は不可）
+    3. エリア: ユーザーのよく歩くエリアまたはその近隣から選ぶ
+    4. 必須項目: address（都道府県+市区町村+町名）、postalCode（7桁ハイフン付き）、landmark（具体的な場所名）
+    5. 整合性: title・description・landmarkの地名とaddressの市区町村を一致させる
 
     ■ 出力フォーマット（JSON配列）
-    ```json
-    [
-      {
-        "title": "文京区本郷の歴史さんぽ",
-        "description": "下町の風情を感じながら神田川沿いを歩くルートです。",
-        "estimatedDistance": 3.2,
-        "estimatedDuration": 1.5,
-        "recommendationReason": "落ち着いた街並みで、のんびり歩きたい気分にぴったりです。",
-        "address": "東京都文京区本郷3丁目",
-        "postalCode": "113-0033",
-        "landmark": "東京大学本郷キャンパス"
-      },
-      {
-        "title": "千代田区日比谷公園散策",
-        "description": "都会のオアシスで四季の花々を楽しめる癒しのルートです。",
-        "estimatedDistance": 2.5,
-        "estimatedDuration": 1.0,
-        "recommendationReason": "緑豊かな環境で、リフレッシュしたい気分にぴったりです。",
-        "address": "東京都千代田区日比谷公園1",
-        "postalCode": "100-0012",
-        "landmark": "日比谷公園"
-      },
-      {
-        "title": "新宿区神楽坂グルメ巡り",
-        "description": "石畳の路地を散策しながら、個性豊かなお店を巡るルートです。",
-        "estimatedDistance": 4.0,
-        "estimatedDuration": 2.0,
-        "recommendationReason": "新しい発見を楽しみたい気分に最適です。",
-        "address": "東京都新宿区神楽坂6丁目",
-        "postalCode": "162-0825",
-        "landmark": "神楽坂商店街"
-      }
-    ]
-    ```
+    以下の形式で\(targetSuggestionCount)件を生成：
+    - title: エリア名を含む短いルート名
+    - description: ルートの特徴（1〜2文）
+    - estimatedDistance: \(distanceSpec)（km）
+    - estimatedDuration: \(durationSpec)（時間）
+    - recommendationReason: 気分に基づいた推奨理由
+    - address: 「都道府県+市区町村+町名」形式の住所
+    - postalCode: 7桁ハイフン付き郵便番号
+    - landmark: 具体的な場所名
 
-    上記の形式で\(targetSuggestionCount)件の提案を生成してください。
+    JSON配列として出力してください。
     """
     print("入力プロンプト: \(inputPrompt)")
     return inputPrompt
