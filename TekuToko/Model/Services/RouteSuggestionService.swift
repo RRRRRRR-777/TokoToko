@@ -149,30 +149,43 @@ class RouteSuggestionService {
 
           let suggestions = mapToRouteSuggestions(from: response.content)
 
-          // 0件の場合のみリトライ
-          if suggestions.isEmpty {
-            #if DEBUG
-              print(
-                "[RouteSuggestionService] FoundationModelsが0件を返しました。リトライします (\(attempt)/3)"
-              )
-            #endif
-            if attempt == 3 {
-              throw RouteSuggestionServiceError.generationFailed(
-                "Foundation Modelsが提案を生成できませんでした"
-              )
-            }
-            continue
-          }
-
-          // 1件以上あれば結果を返す（3件未満の場合は警告ログ）
+          // 目標件数に満たない場合の処理
           if suggestions.count < targetSuggestionCount {
             #if DEBUG
               print(
-                "[RouteSuggestionService] 警告: FoundationModelsが\(suggestions.count)件を返しました（目標\(targetSuggestionCount)件）"
+                "[RouteSuggestionService] FoundationModelsが\(suggestions.count)件を返しました（目標\(targetSuggestionCount)件）"
               )
             #endif
+
+            // 3回目のリトライでも目標件数に達しない場合
+            if attempt == 3 {
+              // 0件の場合はエラー
+              if suggestions.isEmpty {
+                throw RouteSuggestionServiceError.generationFailed(
+                  "Foundation Modelsが提案を生成できませんでした"
+                )
+              }
+              // 1件以上あればその結果を返す
+              #if DEBUG
+                print(
+                  "[RouteSuggestionService] リトライ上限に達しました。\(suggestions.count)件の提案を返します"
+                )
+              #endif
+              logGeneratedSuggestions(
+                suggestions,
+                source: "FoundationModels（試行\(attempt)回目、目標未達）"
+              )
+              return suggestions
+            }
+
+            // まだリトライ可能な場合は続行
+            #if DEBUG
+              print("[RouteSuggestionService] リトライします (\(attempt)/3)")
+            #endif
+            continue
           }
 
+          // 目標件数に達した場合
           logGeneratedSuggestions(
             suggestions,
             source: "FoundationModels（試行\(attempt)回目）"
