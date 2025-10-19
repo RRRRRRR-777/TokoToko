@@ -302,6 +302,54 @@ final class RouteSuggestionServiceTests: XCTestCase {
     }
   }
 
+  // MARK: - Clustering Tests
+
+  /// クラスタリング機能が近接する地点を1つに集約することを確認するテスト
+  func testClusterLocations_ReducesNearbyPoints() {
+    // Given: 同じエリア内の複数の地点
+    let nearbyLocations = [
+      CLLocation(latitude: 35.681, longitude: 139.767),  // 東京駅周辺
+      CLLocation(latitude: 35.682, longitude: 139.768),  // 約100m離れた地点
+      CLLocation(latitude: 35.683, longitude: 139.769),  // 約200m離れた地点
+      CLLocation(latitude: 36.000, longitude: 140.000),  // 遠く離れた地点
+    ]
+
+    // When: クラスタリングを実行
+    let clustered = service.clusterLocations(nearbyLocations)
+
+    // Then: 近接する地点が集約される
+    XCTAssertLessThan(clustered.count, nearbyLocations.count, "近接する地点が集約されること")
+    XCTAssertGreaterThan(clustered.count, 0, "少なくとも1つの代表地点が残ること")
+  }
+
+  /// クラスタリング後も遠く離れた地点は保持されることを確認するテスト
+  func testClusterLocations_PreservesDistantPoints() {
+    // Given: 遠く離れた地点のみ
+    let distantLocations = [
+      CLLocation(latitude: 35.681, longitude: 139.767),  // 東京
+      CLLocation(latitude: 34.702, longitude: 135.495),  // 大阪
+      CLLocation(latitude: 43.064, longitude: 141.347),  // 札幌
+    ]
+
+    // When: クラスタリングを実行
+    let clustered = service.clusterLocations(distantLocations)
+
+    // Then: すべての地点が保持される
+    XCTAssertEqual(clustered.count, distantLocations.count, "遠く離れた地点はすべて保持されること")
+  }
+
+  /// 空の配列に対してクラスタリングしても安全であることを確認するテスト
+  func testClusterLocations_EmptyArray() {
+    // Given: 空の配列
+    let emptyLocations: [CLLocation] = []
+
+    // When: クラスタリングを実行
+    let clustered = service.clusterLocations(emptyLocations)
+
+    // Then: 空の配列が返される
+    XCTAssertTrue(clustered.isEmpty, "空の配列が返されること")
+  }
+
   // MARK: - User Input Tests
 
   /// generateRouteSuggestions()がユーザー入力（気分）を受け取れることをテスト

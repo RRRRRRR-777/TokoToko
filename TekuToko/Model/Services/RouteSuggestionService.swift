@@ -282,7 +282,9 @@ class RouteSuggestionService {
 
     JSON配列として出力してください。
     """
-    print("入力プロンプト: \(inputPrompt)")
+    #if DEBUG
+      print("入力プロンプト: \(inputPrompt)")
+    #endif
     return inputPrompt
   }
   /// 生成したルート提案をデバッグ出力します。
@@ -375,7 +377,7 @@ class RouteSuggestionService {
         #endif
       }
 
-      // レート制限対策：0.1秒待機
+      // レート制限対策：0.1秒待機（クラスタリング済みのため十分）
       try? await Task.sleep(nanoseconds: 100_000_000)
     }
 
@@ -437,7 +439,7 @@ class RouteSuggestionService {
   ///
   /// - Parameter locations: サンプリング地点の配列
   /// - Returns: クラスタリング後の代表地点配列
-  private func clusterLocations(_ locations: [CLLocation]) -> [CLLocation] {
+  func clusterLocations(_ locations: [CLLocation]) -> [CLLocation] {
     var clusters: [String: CLLocation] = [:]
     
     for location in locations {
