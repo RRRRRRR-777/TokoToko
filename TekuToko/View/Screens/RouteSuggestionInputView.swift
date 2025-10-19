@@ -324,6 +324,7 @@ struct RouteSuggestionInputView: View {
 
   /// ルート提案を生成する
   @available(iOS 26.0, *)
+  @MainActor
   private func generateRouteSuggestions() async {
     isGenerating = true
     errorMessage = nil
