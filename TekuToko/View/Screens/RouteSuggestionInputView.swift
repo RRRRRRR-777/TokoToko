@@ -51,6 +51,7 @@ struct RouteSuggestionInputView: View {
             .foregroundColor(.primary)
 
           HStack {
+            Spacer()
             Button(action: {
               dismiss()
             }) {
@@ -61,7 +62,6 @@ struct RouteSuggestionInputView: View {
                 .background(Color.white.opacity(0.8))
                 .clipShape(Circle())
             }
-            Spacer()
           }
           .padding(.horizontal)
         }
@@ -274,7 +274,7 @@ struct RouteSuggestionInputView: View {
       RouteSuggestionResultView(
         suggestions: generatedSuggestions,
         onClose: {
-          showResultView = false
+          dismiss()  // 入力画面も閉じてホームに直接戻る
         }
       )
     }
