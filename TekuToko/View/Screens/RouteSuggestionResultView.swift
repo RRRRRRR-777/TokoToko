@@ -108,12 +108,28 @@ struct RouteSuggestionResultView: View {
   @ViewBuilder
   private func header() -> some View {
     HStack {
+      // 左上：戻るボタン
+      Button(action: backToInput) {
+        HStack(spacing: 4) {
+          Image(systemName: "chevron.left")
+            .font(.system(size: 14, weight: .semibold))
+          Text("戻る")
+            .font(.system(size: 16, weight: .medium))
+        }
+        .foregroundColor(.blue)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+      }
+      .accessibilityLabel("入力画面に戻る")
+      .padding(.leading, 24)
+
       Spacer()
 
+      // 右上：閉じるボタン
       Button(action: closeView) {
         Image(systemName: "xmark")
           .font(.system(size: 16, weight: .semibold))
-          .foregroundColor(.primary)
+          .foregroundColor(.red)
           .padding(12)
           .background(Color.white.opacity(0.85))
           .clipShape(Circle())
@@ -263,6 +279,10 @@ struct RouteSuggestionResultView: View {
     withAnimation(.easeInOut(duration: 0.2)) {
       currentIndex += 1
     }
+  }
+
+  private func backToInput() {
+    dismiss()
   }
 
   private func closeView() {
