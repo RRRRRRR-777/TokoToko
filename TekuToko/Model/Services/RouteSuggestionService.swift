@@ -59,6 +59,11 @@ class RouteSuggestionService {
   /// ジオコーダー（テスト時にモック可能）
   internal let geocoderFactory: () -> GeocoderProtocol
 
+  #if canImport(FoundationModels)
+    /// テスト用にLLM応答を差し替えるためのフック
+    internal var llmResponseOverride: ((String, Int) async throws -> [RouteSuggestion])?
+  #endif
+
   /// 生成するルート提案数
   private let targetSuggestionCount = 3
 
@@ -137,6 +142,13 @@ class RouteSuggestionService {
 
       // Phase 3: プロンプトを生成
       let prompt = makePrompt(visitedAreas: visitedAreas, userInput: userInput)
+
+      if let override = llmResponseOverride {
+        let suggestions = try await override(prompt, targetSuggestionCount)
+        logGeneratedSuggestions(suggestions, source: "LLMOverride")
+        return suggestions
+      }
+
       let session = LanguageModelSession(instructions: generationInstructions)
       var lastError: Error?
 
@@ -356,7 +368,7 @@ class RouteSuggestionService {
       let samplingPoints = extractSamplingPoints(from: walk)
       allSamplingPoints.append(contentsOf: samplingPoints)
     }
-    
+
     #if DEBUG
       print("[RouteSuggestionService] サンプリング地点を\(allSamplingPoints.count)件収集")
     #endif
@@ -377,7 +389,7 @@ class RouteSuggestionService {
         #endif
       }
 
-      // レート制限対策：0.1秒待機（クラスタリング済みのため十分）
+      // レート制限対策：0.1秒待機
       try? await Task.sleep(nanoseconds: 100_000_000)
     }
 
@@ -441,7 +453,7 @@ class RouteSuggestionService {
   /// - Returns: クラスタリング後の代表地点配列
   func clusterLocations(_ locations: [CLLocation]) -> [CLLocation] {
     var clusters: [String: CLLocation] = [:]
-    
+
     for location in locations {
       let key = gridKey(for: location)
       // 同じグリッド内に既存の地点がない場合のみ追加
@@ -449,13 +461,13 @@ class RouteSuggestionService {
         clusters[key] = location
       }
     }
-    
+
     let clusteredLocations = Array(clusters.values)
-    
+
     #if DEBUG
       print("[RouteSuggestionService] クラスタリング: \(locations.count)地点 → \(clusteredLocations.count)地点に削減")
     #endif
-    
+
     return clusteredLocations
   }
 

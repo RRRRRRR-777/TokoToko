@@ -29,6 +29,9 @@ final class RouteSuggestionServiceTests: XCTestCase {
   }
 
   override func tearDown() {
+    #if canImport(FoundationModels)
+      service.llmResponseOverride = nil
+    #endif
     service = nil
     mockGeocoder = nil
     mockRepository = nil
@@ -365,13 +368,46 @@ final class RouteSuggestionServiceTests: XCTestCase {
       walkOption: .time(hours: 2.0),
       discoveries: ["自然", "景色"]
     )
+    let expectedSuggestions: [RouteSuggestion] = [
+      .fixture(
+        title: "代々木公園と明治神宮の癒やし散歩",
+        description: "都会の真ん中で自然と静けさを味わえる定番ルート。",
+        estimatedDistance: 4.2,
+        estimatedDuration: 1.8,
+        recommendationReason: "自然を感じたい気分に合わせ、緑豊かなスポットを中心に選定しました。",
+        address: "東京都渋谷区代々木神園町",
+        postalCode: "151-0052",
+        landmark: "代々木公園"
+      ),
+      .fixture(
+        title: "渋谷ストリートアート散策",
+        description: "渋谷の裏路地にある壁画やギャラリーを巡るアートルート。",
+        estimatedDistance: 3.1,
+        estimatedDuration: 1.2,
+        recommendationReason: "景色と発見を重視し、歩きやすい距離で構成しています。",
+        address: "東京都渋谷区神南1丁目",
+        postalCode: "150-0041",
+        landmark: "渋谷キャスト"
+      )
+    ]
+
+    var callCount = 0
+    #if canImport(FoundationModels)
+      service.llmResponseOverride = { _, targetCount in
+        callCount += 1
+        XCTAssertEqual(targetCount, 3, "期待される提案数が渡されること")
+        return expectedSuggestions
+      }
+    #else
+      XCTFail("FoundationModelsが利用できない環境ではこのテストを実行できません")
+    #endif
 
     // When: generateRouteSuggestions()を呼び出す
     let suggestions = try await service.generateRouteSuggestions(userInput: userInput)
 
     // Then: 提案が生成される
-    XCTAssertFalse(suggestions.isEmpty, "提案が生成されること")
-    XCTAssertLessThanOrEqual(suggestions.count, 3, "最大3件の提案が生成されること")
+    assertSuggestions(suggestions, match: expectedSuggestions)
+    XCTAssertEqual(callCount, 1, "LLMモックが1回だけ呼ばれること")
   }
 
   /// generateRouteSuggestions()が距離指定を受け取れることをテスト
@@ -387,17 +423,63 @@ final class RouteSuggestionServiceTests: XCTestCase {
       walkOption: .distance(kilometers: 5.0),
       discoveries: []
     )
+    let expectedSuggestions: [RouteSuggestion] = [
+      .fixture(
+        title: "神田川沿いリバーウォーク",
+        description: "川沿いの桜並木を楽しむフラットなコース。",
+        estimatedDistance: 5.0,
+        estimatedDuration: 1.5,
+        recommendationReason: "距離指定5kmに合わせて、のんびり歩ける平坦なルートを選定しました。",
+        address: "東京都新宿区高田馬場1丁目",
+        postalCode: "169-0075",
+        landmark: "高田馬場駅"
+      )
+    ]
+
+    var callCount = 0
+    #if canImport(FoundationModels)
+      service.llmResponseOverride = { _, targetCount in
+        callCount += 1
+        XCTAssertEqual(targetCount, 3, "期待される提案数が渡されること")
+        return expectedSuggestions
+      }
+    #else
+      XCTFail("FoundationModelsが利用できない環境ではこのテストを実行できません")
+    #endif
 
     // When: generateRouteSuggestions()を呼び出す
     let suggestions = try await service.generateRouteSuggestions(userInput: userInput)
 
     // Then: 提案が生成される
-    XCTAssertFalse(suggestions.isEmpty, "提案が生成されること")
-    XCTAssertLessThanOrEqual(suggestions.count, 3, "最大3件の提案が生成されること")
+    assertSuggestions(suggestions, match: expectedSuggestions)
+    XCTAssertEqual(callCount, 1, "LLMモックが1回だけ呼ばれること")
   }
 }
 
 // MARK: - Test Helpers
+
+@available(iOS 26.0, *)
+extension RouteSuggestionServiceTests {
+  func assertSuggestions(
+    _ suggestions: [RouteSuggestion],
+    match expected: [RouteSuggestion],
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    XCTAssertEqual(suggestions.count, expected.count, "提案数が一致すること", file: file, line: line)
+    for (index, pair) in zip(suggestions.indices, zip(suggestions, expected)) {
+      let (actual, expectedSuggestion) = pair
+      XCTAssertEqual(actual.title, expectedSuggestion.title, "titleが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.description, expectedSuggestion.description, "descriptionが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.estimatedDistance, expectedSuggestion.estimatedDistance, accuracy: 0.001, "estimatedDistanceが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.estimatedDuration, expectedSuggestion.estimatedDuration, accuracy: 0.001, "estimatedDurationが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.recommendationReason, expectedSuggestion.recommendationReason, "recommendationReasonが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.address, expectedSuggestion.address, "addressが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.postalCode, expectedSuggestion.postalCode, "postalCodeが一致すること (index: \(index))", file: file, line: line)
+      XCTAssertEqual(actual.landmark, expectedSuggestion.landmark, "landmarkが一致すること (index: \(index))", file: file, line: line)
+    }
+  }
+}
 
 @available(iOS 26.0, *)
 extension RouteSuggestionService {
@@ -515,5 +597,29 @@ extension RouteSuggestionService {
         continuation.resume(returning: areaName)
       }
     }
+  }
+}
+
+private extension RouteSuggestion {
+  static func fixture(
+    title: String,
+    description: String,
+    estimatedDistance: Double,
+    estimatedDuration: Double,
+    recommendationReason: String,
+    address: String,
+    postalCode: String,
+    landmark: String
+  ) -> RouteSuggestion {
+    RouteSuggestion(
+      title: title,
+      description: description,
+      estimatedDistance: estimatedDistance,
+      estimatedDuration: estimatedDuration,
+      recommendationReason: recommendationReason,
+      address: address,
+      postalCode: postalCode,
+      landmark: landmark
+    )
   }
 }
