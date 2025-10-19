@@ -153,7 +153,7 @@ class RouteSuggestionService {
           if suggestions.count < targetSuggestionCount {
             #if DEBUG
               print(
-                "[RouteSuggestionService] FoundationModelsが\(suggestions.count)件を返しました（目標\(targetSuggestionCount)件）"
+                "[RouteSuggestionService] FoundationModelsが\(suggestions.count)件を返しました(目標\(targetSuggestionCount)件)"
               )
             #endif
 
@@ -173,7 +173,7 @@ class RouteSuggestionService {
               #endif
               logGeneratedSuggestions(
                 suggestions,
-                source: "FoundationModels（試行\(attempt)回目、目標未達）"
+                source: "FoundationModels(試行\(attempt)回目、目標未達)"
               )
               return suggestions
             }
@@ -188,7 +188,7 @@ class RouteSuggestionService {
           // 目標件数に達した場合
           logGeneratedSuggestions(
             suggestions,
-            source: "FoundationModels（試行\(attempt)回目）"
+            source: "FoundationModels(試行\(attempt)回目)"
           )
           return suggestions
         } catch {
@@ -345,28 +345,38 @@ class RouteSuggestionService {
   /// - Returns: 訪問エリアの配列（重複除去済み）
   private func extractVisitedAreas(from walks: [Walk]) async -> [String] {
     #if DEBUG
-      print("[RouteSuggestionService] 訪問エリアの抽出を開始（\(walks.count)件の散歩履歴）")
+      print("[RouteSuggestionService] 訪問エリアの抽出を開始(\(walks.count)件の散歩履歴)")
     #endif
 
-    var areas: [String] = []
-
+    // Phase 1: 全散歩からサンプリング地点を収集
+    var allSamplingPoints: [CLLocation] = []
     for walk in walks {
       let samplingPoints = extractSamplingPoints(from: walk)
+      allSamplingPoints.append(contentsOf: samplingPoints)
+    }
+    
+    #if DEBUG
+      print("[RouteSuggestionService] サンプリング地点を\(allSamplingPoints.count)件収集")
+    #endif
 
-      for location in samplingPoints {
-        do {
-          if let areaName = try await reverseGeocode(location: location) {
-            areas.append(areaName)
-          }
-        } catch {
-          #if DEBUG
-            print("[RouteSuggestionService] ジオコーディング失敗: \(error.localizedDescription)")
-          #endif
+    // Phase 2: クラスタリングで代表地点を抽出
+    let clusteredLocations = clusterLocations(allSamplingPoints)
+
+    // Phase 3: 代表地点のみをジオコーディング
+    var areas: [String] = []
+    for location in clusteredLocations {
+      do {
+        if let areaName = try await reverseGeocode(location: location) {
+          areas.append(areaName)
         }
-
-        // レート制限対策：0.1秒待機
-        try? await Task.sleep(nanoseconds: 100_000_000)
+      } catch {
+        #if DEBUG
+          print("[RouteSuggestionService] ジオコーディング失敗: \(error.localizedDescription)")
+        #endif
       }
+
+      // レート制限対策：0.1秒待機
+      try? await Task.sleep(nanoseconds: 100_000_000)
     }
 
     // 重複除去
@@ -405,6 +415,46 @@ class RouteSuggestionService {
     }
 
     return points
+  }
+
+  /// 座標をグリッドキーに変換します（クラスタリング用）。
+  ///
+  /// 緯度経度を一定精度で丸めることで、近接する地点を同じグループにまとめます。
+  /// 精度: 約0.01度 ≈ 1km
+  ///
+  /// - Parameter location: 位置情報
+  /// - Returns: グリッドキー（"緯度_経度"形式）
+  private func gridKey(for location: CLLocation) -> String {
+    let precision = 100.0  // 0.01度単位（約1km）
+    let roundedLat = round(location.coordinate.latitude * precision) / precision
+    let roundedLon = round(location.coordinate.longitude * precision) / precision
+    return "\(roundedLat)_\(roundedLon)"
+  }
+
+  /// サンプリング地点をクラスタリングして代表地点を抽出します。
+  ///
+  /// 近接する地点を1つの代表地点にまとめることで、ジオコーディングの呼び出し回数を削減します。
+  ///
+  /// - Parameter locations: サンプリング地点の配列
+  /// - Returns: クラスタリング後の代表地点配列
+  private func clusterLocations(_ locations: [CLLocation]) -> [CLLocation] {
+    var clusters: [String: CLLocation] = [:]
+    
+    for location in locations {
+      let key = gridKey(for: location)
+      // 同じグリッド内に既存の地点がない場合のみ追加
+      if clusters[key] == nil {
+        clusters[key] = location
+      }
+    }
+    
+    let clusteredLocations = Array(clusters.values)
+    
+    #if DEBUG
+      print("[RouteSuggestionService] クラスタリング: \(locations.count)地点 → \(clusteredLocations.count)地点に削減")
+    #endif
+    
+    return clusteredLocations
   }
 
   /// リバースジオコーディングで位置から地名を取得します。
