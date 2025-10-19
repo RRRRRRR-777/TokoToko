@@ -364,8 +364,8 @@ class RouteSuggestionService {
           #endif
         }
 
-        // レート制限対策：1.5秒待機（50req/60sec = 1.2秒間隔 + 安全マージン）
-        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        // レート制限対策：0.1秒待機
+        try? await Task.sleep(nanoseconds: 100_000_000)
       }
     }
 
