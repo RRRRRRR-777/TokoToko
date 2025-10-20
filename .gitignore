@@ -97,8 +97,8 @@ GoogleService-Info.plist
 .env
 tmp/*
 info.plist
-docs/
-docs_*/
+/docs/
+/docs_*/
 DerivedData/
 GEMINI.md
 .serena/
