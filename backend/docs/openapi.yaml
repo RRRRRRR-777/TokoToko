@@ -6,18 +6,15 @@ info:
     てくとこ - おさんぽSNS のバックエンドAPI
 
     ## 認証
-    全エンドポイント（公開共有リンク除く）はFirebase ID Tokenによる認証が必要です。
+    全エンドポイントはFirebase ID Tokenによる認証が必要です。
     `Authorization: Bearer <firebase_id_token>` ヘッダーを含めてください。
 
     ## レート制限
     - 認証済みユーザー: 100 req/min
-    - 未認証（共有リンク）: 20 req/min
 
   contact:
     name: TekuToko API Support
-    email: support@tekutoko.app
-  license:
-    name: MIT
+    email: tekutoko.walk@gmail.com
 
 servers:
   - url: https://api.tekutoko.app/v1
@@ -32,12 +29,6 @@ tags:
     description: 散歩管理エンドポイント
   - name: Locations
     description: 位置情報管理
-  - name: Photos
-    description: 写真管理
-  - name: Shares
-    description: 共有リンク管理
-  - name: Users
-    description: ユーザー情報管理
 
 security:
   - bearerAuth: []
@@ -51,7 +42,7 @@ paths:
       parameters:
         - name: limit
           in: query
-          description: 取得件数（デフォルト: 20、最大: 100）
+          description: "取得件数（デフォルト: 20、最大: 100）"
           schema:
             type: integer
             minimum: 1
@@ -252,152 +243,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /walks/{walkId}/photos:
-    parameters:
-      - name: walkId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-
-    post:
-      summary: 写真アップロード
-      description: 散歩に写真を追加（最大10枚まで）
-      tags: [Photos]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhotoCreate'
-      responses:
-        '201':
-          description: 追加成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Photo'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '413':
-          description: 写真枚数上限超過
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /walks/{walkId}/photos/{photoId}:
-    parameters:
-      - name: walkId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - name: photoId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-
-    delete:
-      summary: 写真削除
-      description: 指定された写真を削除
-      tags: [Photos]
-      responses:
-        '204':
-          description: 削除成功
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /walks/{walkId}/share:
-    parameters:
-      - name: walkId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-
-    post:
-      summary: 共有リンク生成
-      description: 散歩の公開共有リンクを生成
-      tags: [Shares]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ShareLinkCreate'
-      responses:
-        '201':
-          description: 生成成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/ShareLink'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /shares/{slug}:
-    parameters:
-      - name: slug
-        in: path
-        required: true
-        description: 共有リンクのスラグ
-        schema:
-          type: string
-
-    get:
-      summary: 共有リンク経由で散歩取得
-      description: 公開共有リンクから散歩情報を取得（認証不要）
-      tags: [Shares]
-      security: []  # 認証不要
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Walk'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '410':
-          description: 共有リンクが期限切れ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
 components:
   securitySchemes:
     bearerAuth:
@@ -436,12 +281,14 @@ components:
           type: string
           description: 現在のカーソル
         next_cursor:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: 次ページのカーソル（次ページがない場合はnull）
         prev_cursor:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: 前ページのカーソル（前ページがない場合はnull）
         has_next:
           type: boolean
@@ -516,13 +363,15 @@ components:
         description:
           type: string
         start_time:
-          type: string
-          format: date-time
-          nullable: true
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
         end_time:
-          type: string
-          format: date-time
-          nullable: true
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
         total_distance:
           type: number
           format: double
@@ -531,21 +380,25 @@ components:
           type: integer
           description: 総歩数
         polyline_data:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: Google Maps エンコード済みポリライン
         thumbnail_image_url:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
         status:
           $ref: '#/components/schemas/WalkStatus'
         paused_at:
-          type: string
-          format: date-time
-          nullable: true
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
         total_paused_duration:
-          type: string
-          description: 累積一時停止時間（ISO 8601 duration形式）
+          type: number
+          format: double
+          description: 累積一時停止時間（秒）
         created_at:
           type: string
           format: date-time
@@ -570,19 +423,22 @@ components:
         status:
           $ref: '#/components/schemas/WalkStatus'
         start_time:
-          type: string
-          format: date-time
-          nullable: true
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
         end_time:
-          type: string
-          format: date-time
-          nullable: true
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
         total_distance:
           type: number
           format: double
         thumbnail_image_url:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
 
     WalkCreate:
       type: object
@@ -619,7 +475,7 @@ components:
       required:
         - latitude
         - longitude
-        - recorded_at
+        - timestamp
       properties:
         latitude:
           type: number
@@ -632,28 +488,34 @@ components:
           minimum: -180
           maximum: 180
         altitude:
-          type: number
-          format: double
-          nullable: true
-        recorded_at:
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
+        timestamp:
           type: string
           format: date-time
+          description: 位置情報の記録日時
         horizontal_accuracy:
-          type: number
-          format: double
-          nullable: true
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
         vertical_accuracy:
-          type: number
-          format: double
-          nullable: true
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
         speed:
-          type: number
-          format: double
-          nullable: true
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
         course:
-          type: number
-          format: double
-          nullable: true
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
 
     LocationBatch:
       type: object
@@ -667,121 +529,6 @@ components:
           minItems: 1
           maxItems: 500
           description: 位置情報配列（最大500件）
-
-    # ===== Photo =====
-    Photo:
-      type: object
-      required:
-        - id
-        - walk_id
-        - position
-        - url
-        - created_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        walk_id:
-          type: string
-          format: uuid
-        position:
-          type: integer
-          minimum: 1
-          maximum: 10
-          description: 表示順序（1-10）
-        url:
-          type: string
-          format: uri
-        latitude:
-          type: number
-          format: double
-          nullable: true
-        longitude:
-          type: number
-          format: double
-          nullable: true
-        caption:
-          type: string
-          nullable: true
-        captured_at:
-          type: string
-          format: date-time
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-
-    PhotoCreate:
-      type: object
-      required:
-        - position
-        - url
-      properties:
-        position:
-          type: integer
-          minimum: 1
-          maximum: 10
-        url:
-          type: string
-          format: uri
-          description: Cloud Storage署名付きURL
-        latitude:
-          type: number
-          format: double
-        longitude:
-          type: number
-          format: double
-        caption:
-          type: string
-          maxLength: 500
-        captured_at:
-          type: string
-          format: date-time
-
-    # ===== Share =====
-    ShareLink:
-      type: object
-      required:
-        - id
-        - walk_id
-        - slug
-        - url
-        - is_active
-        - created_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        walk_id:
-          type: string
-          format: uuid
-        slug:
-          type: string
-          description: 共有リンクのスラグ
-        url:
-          type: string
-          format: uri
-          description: 完全な共有URL
-        expires_at:
-          type: string
-          format: date-time
-          nullable: true
-        is_active:
-          type: boolean
-        view_count:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-
-    ShareLinkCreate:
-      type: object
-      properties:
-        expires_in_days:
-          type: integer
-          minimum: 1
-          maximum: 365
-          description: 有効期限（日数）
 
   responses:
     BadRequest:

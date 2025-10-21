@@ -60,7 +60,7 @@
 
 ### エンドポイント命名規則
 - ベースURL: `https://api.tekutoko.app/v1`
-- リソース指向: `/v1/walks`, `/v1/users`, `/v1/photos`
+- リソース指向: `/v1/walks`
 - HTTPメソッド: GET（取得）, POST（作成）, PATCH（部分更新）, DELETE（削除）
 
 ### レスポンス形式
