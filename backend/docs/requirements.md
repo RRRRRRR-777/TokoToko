@@ -42,7 +42,6 @@
   - 安全な移行（問題発生時の即時ロールバック）
   - 機能ごとの段階的切り替え
   - A/Bテストによる検証
-  - iOS側の設定切り替えのみで元に戻せる
 
 ### 3.2 移行フェーズ
 
@@ -99,7 +98,7 @@ class WalkRepositoryFactory {
 ## 4. モバイルアプリ特有要件
 
 ### 4.1 オフライン対応
-- **方針**: オプションA（ローカル保存→復帰後同期）
+- **方針**: ローカル保存→復帰後同期
 - **実装方針**:
   - 散歩中の位置情報・写真はローカルストレージに保存
   - ネットワーク復帰時、バックグラウンドでサーバーに同期
@@ -136,7 +135,7 @@ class WalkRepositoryFactory {
 ### 6.1 Firebase依存
 - **継続利用**: Authentication（ID Token検証）
 - **段階的移行**: Firestore → PostgreSQL（Phase2）
-- **段階的移行**: Storage → Cloud Storage（Phase6）
+- **継続利用**: Firebase Storage SDK（Phase6でアクセス方式最適化検討）
 
 ### 6.2 クライアント互換性
 - **iOS最低バージョン**: iOS 15.0+
