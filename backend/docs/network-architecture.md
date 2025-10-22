@@ -2,441 +2,443 @@
 
 ## 概要
 
-Cloud Run環境でのネットワークアーキテクチャを定義します。
-VPCコネクタによるプライベートネットワーク接続とセキュリティ設計を含みます。
+GKE Autopilot環境でのネットワークアーキテクチャを定義します。
+Kubernetesネイティブなロードバランシングとセキュリティ設計を含みます。
 
 ## ネットワーク構成図
 
 ```mermaid
 graph TB
     subgraph "Public Internet"
-        Client[iOS/Web Clients]
+        Client[iOS]
     end
 
     subgraph "Google Cloud - asia-northeast1"
-        subgraph "Public Layer"
-            CloudCDN[Cloud CDN]
+        subgraph "Public Layer (Phase4で追加)"
             CloudArmor[Cloud Armor<br/>WAF/DDoS Protection]
-            LB[Cloud Load Balancer<br/>External HTTPS LB]
         end
 
-        subgraph "Serverless NEG"
-            CloudRun[Cloud Run Service<br/>tekutoko-api]
-        end
+        subgraph "GKE Autopilot Cluster"
+            LB[LoadBalancer Service<br/>External IP]
 
-        subgraph "VPC Network: tekutoko-vpc"
-            VPCConnector[Serverless VPC Connector]
-
-            subgraph "Private Subnet: db-subnet"
-                CloudSQL[(Cloud SQL<br/>Private IP)]
+            subgraph "Pods (tekutoko-api)"
+                Pod1[Pod 1<br/>API + SQL Proxy]
+                Pod2[Pod 2<br/>API + SQL Proxy]
+                PodN[Pod N<br/>API + SQL Proxy]
             end
+
+            ConfigMap[ConfigMap]
+            Secret[Secret]
         end
 
         subgraph "Managed Services"
-            CloudStorage[Cloud Storage<br/>Public Bucket]
+            CloudSQL[(Cloud SQL<br/>PostgreSQL)]
+            FirebaseStorage[Firebase Storage]
             FirebaseAuth[Firebase Auth]
             SecretManager[Secret Manager]
         end
     end
 
-    Client -->|HTTPS| CloudCDN
-    CloudCDN --> CloudArmor
-    CloudArmor --> LB
-    LB -->|Serverless NEG| CloudRun
+    Client -->|HTTPS| LB
+    LB --> Pod1 & Pod2 & PodN
 
-    CloudRun -.->|Optional| VPCConnector
-    VPCConnector -.-> CloudSQL
-    CloudRun -->|Public API| CloudSQL
+    Pod1 & Pod2 & PodN -->|Cloud SQL Proxy| CloudSQL
+    Pod1 & Pod2 & PodN -->|Firebase SDK| FirebaseStorage
+    Pod1 & Pod2 & PodN -->|ID Token Verify| FirebaseAuth
 
-    CloudRun -->|Signed URL| CloudStorage
-    CloudRun -->|ID Token Verify| FirebaseAuth
-    CloudRun -->|Get Secrets| SecretManager
+    ConfigMap -.->|環境変数| Pod1 & Pod2 & PodN
+    Secret -.->|認証情報| Pod1 & Pod2 & PodN
 
-    style CloudArmor fill:#f9f,stroke:#333,stroke-width:2px
-    style VPCConnector fill:#bbf,stroke:#333,stroke-width:2px
+    style LB fill:#f9f,stroke:#333,stroke-width:2px
+    style Pod1 fill:#bbf,stroke:#333,stroke-width:2px
+    style Pod2 fill:#bbf,stroke:#333,stroke-width:2px
+    style PodN fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ## ネットワークコンポーネント
 
-### 1. VPC Network
+### 1. GKE Autopilot クラスタ
 
-#### VPC構成
+#### クラスタ構成
 ```
-VPC名: tekutoko-vpc
+クラスタ名: tekutoko-cluster
 リージョン: asia-northeast1
-サブネット:
-  - db-subnet: 10.0.1.0/24 (Private)
-  - connector-subnet: 10.0.2.0/28 (Serverless VPC Connector用)
+モード: Autopilot
+リリースチャネル: regular
 ```
 
-#### Serverless VPC Connector
+#### ネットワーク設定
+- **VPC**: GKE Autopilotが自動作成
+- **サブネット**: 自動管理（ノードとPod用）
+- **Private Cluster**: デフォルトで有効（ノードはプライベートIP）
+- **Master Authorized Networks**: 必要に応じて設定
+
+### 2. Kubernetes LoadBalancer Service
+
+#### Service設定
 ```yaml
-name: tekutoko-connector
-network: tekutoko-vpc
-region: asia-northeast1
-ip_cidr_range: 10.0.2.0/28
-min_throughput: 200  # Mbps
-max_throughput: 1000 # Mbps
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekutoko-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: tekutoko-api
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
 ```
 
-**用途**:
-- Cloud RunからCloud SQL Private IPへの接続（オプション）
-- 将来的な内部サービス間通信
+**動作**:
+1. GCPが自動的にExternal Load Balancerを作成
+2. LoadBalancerがPodに自動的にトラフィックを分散
+3. ヘルスチェックでPodの状態を監視
+4. 異常なPodにはトラフィックを送らない
 
-### 2. Cloud SQL接続方式
+### 3. Cloud SQL 接続方式
 
-#### 推奨: Public IP + Cloud SQL Connector
+#### 採用: Cloud SQL Proxy サイドカーパターン
+
 ```
-メリット:
-  ✅ VPC Connector不要（コスト削減）
-  ✅ 自動暗号化
-  ✅ IAM認証サポート
-  ✅ セットアップ簡単
-
-デメリット:
-  ❌ Public IP経由（ただし暗号化済み）
-```
-
-#### オプション: Private IP + VPC Connector
-```
-メリット:
-  ✅ 完全なプライベート接続
-  ✅ ネットワーク分離
-
-デメリット:
-  ❌ VPC Connector月額$10-30
-  ❌ 設定複雑
+Pod構成:
+├── api コンテナ (Go Application)
+│   └── localhost:5432 に接続
+└── cloud-sql-proxy コンテナ (サイドカー)
+    └── Cloud SQL へProxyする
 ```
 
-**Phase2採用**: Public IP + Cloud SQL Connector（コストと簡潔性優先）
+**メリット**:
+- ✅ Kubernetesネイティブ
+- ✅ 自動暗号化
+- ✅ IAM認証サポート（Workload Identity）
+- ✅ VPC不要（コスト削減）
+- ✅ 各Podに専用Proxy
 
-### 3. Cloud Load Balancer
-
-#### 構成
+**Deployment設定例**:
 ```yaml
-type: External HTTPS Load Balancer
-protocol: HTTPS/HTTP2
-regions: Global (Multi-region)
-backend:
-  - Cloud Run Serverless NEG
-ssl_policy: MODERN
-  min_tls_version: TLS 1.2
+spec:
+  containers:
+  - name: api
+    image: gcr.io/PROJECT_ID/tekutoko-api
+    env:
+    - name: DB_HOST
+      value: "localhost"  # Cloud SQL Proxyサイドカーに接続
+    - name: DB_PORT
+      value: "5432"
+
+  - name: cloud-sql-proxy
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy
+    args:
+      - "--port=5432"
+      - "PROJECT_ID:REGION:INSTANCE_NAME"
 ```
 
-#### SSL証明書
+### 4. Workload Identity（セキュリティ）
+
+#### 概要
+Kubernetes Service Account と GCP Service Account を紐付け
+
 ```
-方式: Google-managed SSL Certificate
-ドメイン: api.tekutoko.app
-自動更新: 有効
+Kubernetes Pod
+  ↓ (Workload Identity)
+Kubernetes Service Account (tekutoko-api-sa)
+  ↓ (IAM Binding)
+GCP Service Account (tekutoko-api@PROJECT_ID.iam)
+  ↓ (IAM Policy)
+Cloud SQL / Secret Manager / Firebase
 ```
 
-### 4. Cloud Armor（WAF/DDoS Protection）
+#### 設定手順
 
-#### セキュリティポリシー
+**1. GCP Service Account 作成**:
+```bash
+gcloud iam service-accounts create tekutoko-api \
+  --display-name="TekuToko API Service Account"
+```
 
-**Phase2実装内容**:
+**2. 権限付与**:
+```bash
+# Cloud SQL接続権限
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="serviceAccount:tekutoko-api@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/cloudsql.client"
+
+# Secret Manager読み取り権限
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="serviceAccount:tekutoko-api@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+**3. Workload Identity バインディング**:
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  tekutoko-api@PROJECT_ID.iam.gserviceaccount.com \
+  --role roles/iam.workloadIdentityUser \
+  --member "serviceAccount:PROJECT_ID.svc.id.goog[default/tekutoko-api-sa]"
+```
+
+**4. Kubernetes Service Account**:
 ```yaml
-rules:
-  # Rule 1: Rate Limiting
-  - priority: 1000
-    description: "Rate limit per IP"
-    match:
-      versioned_expr: SRC_IPS_V1
-      config:
-        src_ip_ranges: ["*"]
-    rate_limit_options:
-      conform_action: "allow"
-      exceed_action: "deny(429)"
-      rate_limit_threshold:
-        count: 100
-        interval_sec: 60
-
-  # Rule 2: Geo-blocking (オプション)
-  - priority: 2000
-    description: "Allow Japan only"
-    match:
-      expr:
-        expression: "origin.region_code != 'JP'"
-    action: "deny(403)"
-
-  # Rule 3: OWASP Top 10 Protection
-  - priority: 3000
-    description: "OWASP ModSecurity Core Rule Set"
-    match:
-      expr:
-        expression: "evaluatePreconfiguredExpr('xss-stable')"
-    action: "deny(403)"
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekutoko-api-sa
+  annotations:
+    iam.gke.io/gcp-service-account: tekutoko-api@PROJECT_ID.iam.gserviceaccount.com
 ```
 
-### 5. Cloud CDN
+### 5. トラフィックフロー
 
-#### キャッシュ戦略
-```yaml
-enabled: true
-cache_mode: CACHE_ALL_STATIC
-default_ttl: 3600  # 1時間
-max_ttl: 86400     # 24時間
-client_ttl: 3600
-
-# キャッシュ対象外
-negative_caching: false
-bypass_cache_on_request_headers:
-  - "Authorization"
+#### クライアント → API
+```
+iOS/Web Client
+  ↓ HTTPS (Port 443/80)
+LoadBalancer Service (External IP)
+  ↓ HTTP (Port 8080)
+Pod (tekutoko-api)
+  ↓ Internal
+Go Application
 ```
 
-**キャッシュ対象**:
-- 共有リンク経由の散歩データ（`/v1/shares/{slug}`）
-- 静的アセット（将来）
+#### API → Cloud SQL
+```
+Go Application
+  ↓ localhost:5432
+Cloud SQL Proxy (サイドカー)
+  ↓ Encrypted Connection
+Cloud SQL (PostgreSQL)
+```
 
-**キャッシュ対象外**:
-- 認証が必要なエンドポイント
-- POST/PATCH/DELETE リクエスト
+#### API → Firebase Storage
+```
+Go Application
+  ↓ HTTPS (Firebase Admin SDK)
+Firebase Storage
+```
 
 ## セキュリティ設計
 
 ### 1. ネットワークセキュリティ
 
-#### Cloud Run Ingress制御
-```yaml
-ingress: INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER
-# Cloud Load Balancer経由のみ許可
-# 直接アクセス不可
+#### Pod間通信
+- **デフォルト**: 全Pod間で通信可能
+- **Network Policy（Phase6で追加）**: 必要に応じて通信制限
+
+#### Ingress制御
+- **LoadBalancer**: インターネットからのHTTP/HTTPS受付
+- **NodePort**: 無効（LoadBalancerのみ使用）
+
+### 2. 認証・認可
+
+#### API認証
+```
+1. クライアントがFirebase ID Tokenを取得
+2. HTTPヘッダーに付与: Authorization: Bearer <token>
+3. Go APIがFirebase Admin SDKで検証
+4. 検証成功でリクエスト処理
 ```
 
-#### Egress制御
-```yaml
-egress: PRIVATE_RANGES_ONLY
-vpc_connector: tekutoko-connector
-# VPC内リソースのみアクセス可能
+#### サービス間認証
+- **Workload Identity**: GCPサービスへのアクセス
+- **Service Account**: Kubernetes内部での識別
+
+### 3. Secret管理
+
+#### 機密情報の保存
+```
+優先度1: Kubernetes Secret
+  └── データベースパスワード、Firebase認証情報
+
+優先度2: GCP Secret Manager (Phase4で追加)
+  └── より厳密な管理が必要な場合
 ```
 
-### 2. ファイアウォールルール
-
-#### Cloud SQL向けルール
-```yaml
-name: allow-cloudrun-to-cloudsql
-direction: INGRESS
-source_ranges: ["10.0.2.0/28"]  # VPC Connector subnet
-target_tags: ["cloudsql-instance"]
-allowed:
-  - protocol: tcp
-    ports: ["5432"]
-```
-
-### 3. IAM & サービスアカウント
-
-#### Cloud Run用サービスアカウント
-```yaml
-name: tekutoko-api-sa@PROJECT_ID.iam.gserviceaccount.com
-roles:
-  - roles/cloudsql.client          # Cloud SQL接続
-  - roles/secretmanager.secretAccessor  # Secret取得
-  - roles/storage.objectCreator    # 署名付きURL生成
-  - roles/logging.logWriter        # ログ書き込み
-  - roles/monitoring.metricWriter  # メトリクス書き込み
-```
-
-### 4. Secret Manager統合
-
-#### シークレット管理
-```yaml
-secrets:
-  - name: database-url
-    value: "postgresql://..."
-    access: tekutoko-api-sa
-
-  - name: firebase-service-account
-    value: "{json_key}"
-    access: tekutoko-api-sa
-
-  - name: storage-signing-key
-    value: "..."
-    access: tekutoko-api-sa
-```
-
-## トラフィックフロー
-
-### 1. 通常APIリクエスト（認証あり）
-
-```
-1. Client
-   ↓ HTTPS Request + Authorization: Bearer <token>
-2. Cloud CDN (bypass cache)
-   ↓
-3. Cloud Armor (Rate limit check)
-   ↓
-4. Cloud Load Balancer
-   ↓
-5. Cloud Run (Firebase ID Token検証)
-   ↓
-6. Cloud SQL (データ取得)
-   ↓
-7. Response → Client
-```
-
-### 2. 共有リンクリクエスト（認証なし）
-
-```
-1. Browser
-   ↓ HTTPS Request /v1/shares/{slug}
-2. Cloud CDN (cache hit → return)
-   ↓ (cache miss)
-3. Cloud Armor (Rate limit check)
-   ↓
-4. Cloud Load Balancer
-   ↓
-5. Cloud Run (slug検証)
-   ↓
-6. Cloud SQL (データ取得)
-   ↓
-7. Response (Cache-Control: public, max-age=3600)
-   ↓
-8. Cloud CDN (cache store)
-   ↓
-9. Browser
-```
-
-### 3. 写真アップロードフロー
-
-```
-1. Client
-   ↓ POST /v1/walks/{id}/photos
-2. Cloud Run (署名付きURL生成)
-   ↓ Response: { "upload_url": "..." }
-3. Client
-   ↓ PUT {upload_url} (直接Cloud Storageへ)
-4. Cloud Storage
-   ↓ Upload成功
-5. Client
-   ↓ PATCH /v1/walks/{id}/photos/{id} (URL登録)
-6. Cloud Run → Cloud SQL
-```
-
-## 監視・ロギング
-
-### 1. VPC Flow Logs
-
-```yaml
-enabled: true
-aggregation_interval: 5-sec
-flow_sampling: 1.0  # 100%サンプリング（初期）
-metadata: INCLUDE_ALL_METADATA
-```
-
-**用途**:
-- トラフィック分析
-- 異常検知
-- セキュリティ監査
-
-### 2. Cloud Load Balancer Logs
-
-```yaml
-enabled: true
-sample_rate: 1.0  # 100%
-```
-
-**ログ内容**:
-- リクエスト/レスポンスサイズ
-- レイテンシ
-- バックエンドレイテンシ
-- ステータスコード
-
-### 3. Cloud Armor Logs
-
-```yaml
-enabled: true
-log_level: VERBOSE
-```
-
-**ログ内容**:
-- ブロックされたリクエスト
-- レート制限発動
-- ルールマッチング
-
-## DNS構成
-
-### Cloud DNS設定
-
-```
-Zone: tekutoko.app
-Records:
-  - api.tekutoko.app A    -> Cloud Load Balancer IP
-  - api.tekutoko.app AAAA -> Cloud Load Balancer IPv6
-```
-
-### SSL証明書
-
-```
-Type: Google-managed SSL Certificate
-Domains:
-  - api.tekutoko.app
-Auto-renewal: Enabled
-```
-
-## コスト概算（ネットワーク関連）
-
-| サービス | 月額コスト |
-|---------|----------|
-| Cloud Load Balancer | $18 (ルール5個) |
-| Cloud Armor | $5 (ポリシー1個) |
-| VPC Connector | $0 (未使用) |
-| Cloud CDN | $0.02/GB (転送量次第) |
-| Cloud DNS | $0.40 (ホストゾーン) |
-| **合計** | **約$25** |
-
-## Phase2実装タスク
-
-### ネットワーク構築手順
-
-1. **VPC作成**
+#### Secret作成
 ```bash
-gcloud compute networks create tekutoko-vpc \
-  --subnet-mode=custom \
-  --bgp-routing-mode=regional
-
-gcloud compute networks subnets create db-subnet \
-  --network=tekutoko-vpc \
-  --region=asia-northeast1 \
-  --range=10.0.1.0/24
+kubectl create secret generic app-secret \
+  --from-literal=db_password=YOUR_PASSWORD \
+  --from-file=firebase_credentials=firebase-creds.json
 ```
 
-2. **Cloud SQL構築** (Public IP)
+## Phase4: Cloud Armor 追加（将来実装）
+
+### Cloud Armor（WAF/DDoS対策）
+
+```mermaid
+graph LR
+    Client[Client]
+    Armor[Cloud Armor]
+    LB[LoadBalancer]
+    GKE[GKE Pods]
+
+    Client -->|HTTPS| Armor
+    Armor -->|フィルタリング後| LB
+    LB --> GKE
+```
+
+#### 設定内容
+- **DDoS Protection**: 自動
+- **Rate Limiting**: 100 req/sec/IP
+- **地域制限**: 日本・米国のみ許可
+- **SQLインジェクション対策**: 有効
+- **XSS対策**: 有効
+
+#### 導入タイミング
+- Phase4（監視・冗長構成フェーズ）
+- 本番リリース前に導入
+
+## IPアドレス設計
+
+### LoadBalancer External IP
+```
+タイプ: Ephemeral（動的）または Reserved（静的）
+リージョン: asia-northeast1
+用途: クライアントからのHTTPS接続
+```
+
+#### 静的IP予約（推奨：本番環境）
 ```bash
-gcloud sql instances create tekutoko-db \
-  --database-version=POSTGRES_15 \
-  --tier=db-f1-micro \
-  --region=asia-northeast1 \
-  --network=tekutoko-vpc \
-  --no-assign-ip  # Private IPのみ（オプション）
+# 静的IP予約
+gcloud compute addresses create tekutoko-api-ip \
+  --region=asia-northeast1
+
+# IPアドレス確認
+gcloud compute addresses describe tekutoko-api-ip \
+  --region=asia-northeast1
 ```
 
-3. **Cloud Run デプロイ**
+#### ServiceでIPを指定
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekutoko-api
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "RESERVED_IP_ADDRESS"  # 予約したIP
+```
+
+### Pod IP範囲
+- **管理**: GKE Autopilotが自動管理
+- **範囲**: クラスタ作成時に自動割り当て
+
+## DNS設定
+
+### ドメイン設定（Phase4）
+
+```
+api.tekutoko.com
+  ↓ (A Record)
+LoadBalancer External IP
+```
+
+#### Cloud DNS設定
 ```bash
-gcloud run deploy tekutoko-api \
-  --image=gcr.io/PROJECT/api:latest \
-  --region=asia-northeast1 \
-  --ingress=internal-and-cloud-load-balancing \
-  --service-account=tekutoko-api-sa@PROJECT.iam
+# DNSゾーン作成
+gcloud dns managed-zones create tekutoko-zone \
+  --dns-name="tekutoko.com" \
+  --description="TekuToko DNS Zone"
+
+# Aレコード追加
+gcloud dns record-sets transaction start --zone=tekutoko-zone
+gcloud dns record-sets transaction add EXTERNAL_IP \
+  --name=api.tekutoko.com \
+  --ttl=300 \
+  --type=A \
+  --zone=tekutoko-zone
+gcloud dns record-sets transaction execute --zone=tekutoko-zone
 ```
 
-4. **Load Balancer構成**
+## モニタリング・ロギング
+
+### ネットワークメトリクス
+
+**Cloud Monitoring**:
+- LoadBalancerリクエスト数
+- LoadBalancerレイテンシ
+- Pod間通信量
+- Egress/Ingress帯域
+
+**kubectl監視**:
 ```bash
-gcloud compute backend-services create tekutoko-backend \
-  --global \
-  --load-balancing-scheme=EXTERNAL \
-  --protocol=HTTPS
+# Service状態
+kubectl get svc
 
-gcloud compute url-maps create tekutoko-lb \
-  --default-service=tekutoko-backend
+# Endpoint確認（Podへのマッピング）
+kubectl get endpoints
+
+# ネットワークポリシー確認
+kubectl get networkpolicy
 ```
 
-5. **Cloud Armor適用**
-```bash
-gcloud compute security-policies create tekutoko-policy
-gcloud compute backend-services update tekutoko-backend \
-  --security-policy=tekutoko-policy
+### ログ
+
+**Cloud Logging**:
+- LoadBalancerアクセスログ
+- Podアプリケーションログ
+- Cloud SQL Proxyログ
+
+## コスト試算
+
+### ネットワーク関連コスト（月額）
+
+| 項目 | 使用量 | 月額コスト |
+|------|--------|----------|
+| LoadBalancer | 1個 | $18 |
+| Egress（アジア） | 100GB | $12 |
+| Cloud Armor | - | $5（Phase4） |
+| Cloud DNS | 1ゾーン | $0.40（Phase4） |
+| **合計** | | **約$30** |
+
+**注**: GKE AutopilotのネットワークコストはPod課金に含まれる
+
+## Terraform管理
+
+### ネットワークリソースのTerraform化
+
+```hcl
+# modules/network/main.tf
+
+# 静的IP予約
+resource "google_compute_address" "api_ip" {
+  name   = "tekutoko-api-ip"
+  region = var.region
+}
+
+# Cloud DNS（Phase4）
+resource "google_dns_managed_zone" "tekutoko" {
+  name     = "tekutoko-zone"
+  dns_name = "tekutoko.com."
+}
+
+resource "google_dns_record_set" "api" {
+  name         = "api.${google_dns_managed_zone.tekutoko.dns_name}"
+  type         = "A"
+  ttl          = 300
+  managed_zone = google_dns_managed_zone.tekutoko.name
+  rrdatas      = [google_compute_address.api_ip.address]
+}
 ```
+
+## Phase2実装時の作業
+
+### 必須作業
+1. GKE Autopilotクラスタ作成
+2. Kubernetesマニフェスト適用
+3. LoadBalancer Service作成
+4. Cloud SQL Proxy設定
+5. Workload Identity設定
+
+### オプション作業（Phase4）
+1. 静的IP予約
+2. Cloud Armor設定
+3. Cloud DNS設定
+4. Network Policy設定
 
 ## 関連ドキュメント
-- [デプロイアーキテクチャ](./deployment-architecture.md)
-- [セキュリティ設計](./security-design.md)（Phase4で作成）
+- [deployment-architecture.md](./deployment-architecture.md)
+- [phase1-summary.md](./phase1-summary.md)
+- [Kubernetesマニフェスト](../deploy/kubernetes/)
+- [GKE Networking](https://cloud.google.com/kubernetes-engine/docs/concepts/network-overview)
