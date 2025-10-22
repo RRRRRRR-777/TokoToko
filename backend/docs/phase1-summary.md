@@ -56,17 +56,37 @@ Go言語バックエンド実装のPhase1（設計フェーズ）を完了しま
 - ENUMまたはCHECK制約でstatus管理
 
 ### Step4: API設計書作成
-**ドキュメント**: `openapi.yaml`
 
 **成果物**:
-- OpenAPI 3.1仕様書
-- 主要エンドポイント定義（Walk CRUD、位置情報）
-- 統一レスポンス形式
-- エラーハンドリング設計
+- `backend/docs/openapi.yaml` (OpenAPI 3.1仕様書)
 
-**エンドポイント数**: 6個
-- Walks: 5エンドポイント
-- Locations: 1エンドポイント
+**決定事項**:
+- **エンドポイント数**: 6個
+  - Walks: 5エンドポイント（CRUD + list）
+  - Locations: 1エンドポイント（バッチ追加）
+
+**API設計の特徴**:
+- **統一レスポンス形式**: 全エンドポイントで一貫したJSON構造
+- **エラーハンドリング**: RFC 7807準拠のエラーレスポンス
+- **認証**: Bearer Token（Firebase ID Token）
+- **ページネーション**: Cursor-based（next_cursor）
+- **位置情報**: バッチ送信対応（10秒〜1分間隔想定）
+
+**主要エンドポイント**:
+```
+GET    /v1/walks              # 散歩一覧取得
+POST   /v1/walks              # 散歩作成
+GET    /v1/walks/{id}         # 散歩詳細取得
+PATCH  /v1/walks/{id}         # 散歩更新
+DELETE /v1/walks/{id}         # 散歩削除
+POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
+```
+
+**Phase2実装対象外（将来機能）**:
+- Photos API（写真アップロード）
+- Shares API（共有リンク生成・取得）
+- Users API（Firebase Authenticationで代替）
+- Health API（ヘルスチェック）
 
 ### Step5: デプロイ環境選定
 **ドキュメント**: `deployment-architecture.md`
