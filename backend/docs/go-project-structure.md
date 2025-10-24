@@ -17,28 +17,20 @@ backend/
 │   │   │   ├── walk.go            # Walkエンティティ
 │   │   │   ├── repository.go      # Repository interface
 │   │   │   └── service.go         # Domain service
-│   │   ├── user/
-│   │   │   ├── user.go
-│   │   │   └── repository.go
-│   │   └── photo/
-│   │       ├── photo.go
+│   │   └── user/
+│   │       ├── user.go
 │   │       └── repository.go
 │   ├── usecase/                    # ユースケース層
-│   │   ├── walk/
-│   │   │   ├── create_walk.go
-│   │   │   ├── get_walk.go
-│   │   │   ├── list_walks.go
-│   │   │   ├── update_walk.go
-│   │   │   └── delete_walk.go
-│   │   └── photo/
-│   │       ├── upload_photo.go
-│   │       └── delete_photo.go
+│   │   └── walk/
+│   │       ├── create_walk.go
+│   │       ├── get_walk.go
+│   │       ├── list_walks.go
+│   │       ├── update_walk.go
+│   │       └── delete_walk.go
 │   ├── interface/                  # インターフェース層
 │   │   ├── api/
 │   │   │   ├── handler/           # HTTPハンドラー
-│   │   │   │   ├── walk_handler.go
-│   │   │   │   ├── photo_handler.go
-│   │   │   │   └── share_handler.go
+│   │   │   │   └── walk_handler.go
 │   │   │   ├── middleware/        # ミドルウェア
 │   │   │   │   ├── auth.go
 │   │   │   │   ├── logging.go
@@ -724,10 +716,6 @@ struct FeatureFlags {
     // 機能ごとのFlag
     static var useGoBackendForWalks: Bool {
         remoteConfig["go_backend_walks"].boolValue
-    }
-
-    static var useGoBackendForPhotos: Bool {
-        remoteConfig["go_backend_photos"].boolValue
     }
 }
 ```
