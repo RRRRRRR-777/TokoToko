@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -36,26 +37,44 @@ func main() {
 	// - Middleware設定 (internal/interface/api/middleware)
 	// - Handler登録 (internal/interface/api/handler)
 
-	logger.Printf("Server will listen on port %s", port)
+	// 簡易ルーター設定（Phase2で本格実装予定）
+	mux := http.NewServeMux()
+
+	// ヘルスチェックエンドポイント
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","message":"TekuToko API is running"}`)
+	})
+
+	// ルートエンドポイント
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"message":"Welcome to TekuToko API","version":"0.1.0","status":"Phase 2 in progress"}`)
+	})
+
+	// HTTPサーバー設定
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%s", port),
+		Handler:           mux,
+		ReadHeaderTimeout: readHeaderTimeout,
+	}
 
 	// Graceful Shutdown設定
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// TODO: HTTPサーバー起動
-	// server := &http.Server{
-	// 	Addr:              fmt.Sprintf(":%s", port),
-	// 	Handler:           router,
-	// 	ReadHeaderTimeout: readHeaderTimeout,
-	// }
-
 	// サーバー起動（ゴルーチン）
-	// go func() {
-	// 	logger.Printf("Server started on port %s", port)
-	// 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	// 		logger.Fatalf("Server failed to start: %v", err)
-	// 	}
-	// }()
+	go func() {
+		logger.Printf("Server started on http://localhost:%s", port)
+		logger.Println("Available endpoints:")
+		logger.Println("  GET /        - API情報")
+		logger.Println("  GET /health  - ヘルスチェック")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatalf("Server failed to start: %v", err)
+		}
+	}()
 
 	// シャットダウンシグナル待機
 	<-ctx.Done()
@@ -65,20 +84,9 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	// TODO: サーバーシャットダウン
-	// if err := server.Shutdown(shutdownCtx); err != nil {
-	// 	logger.Printf("Server forced to shutdown: %v", err)
-	// }
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Printf("Server forced to shutdown: %v", err)
+	}
 
 	logger.Println("Server exited")
-
-	// 一時的なメッセージ（Phase2実装完了後は削除）
-	fmt.Printf("TekuToko API server initialized (port: %s)\n", port)
-	fmt.Println("Phase 2 implementation in progress...")
-	fmt.Println("Waiting for shutdown signal...")
-
-	select {
-	case <-shutdownCtx.Done():
-		logger.Println("Shutdown timeout exceeded")
-	}
 }
