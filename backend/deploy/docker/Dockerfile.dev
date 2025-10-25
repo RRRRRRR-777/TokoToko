@@ -1,0 +1,23 @@
+FROM golang:1.25.3-alpine
+
+# 必要なパッケージをインストール
+RUN apk add --no-cache git make
+
+# 作業ディレクトリ設定
+WORKDIR /app
+
+# 依存関係をコピーしてインストール
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Airをインストール（ホットリロード）
+RUN go install github.com/air-verse/air@latest
+
+# ソースコードをコピー
+COPY . .
+
+# ポート公開
+EXPOSE 8080
+
+# Airでホットリロード実行
+CMD ["air", "-c", ".air.toml"]
