@@ -21,7 +21,7 @@ Go言語バックエンド実装のPhase1（設計フェーズ）を完了しま
 - レイテンシ目標: 500ms以内
 - 可用性: 99.9%
 - 認証方式: Firebase ID Token検証継続
-- データ移行: 一括移行（夜間1時間メンテナンス）
+- データ移行: 段階的移行（Firebase/Go並行稼働）
 - オフライン対応: ローカル保存→復帰後同期
 
 ### Step2: 通信方式決定
@@ -83,40 +83,38 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 ```
 
 **Phase2実装対象外（将来機能）**:
-- Photos API（写真アップロード）
-- Shares API（共有リンク生成・取得）
+- Photos API（写真アップロード）- Phase 6
+- Shares API（共有リンク生成・取得）- Phase 6
 - Users API（Firebase Authenticationで代替）
-- Health API（ヘルスチェック）
+- Health API（ヘルスチェック）- Phase 4
 
 ### Step5: デプロイ環境選定
 **ドキュメント**: `deployment-architecture.md`
 
 **決定事項**:
-- プラットフォーム: Google Cloud Run
-- リソース: 1 vCPU, 512Mi, max 10 instances
-- データベース接続: Cloud SQL Connector
+- プラットフォーム: Google Kubernetes Engine (GKE) Autopilot
+- リソース: 500mCPU, 512Mi, レプリカ数 2-10
+- データベース接続: Cloud SQL Proxy サイドカーパターン
 
 **選定理由**:
-- 学習とコストのバランス
-- Phase2実装に集中
-- 月額コスト約$100（¥15,000）
-
-**将来移行パス**:
-- Phase5完了後にGKE Autopilot検討可能
+- Kubernetes学習が目的（負荷分散と冗長構成を自前で学習）
+- 実装負荷を最小化するためAutopilot採用（ノード管理不要）
+- レプリカ数を2〜10台まで簡単に変更可能（1コマンドまたは1行変更）
+- 将来の大規模化にも対応できる基盤
 
 ### Step6: ネットワーク構成設計
 **ドキュメント**: `network-architecture.md`
 
 **成果物**:
 - ネットワーク構成図
-- VPC設計
-- Cloud Load Balancer設定
-- Cloud Armor（WAF/DDoS）設計
-- Cloud CDNキャッシュ戦略
+- Kubernetes LoadBalancer Service設計
+- Cloud SQL接続方式（Cloud SQL Proxy サイドカー）
+- Workload Identity設計
+- Secret管理戦略
 
 **セキュリティ設計**:
-- Ingress制御（LB経由のみ）
-- IAMサービスアカウント設計
+- Ingress制御（LoadBalancer経由のみ）
+- IAMサービスアカウント設計（Workload Identity）
 - Secret Manager統合
 
 ### Step7: Goプロジェクト構成設計
@@ -177,7 +175,7 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 - レプリカ数を2〜10台まで簡単に変更可能（1コマンドまたは1行変更）
 - 将来の大規模化にも対応できる基盤
 
-### 1-2. 段階的移行戦略
+### 2. 段階的移行戦略
 **判断**: 一括移行ではなく、Firebase/Go並行稼働による段階的移行
 
 **理由**:
@@ -186,7 +184,7 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 - 機能ごと・ユーザー比率ごとの段階的展開
 - Firebase実装を2ヶ月間保持（バックアップ）
 
-### 2. REST API選定
+### 3. REST API選定
 **判断**: gRPCではなくREST APIを選定
 
 **理由**:
@@ -195,7 +193,7 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 - 開発チームの学習コスト
 - 現在の要件では十分な性能
 
-### 3. Chi router選定
+### 4. Chi router選定
 **判断**: Gin/EchoではなくChiを選定
 
 **理由**:
@@ -203,7 +201,7 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 - ミドルウェア構築の柔軟性
 - 学習目的での理解しやすさ
 
-### 4. walk_locations分離テーブル
+### 5. walk_locations分離テーブル
 **判断**: JSONB型ではなく分離テーブルを選定
 
 **理由**:
@@ -218,18 +216,20 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 | サービス | 月額 |
 |---------|------|
 | GKE Autopilot | $110 |
-| Cloud SQL | $25 |
+| Cloud SQL (HA) | $85 |
 | Firebase Storage | $10 |
 | Cloud Logging | $2.50 |
 | Cloud Monitoring | $0 |
 | LoadBalancer | $18 |
-| **合計** | **約$165.50 (¥25,000)** |
+| **合計** | **約$225.50 (¥34,000)** |
+
+**注記**: Cloud SQLは500同時接続に対応するため`db-custom-2-4` (2 vCPU, 4GB) + HA構成を想定
 
 ### スケールアップ時（レプリカ数別）
-- 2台（最小）: $150/月
-- 4台: $220/月
-- 8台: $360/月
-- 10台（最大）: $450/月
+- 2台（最小）: $188/月
+- 4台: $258/月
+- 8台: $398/月
+- 10台（最大）: $468/月
 
 ## Phase2への引き継ぎ事項
 
@@ -262,9 +262,12 @@ POST   /v1/walks/{id}/locations  # 位置情報バッチ追加
 18. テストカバレッジ向上
 
 #### 低優先度（Phase6-7で実装）
-20. ポリシー/同意/設定API
-21. Cloud Armor詳細設定
-22. パフォーマンスチューニング
+19. 画像生成・ログ収集サーバー移行
+20. 写真アップロードAPI
+21. 共有リンク生成API
+22. ポリシー/同意/設定API
+23. Cloud Armor詳細設定
+24. パフォーマンスチューニング
 
 ### 技術的負債・リスク
 
