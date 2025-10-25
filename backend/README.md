@@ -92,7 +92,22 @@ backend/
 
 ## セットアップ
 
-### 1. 依存関係インストール
+### クイックスタート（推奨）
+
+```bash
+# 開発環境を自動セットアップ
+./scripts/dev-setup.sh
+```
+
+このスクリプトは以下を自動実行します:
+- ✅ .envファイルの作成
+- ✅ Dockerコンテナの起動
+- ✅ PostgreSQLの起動確認
+- ✅ 開発ツールのインストール確認
+
+### 手動セットアップ
+
+#### 1. 依存関係インストール
 
 ```bash
 # Go依存パッケージ取得
@@ -102,29 +117,27 @@ go mod download
 make tools
 ```
 
-### 2. 環境変数設定
+#### 2. 環境変数設定
 
 ```bash
 # .envファイル作成
 cp .env.example .env
 
 # 必要な環境変数を編集
-# - DATABASE_URL
-# - FIREBASE_CREDENTIALS_PATH
-# - etc.
+vi .env
 ```
 
-### 3. ローカルデータベース起動
+#### 3. ローカル開発環境起動
 
 ```bash
-# Docker Composeでローカル開発環境起動
-make db-up
+# PostgreSQLコンテナ起動
+docker-compose up -d postgres
 
-# マイグレーション実行
+# コンテナ状態確認
+docker-compose ps
+
+# マイグレーション実行（準備ができたら）
 make migrate-up
-
-# シードデータ投入
-make seed
 ```
 
 ## ローカル実行
