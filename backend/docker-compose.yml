@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL データベース
+  postgres:
+    image: postgres:16-alpine
+    container_name: tekutoko-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-tekutoko}
+      TZ: 'Asia/Tokyo'
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tekutoko-network
+
+  # pgAdmin (オプション: データベース管理UI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tekutoko-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@tekutoko.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    networks:
+      - tekutoko-network
+    profiles:
+      - tools
+
+  # API サーバー（ホットリロード対応）
+  api:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.dev
+    container_name: tekutoko-api
+    environment:
+      ENVIRONMENT: development
+      PORT: ${PORT:-8080}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-tekutoko}
+      DB_SSLMODE: disable
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - .:/app
+      - go_modules:/go/pkg/mod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tekutoko-network
+    command: air
+
+volumes:
+  postgres_data:
+    driver: local
+  go_modules:
+    driver: local
+
+networks:
+  tekutoko-network:
+    driver: bridge
