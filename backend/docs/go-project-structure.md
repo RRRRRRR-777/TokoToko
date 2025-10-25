@@ -103,7 +103,9 @@ backend/
 // go.mod
 module github.com/RRRRRRR-777/TekuToko/backend
 
-go 1.21
+go 1.25
+
+toolchain go1.25.3
 
 require (
     // HTTP Router
