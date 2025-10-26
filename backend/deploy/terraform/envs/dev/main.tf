@@ -1,0 +1,35 @@
+# TekuToko開発環境のTerraform設定
+
+terraform {
+  required_version = ">= 1.9.0"
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
+  }
+
+  # リモートバックエンド設定（GCS）
+  # 初回実行前に global/ でstateバケットを作成する必要があります
+  backend "gcs" {
+    bucket = "your-project-id-terraform-state" # プロジェクトIDに合わせて変更
+    prefix = "state/dev"
+  }
+}
+
+provider "google" {
+  project = var.project_id
+  region  = var.region
+  zone    = var.zone
+
+  # デフォルトラベル（全リソースに自動付与）
+  default_labels = {
+    environment = "dev"
+    managed_by  = "terraform"
+    project     = "tekutoko"
+  }
+}
+
+# 将来的にここにGKE, Cloud SQL等のリソースを定義
+# 現在はプロジェクト基盤のみ

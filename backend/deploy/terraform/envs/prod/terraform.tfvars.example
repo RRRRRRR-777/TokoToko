@@ -1,0 +1,10 @@
+# 開発環境の変数設定サンプル
+# このファイルをコピーして terraform.tfvars を作成してください
+# cp terraform.tfvars.example terraform.tfvars
+
+# GCPプロジェクトID（必須）
+project_id = "your-gcp-project-id"
+
+# リージョン/ゾーン設定（オプション）
+region = "asia-northeast1"
+zone   = "asia-northeast1-a"
