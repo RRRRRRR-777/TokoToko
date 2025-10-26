@@ -79,27 +79,53 @@ docker-run: ## Dockerコンテナを起動
 	@echo "Running Docker container..."
 	docker run -p 8080:8080 --env-file .env tekutoko-api:latest
 
-# データベース関連 (TODO: Phase2で実装)
+# データベース関連
+DATABASE_URL ?= postgres://postgres:postgres@localhost:5432/tekutoko?sslmode=disable
+MIGRATE := $(shell which migrate || echo "$(HOME)/go/bin/migrate")
+
 .PHONY: db-up
 db-up: ## ローカルDBを起動
-	@echo "TODO: docker-compose up -d postgres"
+	@echo "Starting PostgreSQL..."
+	docker-compose up -d postgres
+	@echo "Waiting for PostgreSQL to be ready..."
+	@sleep 3
+	@docker-compose exec -T postgres pg_isready -U postgres || (echo "PostgreSQL not ready" && exit 1)
+	@echo "PostgreSQL is ready!"
 
 .PHONY: db-down
 db-down: ## ローカルDBを停止
-	@echo "TODO: docker-compose down"
+	@echo "Stopping Docker containers..."
+	docker-compose down
 
 .PHONY: migrate-up
 migrate-up: ## マイグレーションを適用
-	@echo "TODO: migrate -path migrations -database ${DATABASE_URL} up"
+	@echo "Running migrations..."
+	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" up
+	@echo "Migrations applied successfully!"
 
 .PHONY: migrate-down
 migrate-down: ## マイグレーションをロールバック
-	@echo "TODO: migrate -path migrations -database ${DATABASE_URL} down 1"
+	@echo "Rolling back last migration..."
+	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" down 1
+	@echo "Migration rolled back!"
+
+.PHONY: migrate-force
+migrate-force: ## マイグレーションバージョンを強制設定 (使用例: make migrate-force version=1)
+	@if [ -z "$(version)" ]; then echo "Error: version is required. Usage: make migrate-force version=N"; exit 1; fi
+	@echo "Forcing migration version to $(version)..."
+	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" force $(version)
+
+.PHONY: migrate-version
+migrate-version: ## 現在のマイグレーションバージョンを表示
+	@echo "Current migration version:"
+	@$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" version || echo "No migrations applied yet"
 
 .PHONY: migrate-create
 migrate-create: ## マイグレーションファイルを作成 (使用例: make migrate-create name=create_walks_table)
 	@if [ -z "$(name)" ]; then echo "Error: name is required. Usage: make migrate-create name=your_migration_name"; exit 1; fi
-	@echo "TODO: migrate create -ext sql -dir migrations -seq $(name)"
+	@echo "Creating migration files..."
+	$(MIGRATE) create -ext sql -dir ../migrations -seq $(name)
+	@echo "Migration files created!"
 
 .PHONY: seed
 seed: ## シードデータを投入
