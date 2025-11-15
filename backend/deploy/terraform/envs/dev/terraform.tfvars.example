@@ -8,3 +8,7 @@ project_id = "your-gcp-project-id"
 # リージョン/ゾーン設定（オプション）
 region = "asia-northeast1"
 zone   = "asia-northeast1-a"
+
+# Cloud SQLデータベースパスワード（必須）
+# 本番ではSecret Managerから取得推奨
+db_password = "CHANGE_ME_STRONG_PASSWORD"
