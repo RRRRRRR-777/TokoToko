@@ -16,3 +16,9 @@ variable "zone" {
   type        = string
   default     = "asia-northeast1-a"
 }
+
+variable "db_password" {
+  description = "Cloud SQLデータベースパスワード"
+  type        = string
+  sensitive   = true
+}
