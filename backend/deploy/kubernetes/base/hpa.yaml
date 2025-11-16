@@ -1,0 +1,75 @@
+# TekuToko API Horizontal Pod Autoscaler
+# CPU/メモリ使用率に基づいて自動スケーリング（2-10レプリカ）
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tekutoko-api-hpa
+  labels:
+    app: tekutoko-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tekutoko-api
+
+  # レプリカ数の範囲
+  minReplicas: 2   # 最小2レプリカ（冗長性確保）
+  maxReplicas: 10  # 最大10レプリカ
+
+  # スケーリング動作設定
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5分間安定してから縮小
+      policies:
+      - type: Percent
+        value: 50  # 一度に50%まで縮小可能
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0  # すぐにスケールアップ
+      policies:
+      - type: Percent
+        value: 100  # 一度に100%（2倍）までスケールアップ可能
+        periodSeconds: 60
+      - type: Pods
+        value: 2  # または一度に2Pod追加
+        periodSeconds: 60
+      selectPolicy: Max  # より積極的な方を選択
+
+  # メトリクス設定
+  metrics:
+  # CPU使用率ベース
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # CPU使用率70%でスケールアップ
+
+  # メモリ使用率ベース
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # メモリ使用率80%でスケールアップ
+
+  # Phase4で追加予定: カスタムメトリクス
+  # - type: External
+  #   external:
+  #     metric:
+  #       name: custom.googleapis.com|request_latency_p95
+  #       selector:
+  #         matchLabels:
+  #           resource.type: k8s_pod
+  #           resource.labels.app: tekutoko-api
+  #     target:
+  #       type: Value
+  #       value: "500"  # 500ms（P95レイテンシ）
+  #
+  # - type: External
+  #   external:
+  #     metric:
+  #       name: custom.googleapis.com|request_rate
+  #     target:
+  #       type: AverageValue
+  #       averageValue: "10"  # 10 req/sec/pod
