@@ -90,10 +90,19 @@ variable "enable_public_ip" {
   default     = false
 }
 
-variable "require_ssl" {
-  description = "SSL接続を必須にするか"
-  type        = bool
-  default     = true
+variable "ssl_mode" {
+  description = "SSL/TLS接続モード (ALLOW_UNENCRYPTED_AND_ENCRYPTED, ENCRYPTED_ONLY, TRUSTED_CLIENT_CERTIFICATE_REQUIRED)"
+  type        = string
+  default     = "ENCRYPTED_ONLY"
+
+  validation {
+    condition = contains([
+      "ALLOW_UNENCRYPTED_AND_ENCRYPTED",
+      "ENCRYPTED_ONLY",
+      "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+    ], var.ssl_mode)
+    error_message = "ssl_mode must be one of: ALLOW_UNENCRYPTED_AND_ENCRYPTED, ENCRYPTED_ONLY, TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+  }
 }
 
 variable "authorized_networks" {

@@ -80,7 +80,7 @@ module "cloud_sql" {
   # ネットワーク設定
   network_self_link = module.vpc.vpc_self_link
   enable_public_ip  = false # Private IPのみ
-  require_ssl       = true
+  ssl_mode          = "ENCRYPTED_ONLY"
 
   # バックアップ設定（開発環境は最小限）
   enable_backup                  = true
