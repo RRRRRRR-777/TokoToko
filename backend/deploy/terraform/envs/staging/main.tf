@@ -11,6 +11,7 @@ terraform {
   }
 
   # リモートバックエンド設定（GCS）
+  # 初回実行前に global/ でstateバケットを作成する必要があります
   backend "gcs" {
     bucket = "your-project-id-terraform-state" # プロジェクトIDに合わせて変更
     prefix = "state/staging"
@@ -22,6 +23,7 @@ provider "google" {
   region  = var.region
   zone    = var.zone
 
+  # デフォルトラベル（全リソースに自動付与）
   default_labels = {
     environment = "staging"
     managed_by  = "terraform"

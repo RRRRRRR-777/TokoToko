@@ -5,9 +5,9 @@ locals {
   region      = var.region
 
   # CIDR設計（docs/networking.md参照）
-  primary_cidr  = "10.16.0.0/20" # 4,096 IPs
-  pods_cidr     = "10.20.0.0/17" # 32,768 IPs
-  services_cidr = "10.24.0.0/22" # 1,024 IPs
+  primary_cidr  = "10.1.0.0/20" # 4,096 IPs
+  pods_cidr     = "10.5.0.0/17" # 32,768 IPs
+  services_cidr = "10.9.0.0/22" # 1,024 IPs
 
   # 命名規約
   vpc_name            = "vpc-tekutoko-${local.environment}"
@@ -49,7 +49,7 @@ module "cloud_nat" {
   network_self_link = module.vpc.vpc_self_link
   environment       = local.environment
 
-  min_ports_per_vm = 128
+  min_ports_per_vm = 256
   enable_logging   = true
 }
 
@@ -65,7 +65,8 @@ module "firewall" {
   # GKE Master CIDRは将来GKE作成後に設定
   gke_master_cidr = ""
 
-  enable_deny_all = false
+  # ステージング環境では本番同様にdeny allを有効化
+  enable_deny_all = true
 }
 
 # 出力値
