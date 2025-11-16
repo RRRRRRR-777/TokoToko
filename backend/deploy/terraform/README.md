@@ -11,10 +11,17 @@ terraform/
 │   ├── dev/            # 開発環境
 │   ├── staging/        # ステージング環境
 │   └── prod/           # 本番環境
-├── modules/            # 共通モジュール（将来使用）
+├── modules/            # 共通モジュール
+│   ├── vpc/            # VPCネットワーク
+│   ├── cloud_nat/      # Cloud NAT
+│   ├── firewall/       # Firewallルール
+│   ├── gke/            # GKE Autopilot
+│   ├── cloud_sql/      # Cloud SQL PostgreSQL
+│   └── secret_manager/ # Secret Manager
 ├── scripts/            # ヘルパースクリプト
 │   ├── init.sh        # Terraform初期化
 │   └── apply.sh       # Terraform適用
+├── docs/               # ドキュメント
 └── README.md          # このファイル
 ```
 
@@ -147,6 +154,54 @@ terraform state list
 terraform state show <resource_name>
 ```
 
+## 📦 モジュール詳細
+
+### VPC（modules/vpc）
+- **機能**: VPCネットワークとサブネット作成
+- **特徴**:
+  - セカンダリIP範囲（GKE Pods/Services用）
+  - Flow Logs対応
+  - Private Google Access有効化
+
+### Cloud NAT（modules/cloud_nat）
+- **機能**: アウトバウンド通信用NAT
+- **特徴**:
+  - Cloud Routerと連携
+  - ポート割り当て調整可能
+  - ログ出力対応
+
+### Firewall（modules/firewall）
+- **機能**: ファイアウォールルール管理
+- **特徴**:
+  - Pod間通信許可
+  - GKE Masterアクセス制御
+  - デフォルト拒否ルール（オプション）
+
+### GKE Autopilot（modules/gke）
+- **機能**: マネージドKubernetesクラスタ
+- **特徴**:
+  - Private Cluster対応
+  - Workload Identity有効化
+  - Binary Authorization対応
+  - リリースチャネル選択（RAPID/REGULAR/STABLE）
+  - Prometheus監視統合
+
+### Cloud SQL（modules/cloud_sql）
+- **機能**: PostgreSQL 15データベース
+- **特徴**:
+  - REGIONAL HA構成
+  - Point-In-Time Recovery（PITR）
+  - Private IP接続
+  - SSL/TLS強制（ssl_mode: ENCRYPTED_ONLY）
+  - 自動バックアップ
+  - PostgreSQL最適化設定
+
+### Secret Manager（modules/secret_manager）
+- **機能**: シークレット管理
+- **特徴**:
+  - バージョン管理
+  - IAM統合
+
 ## 🔐 State管理
 
 ### リモートState設定
@@ -266,8 +321,24 @@ terraform force-unlock <LOCK_ID>
    - データベース削除等の破壊的変更は慎重に
    - 必要に応じて `prevent_destroy` を設定
 
+## ✅ 実装済み機能
+
+- ✅ Terraform State管理（GCSバケット）
+- ✅ モジュール実装
+  - VPC/Subnet（セカンダリIP範囲含む）
+  - Cloud NAT（アウトバウンド通信）
+  - Firewall Rules（Pod間通信、GKE Master等）
+  - GKE Autopilot（Private Cluster、Workload Identity）
+  - Cloud SQL PostgreSQL（REGIONAL HA、PITR、Private IP）
+  - Secret Manager
+- ✅ 3環境構成（dev/staging/prod）
+  - 環境別CIDR設計
+  - 環境別スペック調整（Cloud SQL: f1-micro → custom-4-15360）
+  - 環境別セキュリティレベル（削除保護、Binary Authorization等）
+
 ## 🔄 次のステップ
 
-- [ ] タスクE: ネットワーク/セキュリティ定義（VPC, Cloud NAT等）
-- [ ] タスクF: GKE Autopilot & Cloud SQLリソース定義
-- [ ] タスクG: Terraform CI検証（GitHub Actions）
+- [ ] Terraform実行・検証（各環境でapply）
+- [ ] CI/CD統合（GitHub Actions）
+- [ ] ドキュメント追加（各モジュール詳細説明）
+- [ ] セキュリティ強化（Cloud Armor、WAF等）
