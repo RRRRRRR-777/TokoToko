@@ -63,22 +63,8 @@ resource "google_container_cluster" "autopilot" {
   }
 
   # メンテナンスウィンドウ
-  maintenance_policy {
-    dynamic "recurring_window" {
-      for_each = var.maintenance_window != null ? [1] : []
-      content {
-        start_time = var.maintenance_window.start_time
-        end_time   = var.maintenance_window.end_time
-        recurrence = var.maintenance_window.recurrence
-      }
-    }
-  }
-
-  # Autopilotは自動でaddons管理するため設定不要
-  # ただしNetwork Policyは明示的に有効化可能
-  network_policy {
-    enabled = var.enable_network_policy
-  }
+  # Autopilotではメンテナンスウィンドウの設定が不要（Google管理）
+  # maintenance_policyブロック自体を削除
 
   # ログ設定
   logging_config {

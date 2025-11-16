@@ -87,23 +87,6 @@ variable "enable_binary_authorization" {
   default     = false
 }
 
-variable "enable_network_policy" {
-  description = "Network Policyを有効化するか"
-  type        = bool
-  default     = true
-}
-
-# メンテナンスウィンドウ
-variable "maintenance_window" {
-  description = "メンテナンスウィンドウ設定"
-  type = object({
-    start_time = string
-    end_time   = string
-    recurrence = string
-  })
-  default = null
-}
-
 # ログ・モニタリング
 variable "logging_components" {
   description = "ログ収集コンポーネント"
