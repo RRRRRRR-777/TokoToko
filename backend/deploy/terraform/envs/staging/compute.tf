@@ -96,11 +96,23 @@ module "cloud_sql" {
     update_track = "stable"
   }
 
-  # データベースフラグ
+  # データベースフラグ（本番環境と同等の最適化設定）
   database_flags = [
     {
       name  = "max_connections"
       value = "200"
+    },
+    {
+      name  = "shared_buffers"
+      value = "1966080" # 1920MB (RAM 7.5GB の 25%)
+    },
+    {
+      name  = "effective_cache_size"
+      value = "5898240" # 5760MB (RAM 7.5GB の 75%)
+    },
+    {
+      name  = "work_mem"
+      value = "10240" # 10MB
     }
   ]
 
