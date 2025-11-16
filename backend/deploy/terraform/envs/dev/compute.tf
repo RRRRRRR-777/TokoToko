@@ -44,7 +44,6 @@ module "gke" {
 
   # セキュリティ設定
   enable_binary_authorization = false # 開発環境では無効
-  enable_network_policy       = true
 
   # ログ・モニタリング
   logging_components        = ["SYSTEM_COMPONENTS", "WORKLOADS"]
