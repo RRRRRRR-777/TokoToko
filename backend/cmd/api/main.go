@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	defaultPort         = "8080"
-	shutdownTimeout     = 10 * time.Second
-	readHeaderTimeout   = 10 * time.Second
+	defaultPort       = "8080"
+	shutdownTimeout   = 10 * time.Second
+	readHeaderTimeout = 10 * time.Second
 )
 
 func main() {
@@ -40,11 +40,26 @@ func main() {
 	// 簡易ルーター設定（Phase2で本格実装予定）
 	mux := http.NewServeMux()
 
-	// ヘルスチェックエンドポイント
+	// ヘルスチェックエンドポイント（Liveness Probe用）
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"status":"ok","message":"TekuToko API is running"}`)
+	})
+
+	// レディネスチェックエンドポイント（Readiness Probe用）
+	// TODO: Phase2でデータベース接続チェック等を追加
+	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		// Phase2以降: DB接続確認、外部サービス接続確認等
+		// if !db.Ping() {
+		//     w.WriteHeader(http.StatusServiceUnavailable)
+		//     fmt.Fprintf(w, `{"status":"not_ready","message":"Database not ready"}`)
+		//     return
+		// }
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ready","message":"TekuToko API is ready"}`)
 	})
 
 	// ルートエンドポイント
@@ -70,7 +85,8 @@ func main() {
 		logger.Printf("Server started on http://localhost:%s", port)
 		logger.Println("Available endpoints:")
 		logger.Println("  GET /        - API情報")
-		logger.Println("  GET /health  - ヘルスチェック")
+		logger.Println("  GET /health  - ヘルスチェック（Liveness Probe）")
+		logger.Println("  GET /ready   - レディネスチェック（Readiness Probe）")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatalf("Server failed to start: %v", err)
 		}
