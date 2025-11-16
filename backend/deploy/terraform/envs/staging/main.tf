@@ -13,7 +13,7 @@ terraform {
   # リモートバックエンド設定（GCS）
   # 初回実行前に global/ でstateバケットを作成する必要があります
   backend "gcs" {
-    bucket = "your-project-id-terraform-state" # プロジェクトIDに合わせて変更
+    bucket = "tokotoko-terraform-state"
     prefix = "state/staging"
   }
 }

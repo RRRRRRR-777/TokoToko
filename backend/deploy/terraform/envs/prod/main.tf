@@ -12,7 +12,7 @@ terraform {
 
   # リモートバックエンド設定（GCS）
   backend "gcs" {
-    bucket = "your-project-id-terraform-state" # プロジェクトIDに合わせて変更
+    bucket = "tokotoko-terraform-state"
     prefix = "state/prod"
   }
 }
