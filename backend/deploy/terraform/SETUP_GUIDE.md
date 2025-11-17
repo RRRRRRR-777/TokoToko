@@ -212,13 +212,41 @@ kubectl cluster-info
 
 ## 🔄 Step 4: Staging環境構築（30分）
 
-### 4-1. 変数ファイル作成
+### 4-1. Secret Manager でパスワード管理（推奨）
+
+**💡 Staging環境も本番に近いセキュリティ対策を推奨**
 
 ```bash
 # Staging環境ディレクトリに移動
 cd ../staging
 
-# terraform.tfvars作成
+# 強力なランダムパスワード生成
+PASSWORD=$(openssl rand -base64 32)
+
+# Secret Manager に保存
+echo -n "$PASSWORD" | gcloud secrets create db-password-staging \
+  --data-file=- \
+  --replication-policy="automatic" \
+  --project=tokotoko-ea308
+```
+
+### 4-2. 変数ファイル作成（パスワードなし）
+
+```bash
+# terraform.tfvars作成（パスワードは環境変数で渡す）
+cat > terraform.tfvars <<'EOF'
+project_id = "tokotoko-ea308"
+region     = "asia-northeast1"
+zone       = "asia-northeast1-a"
+EOF
+
+# パスワードを環境変数で設定
+export TF_VAR_db_password=$(gcloud secrets versions access latest --secret="db-password-staging" --project=tokotoko-ea308)
+```
+
+**または terraform.tfvars にパスワードを記載する場合（簡易的な方法）:**
+
+```bash
 cat > terraform.tfvars <<'EOF'
 project_id = "tokotoko-ea308"
 region     = "asia-northeast1"
@@ -227,7 +255,7 @@ db_password = "staging-password-12345"
 EOF
 ```
 
-### 4-2. Terraform実行
+### 4-3. Terraform実行
 
 ```bash
 terraform init
@@ -238,7 +266,7 @@ terraform apply
 # 完了まで20-30分
 ```
 
-### 4-3. 動作確認
+### 4-4. 動作確認
 
 ```bash
 gcloud container clusters get-credentials tekutoko-staging \
@@ -251,20 +279,52 @@ kubectl get nodes
 
 ## 🚀 Step 5: Production環境構築（30分）
 
-### 5-1. 変数ファイル作成
+### 5-1. Secret Manager でパスワード管理（本番環境推奨）
+
+**⚠️ 本番環境では terraform.tfvars にパスワードを直接記載しない**
 
 ```bash
-cd ../production
+cd ../prod
 
+# 強力なランダムパスワード生成
+PASSWORD=$(openssl rand -base64 32)
+
+# Secret Manager に保存
+echo -n "$PASSWORD" | gcloud secrets create db-password-prod \
+  --data-file=- \
+  --replication-policy="automatic" \
+  --project=tokotoko-ea308
+
+# パスワードを確認（必要な場合のみ）
+gcloud secrets versions access latest --secret="db-password-prod" --project=tokotoko-ea308
+```
+
+### 5-2. 変数ファイル作成（パスワードなし）
+
+```bash
+# terraform.tfvars作成（パスワードは環境変数で渡す）
 cat > terraform.tfvars <<'EOF'
 project_id = "tokotoko-ea308"
 region     = "asia-northeast1"
 zone       = "asia-northeast1-a"
-db_password = "prod-password-12345"
+EOF
+
+# パスワードを環境変数で設定
+export TF_VAR_db_password=$(gcloud secrets versions access latest --secret="db-password-prod" --project=tokotoko-ea308)
+```
+
+**または terraform.tfvars にパスワードを記載する場合（学習用のみ）:**
+
+```bash
+cat > terraform.tfvars <<'EOF'
+project_id = "tokotoko-ea308"
+region     = "asia-northeast1"
+zone       = "asia-northeast1-a"
+db_password = "CHANGE_ME_VERY_STRONG_PASSWORD"
 EOF
 ```
 
-### 5-2. Terraform実行
+### 5-3. Terraform実行
 
 ```bash
 terraform init
@@ -275,7 +335,7 @@ terraform apply
 # 完了まで30-40分（HA構成のため少し時間がかかる）
 ```
 
-### 5-3. 動作確認
+### 5-4. 動作確認
 
 ```bash
 gcloud container clusters get-credentials tekutoko-production \
