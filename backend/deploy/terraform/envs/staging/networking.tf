@@ -62,8 +62,8 @@ module "firewall" {
   environment  = local.environment
   pods_cidr    = local.pods_cidr
 
-  # GKE Master CIDRは将来GKE作成後に設定
-  gke_master_cidr = ""
+  # GKE Master CIDR（compute.tfのlocalと同じ値）
+  gke_master_cidr = "172.17.0.0/28"
 
   # ステージング環境では本番同様にdeny allを有効化
   enable_deny_all = true

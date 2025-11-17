@@ -54,6 +54,7 @@ module "cloud_nat" {
 }
 
 # Firewall Rules作成
+# GKE Master CIDRを含む完全なFirewall設定
 module "firewall" {
   source = "../../modules/firewall"
 
@@ -62,8 +63,8 @@ module "firewall" {
   environment  = local.environment
   pods_cidr    = local.pods_cidr
 
-  # GKE Master CIDRは将来GKE作成後に設定
-  gke_master_cidr = ""
+  # GKE Master CIDR（compute.tfのlocalと同じ値）
+  gke_master_cidr = "172.16.0.0/28"
 
   # 開発環境ではdeny allを無効化（デバッグ容易性）
   enable_deny_all = false
