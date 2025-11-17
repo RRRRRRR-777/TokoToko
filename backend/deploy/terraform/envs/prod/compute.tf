@@ -94,7 +94,9 @@ module "cloud_sql" {
     update_track = "stable"
   }
 
-  # データベースフラグ
+  # データベースフラグ（15GB RAM に適した設定）
+  # 注: GCP Cloud SQL の制限により、インスタンスサイズに応じた上限値が設定されています
+  # 15GB RAM の場合、shared_buffers の推奨値は 2-3GB 程度
   database_flags = [
     {
       name  = "max_connections"
@@ -102,11 +104,11 @@ module "cloud_sql" {
     },
     {
       name  = "shared_buffers"
-      value = "3932160" # 3840MB (RAM 15GB の 25%)
+      value = "2621440" # 2560MB (RAM 15GB の約17%)
     },
     {
       name  = "effective_cache_size"
-      value = "11796480" # 11520MB (RAM 15GB の 75%)
+      value = "9830400" # 9600MB (RAM 15GB の約64%)
     },
     {
       name  = "work_mem"

@@ -94,7 +94,7 @@ module "cloud_sql" {
     update_track = "stable"
   }
 
-  # データベースフラグ（本番環境と同等の最適化設定）
+  # データベースフラグ（7.5GB RAM に適した設定）
   database_flags = [
     {
       name  = "max_connections"
@@ -102,11 +102,11 @@ module "cloud_sql" {
     },
     {
       name  = "shared_buffers"
-      value = "1966080" # 1920MB (RAM 7.5GB の 25%)
+      value = "491520" # 480MB (RAM 7.5GB の約6.25%)
     },
     {
       name  = "effective_cache_size"
-      value = "5898240" # 5760MB (RAM 7.5GB の 75%)
+      value = "655360" # 640MB (許容最大値 672MB の約93%)
     },
     {
       name  = "work_mem"
