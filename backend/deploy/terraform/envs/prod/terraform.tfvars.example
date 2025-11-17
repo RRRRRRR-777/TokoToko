@@ -1,6 +1,20 @@
 # 本番環境の変数設定サンプル
-# このファイルをコピーして terraform.tfvars を作成してください
-# cp terraform.tfvars.example terraform.tfvars
+#
+# ⚠️ 本番環境では必ずSecret Managerを使用してパスワードを管理してください
+#
+# 1. Secret Managerにパスワードを保存:
+#    PASSWORD=$(openssl rand -base64 32)
+#    echo -n "$PASSWORD" | gcloud secrets create db-password-prod \
+#      --data-file=- --replication-policy="automatic" --project=your-gcp-project-id
+#
+# 2. このファイルをコピーして terraform.tfvars を作成（パスワードなし）:
+#    cp terraform.tfvars.example terraform.tfvars
+#
+# 3. 環境変数でパスワードを設定:
+#    export TF_VAR_db_password=$(gcloud secrets versions access latest --secret="db-password-prod" --project=your-gcp-project-id)
+#
+# 4. Terraform実行:
+#    terraform apply
 
 # GCPプロジェクトID（必須）
 project_id = "your-gcp-project-id"
@@ -10,5 +24,5 @@ region = "asia-northeast1"
 zone   = "asia-northeast1-a"
 
 # Cloud SQLデータベースパスワード（必須）
-# 本番環境ではSecret Managerから取得必須
-db_password = "CHANGE_ME_VERY_STRONG_PASSWORD"
+# ⚠️ 本番環境ではterraform.tfvarsにパスワードを記載せず、環境変数を使用してください
+# db_password = "DO_NOT_USE_IN_PRODUCTION"
