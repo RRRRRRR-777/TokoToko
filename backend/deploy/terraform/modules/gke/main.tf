@@ -62,10 +62,6 @@ resource "google_container_cluster" "autopilot" {
     }
   }
 
-  # メンテナンスウィンドウ
-  # Autopilotではメンテナンスウィンドウの設定が不要（Google管理）
-  # maintenance_policyブロック自体を削除
-
   # ログ設定
   logging_config {
     enable_components = var.logging_components
@@ -73,9 +69,6 @@ resource "google_container_cluster" "autopilot" {
 
   monitoring_config {
     enable_components = var.monitoring_components
-    managed_prometheus {
-      enabled = var.enable_managed_prometheus
-    }
   }
 
   # リソースラベル

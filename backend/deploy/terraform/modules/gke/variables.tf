@@ -100,12 +100,6 @@ variable "monitoring_components" {
   default     = ["SYSTEM_COMPONENTS"]
 }
 
-variable "enable_managed_prometheus" {
-  description = "Managed Prometheusを有効化するか"
-  type        = bool
-  default     = false
-}
-
 # その他
 variable "additional_labels" {
   description = "追加のリソースラベル"
