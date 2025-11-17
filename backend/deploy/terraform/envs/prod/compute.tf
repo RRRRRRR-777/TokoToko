@@ -84,7 +84,7 @@ module "cloud_sql" {
   enable_backup                  = true
   backup_start_time              = "03:00"
   enable_pitr                    = true # Point-In-Time Recovery必須
-  transaction_log_retention_days = 14   # 14日間保持
+  transaction_log_retention_days = 7    # 7日間保持（GCP上限）
   retained_backups               = 14   # 14世代保持
 
   # メンテナンスウィンドウ
@@ -96,7 +96,7 @@ module "cloud_sql" {
 
   # データベースフラグ（15GB RAM に適した設定）
   # 注: GCP Cloud SQL の制限により、インスタンスサイズに応じた上限値が設定されています
-  # 15GB RAM の場合、shared_buffers の推奨値は 2-3GB 程度
+  # e2-custom-4-15360 の場合、GCP が設定する上限値内に収める必要がある
   database_flags = [
     {
       name  = "max_connections"
@@ -104,11 +104,11 @@ module "cloud_sql" {
     },
     {
       name  = "shared_buffers"
-      value = "2621440" # 2560MB (RAM 15GB の約17%)
+      value = "983040" # 960MB (GCP許容範囲内の安全な値)
     },
     {
       name  = "effective_cache_size"
-      value = "9830400" # 9600MB (RAM 15GB の約64%)
+      value = "1310720" # 1280MB (GCP上限 1344MB 以内)
     },
     {
       name  = "work_mem"

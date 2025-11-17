@@ -338,8 +338,9 @@ terraform apply
 ### 5-4. 動作確認
 
 ```bash
-gcloud container clusters get-credentials tekutoko-production \
-  --region=asia-northeast1
+gcloud container clusters get-credentials gke-tekutoko-prod \
+  --region=asia-northeast1 \
+  --project=tokotoko-ea308
 
 kubectl get nodes
 ```
@@ -352,18 +353,18 @@ kubectl get nodes
 
 ```bash
 # GKEクラスタ一覧
-gcloud container clusters list
+gcloud container clusters list --project=tokotoko-ea308
 # 出力例:
-# tekutoko-dev        asia-northeast1  ...  RUNNING
-# tekutoko-staging    asia-northeast1  ...  RUNNING
-# tekutoko-production asia-northeast1  ...  RUNNING
+# gke-tekutoko-dev      asia-northeast1  ...  RUNNING
+# gke-tekutoko-staging  asia-northeast1  ...  RUNNING
+# gke-tekutoko-prod     asia-northeast1  ...  RUNNING
 
 # Cloud SQL一覧
-gcloud sql instances list
+gcloud sql instances list --project=tokotoko-ea308
 # 出力例:
-# tekutoko-dev        POSTGRES_15  ...  RUNNABLE
-# tekutoko-staging    POSTGRES_15  ...  RUNNABLE
-# tekutoko-production POSTGRES_15  ...  RUNNABLE
+# tekutoko-dev-db      POSTGRES_15  ...  RUNNABLE
+# tekutoko-staging-db  POSTGRES_15  ...  RUNNABLE
+# tekutoko-prod-db     POSTGRES_15  ...  RUNNABLE
 
 # VPCネットワーク一覧
 gcloud compute networks list
