@@ -46,9 +46,8 @@ module "gke" {
   enable_binary_authorization = false # 開発環境では無効
 
   # ログ・モニタリング
-  logging_components        = ["SYSTEM_COMPONENTS", "WORKLOADS"]
-  monitoring_components     = ["SYSTEM_COMPONENTS"]
-  enable_managed_prometheus = false # コスト削減
+  logging_components    = ["SYSTEM_COMPONENTS", "WORKLOADS"]
+  monitoring_components = ["SYSTEM_COMPONENTS"]
 
   # 削除保護
   deletion_protection = false # 開発環境では無効
@@ -101,23 +100,6 @@ module "cloud_sql" {
   deletion_protection   = false # 開発環境では無効
 
   depends_on = [module.vpc]
-}
-
-# Firewallルールを更新（GKE Master CIDR追加）
-module "firewall_gke_update" {
-  source = "../../modules/firewall"
-
-  project_id   = var.project_id
-  network_name = module.vpc.vpc_name
-  environment  = local.environment
-  pods_cidr    = local.pods_cidr
-
-  # GKE Master CIDR設定
-  gke_master_cidr = local.master_ipv4_cidr_block
-
-  enable_deny_all = false
-
-  depends_on = [module.gke]
 }
 
 # 出力値
