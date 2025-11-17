@@ -386,7 +386,99 @@ gcloud compute networks list
 
 ---
 
-## 🗑️ Step 7: 環境削除（学習完了後）
+## 🔄 Step 7: リソースの起動・停止（コスト管理）
+
+### 7-1. Cloud SQL の停止（推奨）
+
+開発中でリソースを使用しない期間は、Cloud SQL を停止することで大幅にコスト削減できます。
+
+#### すべての環境を停止
+
+```bash
+# Dev環境のCloud SQL停止
+gcloud sql instances patch tekutoko-dev-db \
+  --activation-policy=NEVER \
+  --project=tokotoko-ea308
+
+# Staging環境のCloud SQL停止
+gcloud sql instances patch tekutoko-staging-db \
+  --activation-policy=NEVER \
+  --project=tokotoko-ea308
+
+# Production環境のCloud SQL停止
+gcloud sql instances patch tekutoko-prod-db \
+  --activation-policy=NEVER \
+  --project=tokotoko-ea308
+
+# 停止確認
+gcloud sql instances list --project=tokotoko-ea308
+# STATUS が STOPPED になっていることを確認
+```
+
+#### すべての環境を再開
+
+```bash
+# Dev環境のCloud SQL再開
+gcloud sql instances patch tekutoko-dev-db \
+  --activation-policy=ALWAYS \
+  --project=tokotoko-ea308
+
+# Staging環境のCloud SQL再開
+gcloud sql instances patch tekutoko-staging-db \
+  --activation-policy=ALWAYS \
+  --project=tokotoko-ea308
+
+# Production環境のCloud SQL再開
+gcloud sql instances patch tekutoko-prod-db \
+  --activation-policy=ALWAYS \
+  --project=tokotoko-ea308
+
+# 再開確認
+gcloud sql instances list --project=tokotoko-ea308
+# STATUS が RUNNABLE になっていることを確認
+```
+
+### 7-2. GKE Autopilot について
+
+⚠️ **重要**: GKE Autopilot には停止機能がありません。
+
+**現在の課金状況**:
+- Pod未デプロイの場合: ノード課金なし（コントロールプレーンのみ約$73/月）
+- Pod デプロイ時: 使用リソースに応じて課金
+
+**コスト削減方法**:
+1. ✅ **推奨**: Pod を削除してノード課金を停止
+   ```bash
+   # デプロイされているPodを確認
+   kubectl get pods --all-namespaces
+
+   # 不要なPodを削除
+   kubectl delete deployment <deployment-name> -n <namespace>
+   ```
+
+2. ⚠️ **非推奨**: クラスター削除（再構築に時間がかかる）
+   ```bash
+   # Dev環境のGKE削除
+   gcloud container clusters delete gke-tekutoko-dev \
+     --region=asia-northeast1 \
+     --project=tokotoko-ea308
+   ```
+
+### 7-3. コスト比較
+
+| 状態 | Cloud SQL (3環境) | GKE (3環境) | 合計/月 |
+|------|------------------|------------|---------|
+| **全稼働** | ~$250 | ~$220 | ~$470 |
+| **SQL停止** | ~$6 (ストレージのみ) | ~$220 | ~$226 |
+| **全削除** | $0 | $0 | $0 |
+
+**推奨アクション**:
+- 短期間（1日〜1週間）: Cloud SQL のみ停止
+- 長期間（1ヶ月以上）: terraform destroy で完全削除
+
+---
+
+## 🗑️ Step 8: 環境削除（学習完了後）
 
 ### ⚠️ 注意事項
 
@@ -395,7 +487,7 @@ gcloud compute networks list
 - 学習完了後、不要な環境（Dev/Staging）を削除可能
 - Production環境は本番運用開始まで維持または削除を慎重に判断
 
-### 7-1. Dev環境削除（学習完了後）
+### 8-1. Dev環境削除（学習完了後）
 
 ```bash
 cd deploy/terraform/envs/dev
@@ -409,7 +501,7 @@ terraform destroy
 # 完了まで10-15分
 ```
 
-### 7-2. Staging環境削除（学習完了後）
+### 8-2. Staging環境削除（学習完了後）
 
 ```bash
 cd ../staging
@@ -419,7 +511,7 @@ terraform destroy
 # 完了まで10-15分
 ```
 
-### 7-3. Production環境削除（本番運用しない場合のみ）
+### 8-3. Production環境削除（本番運用しない場合のみ）
 
 ```bash
 cd ../production
@@ -430,7 +522,7 @@ terraform destroy
 # ⚠️ 本番運用を開始する場合は削除しないこと
 ```
 
-### 7-4. GCSバケット削除（完全削除時のみ）
+### 8-4. GCSバケット削除（完全削除時のみ）
 
 ```bash
 # ⚠️ 全環境削除後のみ実行
@@ -438,7 +530,7 @@ terraform destroy
 # gsutil rm -r gs://tokotoko-terraform-state
 ```
 
-### 7-5. 本番運用への移行について
+### 8-5. 本番運用への移行について
 
 **学習完了後、本番運用を開始する場合:**
 1. Dev/Staging環境を削除してコスト削減
