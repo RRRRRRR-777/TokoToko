@@ -54,7 +54,8 @@ gcloud services enable \
   cloudresourcemanager.googleapis.com \
   iam.googleapis.com \
   artifactregistry.googleapis.com \
-  secretmanager.googleapis.com
+  secretmanager.googleapis.com \
+  servicenetworking.googleapis.com
 
 # 完了まで2-3分待つ
 # "Operation finished successfully" と表示されればOK
@@ -148,10 +149,10 @@ terraform plan
 ```
 
 **確認ポイント:**
-- ✅ GKE Autopilotクラスタ: `tekutoko-dev`
-- ✅ Cloud SQL インスタンス: `tekutoko-dev`
-- ✅ VPC ネットワーク: `tekutoko-vpc-dev`
-- ✅ Artifact Registry: `tekutoko`
+- ✅ GKE Autopilotクラスタ: `gke-tekutoko-dev`
+- ✅ Cloud SQL インスタンス: `tekutoko-dev-db`
+- ✅ VPC ネットワーク: `vpc-tekutoko-dev`
+- ✅ サブネット: `subnet-asia-northeast1-dev-primary`
 
 ### 3-4. 適用（実際にリソース作成）
 
