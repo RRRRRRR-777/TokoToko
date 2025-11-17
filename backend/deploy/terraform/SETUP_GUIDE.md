@@ -151,6 +151,8 @@ terraform plan
 **確認ポイント:**
 - ✅ GKE Autopilotクラスタ: `gke-tekutoko-dev`
 - ✅ Cloud SQL インスタンス: `tekutoko-dev-db`
+  - プライベートIP: `10.71.0.3`
+  - 接続名: `tokotoko-ea308:asia-northeast1:tekutoko-dev-db`
 - ✅ VPC ネットワーク: `vpc-tekutoko-dev`
 - ✅ サブネット: `subnet-asia-northeast1-dev-primary`
 
@@ -167,24 +169,43 @@ terraform apply
 # Apply complete! Resources: 15 added, 0 changed, 0 destroyed. と表示されればOK
 ```
 
-### 3-5. 動作確認
+### 3-5. kubectl用認証プラグインのインストール
+
+**⚠️ GKE 1.26以降は必須**
+
+```bash
+# gke-gcloud-auth-pluginをインストール
+gcloud components install gke-gcloud-auth-plugin
+
+# インストール確認
+gke-gcloud-auth-plugin --version
+```
+
+### 3-6. 動作確認
 
 ```bash
 # GKEクラスタ確認
-gcloud container clusters list
-# 出力例: tekutoko-dev  asia-northeast1  ...  RUNNING
+gcloud container clusters list --project=tokotoko-ea308
+# 出力例: gke-tekutoko-dev  asia-northeast1  ...  RUNNING
 
 # Cloud SQL確認
-gcloud sql instances list
-# 出力例: tekutoko-dev  POSTGRES_15  ...  RUNNABLE
+gcloud sql instances list --project=tokotoko-ea308
+# 出力例: tekutoko-dev-db  POSTGRES_15  ...  RUNNABLE
 
 # クラスタ認証情報取得
-gcloud container clusters get-credentials tekutoko-dev \
-  --region=asia-northeast1
+gcloud container clusters get-credentials gke-tekutoko-dev \
+  --region=asia-northeast1 \
+  --project=tokotoko-ea308
 
-# ノード確認
+# ノード確認（Autopilotなので自動スケール）
 kubectl get nodes
-# 出力例: gk3-tekutoko-dev-...  Ready  ...
+# 出力例: gk3-gke-tekutoko-dev-...  Ready  ...
+
+# 名前空間確認
+kubectl get namespaces
+
+# クラスタ情報確認
+kubectl cluster-info
 ```
 
 ---
