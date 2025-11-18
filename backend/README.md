@@ -367,3 +367,4 @@ GitHub Actionsで自動デプロイ設定済み:
 
 - **プロジェクト**: TekuToko - おさんぽSNS
 - **リポジトリ**: https://github.com/RRRRRRR-777/TokoToko
+# CI/CD Pipeline Test
