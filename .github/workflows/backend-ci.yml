@@ -12,6 +12,7 @@ on:
     branches:
       - main
       - dev-*
+      - 'ticket/**'
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
