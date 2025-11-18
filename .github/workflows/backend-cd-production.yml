@@ -1,0 +1,122 @@
+name: Backend CD - Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g., staging-latest or commit SHA)'
+        required: true
+        default: 'staging-latest'
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: asia-northeast1
+  GKE_CLUSTER: tekutoko-production
+  IMAGE_NAME: tekutoko-api
+
+jobs:
+  approve-deployment:
+    name: Approve Production Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://api.tekutoko.app
+    steps:
+      - name: Manual approval required
+        run: |
+          echo "🚀 Production deployment requested for image: ${{ github.event.inputs.image_tag }}"
+          echo "This step requires manual approval in GitHub Actions UI"
+
+  deploy-to-gke:
+    name: Deploy to GKE Production
+    runs-on: ubuntu-latest
+    needs: approve-deployment
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_PROD }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }}
+
+      - name: Create backup of current deployment
+        run: |
+          kubectl get deployment tekutoko-api -n default -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
+
+      - name: Update deployment image
+        run: |
+          IMAGE_FULL_PATH="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.event.inputs.image_tag }}"
+          echo "Deploying image: $IMAGE_FULL_PATH"
+          kubectl set image deployment/tekutoko-api \
+            api=$IMAGE_FULL_PATH \
+            -n default
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/tekutoko-api -n default --timeout=10m
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n default -l app=tekutoko-api
+          kubectl get services -n default tekutoko-api
+
+      - name: Run smoke tests
+        run: |
+          EXTERNAL_IP=$(kubectl get service tekutoko-api -n default -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Testing health endpoint at http://$EXTERNAL_IP/health"
+          curl -f http://$EXTERNAL_IP/health || exit 1
+
+          echo "Testing ready endpoint at http://$EXTERNAL_IP/ready"
+          curl -f http://$EXTERNAL_IP/ready || exit 1
+
+      - name: Upload deployment backup
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployment-backup-${{ github.run_number }}
+          path: backend/deployment-backup-*.yaml
+          retention-days: 90
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [approve-deployment, deploy-to-gke]
+    if: always()
+    steps:
+      - name: Notify success
+        if: needs.deploy-to-gke.result == 'success'
+        run: |
+          echo "✅ Production deployment successful"
+          echo "Image: ${{ github.event.inputs.image_tag }}"
+          echo "Deployed by: ${{ github.actor }}"
+          # TODO: Slack通知を追加
+
+      - name: Notify failure
+        if: needs.deploy-to-gke.result == 'failure'
+        run: |
+          echo "❌ Production deployment failed"
+          echo "Image: ${{ github.event.inputs.image_tag }}"
+          echo "See deployment backup artifact for rollback"
+          # TODO: Slack通知を追加
