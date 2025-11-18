@@ -2,11 +2,31 @@
 
 TekuToko Backend の CI/CD パイプライン設定です。
 
+## ワークフロー概要
+
+```mermaid
+graph LR
+    A[ticket/** ブランチ] --> B[CI]
+    A --> C[CD-Dev<br/>Build Only]
+
+    D[dev-* ブランチ] --> B
+    D --> E[CD-Dev<br/>Build + Deploy]
+    E --> F[Dev環境]
+
+    G[main ブランチ] --> B
+    G --> H[CD-Staging<br/>Auto Deploy]
+    H --> I[Staging環境]
+
+    I --> J[手動承認]
+    J --> K[CD-Production<br/>Manual Deploy]
+    K --> L[Production環境]
+```
+
 ## ワークフロー一覧
 
 ### 1. CI (Continuous Integration)
-**ファイル**: `ci.yml`
-**トリガー**: PR作成/更新、main/dev-*ブランチへのpush
+**ファイル**: `backend-ci.yml`
+**トリガー**: PR作成/更新、main/dev-*ブランチへのpush、ticket/**ブランチへのpush
 
 #### ジョブ構成
 1. **lint**: golangci-lint によるコード品質チェック
@@ -19,8 +39,36 @@ TekuToko Backend の CI/CD パイプライン設定です。
 
 ---
 
-### 2. CD - Staging (Continuous Deployment)
-**ファイル**: `cd-staging.yml`
+### 2. CD - Dev (Continuous Deployment)
+**ファイル**: `backend-cd-dev.yml`
+**トリガー**: dev-*ブランチへのpush、ticket/**ブランチへのpush、手動実行
+
+#### デプロイフロー
+1. **build-and-push**: Dockerイメージビルド → Artifact Registry へpush
+2. **deploy-to-gke**: GKE Dev クラスタへデプロイ（dev-*ブランチのみ）
+3. **notify**: デプロイ結果通知（Slack等）
+
+#### 必要なSecrets
+| Secret名 | 説明 |
+|---------|------|
+| `GCP_PROJECT_ID` | GCPプロジェクトID |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity プロバイダー |
+| `GCP_SERVICE_ACCOUNT_DEV` | Dev環境デプロイ用サービスアカウント |
+
+#### デプロイ先
+- **GKEクラスタ**: `tekutoko-dev`
+- **リージョン**: `asia-northeast1`
+- **イメージタグ**: `<commit-sha>`, `dev-latest`
+
+#### 特徴
+- ticket/**ブランチでは**イメージビルドのみ**実行（デプロイはスキップ）
+- dev-*ブランチでは**ビルド+デプロイ**を自動実行
+- 開発中の機能を素早くDev環境で検証可能
+
+---
+
+### 3. CD - Staging (Continuous Deployment)
+**ファイル**: `backend-cd-staging.yml`
 **トリガー**: mainブランチへのpush、手動実行
 
 #### デプロイフロー
@@ -42,8 +90,8 @@ TekuToko Backend の CI/CD パイプライン設定です。
 
 ---
 
-### 3. CD - Production (Continuous Deployment)
-**ファイル**: `cd-production.yml`
+### 4. CD - Production (Continuous Deployment)
+**ファイル**: `backend-cd-production.yml`
 **トリガー**: 手動実行のみ（Manual Approval必須）
 
 #### デプロイフロー
@@ -79,30 +127,41 @@ TekuToko Backend の CI/CD パイプライン設定です。
 # GitHub リポジトリ設定 > Secrets and variables > Actions で追加
 GCP_PROJECT_ID=your-project-id
 GCP_WORKLOAD_IDENTITY_PROVIDER=projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_NAME/providers/PROVIDER_NAME
-GCP_SERVICE_ACCOUNT=github-actions@your-project.iam.gserviceaccount.com
+GCP_SERVICE_ACCOUNT_DEV=github-actions-dev@your-project.iam.gserviceaccount.com
+GCP_SERVICE_ACCOUNT=github-actions-staging@your-project.iam.gserviceaccount.com
 GCP_SERVICE_ACCOUNT_PROD=github-actions-prod@your-project.iam.gserviceaccount.com
 ```
 
 ### 2. Workload Identity設定
 ```bash
-# サービスアカウント作成
-gcloud iam service-accounts create github-actions \
-  --display-name="GitHub Actions Service Account"
+# Dev環境用サービスアカウント作成
+gcloud iam service-accounts create github-actions-dev \
+  --display-name="GitHub Actions Dev Service Account"
 
-# 必要な権限を付与
+# Staging環境用サービスアカウント作成
+gcloud iam service-accounts create github-actions-staging \
+  --display-name="GitHub Actions Staging Service Account"
+
+# Production環境用サービスアカウント作成
+gcloud iam service-accounts create github-actions-prod \
+  --display-name="GitHub Actions Production Service Account"
+
+# 各環境に必要な権限を付与（例: Dev環境）
 gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:github-actions@PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:github-actions-dev@PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/container.developer"
 
 gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:github-actions@PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:github-actions-dev@PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/artifactregistry.writer"
 
-# Workload Identity バインディング
+# Workload Identity バインディング（例: Dev環境）
 gcloud iam service-accounts add-iam-policy-binding \
-  github-actions@PROJECT_ID.iam.gserviceaccount.com \
+  github-actions-dev@PROJECT_ID.iam.gserviceaccount.com \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/attribute.repository/OWNER/REPO"
+
+# Staging, Production環境も同様に設定
 ```
 
 ### 3. GitHub Environment設定
