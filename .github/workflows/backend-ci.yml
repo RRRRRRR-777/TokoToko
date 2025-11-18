@@ -82,11 +82,7 @@ jobs:
 
       - name: Run migrations
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: tekutoko
-          DB_PASSWORD: test_password
-          DB_NAME: tekutoko_test
+          DATABASE_URL: postgres://tekutoko:test_password@localhost:5432/tekutoko_test?sslmode=disable
         run: |
           make migrate-up
 

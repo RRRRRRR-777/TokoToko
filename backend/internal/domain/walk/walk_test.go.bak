@@ -353,17 +353,17 @@ func TestWalk_IsInProgress(t *testing.T) {
 		},
 		{
 			name:      "進行中",
-			setupFunc: func(w *Walk) { _ = w.Start() },
+			setupFunc: func(w *Walk) { w.Start() },
 			want:      true,
 		},
 		{
 			name:      "一時停止中",
-			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Pause() },
+			setupFunc: func(w *Walk) { w.Start(); w.Pause() },
 			want:      false,
 		},
 		{
 			name:      "完了済み",
-			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Complete() },
+			setupFunc: func(w *Walk) { w.Start(); w.Complete() },
 			want:      false,
 		},
 	}
@@ -394,17 +394,17 @@ func TestWalk_IsCompleted(t *testing.T) {
 		},
 		{
 			name:      "進行中",
-			setupFunc: func(w *Walk) { _ = w.Start() },
+			setupFunc: func(w *Walk) { w.Start() },
 			want:      false,
 		},
 		{
 			name:      "一時停止中",
-			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Pause() },
+			setupFunc: func(w *Walk) { w.Start(); w.Pause() },
 			want:      false,
 		},
 		{
 			name:      "完了済み",
-			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Complete() },
+			setupFunc: func(w *Walk) { w.Start(); w.Complete() },
 			want:      true,
 		},
 	}
@@ -431,9 +431,7 @@ func TestWalk_StateTransitions(t *testing.T) {
 	}
 
 	// 開始: not_started -> in_progress
-	if err := walk.Start(); err != nil {
-		t.Fatalf("Start failed: %v", err)
-	}
+	walk.Start()
 	if walk.Status != StatusInProgress {
 		t.Errorf("After Start: status = %v, want %v", walk.Status, StatusInProgress)
 	}
@@ -443,9 +441,7 @@ func TestWalk_StateTransitions(t *testing.T) {
 	walk.UpdateSteps(700)
 
 	// 一時停止: in_progress -> paused
-	if err := walk.Pause(); err != nil {
-		t.Fatalf("Pause failed: %v", err)
-	}
+	walk.Pause()
 	if walk.Status != StatusPaused {
 		t.Errorf("After Pause: status = %v, want %v", walk.Status, StatusPaused)
 	}
@@ -453,9 +449,7 @@ func TestWalk_StateTransitions(t *testing.T) {
 	time.Sleep(50 * time.Millisecond) // 一時停止時間をシミュレート
 
 	// 再開: paused -> in_progress
-	if err := walk.Resume(); err != nil {
-		t.Fatalf("Resume failed: %v", err)
-	}
+	walk.Resume()
 	if walk.Status != StatusInProgress {
 		t.Errorf("After Resume: status = %v, want %v", walk.Status, StatusInProgress)
 	}
@@ -470,9 +464,7 @@ func TestWalk_StateTransitions(t *testing.T) {
 	walk.UpdateSteps(1500)
 
 	// 完了: in_progress -> completed
-	if err := walk.Complete(); err != nil {
-		t.Fatalf("Complete failed: %v", err)
-	}
+	walk.Complete()
 	if walk.Status != StatusCompleted {
 		t.Errorf("After Complete: status = %v, want %v", walk.Status, StatusCompleted)
 	}
