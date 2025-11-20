@@ -103,8 +103,10 @@ jobs:
 
       - name: Update deployment image
         run: |
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "Updating deployment with image: ${IMAGE_TAG}"
           kubectl set image deployment/tekutoko-api \
-            api=${{ needs.build-and-push.outputs.image-tag }} \
+            api=${IMAGE_TAG} \
             -n default
 
       - name: Wait for rollout
