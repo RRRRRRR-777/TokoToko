@@ -57,13 +57,15 @@ jobs:
           docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:dev-latest
 
-      - name: Output image digest
-        id: image-digest
+      - name: Output image tag
+        id: image-tag
         run: |
-          echo "digest=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "Image tag: ${IMAGE_TAG}"
 
     outputs:
-      image-digest: ${{ steps.image-digest.outputs.digest }}
+      image-tag: ${{ steps.image-tag.outputs.tag }}
 
   deploy-to-gke:
     name: Deploy to GKE Dev
@@ -102,7 +104,7 @@ jobs:
       - name: Update deployment image
         run: |
           kubectl set image deployment/tekutoko-api \
-            api=${{ needs.build-and-push.outputs.image-digest }} \
+            api=${{ needs.build-and-push.outputs.image-tag }} \
             -n default
 
       - name: Wait for rollout
