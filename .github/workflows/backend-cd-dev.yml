@@ -12,7 +12,7 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-northeast1
-  GKE_CLUSTER: tekutoko-dev
+  GKE_CLUSTER: gke-tekutoko-dev
   IMAGE_NAME: tekutoko-api
   GO_VERSION: '1.23'
 
