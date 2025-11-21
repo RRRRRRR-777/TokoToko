@@ -38,7 +38,10 @@ type LogConfig struct {
 
 // Load は環境変数から設定を読み込む
 func Load() (*Config, error) {
-	dbPort, _ := strconv.Atoi(getEnv("DB_PORT", "5432"))
+	dbPort, err := strconv.Atoi(getEnv("DB_PORT", "5432"))
+	if err != nil {
+		dbPort = 5432 // デフォルト値を使用
+	}
 
 	return &Config{
 		Environment: getEnv("ENVIRONMENT", "development"),

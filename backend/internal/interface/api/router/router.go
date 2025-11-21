@@ -29,7 +29,7 @@ func NewRouter(container *di.Container) http.Handler {
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok","message":"TekuToko API is running"}`))
+	_, _ = w.Write([]byte(`{"status":"ok","message":"TekuToko API is running"}`))
 }
 
 func readinessCheckHandler(container *di.Container) http.HandlerFunc {
@@ -38,18 +38,18 @@ func readinessCheckHandler(container *di.Container) http.HandlerFunc {
 		if err := container.DB.HealthCheck(r.Context()); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"status":"not_ready","message":"Database not ready"}`))
+			_, _ = w.Write([]byte(`{"status":"not_ready","message":"Database not ready"}`))
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ready","message":"TekuToko API is ready"}`))
+		_, _ = w.Write([]byte(`{"status":"ready","message":"TekuToko API is ready"}`))
 	}
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Welcome to TekuToko API","version":"0.1.0","status":"Phase 2 in progress"}`))
+	_, _ = w.Write([]byte(`{"message":"Welcome to TekuToko API","version":"0.1.0","status":"Phase 2 in progress"}`))
 }

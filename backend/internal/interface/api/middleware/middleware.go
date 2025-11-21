@@ -35,7 +35,7 @@ func Recovery(logger *log.Logger) func(http.Handler) http.Handler {
 				if err := recover(); err != nil {
 					logger.Printf("Panic recovered: %v", err)
 					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte(`{"error":"Internal Server Error"}`))
+					_, _ = w.Write([]byte(`{"error":"Internal Server Error"}`))
 				}
 			}()
 			next.ServeHTTP(w, r)

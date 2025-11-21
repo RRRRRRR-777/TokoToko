@@ -29,7 +29,7 @@ func (h *WalkHandler) ListWalks(w http.ResponseWriter, r *http.Request) {
 	// - Usecase呼び出し
 	// - レスポンス返却
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte(`{"message":"Not implemented yet"}`))
+	_, _ = w.Write([]byte(`{"message":"Not implemented yet"}`))
 }
 
 // GetWalk は散歩詳細を取得する
@@ -37,7 +37,7 @@ func (h *WalkHandler) ListWalks(w http.ResponseWriter, r *http.Request) {
 func (h *WalkHandler) GetWalk(w http.ResponseWriter, r *http.Request) {
 	// TODO: Phase2で実装
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte(`{"message":"Not implemented yet"}`))
+	_, _ = w.Write([]byte(`{"message":"Not implemented yet"}`))
 }
 
 // CreateWalk は新しい散歩を作成する
@@ -45,7 +45,7 @@ func (h *WalkHandler) GetWalk(w http.ResponseWriter, r *http.Request) {
 func (h *WalkHandler) CreateWalk(w http.ResponseWriter, r *http.Request) {
 	// TODO: Phase2で実装
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte(`{"message":"Not implemented yet"}`))
+	_, _ = w.Write([]byte(`{"message":"Not implemented yet"}`))
 }
 
 // UpdateWalk は散歩を更新する
@@ -53,7 +53,7 @@ func (h *WalkHandler) CreateWalk(w http.ResponseWriter, r *http.Request) {
 func (h *WalkHandler) UpdateWalk(w http.ResponseWriter, r *http.Request) {
 	// TODO: Phase2で実装
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte(`{"message":"Not implemented yet"}`))
+	_, _ = w.Write([]byte(`{"message":"Not implemented yet"}`))
 }
 
 // DeleteWalk は散歩を削除する
@@ -61,5 +61,5 @@ func (h *WalkHandler) UpdateWalk(w http.ResponseWriter, r *http.Request) {
 func (h *WalkHandler) DeleteWalk(w http.ResponseWriter, r *http.Request) {
 	// TODO: Phase2で実装
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte(`{"message":"Not implemented yet"}`))
+	_, _ = w.Write([]byte(`{"message":"Not implemented yet"}`))
 }

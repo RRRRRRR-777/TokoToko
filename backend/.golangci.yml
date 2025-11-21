@@ -1,0 +1,95 @@
+# golangci-lint configuration for TekuToko backend
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Default linters
+    - errcheck      # エラーチェック漏れを検出
+    - gosimple      # コードの簡略化を提案
+    - govet         # Go標準のvetツール
+    - ineffassign   # 無効な代入を検出
+    - staticcheck   # 静的解析
+    - unused        # 未使用のコードを検出
+
+    # Additional linters
+    - gofmt         # コードフォーマット
+    - goimports     # importの整理
+    - misspell      # スペルミスを検出
+    - revive        # golintの代替
+    - gosec         # セキュリティ問題を検出
+    - unconvert     # 不要な型変換を検出
+    - unparam       # 未使用のパラメータを検出
+    - gocyclo       # 循環的複雑度を計測
+    - dupl          # 重複コードを検出
+    - goconst       # 定数化できる文字列を検出
+    - stylecheck    # Goのスタイルガイドに準拠
+    - nolintlint    # nolintディレクティブの誤用を検出
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: false  # _, _ = w.Write() を許可
+
+  govet:
+    check-shadowing: true
+
+  gocyclo:
+    min-complexity: 15
+
+  dupl:
+    threshold: 150
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  misspell:
+    locale: US
+
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: false
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+
+  gosec:
+    excludes:
+      - G104  # Errors unhandled (errcheckで検出)
+
+  stylecheck:
+    checks: ["all", "-ST1000", "-ST1003"]
+
+issues:
+  exclude-rules:
+    # テストファイルでは一部のルールを無効化
+    - path: _test\.go
+      linters:
+        - dupl
+        - gosec
+        - goconst
+        - gocyclo
+
+    # mainパッケージではexported関連を無効化
+    - path: cmd/
+      linters:
+        - revive
+      text: "exported:"
+
+    # 型名の繰り返しは意図的なものを許可
+    - linters:
+        - revive
+      text: "type name will be used as .* by other packages, and that is repetitive"
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  formats: colored-line-number
