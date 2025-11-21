@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tekutoko-api-network-policy
+  namespace: default
+  labels:
+    app: tekutoko-api
+spec:
+  podSelector:
+    matchLabels:
+      app: tekutoko-api
+  policyTypes:
+  - Ingress
+  - Egress
+
+  # Ingressルール: LoadBalancerからのトラフィックのみ許可
+  ingress:
+  - from:
+    # GKE Ingress/LoadBalancerからのトラフィック
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # すべてのPodからのヘルスチェックを許可
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Egressルール: 必要な外部通信のみ許可
+  egress:
+  # DNS解決を許可
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+  # Cloud SQL Proxy経由のDB接続を許可
+  - to:
+    - podSelector:
+        matchLabels:
+          app: tekutoko-api
+    ports:
+    - protocol: TCP
+      port: 5432
+
+  # HTTPS通信を許可（外部API、GCP API等）
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+
+  # HTTP通信を許可（メタデータサーバー等）
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 80
+
+  # GKE Metadata Serverへのアクセスを許可
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 988

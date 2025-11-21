@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# CI/CD
+.github/
+
+# Terraform
+deploy/terraform/
+
+# Kubernetes
+deploy/kubernetes/
+
+# Development
+.env
+.env.*
+*.local
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Test files
+*_test.go
+testdata/
+
+# Build artifacts
+bin/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

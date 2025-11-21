@@ -1,0 +1,560 @@
+openapi: 3.1.0
+info:
+  title: TekuToko API
+  version: 1.0.0
+  description: |
+    てくとこ - おさんぽSNS のバックエンドAPI
+
+    ## 認証
+    全エンドポイントはFirebase ID Tokenによる認証が必要です。
+    `Authorization: Bearer <firebase_id_token>` ヘッダーを含めてください。
+
+    ## レート制限
+    - 認証済みユーザー: 100 req/min
+
+  contact:
+    name: TekuToko API Support
+    email: tekutoko.walk@gmail.com
+
+servers:
+  - url: https://api.tekutoko.app/v1
+    description: Production
+  - url: https://api-staging.tekutoko.app/v1
+    description: Staging
+  - url: http://localhost:8080/v1
+    description: Local Development
+
+tags:
+  - name: Walks
+    description: 散歩管理エンドポイント
+  - name: Locations
+    description: 位置情報管理
+
+security:
+  - bearerAuth: []
+
+paths:
+  /walks:
+    get:
+      summary: 散歩一覧取得
+      description: 認証ユーザーの散歩一覧をページネーション付きで取得
+      tags: [Walks]
+      parameters:
+        - name: limit
+          in: query
+          description: "取得件数（デフォルト: 20、最大: 100）"
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: ページネーションカーソル（前回レスポンスのnext_cursorを使用）
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: ステータスフィルター
+          schema:
+            $ref: '#/components/schemas/WalkStatus'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WalkSummary'
+                  meta:
+                    allOf:
+                      - $ref: '#/components/schemas/Meta'
+                      - type: object
+                        properties:
+                          page:
+                            $ref: '#/components/schemas/PageInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: 散歩開始
+      description: 新しい散歩セッションを作成
+      tags: [Walks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalkCreate'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Walk'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /walks/{walkId}:
+    parameters:
+      - name: walkId
+        in: path
+        required: true
+        description: 散歩ID（UUID）
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: 散歩詳細取得
+      description: 指定された散歩の詳細情報を取得
+      tags: [Walks]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Walk'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      summary: 散歩更新
+      description: 散歩のステータスや情報を更新
+      tags: [Walks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalkUpdate'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Walk'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: 散歩削除
+      description: 指定された散歩を削除
+      tags: [Walks]
+      responses:
+        '204':
+          description: 削除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /walks/{walkId}/locations:
+    parameters:
+      - name: walkId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      summary: 位置情報一括追加
+      description: 散歩に位置情報をバッチ追加（最大500件）
+      tags: [Locations]
+      parameters:
+        - name: X-Idempotency-Key
+          in: header
+          description: バッチIDによる冪等性保証
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationBatch'
+      responses:
+        '201':
+          description: 追加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      added_count:
+                        type: integer
+                        description: 追加された位置情報の件数
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: バッチサイズ超過
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID Token
+
+  schemas:
+    # ===== Common =====
+    Meta:
+      type: object
+      required:
+        - request_id
+        - timestamp
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          description: リクエストID（トレーシング用）
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成時刻
+
+    PageInfo:
+      type: object
+      required:
+        - limit
+        - has_next
+      properties:
+        limit:
+          type: integer
+          description: 取得件数
+        cursor:
+          type: string
+          description: 現在のカーソル
+        next_cursor:
+          anyOf:
+            - type: string
+            - type: "null"
+          description: 次ページのカーソル（次ページがない場合はnull）
+        prev_cursor:
+          anyOf:
+            - type: string
+            - type: "null"
+          description: 前ページのカーソル（前ページがない場合はnull）
+        has_next:
+          type: boolean
+          description: 次ページの有無
+
+    Error:
+      type: object
+      required:
+        - error
+        - meta
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - INVALID_REQUEST
+                - UNAUTHORIZED
+                - FORBIDDEN
+                - NOT_FOUND
+                - CONFLICT
+                - INTERNAL_ERROR
+              description: エラーコード
+            message:
+              type: string
+              description: エラーメッセージ
+            status:
+              type: integer
+              description: HTTPステータスコード
+            target:
+              type: string
+              description: エラー対象フィールド
+            details:
+              type: object
+              additionalProperties: true
+              description: 詳細情報
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    # ===== Walk =====
+    WalkStatus:
+      type: string
+      enum:
+        - not_started
+        - in_progress
+        - paused
+        - completed
+      description: 散歩ステータス
+
+    Walk:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          description: Firebase Auth UID
+        title:
+          type: string
+        description:
+          type: string
+        start_time:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        end_time:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        total_distance:
+          type: number
+          format: double
+          description: 総距離（メートル）
+        total_steps:
+          type: integer
+          description: 総歩数
+        polyline_data:
+          anyOf:
+            - type: string
+            - type: "null"
+          description: Google Maps エンコード済みポリライン
+        thumbnail_image_url:
+          anyOf:
+            - type: string
+            - type: "null"
+        status:
+          $ref: '#/components/schemas/WalkStatus'
+        paused_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        total_paused_duration:
+          type: number
+          format: double
+          description: 累積一時停止時間（秒）
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WalkSummary:
+      type: object
+      description: 一覧表示用の散歩サマリー
+      required:
+        - id
+        - title
+        - status
+        - start_time
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          $ref: '#/components/schemas/WalkStatus'
+        start_time:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        end_time:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        total_distance:
+          type: number
+          format: double
+        thumbnail_image_url:
+          anyOf:
+            - type: string
+            - type: "null"
+
+    WalkCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+
+    WalkUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        status:
+          $ref: '#/components/schemas/WalkStatus'
+        total_steps:
+          type: integer
+          minimum: 0
+
+    # ===== Location =====
+    WalkLocation:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - timestamp
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        altitude:
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
+        timestamp:
+          type: string
+          format: date-time
+          description: 位置情報の記録日時
+        horizontal_accuracy:
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
+        vertical_accuracy:
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
+        speed:
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
+        course:
+          anyOf:
+            - type: number
+              format: double
+            - type: "null"
+
+    LocationBatch:
+      type: object
+      required:
+        - positions
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalkLocation'
+          minItems: 1
+          maxItems: 500
+          description: 位置情報配列（最大500件）
+
+  responses:
+    BadRequest:
+      description: 不正なリクエスト
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

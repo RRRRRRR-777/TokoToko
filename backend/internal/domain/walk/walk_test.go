@@ -1,0 +1,500 @@
+package walk
+
+import (
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+// TestNewWalk は NewWalk 関数のテスト
+func TestNewWalk(t *testing.T) {
+	tests := []struct {
+		name        string
+		userID      string
+		title       string
+		description string
+	}{
+		{
+			name:        "標準的な散歩作成",
+			userID:      "user-123",
+			title:       "朝の散歩",
+			description: "公園を一周",
+		},
+		{
+			name:        "説明なしの散歩作成",
+			userID:      "user-456",
+			title:       "夕方の散歩",
+			description: "",
+		},
+		{
+			name:        "長いタイトルの散歩作成",
+			userID:      "user-789",
+			title:       "とても長いタイトルの散歩テストケース",
+			description: "詳細な説明文",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			before := time.Now()
+			walk := NewWalk(tt.userID, tt.title, tt.description)
+			after := time.Now()
+
+			// IDが生成されているか検証
+			if walk.ID == uuid.Nil {
+				t.Error("ID should not be nil UUID")
+			}
+
+			// UserIDの検証
+			if walk.UserID != tt.userID {
+				t.Errorf("UserID = %v, want %v", walk.UserID, tt.userID)
+			}
+
+			// Titleの検証
+			if walk.Title != tt.title {
+				t.Errorf("Title = %v, want %v", walk.Title, tt.title)
+			}
+
+			// Descriptionの検証
+			if walk.Description != tt.description {
+				t.Errorf("Description = %v, want %v", walk.Description, tt.description)
+			}
+
+			// 初期状態の検証
+			if walk.Status != StatusNotStarted {
+				t.Errorf("Status = %v, want %v", walk.Status, StatusNotStarted)
+			}
+
+			if walk.TotalDistance != 0 {
+				t.Errorf("TotalDistance = %v, want 0", walk.TotalDistance)
+			}
+
+			if walk.TotalSteps != 0 {
+				t.Errorf("TotalSteps = %v, want 0", walk.TotalSteps)
+			}
+
+			if walk.TotalPausedDuration != 0 {
+				t.Errorf("TotalPausedDuration = %v, want 0", walk.TotalPausedDuration)
+			}
+
+			// CreatedAtが適切な時刻範囲にあるか検証
+			if walk.CreatedAt.Before(before) || walk.CreatedAt.After(after) {
+				t.Errorf("CreatedAt = %v, want between %v and %v", walk.CreatedAt, before, after)
+			}
+
+			// UpdatedAtが適切な時刻範囲にあるか検証
+			if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+				t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+			}
+
+			// ポインタフィールドがnilであることを検証
+			if walk.StartTime != nil {
+				t.Error("StartTime should be nil initially")
+			}
+
+			if walk.EndTime != nil {
+				t.Error("EndTime should be nil initially")
+			}
+
+			if walk.PausedAt != nil {
+				t.Error("PausedAt should be nil initially")
+			}
+		})
+	}
+}
+
+// TestWalk_Start は Start メソッドのテスト
+func TestWalk_Start(t *testing.T) {
+	walk := NewWalk("user-123", "テスト散歩", "")
+
+	before := time.Now()
+	err := walk.Start()
+	after := time.Now()
+
+	// エラーがないことを確認
+	if err != nil {
+		t.Errorf("Start() error = %v, want nil", err)
+	}
+
+	// ステータスが変更されているか確認
+	if walk.Status != StatusInProgress {
+		t.Errorf("Status = %v, want %v", walk.Status, StatusInProgress)
+	}
+
+	// StartTimeが設定されているか確認
+	if walk.StartTime == nil {
+		t.Error("StartTime should not be nil after Start()")
+	} else {
+		if walk.StartTime.Before(before) || walk.StartTime.After(after) {
+			t.Errorf("StartTime = %v, want between %v and %v", walk.StartTime, before, after)
+		}
+	}
+
+	// UpdatedAtが更新されているか確認
+	if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+		t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+	}
+}
+
+// TestWalk_Pause は Pause メソッドのテスト
+func TestWalk_Pause(t *testing.T) {
+	walk := NewWalk("user-123", "テスト散歩", "")
+	if err := walk.Start(); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	time.Sleep(10 * time.Millisecond)
+
+	before := time.Now()
+	err := walk.Pause()
+	after := time.Now()
+
+	// エラーがないことを確認
+	if err != nil {
+		t.Errorf("Pause() error = %v, want nil", err)
+	}
+
+	// ステータスが変更されているか確認
+	if walk.Status != StatusPaused {
+		t.Errorf("Status = %v, want %v", walk.Status, StatusPaused)
+	}
+
+	// PausedAtが設定されているか確認
+	if walk.PausedAt == nil {
+		t.Error("PausedAt should not be nil after Pause()")
+	} else {
+		if walk.PausedAt.Before(before) || walk.PausedAt.After(after) {
+			t.Errorf("PausedAt = %v, want between %v and %v", walk.PausedAt, before, after)
+		}
+	}
+
+	// UpdatedAtが更新されているか確認
+	if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+		t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+	}
+}
+
+// TestWalk_Resume は Resume メソッドのテスト
+func TestWalk_Resume(t *testing.T) {
+	walk := NewWalk("user-123", "テスト散歩", "")
+	if err := walk.Start(); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	if err := walk.Pause(); err != nil {
+		t.Fatalf("Pause failed: %v", err)
+	}
+
+	time.Sleep(10 * time.Millisecond)
+	initialPausedDuration := walk.TotalPausedDuration
+
+	before := time.Now()
+	err := walk.Resume()
+	after := time.Now()
+
+	// エラーがないことを確認
+	if err != nil {
+		t.Errorf("Resume() error = %v, want nil", err)
+	}
+
+	// ステータスが変更されているか確認
+	if walk.Status != StatusInProgress {
+		t.Errorf("Status = %v, want %v", walk.Status, StatusInProgress)
+	}
+
+	// PausedAtがクリアされているか確認
+	if walk.PausedAt != nil {
+		t.Error("PausedAt should be nil after Resume()")
+	}
+
+	// TotalPausedDurationが増加しているか確認
+	if walk.TotalPausedDuration <= initialPausedDuration {
+		t.Errorf("TotalPausedDuration should increase after Resume()")
+	}
+
+	// UpdatedAtが更新されているか確認
+	if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+		t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+	}
+}
+
+// TestWalk_Complete は Complete メソッドのテスト
+func TestWalk_Complete(t *testing.T) {
+	walk := NewWalk("user-123", "テスト散歩", "")
+	if err := walk.Start(); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	time.Sleep(10 * time.Millisecond)
+
+	before := time.Now()
+	err := walk.Complete()
+	after := time.Now()
+
+	// エラーがないことを確認
+	if err != nil {
+		t.Errorf("Complete() error = %v, want nil", err)
+	}
+
+	// ステータスが変更されているか確認
+	if walk.Status != StatusCompleted {
+		t.Errorf("Status = %v, want %v", walk.Status, StatusCompleted)
+	}
+
+	// EndTimeが設定されているか確認
+	if walk.EndTime == nil {
+		t.Error("EndTime should not be nil after Complete()")
+	} else {
+		if walk.EndTime.Before(before) || walk.EndTime.After(after) {
+			t.Errorf("EndTime = %v, want between %v and %v", walk.EndTime, before, after)
+		}
+	}
+
+	// UpdatedAtが更新されているか確認
+	if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+		t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+	}
+}
+
+// TestWalk_UpdateDistance は UpdateDistance メソッドのテスト
+func TestWalk_UpdateDistance(t *testing.T) {
+	tests := []struct {
+		name     string
+		distance float64
+	}{
+		{name: "0メートル", distance: 0},
+		{name: "100メートル", distance: 100.0},
+		{name: "1000.5メートル", distance: 1000.5},
+		{name: "5000メートル", distance: 5000.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			walk := NewWalk("user-123", "テスト散歩", "")
+			originalUpdatedAt := walk.UpdatedAt
+
+			time.Sleep(10 * time.Millisecond)
+
+			before := time.Now()
+			walk.UpdateDistance(tt.distance)
+			after := time.Now()
+
+			// 距離が正しく設定されているか確認
+			if walk.TotalDistance != tt.distance {
+				t.Errorf("TotalDistance = %v, want %v", walk.TotalDistance, tt.distance)
+			}
+
+			// UpdatedAtが更新されているか確認
+			if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+				t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+			}
+
+			// UpdatedAtが元の値より後になっているか確認
+			if !walk.UpdatedAt.After(originalUpdatedAt) {
+				t.Error("UpdatedAt should be after original value")
+			}
+		})
+	}
+}
+
+// TestWalk_UpdateSteps は UpdateSteps メソッドのテスト
+func TestWalk_UpdateSteps(t *testing.T) {
+	tests := []struct {
+		name  string
+		steps int
+	}{
+		{name: "0歩", steps: 0},
+		{name: "100歩", steps: 100},
+		{name: "1000歩", steps: 1000},
+		{name: "5000歩", steps: 5000},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			walk := NewWalk("user-123", "テスト散歩", "")
+			originalUpdatedAt := walk.UpdatedAt
+
+			time.Sleep(10 * time.Millisecond)
+
+			before := time.Now()
+			walk.UpdateSteps(tt.steps)
+			after := time.Now()
+
+			// 歩数が正しく設定されているか確認
+			if walk.TotalSteps != tt.steps {
+				t.Errorf("TotalSteps = %v, want %v", walk.TotalSteps, tt.steps)
+			}
+
+			// UpdatedAtが更新されているか確認
+			if walk.UpdatedAt.Before(before) || walk.UpdatedAt.After(after) {
+				t.Errorf("UpdatedAt = %v, want between %v and %v", walk.UpdatedAt, before, after)
+			}
+
+			// UpdatedAtが元の値より後になっているか確認
+			if !walk.UpdatedAt.After(originalUpdatedAt) {
+				t.Error("UpdatedAt should be after original value")
+			}
+		})
+	}
+}
+
+// TestWalk_IsInProgress は IsInProgress メソッドのテスト
+func TestWalk_IsInProgress(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFunc func(*Walk)
+		want      bool
+	}{
+		{
+			name:      "開始前",
+			setupFunc: func(w *Walk) {},
+			want:      false,
+		},
+		{
+			name:      "進行中",
+			setupFunc: func(w *Walk) { _ = w.Start() },
+			want:      true,
+		},
+		{
+			name:      "一時停止中",
+			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Pause() },
+			want:      false,
+		},
+		{
+			name:      "完了済み",
+			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Complete() },
+			want:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			walk := NewWalk("user-123", "テスト散歩", "")
+			tt.setupFunc(walk)
+
+			if got := walk.IsInProgress(); got != tt.want {
+				t.Errorf("IsInProgress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestWalk_IsCompleted は IsCompleted メソッドのテスト
+func TestWalk_IsCompleted(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFunc func(*Walk)
+		want      bool
+	}{
+		{
+			name:      "開始前",
+			setupFunc: func(w *Walk) {},
+			want:      false,
+		},
+		{
+			name:      "進行中",
+			setupFunc: func(w *Walk) { _ = w.Start() },
+			want:      false,
+		},
+		{
+			name:      "一時停止中",
+			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Pause() },
+			want:      false,
+		},
+		{
+			name:      "完了済み",
+			setupFunc: func(w *Walk) { _ = w.Start(); _ = w.Complete() },
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			walk := NewWalk("user-123", "テスト散歩", "")
+			tt.setupFunc(walk)
+
+			if got := walk.IsCompleted(); got != tt.want {
+				t.Errorf("IsCompleted() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestWalk_StateTransitions は状態遷移の統合テスト
+func TestWalk_StateTransitions(t *testing.T) {
+	walk := NewWalk("user-123", "状態遷移テスト", "完全な散歩フロー")
+
+	// 初期状態: not_started
+	if walk.Status != StatusNotStarted {
+		t.Errorf("Initial status = %v, want %v", walk.Status, StatusNotStarted)
+	}
+
+	// 開始: not_started -> in_progress
+	if err := walk.Start(); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	if walk.Status != StatusInProgress {
+		t.Errorf("After Start: status = %v, want %v", walk.Status, StatusInProgress)
+	}
+
+	// 距離と歩数を更新
+	walk.UpdateDistance(500.0)
+	walk.UpdateSteps(700)
+
+	// 一時停止: in_progress -> paused
+	if err := walk.Pause(); err != nil {
+		t.Fatalf("Pause failed: %v", err)
+	}
+	if walk.Status != StatusPaused {
+		t.Errorf("After Pause: status = %v, want %v", walk.Status, StatusPaused)
+	}
+
+	time.Sleep(50 * time.Millisecond) // 一時停止時間をシミュレート
+
+	// 再開: paused -> in_progress
+	if err := walk.Resume(); err != nil {
+		t.Fatalf("Resume failed: %v", err)
+	}
+	if walk.Status != StatusInProgress {
+		t.Errorf("After Resume: status = %v, want %v", walk.Status, StatusInProgress)
+	}
+
+	// TotalPausedDurationが記録されているか確認
+	if walk.TotalPausedDuration <= 0 {
+		t.Error("TotalPausedDuration should be > 0 after Resume")
+	}
+
+	// さらに距離と歩数を更新
+	walk.UpdateDistance(1200.0)
+	walk.UpdateSteps(1500)
+
+	// 完了: in_progress -> completed
+	if err := walk.Complete(); err != nil {
+		t.Fatalf("Complete failed: %v", err)
+	}
+	if walk.Status != StatusCompleted {
+		t.Errorf("After Complete: status = %v, want %v", walk.Status, StatusCompleted)
+	}
+
+	// 最終的な値を確認
+	if walk.TotalDistance != 1200.0 {
+		t.Errorf("Final TotalDistance = %v, want 1200.0", walk.TotalDistance)
+	}
+
+	if walk.TotalSteps != 1500 {
+		t.Errorf("Final TotalSteps = %v, want 1500", walk.TotalSteps)
+	}
+
+	if walk.StartTime == nil {
+		t.Error("StartTime should be set")
+	}
+
+	if walk.EndTime == nil {
+		t.Error("EndTime should be set")
+	}
+
+	if walk.PausedAt != nil {
+		t.Error("PausedAt should be nil after complete flow")
+	}
+}

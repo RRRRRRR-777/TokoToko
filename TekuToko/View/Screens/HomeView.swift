@@ -11,6 +11,10 @@ import MapKit
 import SwiftUI
 import UIKit
 
+#if canImport(FoundationModels)
+  import FoundationModels
+#endif
+
 /// TekuTokoアプリのメイン画面を表示するSwiftUIビュー
 ///
 /// `HomeView`は散歩アプリケーションの中核となる画面で、以下の主要機能を提供します：
@@ -58,6 +62,18 @@ struct HomeView: View {
   ///
   /// 非同期処理（位置情報取得、散歩開始処理等）の実行中に表示するローディングインジケーターの制御に使用されます。
   @State private var isLoading = false
+
+  /// ルート提案エラー表示用のメッセージ
+  @State private var routeSuggestionErrorMessage: String?
+
+  /// ルート提案入力画面の表示状態
+  @State private var showRouteSuggestionInput = false
+
+  /// Apple Intelligence利用可否フラグ
+  ///
+  /// 端末がApple Intelligence（Foundation Models）をサポートしているかを示します。
+  /// iOS 26.0以降でSystemLanguageModelの利用可否をチェックして設定されます。
+  @State private var isAppleIntelligenceAvailable = false
 
   /// マップ表示領域の座標範囲
   ///
@@ -210,6 +226,28 @@ struct HomeView: View {
         }
       }
 
+      // 右下固定の散歩提案ボタン（iOS 26.0以降かつApple Intelligence利用可能な端末のみ表示）
+      if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            routeSuggestionButton
+              .padding(.trailing, 20)
+              .padding(.bottom, bottomPadding)
+          }
+        }
+      } else if #available(iOS 26.0, *), isAppleIntelligenceAvailable {
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            routeSuggestionButton
+              .padding(.trailing, 20)
+              .padding(.bottom, bottomPadding)
+          }
+        }
+      }
     }
     .accessibilityIdentifier("HomeView")
     .navigationBarHidden(true)
@@ -223,6 +261,9 @@ struct HomeView: View {
 
       // アニメーション制御の初期化
       initializeAnimationStates()
+
+      // Apple Intelligence利用可否チェック
+      checkAppleIntelligenceAvailability()
 
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
@@ -269,6 +310,21 @@ struct HomeView: View {
       #endif
     }
     .loadingOverlay(isLoading: isLoading)
+    .alert(
+      "散歩ルート提案エラー",
+      isPresented: Binding(
+        get: { routeSuggestionErrorMessage != nil },
+        set: { if !$0 { routeSuggestionErrorMessage = nil } }
+      ),
+      actions: {
+        Button("閉じる", role: .cancel) {
+          routeSuggestionErrorMessage = nil
+        }
+      },
+      message: {
+        Text(routeSuggestionErrorMessage ?? "")
+      }
+    )
     .overlay(
       // オンボーディングモーダルを背景透明でオーバーレイ表示
       Group {
@@ -283,6 +339,35 @@ struct HomeView: View {
         }
       }
     )
+    .fullScreenCover(isPresented: $showRouteSuggestionInput) {
+      RouteSuggestionInputView()
+    }
+  }
+
+  // 散歩提案ボタン
+  private var routeSuggestionButton: some View {
+    Button(action: {
+      handleSuggestionButtonTapped()
+    }) {
+      Image(systemName: "sparkles")
+        .font(.system(size: 24, weight: .medium))
+        .foregroundColor(.white)
+        .frame(width: 60, height: 60)
+        .background(
+          LinearGradient(
+            gradient: Gradient(colors: [
+              Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255),
+              Color(red: 138 / 255, green: 55 / 255, blue: 217 / 255)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .clipShape(Circle())
+        .shadow(color: Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255).opacity(0.4), radius: 8, x: 0, y: 4)
+    }
+    .accessibilityIdentifier("RouteSuggestionButton")
+    .accessibilityLabel("散歩ルートを提案")
   }
 
   // マップセクション
@@ -491,6 +576,13 @@ struct HomeView: View {
     .accessibilityLabel("位置情報の許可状態が不明です")
   }
 
+  /// 散歩提案ボタンがタップされた時の処理
+  ///
+  /// ルート提案入力画面を表示します。
+  private func handleSuggestionButtonTapped() {
+    showRouteSuggestionInput = true
+  }
+
   // 位置情報マネージャーの設定
   private func setupLocationManager() {
     currentLocation = locationManager.currentLocation
@@ -504,6 +596,46 @@ struct HomeView: View {
         region = locationManager.region(for: location)
       }
     }
+  }
+
+  private func forcedRouteSuggestionErrorMessage() -> String? {
+    let arguments = ProcessInfo.processInfo.arguments
+    guard arguments.contains("--force-error") else { return nil }
+
+    let type = arguments.firstIndex(of: "--error-type").flatMap { index -> String? in
+      guard index + 1 < arguments.count else { return nil }
+      return arguments[index + 1]
+    }?.lowercased()
+
+    switch type {
+    case "network":
+      return "ネットワーク接続に問題が発生しました。通信環境を確認して再度お試しください。"
+    case "timeout":
+      return "サーバーの応答がタイムアウトしました。しばらくしてから再度お試しください。"
+    case "unauthorized":
+      return "ログイン状態が無効です。再度ログインしてからお試しください。"
+    default:
+      return "ルート提案の取得中にエラーが発生しました。"
+    }
+  }
+
+  private func makeRouteSuggestionAlertMessage(from error: Error) -> String {
+    if let serviceError = error as? RouteSuggestionServiceError {
+      switch serviceError {
+      case .foundationModelUnavailable(let detail):
+        return "Apple Intelligenceが現在利用できないため、ルート提案を生成できません。設定を確認してから再度お試しください。\n詳細: \(detail)"
+      case .generationFailed(let detail):
+        return "ルート提案の生成に失敗しました。時間をおいて再度お試しください。\n詳細: \(detail)"
+      case .databaseUnavailable(let detail):
+        return "散歩履歴の取得に失敗しました。通信環境を確認してから再度お試しください。\n詳細: \(detail)"
+      }
+    }
+
+    let nsError = error as NSError
+    if nsError.domain == NSURLErrorDomain {
+      return "ネットワーク接続に問題が発生しました。（コード: \(nsError.code)）通信環境を確認して再度お試しください。"
+    }
+    return nsError.localizedDescription
   }
 
   /// 位置情報許可状態の変更を処理し、オンボーディング表示を制御
@@ -726,6 +858,51 @@ struct HomeView: View {
         print("アニメーション初期化:")
         print("  - 記録アニメーション: \(self.shouldAnimateRecording)")
         print("  - 未知状態アニメーション: \(self.shouldAnimateUnknownState)")
+      #endif
+    }
+  }
+
+  /// Apple Intelligence利用可否をチェック
+  ///
+  /// Foundation ModelsのSystemLanguageModelが利用可能かどうかを確認し、
+  /// 端末がApple Intelligence対応かどうかを判定します。
+  /// iOS 26.0以降でのみ実行され、結果をisAppleIntelligenceAvailableに設定します。
+  private func checkAppleIntelligenceAvailability() {
+    if #available(iOS 26.0, *) {
+      #if canImport(FoundationModels)
+        switch SystemLanguageModel.default.availability {
+        case .available:
+          isAppleIntelligenceAvailable = true
+          #if DEBUG
+            print("✅ Apple Intelligence: 利用可能")
+          #endif
+
+        case .unavailable(let reason):
+          isAppleIntelligenceAvailable = false
+          #if DEBUG
+            print("⚠️ Apple Intelligence: 利用不可")
+            switch reason {
+            case .deviceNotEligible:
+              print("  理由: 端末が非対応（iPhone 15 Pro以降が必要）")
+            case .appleIntelligenceNotEnabled:
+              print("  理由: Apple Intelligenceが無効")
+            case .modelNotReady:
+              print("  理由: モデルが準備中")
+            @unknown default:
+              print("  理由: 不明 (\(reason))")
+            }
+          #endif
+        }
+      #else
+        isAppleIntelligenceAvailable = false
+        #if DEBUG
+          print("⚠️ Apple Intelligence: FoundationModelsフレームワークが利用不可")
+        #endif
+      #endif
+    } else {
+      isAppleIntelligenceAvailable = false
+      #if DEBUG
+        print("⚠️ Apple Intelligence: iOS 26.0以降が必要")
       #endif
     }
   }

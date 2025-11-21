@@ -97,8 +97,8 @@ GoogleService-Info.plist
 .env
 tmp/*
 info.plist
-docs/
-docs_*/
+/docs/
+/docs_*/
 DerivedData/
 GEMINI.md
 .serena/
@@ -106,3 +106,11 @@ GEMINI.md
 *.backup
 *.history
 .firebase/
+TODO.md
+firebase-credentials.json
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
