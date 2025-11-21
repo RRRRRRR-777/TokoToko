@@ -169,6 +169,14 @@ projects/123456789/locations/global/workloadIdentityPools/github-actions-pool/pr
 
 ### 1-5. サービスアカウントと GitHub リポジトリのバインディング
 
+まず、プロジェクト番号を取得します：
+
+```bash
+# プロジェクト番号を取得して変数に設定
+export PROJECT_NUMBER=$(gcloud projects describe ${GCP_PROJECT_ID} --format="value(projectNumber)")
+echo "PROJECT_NUMBER: ${PROJECT_NUMBER}"
+```
+
 #### Staging 用バインディング
 
 ```bash
