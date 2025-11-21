@@ -1,0 +1,32 @@
+# TekuToko API Pod Disruption Budget
+# ノードメンテナンスやアップグレード時の可用性を保証
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tekutoko-api-pdb
+  labels:
+    app: tekutoko-api
+spec:
+  minAvailable: 1  # 最低1Podは常に稼働（ローリングアップデートやメンテナンス時）
+  selector:
+    matchLabels:
+      app: tekutoko-api
+
+# 代替案: maxUnavailableを使用する場合
+# spec:
+#   maxUnavailable: 1  # 最大1Podまで停止可能
+#   selector:
+#     matchLabels:
+#       app: tekutoko-api
+
+# 説明:
+# - minAvailable: 1
+#   - ノードメンテナンスやアップグレード時に、最低1Podは必ず稼働
+#   - レプリカ数が2の場合、1台ずつ順次更新
+#   - レプリカ数が10の場合、9台まで同時更新可能
+#
+# - maxUnavailable: 1
+#   - 同時に停止できるPod数を制限
+#   - より保守的な設定（レプリカ数に関わらず一度に1台のみ更新）
+#
+# 現在の設定（minAvailable: 1）は柔軟性を持たせつつ可用性を確保

@@ -1,0 +1,11 @@
+# Terraform変数設定サンプル
+# このファイルをコピーして terraform.tfvars を作成してください
+# cp terraform.tfvars.example terraform.tfvars
+
+# GCPプロジェクトID（必須）
+# 例: project_id = "tekutoko-dev-123456"
+project_id = "your-gcp-project-id"
+
+# GCSバケットのリージョン（オプション、デフォルト: asia-northeast1）
+# 例: region = "asia-northeast1"
+region = "asia-northeast1"

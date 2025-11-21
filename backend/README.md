@@ -333,9 +333,12 @@ kubectl rollout status deployment/tekutoko-api
 GitHub Actionsで自動デプロイ設定済み:
 
 1. **PR作成時**: テスト・Lint実行
-2. **mainマージ時**: ビルド → GCRプッシュ → GKEデプロイ
+2. **mainマージ時**: ビルド → Artifact Registryプッシュ → GKE Stagingデプロイ
+3. **手動実行**: Production環境へのデプロイ（承認後）
 
-詳細: [.github/workflows/](../.github/workflows/)
+**セットアップ手順**: [GitHub Actions セットアップガイド](./docs/github-actions-setup.md)
+
+**ワークフロー詳細**: [.github/workflows/](../.github/workflows/)
 
 ## 規約
 
@@ -358,12 +361,18 @@ GitHub Actionsで自動デプロイ設定済み:
 
 ## 参考ドキュメント
 
+### 設計・仕様
 - [OpenAPI仕様書](./api/openapi.yaml)
 - [データベーススキーマ](./docs/database-schema.md)
 - [デプロイアーキテクチャ](./docs/deployment-architecture.md)
 - [Phase 1設計サマリー](./docs/phase1-summary.md)
 
+### セットアップガイド
+- [GitHub Actions CI/CD セットアップ](./docs/github-actions-setup.md)
+- [Terraform インフラ構築ガイド](./deploy/terraform/SETUP_GUIDE.md)
+
 ## 開発チーム
 
 - **プロジェクト**: TekuToko - おさんぽSNS
 - **リポジトリ**: https://github.com/RRRRRRR-777/TokoToko
+# CI/CD Pipeline Test
