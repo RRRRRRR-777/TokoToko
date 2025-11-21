@@ -22,7 +22,7 @@ spec:
       containers:
       # メインアプリケーション
       - name: api
-        image: gcr.io/PROJECT_ID/tekutoko-api:latest  # TODO: PROJECT_IDを実際の値に置換
+        image: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api:dev-latest
         ports:
         - containerPort: 8080
           name: http
@@ -142,7 +142,7 @@ spec:
         args:
           - "--structured-logs"
           - "--port=5432"
-          - "PROJECT_ID:REGION:INSTANCE_NAME"  # TODO: 実際の接続名に置換
+          - "tokotoko-ea308:asia-northeast1:tekutoko-dev-db"
 
         resources:
           requests:
