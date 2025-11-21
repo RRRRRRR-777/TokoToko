@@ -107,3 +107,10 @@ GEMINI.md
 *.history
 .firebase/
 TODO.md
+firebase-credentials.json
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
