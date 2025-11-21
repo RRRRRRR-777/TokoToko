@@ -58,21 +58,46 @@ firebase_project_id → FirebaseプロジェクトID
 db_name → 環境に応じたDB名（tekutoko_production等）
 ```
 
-### ステップ2: Secretの作成
+### ステップ2: GCP Secret Managerの設定
 
-Secret ManagerまたはkubectlコマンドでSecretを作成：
+**推奨**: Secret Manager CSI Driverを使用して、GCP Secret Managerから直接Secretを注入します。
+
+#### 2-1. Secret Managerにシークレットを作成
 
 ```bash
-# 方法1: kubectlで直接作成（推奨）
+# DBパスワードを作成
+echo -n "YOUR_DB_PASSWORD" | gcloud secrets create db-password \
+  --data-file=- \
+  --replication-policy="automatic"
+
+# Firebase認証情報を作成
+gcloud secrets create firebase-service-account \
+  --data-file=./path/to/firebase-sa.json \
+  --replication-policy="automatic"
+```
+
+#### 2-2. サービスアカウントに権限付与
+
+```bash
+# Secret Managerへのアクセス権限を付与
+gcloud secrets add-iam-policy-binding db-password \
+  --member="serviceAccount:tekutoko-api@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding firebase-service-account \
+  --member="serviceAccount:tekutoko-api@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+#### 2-3. （代替方法）kubectlで直接作成
+
+Secret Manager CSI Driverを使用しない場合：
+
+```bash
+# 方法1: kubectlで直接作成
 kubectl create secret generic app-secret \
   --from-literal=db_password='YOUR_DB_PASSWORD' \
   --from-file=firebase_service_account_json=./path/to/firebase-sa.json
-
-# 方法2: Secret Managerから取得
-gcloud secrets versions access latest --secret="db-password" | \
-  kubectl create secret generic app-secret \
-    --from-file=db_password=/dev/stdin \
-    --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ### ステップ3: マニフェスト適用
