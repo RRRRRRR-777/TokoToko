@@ -231,11 +231,18 @@ jobs:
     steps:
       - name: Check CI Status
         run: |
+          # 必須ジョブのチェック（fmt, validate, security-scan）
           if [ "${{ needs.terraform-fmt.result }}" != "success" ] || \
              [ "${{ needs.terraform-validate.result }}" != "success" ] || \
-             [ "${{ needs.terraform-plan.result }}" != "success" ] || \
              [ "${{ needs.terraform-security-scan.result }}" != "success" ]; then
             echo "❌ Terraform CI checks failed"
             exit 1
           fi
+
+          # terraform-planはPRのみ実行なのでskippedを許容
+          if [ "${{ needs.terraform-plan.result }}" == "failure" ]; then
+            echo "❌ Terraform Plan failed"
+            exit 1
+          fi
+
           echo "✅ All Terraform CI checks passed"
