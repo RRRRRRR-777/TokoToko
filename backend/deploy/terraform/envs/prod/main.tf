@@ -11,9 +11,12 @@ terraform {
   }
 
   # リモートバックエンド設定（GCS）
+  # 初回実行前に global/ でstateバケットを作成する必要があります
+  # 注: backendブロックでは変数を使用できないため、terraform initで-backend-configを使用
   backend "gcs" {
-    bucket = "tokotoko-terraform-state"
-    prefix = "state/prod"
+    # bucket = var.terraform_state_bucket  # 変数は使用不可
+    # prefix = "state/${var.environment}"   # 変数は使用不可
+    # 代わりに terraform init -backend-config="bucket=BUCKET_NAME" を使用
   }
 }
 

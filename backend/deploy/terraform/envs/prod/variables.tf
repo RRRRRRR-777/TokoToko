@@ -22,3 +22,15 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "terraform_state_bucket" {
+  description = "Terraform状態ファイルを保存するGCSバケット名"
+  type        = string
+  default     = "tokotoko-terraform-state"
+}
+
+variable "environment" {
+  description = "環境名（dev/staging/production）"
+  type        = string
+  default     = "production"
+}
