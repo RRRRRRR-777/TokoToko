@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	defaultPort         = "8080"
-	shutdownTimeout     = 10 * time.Second
-	readHeaderTimeout   = 10 * time.Second
+	defaultPort       = "8080"
+	shutdownTimeout   = 10 * time.Second
+	readHeaderTimeout = 10 * time.Second
 )
 
 func main() {
