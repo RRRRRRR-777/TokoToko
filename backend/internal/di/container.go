@@ -3,21 +3,22 @@ package di
 import (
 	"context"
 
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/config"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/database"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/persistence/postgres"
+	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
 )
 
 // Container は依存性注入コンテナ
 // アプリケーション全体で使用される依存関係を管理する
 type Container struct {
-	Config *config.Config
-	DB     *database.PostgresDB
-	Logger logger.Logger
-	// TODO: Phase2で追加
-	// WalkRepository walk.Repository
-	// WalkUsecase    *walkusecase.Interactor
-	// HTTPHandler    *handler.Handler
+	Config         *config.Config
+	DB             *database.PostgresDB
+	Logger         logger.Logger
+	WalkRepository walk.Repository
+	WalkUsecase    walkusecase.Usecase
 }
 
 // NewContainer は新しいコンテナを生成する
@@ -40,15 +41,18 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		return nil, err
 	}
 
-	// TODO: Phase2で実装
-	// - WalkRepositoryの初期化
-	// - WalkUsecaseの初期化
-	// - HTTPHandlerの初期化
+	// Repository初期化
+	walkRepo := postgres.NewWalkRepository(db.DB)
+
+	// Usecase初期化
+	walkUsecase := walkusecase.NewInteractor(walkRepo)
 
 	return &Container{
-		Config: cfg,
-		DB:     db,
-		Logger: log,
+		Config:         cfg,
+		DB:             db,
+		Logger:         log,
+		WalkRepository: walkRepo,
+		WalkUsecase:    walkUsecase,
 	}, nil
 }
 
