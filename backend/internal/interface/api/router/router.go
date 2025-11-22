@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/handler"
 )
 
 // NewRouter はHTTPルーターを生成する
@@ -17,8 +18,32 @@ func NewRouter(container *di.Container) http.Handler {
 	// ルートエンドポイント
 	mux.HandleFunc("/", rootHandler)
 
-	// TODO: Phase2で実装
-	// - /v1/walks エンドポイント
+	// Walk API エンドポイント
+	walkHandler := handler.NewWalkHandler(container)
+	mux.HandleFunc("/v1/walks", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			walkHandler.ListWalks(w, r)
+		case http.MethodPost:
+			walkHandler.CreateWalk(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+	mux.HandleFunc("/v1/walks/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			walkHandler.GetWalk(w, r)
+		case http.MethodPut:
+			walkHandler.UpdateWalk(w, r)
+		case http.MethodDelete:
+			walkHandler.DeleteWalk(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	// TODO: 後のフェーズで実装
 	// - 認証ミドルウェア
 	// - ロギングミドルウェア
 	// - CORS設定
