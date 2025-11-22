@@ -42,7 +42,7 @@ func NewRouter(container *di.Container) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Welcome to TekuToko API",
 			"version": "0.1.0",
-			"status":  "Phase 2 in progress",
+			"status":  "Development",
 		})
 	})
 

@@ -2,17 +2,15 @@ package handler
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/presenter"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/pkg/errors"
 	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -32,7 +30,7 @@ func NewWalkHandler(container *di.Container) *WalkHandler {
 
 // CreateWalkRequest はWalk作成のリクエスト
 type CreateWalkRequest struct {
-	Title       string `json:"title"`
+	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
 }
 
@@ -46,53 +44,53 @@ type UpdateWalkRequest struct {
 
 // ListWalks は散歩一覧を取得する
 // GET /v1/walks?page=1&limit=20
-func (h *WalkHandler) ListWalks(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (h *WalkHandler) ListWalks(c *gin.Context) {
+	ctx := c.Request.Context()
 
 	// TODO: 認証実装後にuserIDを取得
-	userID := h.getUserID(r)
+	userID := h.getUserID(c)
 
 	// ページネーションパラメータ取得
-	page := 1
-	limit := 20
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
+	pageInt := 1
+	limitInt := 20
+	if p, exists := c.GetQuery("page"); exists {
+		if val, parseErr := parsePositiveInt(p, 1000); parseErr == nil {
+			pageInt = val
 		}
 	}
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
-			limit = l
+	if l, exists := c.GetQuery("limit"); exists {
+		if val, parseErr := parsePositiveInt(l, 100); parseErr == nil {
+			limitInt = val
 		}
 	}
 
-	offset := (page - 1) * limit
+	offset := (pageInt - 1) * limitInt
 
 	// Usecase呼び出し
-	walks, totalCount, err := h.walkUsecase.ListWalks(ctx, userID, limit, offset)
+	walks, totalCount, err := h.walkUsecase.ListWalks(ctx, userID, limitInt, offset)
 	if err != nil {
-		h.respondError(w, err)
+		h.respondError(c, err)
 		return
 	}
 
 	// レスポンス返却
-	response := presenter.ToWalkListResponse(walks, totalCount, page, limit)
-	h.respondJSON(w, http.StatusOK, response)
+	response := presenter.ToWalkListResponse(walks, totalCount, pageInt, limitInt)
+	c.JSON(http.StatusOK, response)
 }
 
 // GetWalk は散歩詳細を取得する
-// GET /v1/walks/{id}
-func (h *WalkHandler) GetWalk(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+// GET /v1/walks/:id
+func (h *WalkHandler) GetWalk(c *gin.Context) {
+	ctx := c.Request.Context()
 
 	// TODO: 認証実装後にuserIDを取得
-	userID := h.getUserID(r)
+	userID := h.getUserID(c)
 
 	// IDパラメータ取得
-	idStr := strings.TrimPrefix(r.URL.Path, "/v1/walks/")
+	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		h.respondError(w, errors.NewInvalidRequestError("Invalid walk ID"))
+		h.respondError(c, errors.NewInvalidRequestError("Invalid walk ID"))
 		return
 	}
 
@@ -100,36 +98,30 @@ func (h *WalkHandler) GetWalk(w http.ResponseWriter, r *http.Request) {
 	wlk, err := h.walkUsecase.GetWalk(ctx, id, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			h.respondError(w, errors.NewNotFoundError("Walk not found"))
+			h.respondError(c, errors.NewNotFoundError("Walk not found"))
 			return
 		}
-		h.respondError(w, err)
+		h.respondError(c, err)
 		return
 	}
 
 	// レスポンス返却
 	response := presenter.ToWalkResponse(wlk)
-	h.respondJSON(w, http.StatusOK, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // CreateWalk は新しい散歩を作成する
 // POST /v1/walks
-func (h *WalkHandler) CreateWalk(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (h *WalkHandler) CreateWalk(c *gin.Context) {
+	ctx := c.Request.Context()
 
 	// TODO: 認証実装後にuserIDを取得
-	userID := h.getUserID(r)
+	userID := h.getUserID(c)
 
-	// リクエストボディをパース
+	// リクエストボディをバインド
 	var req CreateWalkRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, errors.NewInvalidRequestError("Invalid request body"))
-		return
-	}
-
-	// バリデーション
-	if req.Title == "" {
-		h.respondError(w, errors.NewInvalidRequestError("Title is required"))
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.respondError(c, errors.NewInvalidRequestError("Invalid request body"))
 		return
 	}
 
@@ -141,35 +133,35 @@ func (h *WalkHandler) CreateWalk(w http.ResponseWriter, r *http.Request) {
 	}
 	wlk, err := h.walkUsecase.CreateWalk(ctx, input)
 	if err != nil {
-		h.respondError(w, err)
+		h.respondError(c, err)
 		return
 	}
 
 	// レスポンス返却
 	response := presenter.ToWalkResponse(wlk)
-	h.respondJSON(w, http.StatusCreated, response)
+	c.JSON(http.StatusCreated, response)
 }
 
 // UpdateWalk は散歩を更新する
-// PUT /v1/walks/{id}
-func (h *WalkHandler) UpdateWalk(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+// PUT /v1/walks/:id
+func (h *WalkHandler) UpdateWalk(c *gin.Context) {
+	ctx := c.Request.Context()
 
 	// TODO: 認証実装後にuserIDを取得
-	userID := h.getUserID(r)
+	userID := h.getUserID(c)
 
 	// IDパラメータ取得
-	idStr := strings.TrimPrefix(r.URL.Path, "/v1/walks/")
+	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		h.respondError(w, errors.NewInvalidRequestError("Invalid walk ID"))
+		h.respondError(c, errors.NewInvalidRequestError("Invalid walk ID"))
 		return
 	}
 
-	// リクエストボディをパース
+	// リクエストボディをバインド
 	var req UpdateWalkRequest
-	if decodeErr := json.NewDecoder(r.Body).Decode(&req); decodeErr != nil {
-		h.respondError(w, errors.NewInvalidRequestError("Invalid request body"))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		h.respondError(c, errors.NewInvalidRequestError("Invalid request body"))
 		return
 	}
 
@@ -184,70 +176,61 @@ func (h *WalkHandler) UpdateWalk(w http.ResponseWriter, r *http.Request) {
 	wlk, err := h.walkUsecase.UpdateWalk(ctx, input, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			h.respondError(w, errors.NewNotFoundError("Walk not found"))
+			h.respondError(c, errors.NewNotFoundError("Walk not found"))
 			return
 		}
-		h.respondError(w, err)
+		h.respondError(c, err)
 		return
 	}
 
 	// レスポンス返却
 	response := presenter.ToWalkResponse(wlk)
-	h.respondJSON(w, http.StatusOK, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteWalk は散歩を削除する
-// DELETE /v1/walks/{id}
-func (h *WalkHandler) DeleteWalk(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+// DELETE /v1/walks/:id
+func (h *WalkHandler) DeleteWalk(c *gin.Context) {
+	ctx := c.Request.Context()
 
 	// TODO: 認証実装後にuserIDを取得
-	userID := h.getUserID(r)
+	userID := h.getUserID(c)
 
 	// IDパラメータ取得
-	idStr := strings.TrimPrefix(r.URL.Path, "/v1/walks/")
+	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		h.respondError(w, errors.NewInvalidRequestError("Invalid walk ID"))
+		h.respondError(c, errors.NewInvalidRequestError("Invalid walk ID"))
 		return
 	}
 
 	// Usecase呼び出し
 	if err := h.walkUsecase.DeleteWalk(ctx, id, userID); err != nil {
 		if err == sql.ErrNoRows {
-			h.respondError(w, errors.NewNotFoundError("Walk not found"))
+			h.respondError(c, errors.NewNotFoundError("Walk not found"))
 			return
 		}
-		h.respondError(w, err)
+		h.respondError(c, err)
 		return
 	}
 
 	// レスポンス返却
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
 // ヘルパーメソッド
 
 // getUserID は現在のユーザーIDを取得する
 // TODO: 認証実装後に実装
-func (h *WalkHandler) getUserID(r *http.Request) string {
-	if userID := r.Header.Get("X-User-ID"); userID != "" {
+func (h *WalkHandler) getUserID(c *gin.Context) string {
+	if userID := c.GetHeader("X-User-ID"); userID != "" {
 		return userID
 	}
 	return "test-user" // 仮のユーザーID
 }
 
-// respondJSON はJSON形式でレスポンスを返す
-func (h *WalkHandler) respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		h.container.Logger.Error(fmt.Sprintf("Failed to encode JSON: %v", err))
-	}
-}
-
 // respondError はエラーレスポンスを返す
-func (h *WalkHandler) respondError(w http.ResponseWriter, err error) {
+func (h *WalkHandler) respondError(c *gin.Context, err error) {
 	appErr := errors.GetAppError(err)
 	if appErr == nil {
 		appErr = errors.NewInternalError("Internal server error", err)
@@ -267,12 +250,22 @@ func (h *WalkHandler) respondError(w http.ResponseWriter, err error) {
 		status = http.StatusConflict
 	}
 
-	response := map[string]interface{}{
-		"error": map[string]string{
+	c.JSON(status, gin.H{
+		"error": gin.H{
 			"code":    appErr.Code,
 			"message": appErr.Message,
 		},
-	}
+	})
+}
 
-	h.respondJSON(w, status, response)
+// parsePositiveInt は文字列を正の整数に変換する
+func parsePositiveInt(s string, max int) (int, error) {
+	var val int
+	if _, err := fmt.Sscanf(s, "%d", &val); err != nil {
+		return 0, err
+	}
+	if val <= 0 || val > max {
+		return 0, fmt.Errorf("value out of range")
+	}
+	return val, nil
 }
