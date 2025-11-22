@@ -5,76 +5,65 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/handler"
+	"github.com/gin-gonic/gin"
 )
 
 // NewRouter はHTTPルーターを生成する
-func NewRouter(container *di.Container) http.Handler {
-	mux := http.NewServeMux()
+func NewRouter(container *di.Container) *gin.Engine {
+	// Ginエンジンの初期化
+	r := gin.Default()
 
 	// ヘルスチェックエンドポイント
-	mux.HandleFunc("/health", healthCheckHandler)
-	mux.HandleFunc("/ready", readinessCheckHandler(container))
-
-	// ルートエンドポイント
-	mux.HandleFunc("/", rootHandler)
-
-	// Walk API エンドポイント
-	walkHandler := handler.NewWalkHandler(container)
-	mux.HandleFunc("/v1/walks", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			walkHandler.ListWalks(w, r)
-		case http.MethodPost:
-			walkHandler.CreateWalk(w, r)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-	mux.HandleFunc("/v1/walks/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			walkHandler.GetWalk(w, r)
-		case http.MethodPut:
-			walkHandler.UpdateWalk(w, r)
-		case http.MethodDelete:
-			walkHandler.DeleteWalk(w, r)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ok",
+			"message": "TekuToko API is running",
+		})
 	})
 
-	// TODO: 後のフェーズで実装
-	// - 認証ミドルウェア
-	// - ロギングミドルウェア
-	// - CORS設定
-
-	return mux
-}
-
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"ok","message":"TekuToko API is running"}`))
-}
-
-func readinessCheckHandler(container *di.Container) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	r.GET("/ready", func(c *gin.Context) {
 		// データベース接続チェック
-		if err := container.DB.HealthCheck(r.Context()); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte(`{"status":"not_ready","message":"Database not ready"}`))
+		if err := container.DB.HealthCheck(c.Request.Context()); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":  "not_ready",
+				"message": "Database not ready",
+			})
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ready","message":"TekuToko API is ready"}`))
-	}
-}
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ready",
+			"message": "TekuToko API is ready",
+		})
+	})
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"message":"Welcome to TekuToko API","version":"0.1.0","status":"Phase 2 in progress"}`))
+	// ルートエンドポイント
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Welcome to TekuToko API",
+			"version": "0.1.0",
+			"status":  "Phase 2 in progress",
+		})
+	})
+
+	// Walk API エンドポイント
+	walkHandler := handler.NewWalkHandler(container)
+	v1 := r.Group("/v1")
+	{
+		walks := v1.Group("/walks")
+		{
+			walks.GET("", walkHandler.ListWalks)
+			walks.POST("", walkHandler.CreateWalk)
+			walks.GET("/:id", walkHandler.GetWalk)
+			walks.PUT("/:id", walkHandler.UpdateWalk)
+			walks.DELETE("/:id", walkHandler.DeleteWalk)
+		}
+	}
+
+	// TODO: 後のフェーズで実装
+	// - 認証ミドルウェア (r.Use(authMiddleware()))
+	// - ロギングミドルウェア (r.Use(loggingMiddleware()))
+	// - CORS設定 (r.Use(cors.Default()))
+
+	return r
 }

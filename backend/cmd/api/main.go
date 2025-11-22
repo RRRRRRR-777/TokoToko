@@ -9,6 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/router"
 )
 
 const (
@@ -28,51 +31,21 @@ func main() {
 		port = defaultPort
 	}
 
-	// TODO: Phase2で実装
-	// - Config読み込み (internal/infrastructure/config)
-	// - Database接続 (internal/infrastructure/database)
-	// - Firebase Admin SDK初期化 (internal/infrastructure/auth)
-	// - Logger初期化 (internal/infrastructure/logger)
-	// - Router初期化 (internal/interface/api/router)
-	// - Middleware設定 (internal/interface/api/middleware)
-	// - Handler登録 (internal/interface/api/handler)
+	// DI Container初期化
+	ctx := context.Background()
+	container, err := di.NewContainer(ctx)
+	if err != nil {
+		logger.Fatalf("Failed to initialize container: %v", err)
+	}
+	defer container.Close()
 
-	// 簡易ルーター設定（Phase2で本格実装予定）
-	mux := http.NewServeMux()
-
-	// ヘルスチェックエンドポイント（Liveness Probe用）
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","message":"TekuToko API is running"}`)
-	})
-
-	// レディネスチェックエンドポイント（Readiness Probe用）
-	// TODO: Phase2でデータベース接続チェック等を追加
-	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
-		// Phase2以降: DB接続確認、外部サービス接続確認等
-		// if !db.Ping() {
-		//     w.WriteHeader(http.StatusServiceUnavailable)
-		//     fmt.Fprintf(w, `{"status":"not_ready","message":"Database not ready"}`)
-		//     return
-		// }
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ready","message":"TekuToko API is ready"}`)
-	})
-
-	// ルートエンドポイント
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"message":"Welcome to TekuToko API","version":"0.1.0","status":"Phase 2 in progress"}`)
-	})
+	// Router初期化（Gin）
+	r := router.NewRouter(container)
 
 	// HTTPサーバー設定
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%s", port),
-		Handler:           mux,
+		Handler:           r,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
@@ -84,9 +57,11 @@ func main() {
 	go func() {
 		logger.Printf("Server started on http://localhost:%s", port)
 		logger.Println("Available endpoints:")
-		logger.Println("  GET /        - API情報")
-		logger.Println("  GET /health  - ヘルスチェック（Liveness Probe）")
-		logger.Println("  GET /ready   - レディネスチェック（Readiness Probe）")
+		logger.Println("  GET /          - API情報")
+		logger.Println("  GET /health    - ヘルスチェック（Liveness Probe）")
+		logger.Println("  GET /ready     - レディネスチェック（Readiness Probe）")
+		logger.Println("  GET /v1/walks  - 散歩一覧取得")
+		logger.Println("  POST /v1/walks - 散歩作成")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatalf("Server failed to start: %v", err)
 		}
