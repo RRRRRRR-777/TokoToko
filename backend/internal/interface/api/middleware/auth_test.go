@@ -127,26 +127,46 @@ func TestTokenCache_Cleanup(t *testing.T) {
 	cache := NewTokenCacheWithInterval(10 * time.Millisecond)
 	defer cache.Stop()
 
-	// 期限切れエントリを追加
-	cache.Set("token1", "user1")
+	// 複数の期限切れエントリを追加（削除ループを確実に実行）
+	cache.Set("expired1", "user1")
+	cache.Set("expired2", "user2")
+	cache.Set("expired3", "user3")
+
 	cache.mu.Lock()
-	cache.cache["token1"].expiresAt = time.Now().Add(-1 * time.Second)
+	cache.cache["expired1"].expiresAt = time.Now().Add(-1 * time.Second)
+	cache.cache["expired2"].expiresAt = time.Now().Add(-2 * time.Second)
+	cache.cache["expired3"].expiresAt = time.Now().Add(-3 * time.Second)
 	cache.mu.Unlock()
 
 	// 有効なエントリを追加
-	cache.Set("token2", "user2")
+	cache.Set("valid1", "user4")
+	cache.Set("valid2", "user5")
 
-	// クリーンアップを待つ
+	// クリーンアップ前の状態を確認
+	cache.mu.RLock()
+	initialSize := len(cache.cache)
+	cache.mu.RUnlock()
+	assert.Equal(t, 5, initialSize, "クリーンアップ前は5エントリあるべき")
+
+	// クリーンアップを待つ（複数回実行される可能性を考慮）
 	time.Sleep(50 * time.Millisecond)
 
 	// 期待値検証: 期限切れエントリは削除され、有効なエントリは残る
 	cache.mu.RLock()
-	_, exists1 := cache.cache["token1"]
-	_, exists2 := cache.cache["token2"]
+	_, exists1 := cache.cache["expired1"]
+	_, exists2 := cache.cache["expired2"]
+	_, exists3 := cache.cache["expired3"]
+	_, validExists1 := cache.cache["valid1"]
+	_, validExists2 := cache.cache["valid2"]
+	finalSize := len(cache.cache)
 	cache.mu.RUnlock()
 
-	assert.False(t, exists1, "期限切れエントリは削除されるべき")
-	assert.True(t, exists2, "有効なエントリは残るべき")
+	assert.False(t, exists1, "期限切れエントリ1は削除されるべき")
+	assert.False(t, exists2, "期限切れエントリ2は削除されるべき")
+	assert.False(t, exists3, "期限切れエントリ3は削除されるべき")
+	assert.True(t, validExists1, "有効なエントリ1は残るべき")
+	assert.True(t, validExists2, "有効なエントリ2は残るべき")
+	assert.Equal(t, 2, finalSize, "クリーンアップ後は2エントリあるべき")
 }
 
 func TestAuthMiddleware_Handler_WithValidToken(t *testing.T) {
