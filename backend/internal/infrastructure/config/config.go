@@ -27,6 +27,7 @@ type DatabaseConfig struct {
 // FirebaseConfig はFirebase設定
 type FirebaseConfig struct {
 	CredentialsPath string
+	CredentialsJSON string
 	ProjectID       string
 }
 
@@ -56,6 +57,7 @@ func Load() (*Config, error) {
 		},
 		Firebase: FirebaseConfig{
 			CredentialsPath: getEnv("FIREBASE_CREDENTIALS_PATH", ""),
+			CredentialsJSON: getEnv("FIREBASE_CREDENTIALS_JSON", ""),
 			ProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
 		},
 		Log: LogConfig{
