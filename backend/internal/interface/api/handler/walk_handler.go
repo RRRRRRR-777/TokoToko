@@ -7,6 +7,7 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/presenter"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/pkg/errors"
 	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
@@ -221,12 +222,14 @@ func (h *WalkHandler) DeleteWalk(c *gin.Context) {
 // ヘルパーメソッド
 
 // getUserID は現在のユーザーIDを取得する
-// TODO: 認証実装後に実装
+// 認証ミドルウェアで設定されたユーザーIDを取得する
+// エラーが発生する場合は認証設定に問題があるため、panicで早期検知する
 func (h *WalkHandler) getUserID(c *gin.Context) string {
-	if userID := c.GetHeader("X-User-ID"); userID != "" {
-		return userID
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		panic(fmt.Sprintf("authentication misconfiguration: %v", err))
 	}
-	return "test-user" // 仮のユーザーID
+	return userID
 }
 
 // respondError はエラーレスポンスを返す

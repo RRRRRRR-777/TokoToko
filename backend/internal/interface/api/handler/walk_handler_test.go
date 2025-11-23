@@ -11,6 +11,7 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/pkg/errors"
 	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
 	"github.com/gin-gonic/gin"
@@ -119,6 +120,11 @@ func setupTestContext(method, path string, body interface{}) (*gin.Context, *htt
 	}
 
 	c.Request = req
+
+	// デフォルトでテスト用のユーザーIDを設定
+	// 認証ミドルウェアが設定する値を模倣
+	c.Set(middleware.AuthContextKey, "test-user")
+
 	return c, w
 }
 
@@ -427,4 +433,35 @@ func TestWalkHandler_RespondError(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, errorMap["code"])
 		})
 	}
+}
+
+func TestWalkHandler_GetUserID_Success(t *testing.T) {
+	// 期待値: 認証ミドルウェアからユーザーIDを正常に取得できること
+	handler, _ := setupTestHandler()
+
+	c, _ := setupTestContext(http.MethodGet, "/test", nil)
+	expectedUserID := "authenticated-user-123"
+	c.Set(middleware.AuthContextKey, expectedUserID)
+
+	userID := handler.getUserID(c)
+
+	// 期待値検証: ユーザーIDが一致
+	assert.Equal(t, expectedUserID, userID)
+}
+
+func TestWalkHandler_GetUserID_Panic(t *testing.T) {
+	// 期待値: 認証情報がない場合、panicが発生すること
+	handler, _ := setupTestHandler()
+
+	// 認証情報なしのコンテキストを作成
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	c.Request = req
+	// ユーザーIDは設定しない
+
+	// 期待値検証: panicが発生する
+	assert.Panics(t, func() {
+		handler.getUserID(c)
+	}, "認証情報がない場合はpanicが発生すべき")
 }
