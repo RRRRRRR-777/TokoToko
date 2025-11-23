@@ -7,6 +7,7 @@ import (
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/config"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/database"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/persistence/postgres"
 	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
 )
@@ -17,6 +18,7 @@ type Container struct {
 	Config         *config.Config
 	DB             *database.PostgresDB
 	Logger         logger.Logger
+	AuthMiddleware *middleware.AuthMiddleware
 	WalkRepository walk.Repository
 	WalkUsecase    walkusecase.Usecase
 }
@@ -41,6 +43,13 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		return nil, err
 	}
 
+	// AuthMiddleware初期化
+	// Firebase認証情報は環境変数から取得（開発環境では空文字列でも動作）
+	authMw, err := middleware.NewAuthMiddleware(ctx, cfg.Firebase.CredentialsJSON)
+	if err != nil {
+		return nil, err
+	}
+
 	// Repository初期化
 	walkRepo := postgres.NewWalkRepository(db.DB)
 
@@ -51,6 +60,7 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		Config:         cfg,
 		DB:             db,
 		Logger:         log,
+		AuthMiddleware: authMw,
 		WalkRepository: walkRepo,
 		WalkUsecase:    walkUsecase,
 	}, nil
