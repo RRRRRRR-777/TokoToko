@@ -46,11 +46,13 @@ func NewRouter(container *di.Container) *gin.Engine {
 		})
 	})
 
-	// Walk API エンドポイント
+	// Walk API エンドポイント（認証必須）
 	walkHandler := handler.NewWalkHandler(container)
 	v1 := r.Group("/v1")
 	{
+		// 認証が必要なエンドポイント
 		walks := v1.Group("/walks")
+		walks.Use(container.AuthMiddleware.Handler())
 		{
 			walks.GET("", walkHandler.ListWalks)
 			walks.POST("", walkHandler.CreateWalk)
@@ -61,7 +63,6 @@ func NewRouter(container *di.Container) *gin.Engine {
 	}
 
 	// TODO: 後のフェーズで実装
-	// - 認証ミドルウェア (r.Use(authMiddleware()))
 	// - ロギングミドルウェア (r.Use(loggingMiddleware()))
 	// - CORS設定 (r.Use(cors.Default()))
 
