@@ -129,4 +129,12 @@ migrate-create: ## マイグレーションファイルを作成 (使用例: mak
 
 .PHONY: seed
 seed: ## シードデータを投入
-	@echo "TODO: go run scripts/seed/main.go"
+	@echo "Running seed script..."
+	go run ./cmd/seed/main.go
+	@echo "Seed data inserted successfully!"
+
+.PHONY: seed-build
+seed-build: ## シードスクリプトをビルド
+	@echo "Building seed script..."
+	go build -o bin/seed ./cmd/seed
+	@echo "Build complete: bin/seed"

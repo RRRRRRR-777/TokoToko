@@ -312,6 +312,77 @@ make migrate-up
   - `000002_create_walks_table.up.sql`
   - `000002_create_walks_table.down.sql`
 
+## Seedデータ投入
+
+開発・テスト環境でサンプルデータを投入できます。
+
+### Seedデータの内容
+
+以下のテストユーザーごとに様々な状態の散歩データを生成します:
+- `test-user-001`
+- `test-user-002`
+- `test-user-003`
+
+各ユーザーに以下のデータが作成されます:
+- 未開始の散歩 (not_started)
+- 進行中の散歩 (in_progress) - 距離・歩数データあり
+- 一時停止中の散歩 (paused)
+- 完了した散歩（今日）- サムネイル画像URLあり
+- 完了した散歩（昨日）
+- 完了した散歩（1週間前）
+- 完了した散歩（1ヶ月前）
+
+### Seedデータ投入方法
+
+```bash
+# データベースを起動・マイグレーション実行済みであることを確認
+make db-up
+make migrate-up
+
+# Seedデータを投入
+make seed
+```
+
+### Seedスクリプトのビルド
+
+```bash
+# バイナリとしてビルド
+make seed-build
+
+# ビルドしたバイナリを実行
+./bin/seed
+```
+
+### テスト用Fixtureデータ
+
+統合テストやユニットテストで使用できる固定データセットも用意されています:
+
+```go
+import "github.com/RRRRRRR-777/TekuToko/backend/internal/testdata/fixtures"
+
+// Fixtureデータセット取得
+walkFixtures := fixtures.NewWalkFixtures("test-user-id")
+
+// 個別のFixture使用
+notStartedWalk := walkFixtures.NotStartedWalk
+inProgressWalk := walkFixtures.InProgressWalk
+completedWalk := walkFixtures.CompletedWalk
+
+// すべてのFixtureを取得
+allWalks := walkFixtures.AllWalks()
+
+// カスタムテストデータ生成
+minimalWalk := fixtures.NewMinimalWalk("user-id")
+completedWalk := fixtures.NewCompletedWalk("user-id", 5000.0, 6500)
+```
+
+**Fixture一覧**:
+- `NotStartedWalk`: 未開始の散歩
+- `InProgressWalk`: 進行中の散歩（距離・歩数あり）
+- `PausedWalk`: 一時停止中の散歩
+- `CompletedWalk`: 完了した散歩（基本データ）
+- `CompletedWithData`: 完了した散歩（全データあり）
+
 ## デプロイ
 
 ### GKE Autopilotへのデプロイ
