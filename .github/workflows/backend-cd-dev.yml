@@ -101,6 +101,14 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace tekutoko-dev --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Install Secrets Store CSI Driver (CRDs and controller)
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.3/deploy/secrets-store-csi-driver.yaml
+
       - name: Update Kustomize image tag
         run: |
           cd deploy/kubernetes/overlays/dev
