@@ -52,23 +52,20 @@ spec:
     - protocol: TCP
       port: 5432
 
-  # HTTPS通信を許可（外部API、GCP API等）
+  # HTTPS通信を許可（外部API、Cloud SQL エンドポイントなど）
   - to:
-    - namespaceSelector: {}
+    - ipBlock:
+        cidr: 0.0.0.0/0
     ports:
     - protocol: TCP
       port: 443
 
-  # HTTP通信を許可（メタデータサーバー等）
+  # GKE Metadata Serverへのアクセスを許可（WI用）
   - to:
-    - namespaceSelector: {}
+    - ipBlock:
+        cidr: 169.254.169.254/32
     ports:
     - protocol: TCP
       port: 80
-
-  # GKE Metadata Serverへのアクセスを許可
-  - to:
-    - namespaceSelector: {}
-    ports:
     - protocol: TCP
       port: 988
