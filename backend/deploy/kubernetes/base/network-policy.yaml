@@ -49,22 +49,9 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
-
-  # (Placeholder) Staging用 Private IP を設定後に置き換える
-  - to:
-    - ipBlock:
-        cidr: 192.0.2.10/32   # __STAGING_PRIVATE_IP__/32 に置換予定（VALID TEST-NET-1）
-    ports:
     - protocol: TCP
-      port: 5432
-
-  # (Placeholder) Production用 Private IP を設定後に置き換える
-  - to:
-    - ipBlock:
-        cidr: 198.51.100.10/32  # __PROD_PRIVATE_IP__/32 に置換予定（TEST-NET-2）
-    ports:
-    - protocol: TCP
-      port: 5432
+      port: 3307  # Cloud SQL Private IP internal port (proxy経由で必要になる場合あり)
+  # Staging/Prod の Private IP は確定次第、各 overlay で追加許可する
 
   # HTTPS通信を許可（外部API、Cloud SQL エンドポイントなど）
   - to:

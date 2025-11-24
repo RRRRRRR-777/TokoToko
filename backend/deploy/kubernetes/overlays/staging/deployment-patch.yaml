@@ -17,4 +17,10 @@ spec:
             cpu: 1000m
             memory: 1Gi
       - name: cloud-sql-proxy
-        $patch: delete  # StagingはPrivate IP直結に切り替える前提。IP設定後に適用すること。
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+        args:
+          - "--structured-logs"
+          - "--port=5432"
+          - "--private-ip"
+          - "--auto-iam-authn"
+          - "__STAGING_CONNECTION_NAME__"  # 後で置換

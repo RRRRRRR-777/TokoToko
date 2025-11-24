@@ -27,8 +27,8 @@ configMapGenerator:
   - DB_NAME=tekutoko_dev
   - LOG_LEVEL=debug
   - FIREBASE_PROJECT_ID=tokotoko-ea308
-  - DB_HOST=10.71.0.8
-  - DB_SSLMODE=require
+  - DB_HOST=localhost
+  - DB_SSLMODE=disable
 
 # レプリカ数の調整（開発環境は小規模）
 replicas:
