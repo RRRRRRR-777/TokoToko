@@ -105,9 +105,19 @@ jobs:
         run: |
           kubectl create namespace tekutoko-dev --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Install Secrets Store CSI Driver (CRDs and controller)
+      - name: Check Secrets Store CSI Driver presence
         run: |
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.3/deploy/secrets-store-csi-driver.yaml
+          set -e
+          if kubectl get csidrivers secrets-store-gke.csi.k8s.io >/dev/null 2>&1; then
+            echo "GKE managed Secret Manager CSI driver detected"
+            exit 0
+          fi
+          if kubectl get csidrivers secrets-store.csi.k8s.io >/dev/null 2>&1; then
+            echo "Upstream Secrets Store CSI driver detected"
+            exit 0
+          fi
+          echo "CSI driver not found. Please enable Secret Manager add-on or install Secrets Store CSI driver with cluster-admin." >&2
+          exit 1
 
       - name: Update Kustomize image tag
         run: |
