@@ -1,0 +1,37 @@
+# Kustomize Base Configuration
+# 全環境共通のKubernetesリソース定義
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 共通ラベル
+commonLabels:
+  app: tekutoko-api
+  managed-by: kustomize
+
+# リソース定義
+resources:
+- deployment.yaml
+- service.yaml
+- hpa.yaml
+- ingress.yaml
+- configmap.yaml
+- serviceaccount.yaml
+- network-policy.yaml
+- poddisruptionbudget.yaml
+- secretproviderclass.yaml
+
+# ConfigMap生成（環境変数の一部を自動生成）
+configMapGenerator:
+- name: app-config
+  behavior: merge  # 既存のConfigMapとマージ
+  literals:
+  - BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  - GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# イメージタグ設定（Kustomize editで上書き）
+images:
+- name: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api
+  newTag: dev-latest  # デフォルトタグ（overlaysで上書き）
+
+# Namespace設定（overlaysで上書き）
+namespace: default

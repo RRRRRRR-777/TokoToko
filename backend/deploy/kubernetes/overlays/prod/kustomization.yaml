@@ -1,0 +1,42 @@
+# Production環境用Kustomize設定
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Baseリソースを参照
+resources:
+- ../../base
+
+# Namespace
+namespace: tekutoko-prod
+
+# 環境固有のラベル
+commonLabels:
+  environment: production
+
+# イメージタグを本番用に上書き（CI/CDで動的に更新）
+images:
+- name: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api
+  newTag: v1.0.0  # CI/CDパイプラインで自動更新
+
+# ConfigMapの上書き（本番環境固有の設定）
+configMapGenerator:
+- name: app-config
+  behavior: merge
+  literals:
+  - ENVIRONMENT=production
+  - DB_NAME=tekutoko_production
+  - LOG_LEVEL=info
+  - LOG_FORMAT=json
+  - FIREBASE_PROJECT_ID=tokotoko-ea308
+
+# レプリカ数の調整（本番環境は冗長性確保）
+replicas:
+- name: tekutoko-api
+  count: 3  # 本番環境は最低3レプリカ
+
+# 本番環境固有のパッチ
+patchesStrategicMerge:
+- hpa-patch.yaml
+- ingress-patch.yaml
+- deployment-patch.yaml
+- poddisruptionbudget-patch.yaml

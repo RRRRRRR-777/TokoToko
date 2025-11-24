@@ -1,0 +1,21 @@
+# Staging環境用HPA調整
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tekutoko-api-hpa
+spec:
+  minReplicas: 2   # Staging環境は最小2レプリカ
+  maxReplicas: 10  # 最大10レプリカ
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

@@ -1,0 +1,40 @@
+# Development環境用Kustomize設定
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Baseリソースを参照
+resources:
+- ../../base
+
+# Namespace
+namespace: tekutoko-dev
+
+# 環境固有のラベル
+commonLabels:
+  environment: development
+
+# イメージタグをdev用に上書き
+images:
+- name: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api
+  newTag: dev-latest
+
+# ConfigMapの上書き（開発環境固有の設定）
+configMapGenerator:
+- name: app-config
+  behavior: merge
+  literals:
+  - ENVIRONMENT=development
+  - DB_NAME=tekutoko_dev
+  - LOG_LEVEL=debug
+  - FIREBASE_PROJECT_ID=tokotoko-ea308
+
+# レプリカ数の調整（開発環境は小規模）
+replicas:
+- name: tekutoko-api
+  count: 1  # 開発環境は1レプリカで十分
+
+# HPA設定の調整
+patchesStrategicMerge:
+- hpa-patch.yaml
+- ingress-patch.yaml
+- deployment-patch.yaml

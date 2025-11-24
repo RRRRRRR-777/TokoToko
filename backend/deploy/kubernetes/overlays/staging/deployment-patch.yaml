@@ -1,0 +1,23 @@
+# Staging環境用Deployment調整
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekutoko-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        # Staging環境は本番に近いリソース
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      - name: cloud-sql-proxy
+        args:
+          - "--structured-logs"
+          - "--port=5432"
+          - "tokotoko-ea308:asia-northeast1:tekutoko-staging-db"
