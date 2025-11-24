@@ -14,7 +14,7 @@ env:
   GCP_REGION: asia-northeast1
   GKE_CLUSTER: gke-tekutoko-dev
   IMAGE_NAME: tekutoko-api
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.24'
 
 jobs:
   build-and-push:
