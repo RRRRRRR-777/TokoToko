@@ -23,7 +23,7 @@ data:
 
   # Firebase設定（config.go: FIREBASE_PROJECT_ID）
   # FIREBASE_CREDENTIALS_PATH は Secret で管理
-  FIREBASE_PROJECT_ID: "PROJECT_ID"  # TODO: 実際のFirebase Project IDに置換
+  FIREBASE_PROJECT_ID: "tokotoko-ea308"
 
   # ログ設定（config.go: LOG_LEVEL, LOG_FORMAT）
   LOG_LEVEL: "info"     # debug, info, warn, error
