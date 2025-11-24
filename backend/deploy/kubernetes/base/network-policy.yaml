@@ -32,22 +32,36 @@ spec:
 
   # Egressルール: 必要な外部通信のみ許可
   egress:
-  # DNS解決を許可
+  # DNS解決を許可（NodeLocal DNS: 169.254.20.10）
   - to:
-    - namespaceSelector:
-        matchLabels:
-          name: kube-system
+    - ipBlock:
+        cidr: 169.254.20.10/32
     ports:
     - protocol: UDP
       port: 53
     - protocol: TCP
       port: 53
 
-  # Cloud SQL Proxy経由のDB接続を許可
+  # Cloud SQL (Private IP) への接続を許可
   - to:
-    - podSelector:
-        matchLabels:
-          app: tekutoko-api
+    - ipBlock:
+        cidr: 10.71.0.8/32  # tekutoko-dev-db private IP
+    ports:
+    - protocol: TCP
+      port: 5432
+
+  # (Placeholder) Staging用 Private IP を設定後に置き換える
+  - to:
+    - ipBlock:
+        cidr: 192.0.2.10/32   # __STAGING_PRIVATE_IP__/32 に置換予定（VALID TEST-NET-1）
+    ports:
+    - protocol: TCP
+      port: 5432
+
+  # (Placeholder) Production用 Private IP を設定後に置き換える
+  - to:
+    - ipBlock:
+        cidr: 198.51.100.10/32  # __PROD_PRIVATE_IP__/32 に置換予定（TEST-NET-2）
     ports:
     - protocol: TCP
       port: 5432

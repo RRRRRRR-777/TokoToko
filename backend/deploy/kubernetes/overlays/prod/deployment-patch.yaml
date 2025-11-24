@@ -17,7 +17,4 @@ spec:
             cpu: 2000m     # 2 vCPU
             memory: 2Gi    # 2GB
       - name: cloud-sql-proxy
-        args:
-          - "--structured-logs"
-          - "--port=5432"
-          - "tokotoko-ea308:asia-northeast1:tekutoko-prod-db"
+        $patch: delete  # 本番はPrivate IP直結に切替予定。IP設定後に適用すること。

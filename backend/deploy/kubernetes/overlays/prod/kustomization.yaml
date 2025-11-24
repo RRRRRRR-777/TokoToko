@@ -28,6 +28,8 @@ configMapGenerator:
   - LOG_LEVEL=info
   - LOG_FORMAT=json
   - FIREBASE_PROJECT_ID=tokotoko-ea308
+  - DB_HOST=__PROD_PRIVATE_IP__      # 後でPrivate IPに置換
+  - DB_SSLMODE=require               # Proxy撤去後に適用する前提
 
 # レプリカ数の調整（本番環境は冗長性確保）
 replicas:
