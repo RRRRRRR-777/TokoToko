@@ -385,27 +385,113 @@ completedWalk := fixtures.NewCompletedWalk("user-id", 5000.0, 6500)
 
 ## デプロイ
 
-### GKE Autopilotへのデプロイ
+### 前提条件
 
 ```bash
-# Dockerイメージビルド & プッシュ
-make docker-build
-make docker-push
+# gcloud CLIのインストールと認証
+gcloud auth login
+gcloud config set project tokotoko-ea308
 
-# Kubernetesマニフェスト適用
-kubectl apply -k deploy/kubernetes/overlays/prod
+# kubectlとkustomizeのインストール
+gcloud components install kubectl
+kubectl kustomize version
 
-# デプロイ状態確認
-kubectl rollout status deployment/tekutoko-api
+# GKEクラスタ接続
+gcloud container clusters get-credentials tekutoko-cluster \
+  --region asia-northeast1
+```
+
+### Kubernetesマニフェスト構成
+
+Kustomizeを使用した環境別マニフェスト管理:
+
+```
+deploy/kubernetes/
+├── base/                    # 全環境共通のベースマニフェスト
+│   ├── deployment.yaml      # メインアプリケーション定義
+│   ├── service.yaml         # LoadBalancer Service
+│   ├── ingress.yaml         # HTTPS Ingress（Google Cloud Load Balancer）
+│   ├── hpa.yaml             # Horizontal Pod Autoscaler
+│   ├── configmap.yaml       # 環境変数設定
+│   ├── serviceaccount.yaml  # Workload Identity用
+│   ├── network-policy.yaml  # ネットワークポリシー
+│   ├── poddisruptionbudget.yaml  # Pod中断バジェット
+│   └── secretproviderclass.yaml  # Secret管理
+└── overlays/
+    ├── development/         # 開発環境用設定
+    │   ├── kustomization.yaml
+    │   ├── deployment-patch.yaml
+    │   ├── hpa-patch.yaml   # 1-3レプリカ
+    │   └── ingress-patch.yaml
+    ├── staging/             # ステージング環境用設定
+    │   ├── kustomization.yaml
+    │   ├── deployment-patch.yaml
+    │   ├── hpa-patch.yaml   # 2-10レプリカ
+    │   └── ingress-patch.yaml
+    └── production/          # 本番環境用設定
+        ├── kustomization.yaml
+        ├── deployment-patch.yaml
+        ├── hpa-patch.yaml   # 3-20レプリカ
+        ├── ingress-patch.yaml
+        └── poddisruptionbudget-patch.yaml
+```
+
+### デプロイ状態確認
+
+```bash
+# Pod状態確認
+kubectl -n tekutoko-dev get pods      # Development
+kubectl -n tekutoko-staging get pods  # Staging
+kubectl -n tekutoko-prod get pods     # Production
+
+# デプロイ状況確認
+kubectl -n tekutoko-prod rollout status deployment/tekutoko-api
+
+# ログ確認
+kubectl -n tekutoko-prod logs -f deployment/tekutoko-api -c api
+
+# Ingress状態確認
+kubectl -n tekutoko-prod get ingress
+kubectl -n tekutoko-prod describe managedcertificate tekutoko-api-cert
+
+# HPA状態確認
+kubectl -n tekutoko-prod get hpa
+kubectl -n tekutoko-prod describe hpa tekutoko-api-hpa
+```
+
+### トラブルシューティング
+
+```bash
+# ロールバック（緊急時のみ）
+kubectl -n tekutoko-prod rollout history deployment/tekutoko-api
+kubectl -n tekutoko-prod rollout undo deployment/tekutoko-api
+
+# 手動スケーリング（緊急時のみ、HPA無効化が必要）
+kubectl -n tekutoko-prod scale deployment/tekutoko-api --replicas=5
 ```
 
 ### CI/CDパイプライン
 
 GitHub Actionsで自動デプロイ設定済み:
 
-1. **PR作成時**: テスト・Lint実行
-2. **mainマージ時**: ビルド → Artifact Registryプッシュ → GKE Stagingデプロイ
-3. **手動実行**: Production環境へのデプロイ（承認後）
+1. **PR作成時**:
+   - ユニットテスト実行
+   - Lint実行（golangci-lint）
+   - マニフェスト検証（kubectl kustomize）
+
+2. **devブランチマージ時**:
+   - Dockerイメージビルド（タグ: `dev-latest`）
+   - Artifact Registryプッシュ
+   - Development環境へ自動デプロイ
+
+3. **mainブランチマージ時**:
+   - Dockerイメージビルド（タグ: `staging-latest`）
+   - Artifact Registryプッシュ
+   - Staging環境へ自動デプロイ
+
+4. **Staging環境承認後（手動トリガー）**:
+   - イメージタグ更新（タグ: セマンティックバージョン `vX.Y.Z`）
+   - Production環境へデプロイ
 
 **セットアップ手順**: [GitHub Actions セットアップガイド](./docs/github-actions-setup.md)
 
