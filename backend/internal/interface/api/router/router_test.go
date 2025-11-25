@@ -1,23 +1,43 @@
 package router
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"firebase.google.com/go/v4/auth"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/database"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
+
+// mockAuthClient はテスト用のFirebase Auth Client
+type mockAuthClient struct{}
+
+func (m *mockAuthClient) VerifyIDToken(_ context.Context, _ string) (*auth.Token, error) {
+	return &auth.Token{UID: "test-user-id"}, nil
+}
 
 // setupTestRouter はテスト用のルーターをセットアップする
 func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
+	// テスト用ロガー
+	testLogger, _ := logger.NewLogger("error", "console")
+
+	// テスト用認証ミドルウェア
+	mockAuth := &mockAuthClient{}
+	authMiddleware := middleware.NewAuthMiddlewareWithClient(mockAuth)
+
 	container := &di.Container{
-		DB: &database.PostgresDB{},
+		DB:             &database.PostgresDB{},
+		Logger:         testLogger,
+		AuthMiddleware: authMiddleware,
 	}
 
 	return NewRouter(container)
