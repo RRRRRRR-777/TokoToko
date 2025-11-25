@@ -5,13 +5,21 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/handler"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 // NewRouter はHTTPルーターを生成する
 func NewRouter(container *di.Container) *gin.Engine {
-	// Ginエンジンの初期化
-	r := gin.Default()
+	// Ginのデフォルトロガーを無効化（構造化ログを使用）
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+
+	// パニックリカバリーミドルウェア（標準）
+	r.Use(gin.Recovery())
+
+	// 構造化ログミドルウェア
+	r.Use(middleware.LoggingMiddleware(container.Logger))
 
 	// ヘルスチェックエンドポイント
 	r.GET("/health", func(c *gin.Context) {
@@ -63,7 +71,6 @@ func NewRouter(container *di.Container) *gin.Engine {
 	}
 
 	// TODO: 後のフェーズで実装
-	// - ロギングミドルウェア (r.Use(loggingMiddleware()))
 	// - CORS設定 (r.Use(cors.Default()))
 
 	return r

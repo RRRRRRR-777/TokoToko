@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/router"
+	"go.uber.org/zap"
 )
 
 const (
@@ -21,23 +21,28 @@ const (
 )
 
 func main() {
-	// ログ初期化
-	logger := log.New(os.Stdout, "[TekuToko API] ", log.LstdFlags|log.Lshortfile)
-	logger.Println("Starting TekuToko API server...")
+	// DI Container初期化（Logger含む）
+	ctx := context.Background()
+	container, err := di.NewContainer(ctx)
+	if err != nil {
+		// Containerの初期化に失敗した場合は標準出力にエラーを出力
+		fmt.Fprintf(os.Stderr, "Failed to initialize container: %v\n", err)
+		os.Exit(1)
+	}
+	defer container.Close()
+
+	// 構造化ロガー取得
+	logger := container.Logger
+
+	logger.Info("Starting TekuToko API server",
+		zap.String("environment", container.Config.Environment),
+	)
 
 	// 環境変数からポート取得
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
-
-	// DI Container初期化
-	ctx := context.Background()
-	container, err := di.NewContainer(ctx)
-	if err != nil {
-		logger.Fatalf("Failed to initialize container: %v", err)
-	}
-	defer container.Close()
 
 	// Router初期化（Gin）
 	r := router.NewRouter(container)
@@ -55,29 +60,35 @@ func main() {
 
 	// サーバー起動（ゴルーチン）
 	go func() {
-		logger.Printf("Server started on http://localhost:%s", port)
-		logger.Println("Available endpoints:")
-		logger.Println("  GET /          - API情報")
-		logger.Println("  GET /health    - ヘルスチェック（Liveness Probe）")
-		logger.Println("  GET /ready     - レディネスチェック（Readiness Probe）")
-		logger.Println("  GET /v1/walks  - 散歩一覧取得")
-		logger.Println("  POST /v1/walks - 散歩作成")
+		logger.Info("Server started",
+			zap.String("port", port),
+			zap.String("address", fmt.Sprintf("http://localhost:%s", port)),
+		)
+		logger.Info("Available endpoints",
+			zap.Strings("endpoints", []string{
+				"GET /          - API情報",
+				"GET /health    - ヘルスチェック（Liveness Probe）",
+				"GET /ready     - レディネスチェック（Readiness Probe）",
+				"GET /v1/walks  - 散歩一覧取得",
+				"POST /v1/walks - 散歩作成",
+			}),
+		)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("Server failed to start: %v", err)
+			logger.Fatal("Server failed to start", zap.Error(err))
 		}
 	}()
 
 	// シャットダウンシグナル待機
 	<-ctx.Done()
-	logger.Println("Shutdown signal received, starting graceful shutdown...")
+	logger.Info("Shutdown signal received, starting graceful shutdown")
 
 	// Graceful Shutdown
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		logger.Printf("Server forced to shutdown: %v", err)
+		logger.Error("Server forced to shutdown", zap.Error(err))
 	}
 
-	logger.Println("Server exited")
+	logger.Info("Server exited")
 }

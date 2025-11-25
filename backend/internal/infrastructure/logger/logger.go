@@ -39,15 +39,22 @@ func NewLogger(level, format string) (Logger, error) {
 		zapLevel = zapcore.InfoLevel
 	}
 
-	// エンコーダー設定
+	// エンコーダー設定（Cloud Logging対応）
 	var encoder zapcore.Encoder
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 
+	// Cloud Loggingの標準フィールド名に対応
 	if format == "json" {
+		encoderConfig.MessageKey = "message"
+		encoderConfig.LevelKey = "severity"
+		encoderConfig.TimeKey = "time"
+		encoderConfig.CallerKey = "caller"
+		encoderConfig.StacktraceKey = "stacktrace"
+		encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder // DEBUG, INFO, WARN, ERROR
 		encoder = zapcore.NewJSONEncoder(encoderConfig)
 	} else {
+		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		encoder = zapcore.NewConsoleEncoder(encoderConfig)
 	}
 
