@@ -18,6 +18,9 @@ func NewRouter(container *di.Container) *gin.Engine {
 	// パニックリカバリーミドルウェア（標準）
 	r.Use(gin.Recovery())
 
+	// メトリクス計装ミドルウェア（ログよりも先に適用）
+	r.Use(middleware.MetricsMiddleware())
+
 	// 構造化ログミドルウェア
 	r.Use(middleware.LoggingMiddleware(container.Logger))
 
