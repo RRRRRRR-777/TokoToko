@@ -105,19 +105,15 @@ jobs:
         run: |
           kubectl create namespace tekutoko-dev --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Check Secrets Store CSI Driver presence
+      - name: Create or update app-secret from Secret Manager
         run: |
-          set -e
-          if kubectl get csidrivers secrets-store-gke.csi.k8s.io >/dev/null 2>&1; then
-            echo "GKE managed Secret Manager CSI driver detected"
-            exit 0
-          fi
-          if kubectl get csidrivers secrets-store.csi.k8s.io >/dev/null 2>&1; then
-            echo "Upstream Secrets Store CSI driver detected"
-            exit 0
-          fi
-          echo "CSI driver not found. Please enable Secret Manager add-on or install Secrets Store CSI driver with cluster-admin." >&2
-          exit 1
+          DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic app-secret \
+            --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
+            --namespace=tekutoko-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Update Kustomize image tag
         run: |
