@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -12,10 +14,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// getEnvOrDefault は環境変数を取得し、存在しない場合はデフォルト値を返す
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
 // setupTestDB はテスト用のデータベース接続を作成する
 func setupTestDB(t *testing.T) *sql.DB {
-	// GitHub ActionsやCI環境での接続文字列
-	dsn := "host=localhost port=5432 user=postgres password=postgres dbname=tekutoko sslmode=disable"
+	host := getEnvOrDefault("DB_HOST", "localhost")
+	port := getEnvOrDefault("DB_PORT", "5432")
+	user := getEnvOrDefault("DB_USER", "postgres")
+	password := getEnvOrDefault("DB_PASSWORD", "postgres")
+	dbname := getEnvOrDefault("DB_NAME", "tekutoko")
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", dsn)
 	require.NoError(t, err)
