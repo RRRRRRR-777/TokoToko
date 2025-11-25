@@ -7,6 +7,7 @@ import (
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/config"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/database"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/telemetry"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/persistence/postgres"
 	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
@@ -15,12 +16,13 @@ import (
 // Container は依存性注入コンテナ
 // アプリケーション全体で使用される依存関係を管理する
 type Container struct {
-	Config         *config.Config
-	DB             *database.PostgresDB
-	Logger         logger.Logger
-	AuthMiddleware *middleware.AuthMiddleware
-	WalkRepository walk.Repository
-	WalkUsecase    walkusecase.Usecase
+	Config          *config.Config
+	DB              *database.PostgresDB
+	Logger          logger.Logger
+	MetricsProvider *telemetry.MetricsProvider
+	AuthMiddleware  *middleware.AuthMiddleware
+	WalkRepository  walk.Repository
+	WalkUsecase     walkusecase.Usecase
 }
 
 // NewContainer は新しいコンテナを生成する
@@ -33,6 +35,18 @@ func NewContainer(ctx context.Context) (*Container, error) {
 
 	// Logger初期化
 	log, err := logger.NewLogger(cfg.Log.Level, cfg.Log.Format)
+	if err != nil {
+		return nil, err
+	}
+
+	// メトリクスプロバイダー初期化
+	metricsProvider, err := telemetry.NewMetricsProvider(
+		ctx,
+		cfg.Firebase.ProjectID, // GCPプロジェクトID
+		"tekutoko-api",         // サービス名
+		cfg.Environment,        // 環境
+		log,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -57,17 +71,26 @@ func NewContainer(ctx context.Context) (*Container, error) {
 	walkUsecase := walkusecase.NewInteractor(walkRepo)
 
 	return &Container{
-		Config:         cfg,
-		DB:             db,
-		Logger:         log,
-		AuthMiddleware: authMw,
-		WalkRepository: walkRepo,
-		WalkUsecase:    walkUsecase,
+		Config:          cfg,
+		DB:              db,
+		Logger:          log,
+		MetricsProvider: metricsProvider,
+		AuthMiddleware:  authMw,
+		WalkRepository:  walkRepo,
+		WalkUsecase:     walkUsecase,
 	}, nil
 }
 
 // Close はコンテナが保持するリソースを解放する
 func (c *Container) Close() error {
+	// メトリクスプロバイダーのシャットダウン
+	if c.MetricsProvider != nil {
+		if err := c.MetricsProvider.Shutdown(context.Background()); err != nil {
+			c.Logger.Error("Failed to shutdown metrics provider")
+		}
+	}
+
+	// DBクローズ
 	if c.DB != nil {
 		return c.DB.Close()
 	}
