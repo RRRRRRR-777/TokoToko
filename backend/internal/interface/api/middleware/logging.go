@@ -5,6 +5,7 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -36,6 +37,14 @@ func LoggingMiddleware(log logger.Logger) gin.HandlerFunc {
 			zap.Duration("latency", latency),
 			zap.String("client_ip", clientIP),
 			zap.String("user_agent", c.Request.UserAgent()),
+		}
+
+		// トレースIDがある場合は追加（Cloud LoggingとCloud Traceの相関）
+		if spanContext := trace.SpanContextFromContext(c.Request.Context()); spanContext.IsValid() {
+			fields = append(fields,
+				zap.String("trace_id", spanContext.TraceID().String()),
+				zap.String("span_id", spanContext.SpanID().String()),
+			)
 		}
 
 		// エラーがある場合は追加
