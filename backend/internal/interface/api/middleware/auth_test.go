@@ -75,7 +75,6 @@ func TestTokenCache_Expiration(t *testing.T) {
 	assert.Empty(t, retrievedUserID)
 }
 
-
 func TestGetUserID_Success(t *testing.T) {
 	// 期待値: コンテキストからユーザーIDを正常に取得できること
 	gin.SetMode(gin.TestMode)

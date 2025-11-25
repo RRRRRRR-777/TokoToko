@@ -241,7 +241,7 @@ func TestWalkHandler_GetWalk_NotFound(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: 不正なUUID形式の場合、400 Bad Requestを返す
+// 期待値: 不正なUUID形式の場合、400 Bad Requestを返す
 func TestWalkHandler_GetWalk_InvalidID(t *testing.T) {
 	handler, _ := setupTestHandler()
 
@@ -253,7 +253,7 @@ func TestWalkHandler_GetWalk_InvalidID(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-	// 期待値検証: HTTPステータス400
+// 期待値検証: HTTPステータス400
 func TestWalkHandler_ListWalks_Success(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
@@ -280,7 +280,7 @@ func TestWalkHandler_ListWalks_Success(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: 散歩一覧をデフォルトページネーション（page=1, limit=20）で取得し、200 OKを返す
+// 期待値: 散歩一覧をデフォルトページネーション（page=1, limit=20）で取得し、200 OKを返す
 func TestWalkHandler_ListWalks_WithPagination(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
@@ -300,7 +300,7 @@ func TestWalkHandler_ListWalks_WithPagination(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: ページネーションパラメータ（page=2, limit=10）が正しく適用される
+// 期待値: ページネーションパラメータ（page=2, limit=10）が正しく適用される
 func TestWalkHandler_UpdateWalk_Success(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
@@ -327,7 +327,7 @@ func TestWalkHandler_UpdateWalk_Success(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: 散歩情報を正常に更新し、200 OKとともに更新後の散歩情報を返す
+// 期待値: 散歩情報を正常に更新し、200 OKとともに更新後の散歩情報を返す
 func TestWalkHandler_UpdateWalk_NotFound(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
@@ -349,7 +349,7 @@ func TestWalkHandler_UpdateWalk_NotFound(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: 存在しないIDの更新で404 Not Foundを返す
+// 期待値: 存在しないIDの更新で404 Not Foundを返す
 func TestWalkHandler_DeleteWalk_Success(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
@@ -369,7 +369,7 @@ func TestWalkHandler_DeleteWalk_Success(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: 散歩を正常に削除し、204 No Contentまたは200 OKを返す
+// 期待値: 散歩を正常に削除し、204 No Contentまたは200 OKを返す
 func TestWalkHandler_DeleteWalk_NotFound(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
@@ -387,7 +387,7 @@ func TestWalkHandler_DeleteWalk_NotFound(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-	// 期待値: 存在しないIDの削除で404 Not Foundを返す
+// 期待値: 存在しないIDの削除で404 Not Foundを返す
 func TestWalkHandler_RespondError(t *testing.T) {
 	handler, _ := setupTestHandler()
 
