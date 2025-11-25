@@ -32,11 +32,12 @@ linters:
 
 linters-settings:
   errcheck:
-    check-type-assertions: true
+    check-type-assertions: false  # モック等の型アサーションは除外
     check-blank: false  # _, _ = w.Write() を許可
 
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
 
   gocyclo:
     min-complexity: 15

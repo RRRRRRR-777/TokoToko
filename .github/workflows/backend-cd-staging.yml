@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - dev-*
-      - 'ticket/**'
     paths:
       - 'backend/**'
       - '.github/workflows/backend-cd-staging.yml'

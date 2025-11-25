@@ -1,7 +1,6 @@
 package router
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,37 +10,14 @@ import (
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/database"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-// MockDB はデータベースのモック
-type MockDB struct {
-	mock.Mock
-}
-
-func (m *MockDB) HealthCheck(ctx context.Context) error {
-	args := m.Called(ctx)
-	return args.Error(0)
-}
-
-func (m *MockDB) Close() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
 // setupTestRouter はテスト用のルーターをセットアップする
-func setupTestRouter(mockDB *MockDB) *gin.Engine {
+func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	container := &di.Container{
 		DB: &database.PostgresDB{},
-	}
-
-	// モックDBがある場合は置き換え
-	if mockDB != nil {
-		// mockDBをcontainer.DBに設定する方法
-		// 実際にはcontainer.DBのインターフェース化が必要
-		// ここでは簡易的にHealthCheckをテスト
 	}
 
 	return NewRouter(container)
@@ -51,7 +27,7 @@ func setupTestRouter(mockDB *MockDB) *gin.Engine {
 
 func TestRouter_HealthCheck(t *testing.T) {
 	// 期待値: /healthエンドポイントが200 OKとステータス情報を返す
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -70,7 +46,7 @@ func TestRouter_HealthCheck(t *testing.T) {
 
 func TestRouter_RootEndpoint(t *testing.T) {
 	// 期待値: /エンドポイントがAPIバージョン情報を返す
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -89,7 +65,7 @@ func TestRouter_RootEndpoint(t *testing.T) {
 }
 
 func TestRouter_WalkEndpoints_MethodNotAllowed(t *testing.T) {
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	tests := []struct {
 		name   string
@@ -122,7 +98,7 @@ func TestRouter_WalkEndpoints_MethodNotAllowed(t *testing.T) {
 }
 
 func TestRouter_WalkEndpoints_RouteExists(t *testing.T) {
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	tests := []struct {
 		name           string
@@ -178,7 +154,7 @@ func TestRouter_WalkEndpoints_RouteExists(t *testing.T) {
 
 func TestRouter_NotFoundEndpoint(t *testing.T) {
 	// 期待値: 存在しないパスで404 Not Foundを返す
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/non-existent-path", nil)
@@ -189,7 +165,7 @@ func TestRouter_NotFoundEndpoint(t *testing.T) {
 }
 
 func TestRouter_CORSHeaders(t *testing.T) {
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodOptions, "/health", nil)
@@ -205,13 +181,13 @@ func TestRouter_CORSHeaders(t *testing.T) {
 func TestRouter_GinMode(t *testing.T) {
 	// テストモードでの動作確認
 	gin.SetMode(gin.TestMode)
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	assert.NotNil(t, router)
 }
 
 func TestRouter_HealthEndpointContentType(t *testing.T) {
-	router := setupTestRouter(nil)
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
