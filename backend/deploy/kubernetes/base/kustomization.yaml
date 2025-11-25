@@ -18,7 +18,6 @@ resources:
 - serviceaccount.yaml
 - network-policy.yaml
 - poddisruptionbudget.yaml
-- secretproviderclass.yaml
 
 # ConfigMap生成（環境変数の一部を自動生成）
 configMapGenerator:
