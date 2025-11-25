@@ -7,6 +7,7 @@ import (
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/handler"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // NewRouter はHTTPルーターを生成する
@@ -17,6 +18,9 @@ func NewRouter(container *di.Container) *gin.Engine {
 
 	// パニックリカバリーミドルウェア（標準）
 	r.Use(gin.Recovery())
+
+	// 分散トレーシングミドルウェア（最も先に適用してすべての処理をトレース）
+	r.Use(otelgin.Middleware("tekutoko-api"))
 
 	// メトリクス計装ミドルウェア（ログよりも先に適用）
 	r.Use(middleware.MetricsMiddleware())
