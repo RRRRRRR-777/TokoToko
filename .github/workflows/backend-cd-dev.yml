@@ -1,0 +1,160 @@
+name: Backend CD - Dev
+
+on:
+  push:
+    branches:
+      - dev-*
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-cd-dev.yml'
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: asia-northeast1
+  GKE_CLUSTER: gke-tekutoko-dev
+  IMAGE_NAME: tekutoko-api
+  GO_VERSION: '1.24'
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg GO_VERSION=${{ env.GO_VERSION }} \
+            -t ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -t ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:dev-latest \
+            -f Dockerfile .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:dev-latest
+
+      - name: Output image tag
+        id: image-tag
+        run: |
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "Image tag: ${IMAGE_TAG}"
+
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+
+  deploy-to-gke:
+    name: Deploy to GKE Dev
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }}
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace tekutoko-dev --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update app-secret from Secret Manager
+        run: |
+          DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic app-secret \
+            --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
+            --namespace=tekutoko-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Update Kustomize image tag
+        run: |
+          cd deploy/kubernetes/overlays/dev
+          IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "Updating Kustomize image to: ${IMAGE_TAG}"
+          kustomize edit set image asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api=${IMAGE_TAG}
+
+      - name: Deploy with Kustomize
+        run: |
+          kubectl apply -k deploy/kubernetes/overlays/dev
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/tekutoko-api -n tekutoko-dev --timeout=5m
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n tekutoko-dev -l app=tekutoko-api
+          kubectl get services -n tekutoko-dev tekutoko-api
+
+      - name: Run smoke tests
+        run: |
+          EXTERNAL_IP=$(kubectl get service tekutoko-api -n tekutoko-dev -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Testing health endpoint at http://$EXTERNAL_IP/health"
+          curl -f http://$EXTERNAL_IP/health || exit 1
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-to-gke]
+    if: always()
+    steps:
+      - name: Notify success
+        if: needs.deploy-to-gke.result == 'success'
+        run: |
+          echo "✅ Dev deployment successful"
+          # TODO: Slack通知を追加
+
+      - name: Notify failure
+        if: needs.deploy-to-gke.result == 'failure'
+        run: |
+          echo "❌ Dev deployment failed"
+          # TODO: Slack通知を追加

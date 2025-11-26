@@ -1,0 +1,148 @@
+# TekuToko API Ingress
+# Google Cloud Load Balancerと統合し、外部からのHTTPS通信を受け付ける
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tekutoko-api-ingress
+  labels:
+    app: tekutoko-api
+  annotations:
+    # Google Cloud Load Balancer設定
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-ip"  # 静的IPアドレス名
+
+    # SSL/TLS設定
+    networking.gke.io/managed-certificates: "tekutoko-api-cert"  # マネージドSSL証明書
+    kubernetes.io/ingress.allow-http: "false"  # HTTPを無効化（HTTPSのみ）
+
+    # Cloud CDN有効化（静的コンテンツのキャッシュ）
+    cloud.google.com/cdn-enabled: "true"
+    cloud.google.com/cdn-cache-mode: "CACHE_ALL_STATIC"
+
+    # バックエンド設定
+    cloud.google.com/backend-config: "tekutoko-api-backend-config"
+
+    # Cloud Armor（DDoS対策・WAF）
+    cloud.google.com/armor-config: '{"tekutoko-api": "tekutoko-security-policy"}'
+
+    # タイムアウト設定
+    networking.gke.io/backend-timeout: "30"  # 30秒
+
+    # ヘルスチェック設定
+    cloud.google.com/health-check-interval: "10"  # 10秒間隔
+    cloud.google.com/health-check-timeout: "5"    # 5秒タイムアウト
+    cloud.google.com/health-check-healthy-threshold: "2"
+    cloud.google.com/health-check-unhealthy-threshold: "3"
+
+spec:
+  rules:
+  # 本番ドメイン
+  - host: api.tekutoko.app
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tekutoko-api
+            port:
+              number: 80
+
+  # 開発/ステージング用ドメイン（環境ごとにオーバーレイで変更）
+  - host: api-dev.tekutoko.app
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tekutoko-api
+            port:
+              number: 80
+
+  # TLS設定（マネージド証明書を使用）
+  tls:
+  - hosts:
+    - api.tekutoko.app
+    - api-dev.tekutoko.app
+    secretName: tekutoko-api-tls  # マネージド証明書が自動生成するSecret
+
+---
+# マネージドSSL証明書
+# Google Managed Certificateを使用（Let's Encrypt相当）
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: tekutoko-api-cert
+  labels:
+    app: tekutoko-api
+spec:
+  domains:
+  - api.tekutoko.app
+  - api-dev.tekutoko.app
+
+---
+# BackendConfig
+# バックエンドサービスの詳細設定
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: tekutoko-api-backend-config
+  labels:
+    app: tekutoko-api
+spec:
+  # タイムアウト設定
+  timeoutSec: 30
+
+  # 接続ドレイン設定（Podシャットダウン時の猶予期間）
+  connectionDraining:
+    drainingTimeoutSec: 60
+
+  # セッションアフィニティ（ステートレスAPIなので不要）
+  sessionAffinity:
+    affinityType: "NONE"
+
+  # ヘルスチェック設定
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    type: HTTP
+    requestPath: /health
+    port: 8080
+
+  # Cloud CDN設定
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+    negativeCaching: true
+    negativeCachingPolicy:
+    - code: 404
+      ttl: 120
+    - code: 500
+      ttl: 60
+
+  # IAP（Identity-Aware Proxy）設定（将来の拡張用）
+  # iap:
+  #   enabled: false
+  #   oauthclientCredentials:
+  #     secretName: oauth-client-secret
+
+  # カスタムヘッダー設定
+  customRequestHeaders:
+    headers:
+    - "X-Client-Region:{client_region}"
+    - "X-Client-City:{client_city}"
+
+  # セキュリティポリシー（Cloud Armor）
+  securityPolicy:
+    name: "tekutoko-security-policy"
+
+  # ロギング設定
+  logging:
+    enable: true
+    sampleRate: 1.0  # 全リクエストをログ記録（本番では0.1-0.5程度に調整）

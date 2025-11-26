@@ -1,0 +1,21 @@
+# Production環境用HPA調整
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tekutoko-api-hpa
+spec:
+  minReplicas: 3   # 本番環境は最小3レプリカ（高可用性）
+  maxReplicas: 20  # 最大20レプリカ
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60  # 本番環境は余裕を持たせて60%
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70

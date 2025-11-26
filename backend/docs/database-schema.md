@@ -214,7 +214,7 @@ CREATE TRIGGER update_walks_updated_at
 
 | テーブル | インデックス | 目的 |
 |---------|-------------|------|
-| walks | `(user_id, start_time DESC)` | ユーザー別散歩一覧（最新順） |
+| walks | `(user_id, created_at DESC)` | ユーザー別散歩一覧（最新順） |
 | walks | `(status)` | ステータスフィルタリング |
 | walk_locations | `(walk_id, sequence_number)` | 位置情報の順序取得 |
 
@@ -233,18 +233,30 @@ CREATE TRIGGER update_walks_updated_at
 4. **検証**: データ整合性チェック、カウント比較
 5. **切り替え**: アプリケーション設定変更
 
-### 移行スクリプト構成
+### マイグレーションファイル構成
+
+Phase 2では段階的なロールバックとテーブルごとの管理を可能にするため、マイグレーションファイルを分割する：
+
 ```
 backend/
   migrations/
-    001_create_enums.sql
-    002_create_users.sql
-    003_create_walks.sql
-    004_create_walk_locations.sql
-    005_create_consents.sql
-    006_create_triggers.sql
-    007_create_indexes.sql
+    001_create_enums.sql           # ENUM型定義
+    002_create_users.sql           # usersテーブル
+    003_create_walks.sql           # walksテーブル
+    004_create_walk_locations.sql  # walk_locationsテーブル
+    005_create_consents.sql        # consentsテーブル
+    006_create_triggers.sql        # updated_at自動更新トリガー
+    007_create_indexes.sql         # 全インデックス（オプション）
 ```
+
+**分割の利点**:
+- 段階的なロールバックが可能
+- テーブルごとの再作成が容易
+- 複数人開発時のコンフリクト回避
+- マイグレーション履歴の追跡が明確
+
+**実行順序**:
+ファイル名の番号順に実行される（Docker Composeの`/docker-entrypoint-initdb.d`）
 
 ## 関連ドキュメント
 - [要件定義書](./requirements.md)

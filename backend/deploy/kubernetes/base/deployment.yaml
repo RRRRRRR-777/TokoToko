@@ -1,0 +1,174 @@
+# TekuToko API Deployment
+# GKE Autopilot上で動作するメインアプリケーション
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekutoko-api
+  labels:
+    app: tekutoko-api
+    version: v1
+spec:
+  replicas: 2  # 初期レプリカ数（HPAで2-10の範囲で自動調整）
+  selector:
+    matchLabels:
+      app: tekutoko-api
+  template:
+    metadata:
+      labels:
+        app: tekutoko-api
+        version: v1
+    spec:
+      serviceAccountName: tekutoko-api-sa  # Workload Identity用
+      containers:
+      # メインアプリケーション
+      - name: api
+        image: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api:dev-latest
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+
+        env:
+        # 環境変数（ConfigMapから）- config.goと対応
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ENVIRONMENT
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: PORT
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_USER
+        - name: DB_SSLMODE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DB_SSLMODE
+        - name: FIREBASE_PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: FIREBASE_PROJECT_ID
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL
+        - name: LOG_FORMAT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_FORMAT
+
+        # シークレット（Secretから）
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: db_password
+        - name: FIREBASE_CREDENTIALS_PATH
+          value: "/secrets/firebase/credentials.json"  # Secretをファイルとしてマウント
+        # 注: FIREBASE_SERVICE_ACCOUNT_JSONは使用せず、ファイルパスを使用
+
+        # リソース設定
+        resources:
+          requests:
+            cpu: 500m      # 0.5 vCPU
+            memory: 512Mi  # 512MB
+          limits:
+            cpu: 1000m     # 1 vCPU
+            memory: 1Gi    # 1GB
+
+        # ヘルスチェック（存在確認）
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # レディネスチェック（トラフィック受付可能か）
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 2
+
+        # セキュリティコンテキスト
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+
+        # Volume Mount（Firebase認証情報）
+        volumeMounts:
+        - name: firebase-credentials
+          mountPath: /secrets/firebase
+          readOnly: true
+
+      # Cloud SQL Proxyサイドカー
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+        args:
+          - "--structured-logs"
+          - "--port=5432"
+          - "--private-ip"
+          - "--auto-iam-authn"
+          # インスタンス接続名は各環境の overlay で上書きする
+          - "__CONNECTION_NAME_PLACEHOLDER__"
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+
+      # Volumes定義
+      volumes:
+      - name: firebase-credentials
+        secret:
+          secretName: app-secret
+          items:
+          - key: firebase_service_account_json
+            path: credentials.json

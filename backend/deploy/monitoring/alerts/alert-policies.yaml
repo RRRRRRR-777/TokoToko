@@ -1,0 +1,266 @@
+# TekuToko API Alert Policies
+# GCP Cloud Monitoring アラートポリシー定義
+
+---
+# 1. 高エラー率アラート
+displayName: "High Error Rate - TekuToko API"
+documentation:
+  content: |
+    ## 概要
+    APIのエラー率が5%を超えています。
+
+    ## 影響
+    - ユーザーのリクエストが失敗している可能性
+    - データベース接続エラーやアプリケーションバグの可能性
+
+    ## 対応手順
+    1. エラーログを確認: `kubectl logs -l app=tekutoko-api --tail=100`
+    2. エラー内容を特定（500系エラー、DB接続エラー等）
+    3. 必要に応じてロールバックまたは修正デプロイ
+
+    ## Runbook
+    https://github.com/RRRRRRR-777/TokoToko/blob/main/backend/docs/runbook/ERROR_RATE.md
+  mimeType: "text/markdown"
+conditions:
+  - displayName: "Error rate > 5%"
+    conditionThreshold:
+      filter: |
+        resource.type="k8s_container"
+        resource.labels.container_name="api"
+        metric.type="logging.googleapis.com/user/http_requests_total"
+        metric.labels.status=monitoring.regex.full_match("5.*")
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: ALIGN_RATE
+          crossSeriesReducer: REDUCE_SUM
+          groupByFields:
+            - "resource.cluster_name"
+      comparison: COMPARISON_GT
+      thresholdValue: 0.05
+      duration: "300s"
+alertStrategy:
+  autoClose: "1800s"
+notificationChannels:
+  - projects/PROJECT_ID/notificationChannels/CHANNEL_ID
+enabled: true
+severity: ERROR
+
+---
+# 2. 高レイテンシアラート
+displayName: "High Latency (p95 > 1s) - TekuToko API"
+documentation:
+  content: |
+    ## 概要
+    API応答時間のp95が1秒を超えています。
+
+    ## 影響
+    - ユーザー体験の劣化
+    - タイムアウトエラーの増加可能性
+
+    ## 対応手順
+    1. スロークエリログ確認
+    2. データベース接続プール状態確認
+    3. Pod数確認（HPA動作状況）
+    4. 必要に応じてスケールアウト
+
+    ## Runbook
+    https://github.com/RRRRRRR-777/TokoToko/blob/main/backend/docs/runbook/HIGH_LATENCY.md
+  mimeType: "text/markdown"
+conditions:
+  - displayName: "p95 latency > 1s"
+    conditionThreshold:
+      filter: |
+        resource.type="k8s_container"
+        resource.labels.container_name="api"
+        metric.type="logging.googleapis.com/user/http_request_duration_seconds"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: ALIGN_DELTA
+          crossSeriesReducer: REDUCE_PERCENTILE_95
+          groupByFields:
+            - "resource.cluster_name"
+      comparison: COMPARISON_GT
+      thresholdValue: 1.0
+      duration: "300s"
+alertStrategy:
+  autoClose: "1800s"
+notificationChannels:
+  - projects/PROJECT_ID/notificationChannels/CHANNEL_ID
+enabled: true
+severity: WARNING
+
+---
+# 3. Pod再起動頻発アラート
+displayName: "Frequent Pod Restarts - TekuToko API"
+documentation:
+  content: |
+    ## 概要
+    Podが頻繁に再起動しています。
+
+    ## 影響
+    - サービス可用性の低下
+    - OOMキルやクラッシュループの可能性
+
+    ## 対応手順
+    1. Pod状態確認: `kubectl get pods -l app=tekutoko-api`
+    2. イベントログ確認: `kubectl describe pod POD_NAME`
+    3. コンテナログ確認: `kubectl logs POD_NAME --previous`
+    4. メモリ/CPU使用率確認
+
+    ## Runbook
+    https://github.com/RRRRRRR-777/TokoToko/blob/main/backend/docs/runbook/POD_RESTARTS.md
+  mimeType: "text/markdown"
+conditions:
+  - displayName: "Restart count > 3 in 10min"
+    conditionThreshold:
+      filter: |
+        resource.type="k8s_container"
+        resource.labels.container_name="api"
+        metric.type="kubernetes.io/container/restart_count"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: ALIGN_RATE
+          crossSeriesReducer: REDUCE_SUM
+          groupByFields:
+            - "resource.pod_name"
+      comparison: COMPARISON_GT
+      thresholdValue: 3
+      duration: "600s"
+alertStrategy:
+  autoClose: "3600s"
+notificationChannels:
+  - projects/PROJECT_ID/notificationChannels/CHANNEL_ID
+enabled: true
+severity: CRITICAL
+
+---
+# 4. CPU使用率高アラート
+displayName: "High CPU Usage (> 80%) - TekuToko API"
+documentation:
+  content: |
+    ## 概要
+    CPU使用率が80%を超えています。
+
+    ## 影響
+    - レスポンス遅延
+    - スロットリングの可能性
+
+    ## 対応手順
+    1. HPA設定確認（自動スケールアウトが機能しているか）
+    2. CPU使用率の高いエンドポイント特定
+    3. 必要に応じて手動スケールアウト
+    4. コード最適化の検討
+
+    ## Runbook
+    https://github.com/RRRRRRR-777/TokoToko/blob/main/backend/docs/runbook/HIGH_CPU.md
+  mimeType: "text/markdown"
+conditions:
+  - displayName: "CPU usage > 80%"
+    conditionThreshold:
+      filter: |
+        resource.type="k8s_container"
+        resource.labels.container_name="api"
+        metric.type="kubernetes.io/container/cpu/core_usage_time"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: ALIGN_RATE
+          crossSeriesReducer: REDUCE_MEAN
+          groupByFields:
+            - "resource.cluster_name"
+      comparison: COMPARISON_GT
+      thresholdValue: 0.8
+      duration: "300s"
+alertStrategy:
+  autoClose: "1800s"
+notificationChannels:
+  - projects/PROJECT_ID/notificationChannels/CHANNEL_ID
+enabled: true
+severity: WARNING
+
+---
+# 5. メモリ使用率高アラート
+displayName: "High Memory Usage (> 80%) - TekuToko API"
+documentation:
+  content: |
+    ## 概要
+    メモリ使用率が80%を超えています。
+
+    ## 影響
+    - OOMキルのリスク
+    - Pod再起動の可能性
+
+    ## 対応手順
+    1. メモリリーク確認
+    2. メモリプロファイリング実施
+    3. リソースlimit増加の検討
+    4. 必要に応じてスケールアウト
+
+    ## Runbook
+    https://github.com/RRRRRRR-777/TokoToko/blob/main/backend/docs/runbook/HIGH_MEMORY.md
+  mimeType: "text/markdown"
+conditions:
+  - displayName: "Memory usage > 80%"
+    conditionThreshold:
+      filter: |
+        resource.type="k8s_container"
+        resource.labels.container_name="api"
+        metric.type="kubernetes.io/container/memory/used_bytes"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: ALIGN_MEAN
+          crossSeriesReducer: REDUCE_MEAN
+          groupByFields:
+            - "resource.cluster_name"
+      comparison: COMPARISON_GT
+      thresholdValue: 429496729.6  # 512MB * 0.8 = 409.6MB
+      duration: "300s"
+alertStrategy:
+  autoClose: "1800s"
+notificationChannels:
+  - projects/PROJECT_ID/notificationChannels/CHANNEL_ID
+enabled: true
+severity: WARNING
+
+---
+# 6. データベース接続エラーアラート
+displayName: "Database Connection Errors - TekuToko API"
+documentation:
+  content: |
+    ## 概要
+    データベース接続エラーが発生しています。
+
+    ## 影響
+    - データの読み書きが不可能
+    - API全体が機能停止の可能性
+
+    ## 対応手順
+    1. Cloud SQL Proxy状態確認
+    2. Cloud SQLインスタンス状態確認
+    3. 接続数上限確認
+    4. ネットワーク接続確認
+
+    ## Runbook
+    https://github.com/RRRRRRR-777/TokoToko/blob/main/backend/docs/runbook/DB_CONNECTION_ERROR.md
+  mimeType: "text/markdown"
+conditions:
+  - displayName: "DB connection errors detected"
+    conditionThreshold:
+      filter: |
+        resource.type="k8s_container"
+        resource.labels.container_name="api"
+        metric.type="logging.googleapis.com/user/db_connection_errors_total"
+      aggregations:
+        - alignmentPeriod: "60s"
+          perSeriesAligner: ALIGN_RATE
+          crossSeriesReducer: REDUCE_SUM
+          groupByFields:
+            - "resource.cluster_name"
+      comparison: COMPARISON_GT
+      thresholdValue: 0
+      duration: "60s"
+alertStrategy:
+  autoClose: "1800s"
+notificationChannels:
+  - projects/PROJECT_ID/notificationChannels/CHANNEL_ID
+enabled: true
+severity: CRITICAL

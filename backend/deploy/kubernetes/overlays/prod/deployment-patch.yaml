@@ -1,0 +1,26 @@
+# Production環境用Deployment調整
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekutoko-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        # 本番環境では十分なリソースを確保
+        resources:
+          requests:
+            cpu: 1000m     # 1 vCPU
+            memory: 1Gi    # 1GB
+          limits:
+            cpu: 2000m     # 2 vCPU
+            memory: 2Gi    # 2GB
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+        args:
+          - "--structured-logs"
+          - "--port=5432"
+          - "--private-ip"
+          - "--auto-iam-authn"
+          - "__PROD_CONNECTION_NAME__"  # 後で置換

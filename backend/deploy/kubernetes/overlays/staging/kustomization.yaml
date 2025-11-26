@@ -1,0 +1,42 @@
+# Staging環境用Kustomize設定
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Baseリソースを参照
+resources:
+- ../../base
+
+# Namespace
+namespace: tekutoko-staging
+
+# 環境固有のラベル
+commonLabels:
+  environment: staging
+
+# イメージタグをstaging用に上書き
+images:
+- name: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api
+  newTag: staging-latest
+
+# ConfigMapの上書き（Staging環境固有の設定）
+configMapGenerator:
+- name: app-config
+  behavior: merge
+  literals:
+  - ENVIRONMENT=staging
+  - DB_NAME=tekutoko_staging
+  - LOG_LEVEL=info
+  - FIREBASE_PROJECT_ID=tokotoko-ea308
+  - DB_HOST=__STAGING_PRIVATE_IP__   # 後でPrivate IPに置換
+  - DB_SSLMODE=require               # Proxy撤去後に適用する前提
+
+# レプリカ数の調整（Stagingは本番に近い設定）
+replicas:
+- name: tekutoko-api
+  count: 2  # Staging環境は2レプリカ
+
+# Staging環境固有のパッチ
+patchesStrategicMerge:
+- hpa-patch.yaml
+- ingress-patch.yaml
+- deployment-patch.yaml

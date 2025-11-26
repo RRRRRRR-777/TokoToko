@@ -87,7 +87,7 @@ class WalkRepositoryFactory {
 #### Feature Flag管理
 - **開発環境**: UserDefaultsで手動切り替え
 - **本番環境**: Firebase Remote Configで動的切り替え
-- **機能単位**: Walk / Photo / Share ごとに個別制御可能
+- **機能単位**: Walk ごとに個別制御可能（Photo/ShareはPhase 6以降で追加）
 
 ### 3.4 データ互換性
 - **既存データ**: 完全互換を保証

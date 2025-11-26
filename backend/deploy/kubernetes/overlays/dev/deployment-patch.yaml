@@ -1,0 +1,26 @@
+# Development環境用Deployment調整
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tekutoko-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        # 開発環境では少なめのリソース
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+        args:
+          - "--structured-logs"
+          - "--port=5432"
+          - "--private-ip"
+          - "--auto-iam-authn"
+          - "tokotoko-ea308:asia-northeast1:tekutoko-dev-db"

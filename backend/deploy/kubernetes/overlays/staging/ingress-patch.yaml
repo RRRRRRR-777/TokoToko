@@ -1,0 +1,30 @@
+# Staging環境用Ingress調整
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tekutoko-api-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-staging-ip"
+spec:
+  rules:
+  # Staging環境用ドメイン
+  - host: api-staging.tekutoko.app
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tekutoko-api
+            port:
+              number: 80
+
+---
+# Staging環境用マネージド証明書
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: tekutoko-api-cert
+spec:
+  domains:
+  - api-staging.tekutoko.app
