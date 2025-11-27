@@ -100,31 +100,31 @@ db-down: ## ローカルDBを停止
 .PHONY: migrate-up
 migrate-up: ## マイグレーションを適用
 	@echo "Running migrations..."
-	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" up
+	$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" up
 	@echo "Migrations applied successfully!"
 
 .PHONY: migrate-down
 migrate-down: ## マイグレーションをロールバック
 	@echo "Rolling back last migration..."
-	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" down 1
+	$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" down 1
 	@echo "Migration rolled back!"
 
 .PHONY: migrate-force
 migrate-force: ## マイグレーションバージョンを強制設定 (使用例: make migrate-force version=1)
 	@if [ -z "$(version)" ]; then echo "Error: version is required. Usage: make migrate-force version=N"; exit 1; fi
 	@echo "Forcing migration version to $(version)..."
-	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" force $(version)
+	$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" force $(version)
 
 .PHONY: migrate-version
 migrate-version: ## 現在のマイグレーションバージョンを表示
 	@echo "Current migration version:"
-	@$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" version || echo "No migrations applied yet"
+	@$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" version || echo "No migrations applied yet"
 
 .PHONY: migrate-create
 migrate-create: ## マイグレーションファイルを作成 (使用例: make migrate-create name=create_walks_table)
 	@if [ -z "$(name)" ]; then echo "Error: name is required. Usage: make migrate-create name=your_migration_name"; exit 1; fi
 	@echo "Creating migration files..."
-	$(MIGRATE) create -ext sql -dir ../migrations -seq $(name)
+	$(MIGRATE) create -ext sql -dir ./migrations -seq $(name)
 	@echo "Migration files created!"
 
 .PHONY: seed
