@@ -50,11 +50,11 @@ No modules.
 | <a name="input_enable_binary_authorization"></a> [enable\_binary\_authorization](#input\_enable\_binary\_authorization) | Binary Authorizationを有効化するか | `bool` | `false` | no |
 | <a name="input_enable_private_endpoint"></a> [enable\_private\_endpoint](#input\_enable\_private\_endpoint) | Master APIを完全プライベートにするか | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | 環境名（dev/staging/prod） | `string` | n/a | yes |
-| <a name="input_logging_components"></a> [logging\_components](#input\_logging\_components) | ログ収集コンポーネント | `list(string)` | <pre>[<br/>  "SYSTEM_COMPONENTS",<br/>  "WORKLOADS"<br/>]</pre> | no |
-| <a name="input_master_authorized_networks"></a> [master\_authorized\_networks](#input\_master\_authorized\_networks) | Master APIへのアクセスを許可するCIDRリスト | <pre>list(object({<br/>    cidr_block   = string<br/>    display_name = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_logging_components"></a> [logging\_components](#input\_logging\_components) | ログ収集コンポーネント | `list(string)` | <pre>[<br>  "SYSTEM_COMPONENTS",<br>  "WORKLOADS"<br>]</pre> | no |
+| <a name="input_master_authorized_networks"></a> [master\_authorized\_networks](#input\_master\_authorized\_networks) | Master APIへのアクセスを許可するCIDRリスト | <pre>list(object({<br>    cidr_block   = string<br>    display_name = string<br>  }))</pre> | `[]` | no |
 | <a name="input_master_global_access"></a> [master\_global\_access](#input\_master\_global\_access) | グローバルアクセスを許可するか | `bool` | `false` | no |
 | <a name="input_master_ipv4_cidr_block"></a> [master\_ipv4\_cidr\_block](#input\_master\_ipv4\_cidr\_block) | GKE Master CIDR（/28推奨） | `string` | n/a | yes |
-| <a name="input_monitoring_components"></a> [monitoring\_components](#input\_monitoring\_components) | モニタリング収集コンポーネント | `list(string)` | <pre>[<br/>  "SYSTEM_COMPONENTS"<br/>]</pre> | no |
+| <a name="input_monitoring_components"></a> [monitoring\_components](#input\_monitoring\_components) | モニタリング収集コンポーネント | `list(string)` | <pre>[<br>  "SYSTEM_COMPONENTS"<br>]</pre> | no |
 | <a name="input_network_self_link"></a> [network\_self\_link](#input\_network\_self\_link) | VPC self link | `string` | n/a | yes |
 | <a name="input_pods_range_name"></a> [pods\_range\_name](#input\_pods\_range\_name) | Pods用 Secondary Range名 | `string` | n/a | yes |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | GCPプロジェクトID | `string` | n/a | yes |
