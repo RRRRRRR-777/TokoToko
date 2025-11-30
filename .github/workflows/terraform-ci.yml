@@ -88,9 +88,14 @@ jobs:
           db_password = "dummy_password_for_validation"
           EOF
 
+      - name: Remove backend configuration for CI
+        run: |
+          # CI環境ではローカルバックエンドを使用するため、GCSバックエンドを削除
+          sed -i '/backend "gcs" {/,/}/d' main.tf
+
       - name: Terraform Init
         id: init
-        run: terraform init -backend=false -reconfigure
+        run: terraform init
 
       - name: Terraform Validate
         id: validate
@@ -140,9 +145,14 @@ jobs:
           db_password = "dummy_password_for_plan"
           EOF
 
+      - name: Remove backend configuration for CI
+        run: |
+          # CI環境ではローカルバックエンドを使用するため、GCSバックエンドを削除
+          sed -i '/backend "gcs" {/,/}/d' main.tf
+
       - name: Terraform Init
         id: init
-        run: terraform init -backend=false -reconfigure
+        run: terraform init
 
       - name: Terraform Plan
         id: plan
