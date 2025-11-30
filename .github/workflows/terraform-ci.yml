@@ -220,11 +220,10 @@ jobs:
       - name: Generate docs for all modules
         uses: terraform-docs/gh-actions@v1.1.0
         with:
-          working-dir: backend/deploy/terraform/modules
+          working-dir: backend/deploy/terraform
           output-file: README.md
           output-method: inject
-          recursive: true
-          recursive-path: .
+          find-dir: modules
           git-push: true
           git-commit-message: "docs(terraform): モジュールREADME自動更新"
 
