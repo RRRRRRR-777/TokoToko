@@ -182,10 +182,10 @@ func runMigrateAuth(ctx context.Context, db *sql.DB, authClient *auth.Client, lo
 
 	for {
 		user, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
 		if err != nil {
-			if err.Error() == "no more items in iterator" {
-				break
-			}
 			return fmt.Errorf("failed to fetch user: %w", err)
 		}
 
@@ -483,8 +483,11 @@ func getInt(data map[string]interface{}, key string) int {
 }
 
 func getTime(data map[string]interface{}, key string) *time.Time {
-	if v, ok := data[key].(time.Time); ok {
+	switch v := data[key].(type) {
+	case time.Time:
 		return &v
+	case *time.Time:
+		return v
 	}
 	return nil
 }
