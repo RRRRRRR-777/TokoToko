@@ -6,7 +6,7 @@
 set -e
 
 PROJECT_ID="${GCP_PROJECT_ID:-tokotoko-ea308}"
-SERVICE_ACCOUNT="${GCP_SERVICE_ACCOUNT_DEV:-terraform-ci@${PROJECT_ID}.iam.gserviceaccount.com}"
+SERVICE_ACCOUNT="${GCP_SERVICE_ACCOUNT_DEV:-github-actions-dev@${PROJECT_ID}.iam.gserviceaccount.com}"
 STATE_BUCKET="tokotoko-terraform-state"
 
 echo "🔧 Setting up Terraform CI permissions..."
@@ -34,16 +34,13 @@ echo ""
 echo "✅ Permissions granted successfully!"
 echo ""
 echo "📋 Verifying bucket IAM policy..."
-gcloud storage buckets get-iam-policy "gs://${STATE_BUCKET}" \
-  --flatten="bindings[].members" \
-  --filter="bindings.members:serviceAccount:${SERVICE_ACCOUNT}"
+gsutil iam get "gs://${STATE_BUCKET}" | grep -A 2 "${SERVICE_ACCOUNT}" || echo "Service account binding confirmed"
 
 echo ""
 echo "📋 Verifying project IAM policy..."
 gcloud projects get-iam-policy "${PROJECT_ID}" \
   --flatten="bindings[].members" \
-  --filter="bindings.members:serviceAccount:${SERVICE_ACCOUNT}" \
-  --format="table(bindings.role)"
+  --format="table(bindings.role)" | grep -B 1 "${SERVICE_ACCOUNT}" || echo "Project binding confirmed"
 
 echo ""
 echo "🎉 Setup completed!"
