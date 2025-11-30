@@ -14,12 +14,12 @@ echo "Project ID: ${PROJECT_ID}"
 echo "Service Account: ${SERVICE_ACCOUNT}"
 echo "State Bucket: ${STATE_BUCKET}"
 
-# 1. GCSバケットへの読み取り権限を付与
+# 1. GCSバケットへの読み書き権限を付与（State Lock用）
 echo ""
-echo "📦 Granting Storage Object Viewer role to service account..."
+echo "📦 Granting Storage Object User role to service account..."
 gcloud storage buckets add-iam-policy-binding "gs://${STATE_BUCKET}" \
   --member="serviceAccount:${SERVICE_ACCOUNT}" \
-  --role="roles/storage.objectViewer" \
+  --role="roles/storage.objectUser" \
   --project="${PROJECT_ID}"
 
 # 2. プロジェクトレベルの閲覧権限（Terraform planに必要）
