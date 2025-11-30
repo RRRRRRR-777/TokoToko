@@ -64,6 +64,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
+      id-token: write
     strategy:
       matrix:
         environment: [dev, staging, prod]
@@ -74,6 +75,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -82,7 +89,7 @@ jobs:
       - name: Create terraform.tfvars
         run: |
           cat > terraform.tfvars <<EOF
-          project_id  = "tekutoko-${{ matrix.environment }}-test"
+          project_id  = "${{ secrets.GCP_PROJECT_ID }}"
           region      = "asia-northeast1"
           zone        = "asia-northeast1-a"
           db_password = "dummy_password_for_validation"
@@ -90,7 +97,10 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init -backend=false
+        run: |
+          terraform init \
+            -backend-config="bucket=tokotoko-terraform-state" \
+            -backend-config="prefix=state/${{ matrix.environment }}"
 
       - name: Terraform Validate
         id: validate
@@ -116,6 +126,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
+      id-token: write
     strategy:
       matrix:
         environment: [dev]  # PRではdev環境のみplanを実行
@@ -126,6 +137,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -134,7 +151,7 @@ jobs:
       - name: Create terraform.tfvars
         run: |
           cat > terraform.tfvars <<EOF
-          project_id  = "tekutoko-${{ matrix.environment }}-test"
+          project_id  = "${{ secrets.GCP_PROJECT_ID }}"
           region      = "asia-northeast1"
           zone        = "asia-northeast1-a"
           db_password = "dummy_password_for_plan"
@@ -142,12 +159,15 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init -backend=false
+        run: |
+          terraform init \
+            -backend-config="bucket=tokotoko-terraform-state" \
+            -backend-config="prefix=state/${{ matrix.environment }}"
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -no-color -input=false
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Comment Plan Result
         uses: actions/github-script@v7
@@ -243,9 +263,10 @@ jobs:
             exit 1
           fi
 
-          # terraform-planはPRのみ実行、失敗しても警告のみ（バックエンド未設定のため）
+          # terraform-planはPRのみ実行、成功が必須
           if [ "${{ needs.terraform-plan.result }}" == "failure" ]; then
-            echo "⚠️ Terraform Plan failed (expected: backend not configured for CI)"
+            echo "❌ Terraform Plan failed"
+            exit 1
           fi
 
           echo "✅ All Terraform CI checks passed"
