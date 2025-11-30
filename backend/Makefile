@@ -138,3 +138,21 @@ seed-build: ## シードスクリプトをビルド
 	@echo "Building seed script..."
 	go build -o bin/seed ./cmd/seed
 	@echo "Build complete: bin/seed"
+
+.PHONY: migrate-firestore-dry
+migrate-firestore-dry: ## Firestore移行のドライラン（データ数確認のみ）
+	@echo "Running Firestore migration dry-run..."
+	go run ./cmd/migrate-firestore/main.go -dry-run
+	@echo "Dry-run complete!"
+
+.PHONY: migrate-firestore
+migrate-firestore: ## Firestore→PostgreSQL移行を実行
+	@echo "Running Firestore to PostgreSQL migration..."
+	go run ./cmd/migrate-firestore/main.go
+	@echo "Migration complete!"
+
+.PHONY: migrate-firestore-build
+migrate-firestore-build: ## Firestore移行スクリプトをビルド
+	@echo "Building migration script..."
+	go build -o bin/migrate-firestore ./cmd/migrate-firestore/main.go
+	@echo "Build complete: bin/migrate-firestore"
