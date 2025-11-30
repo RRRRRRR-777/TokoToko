@@ -48,7 +48,6 @@ type UpdateWalkRequest struct {
 func (h *WalkHandler) ListWalks(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// TODO: 認証実装後にuserIDを取得
 	userID := h.getUserID(c)
 
 	// ページネーションパラメータ取得
@@ -84,7 +83,6 @@ func (h *WalkHandler) ListWalks(c *gin.Context) {
 func (h *WalkHandler) GetWalk(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// TODO: 認証実装後にuserIDを取得
 	userID := h.getUserID(c)
 
 	// IDパラメータ取得
@@ -116,7 +114,6 @@ func (h *WalkHandler) GetWalk(c *gin.Context) {
 func (h *WalkHandler) CreateWalk(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// TODO: 認証実装後にuserIDを取得
 	userID := h.getUserID(c)
 
 	// リクエストボディをバインド
@@ -148,7 +145,6 @@ func (h *WalkHandler) CreateWalk(c *gin.Context) {
 func (h *WalkHandler) UpdateWalk(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// TODO: 認証実装後にuserIDを取得
 	userID := h.getUserID(c)
 
 	// IDパラメータ取得
@@ -194,7 +190,6 @@ func (h *WalkHandler) UpdateWalk(c *gin.Context) {
 func (h *WalkHandler) DeleteWalk(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// TODO: 認証実装後にuserIDを取得
 	userID := h.getUserID(c)
 
 	// IDパラメータ取得
