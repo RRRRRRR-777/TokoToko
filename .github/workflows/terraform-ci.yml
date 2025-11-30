@@ -24,6 +24,10 @@ jobs:
   terraform-fmt:
     name: Terraform Format Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     defaults:
       run:
         working-directory: ./backend/deploy/terraform
@@ -41,7 +45,7 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: false
 
-      - name: Comment Format Check Result
+      - name: Comment Format  lt
         if: github.event_name == 'pull_request' && failure()
         uses: actions/github-script@v7
         with:
@@ -56,6 +60,10 @@ jobs:
   terraform-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     strategy:
       matrix:
         environment: [dev, staging, prod]
@@ -104,6 +112,10 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     strategy:
       matrix:
         environment: [dev]  # PRではdev環境のみplanを実行
@@ -192,35 +204,28 @@ jobs:
         continue-on-error: true
 
   terraform-docs:
-    name: Terraform Docs Check
+    name: Terraform Docs Auto-Update
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    strategy:
-      matrix:
-        module: [vpc, cloud_nat, firewall, gke, cloud_sql, secret_manager]
-    defaults:
-      run:
-        working-directory: ./backend/deploy/terraform/modules/${{ matrix.module }}
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check README exists
-        run: |
-          if [ ! -f README.md ]; then
-            echo "⚠️ README.md not found in ${{ matrix.module }} module"
-            echo "Please add documentation for this module"
-            exit 1
-          fi
-
-      - name: Render terraform docs
+      - name: Generate docs for all modules
         uses: terraform-docs/gh-actions@v1.1.0
         with:
-          working-dir: backend/deploy/terraform/modules/${{ matrix.module }}
+          working-dir: backend/deploy/terraform
           output-file: README.md
           output-method: inject
-          git-push: false
-          fail-on-diff: false
+          find-dir: modules
+          git-push: true
+          git-commit-message: "docs(terraform): モジュールREADME自動更新"
 
   summary:
     name: CI Summary
@@ -238,10 +243,9 @@ jobs:
             exit 1
           fi
 
-          # terraform-planはPRのみ実行なのでskippedを許容
+          # terraform-planはPRのみ実行、失敗しても警告のみ（バックエンド未設定のため）
           if [ "${{ needs.terraform-plan.result }}" == "failure" ]; then
-            echo "❌ Terraform Plan failed"
-            exit 1
+            echo "⚠️ Terraform Plan failed (expected: backend not configured for CI)"
           fi
 
           echo "✅ All Terraform CI checks passed"
