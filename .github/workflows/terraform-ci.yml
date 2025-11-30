@@ -90,7 +90,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init -backend=false
+        run: terraform init -backend=false -reconfigure
 
       - name: Terraform Validate
         id: validate
@@ -142,7 +142,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init -backend=false
+        run: terraform init -backend=false -reconfigure
 
       - name: Terraform Plan
         id: plan
