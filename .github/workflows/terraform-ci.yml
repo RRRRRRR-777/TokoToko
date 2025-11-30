@@ -210,12 +210,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    strategy:
-      matrix:
-        module: [vpc, cloud_nat, firewall, gke, cloud_sql, secret_manager]
-    defaults:
-      run:
-        working-directory: ./backend/deploy/terraform/modules/${{ matrix.module }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -223,22 +217,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check README exists
-        run: |
-          if [ ! -f README.md ]; then
-            echo "⚠️ README.md not found in ${{ matrix.module }} module"
-            echo "Please add documentation for this module"
-            exit 1
-          fi
-
-      - name: Render and commit terraform docs
+      - name: Generate docs for all modules
         uses: terraform-docs/gh-actions@v1.1.0
         with:
-          working-dir: backend/deploy/terraform/modules/${{ matrix.module }}
+          working-dir: backend/deploy/terraform/modules
           output-file: README.md
           output-method: inject
+          recursive: true
+          recursive-path: .
           git-push: true
-          git-commit-message: "docs(terraform): ${{ matrix.module }}モジュールのREADME自動更新"
+          git-commit-message: "docs(terraform): モジュールREADME自動更新"
 
   summary:
     name: CI Summary
