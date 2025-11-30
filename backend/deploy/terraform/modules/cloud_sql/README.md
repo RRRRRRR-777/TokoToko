@@ -38,6 +38,7 @@ No modules.
 
 | Name | Type |
 |------|------|
+| [google_compute_global_address.private_ip_address](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address) | resource |
 | [google_service_networking_connection.private_vpc_connection](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_networking_connection) | resource |
 | [google_sql_database.database](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database) | resource |
 | [google_sql_database_instance.postgres](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database_instance) | resource |
@@ -48,10 +49,10 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_additional_labels"></a> [additional\_labels](#input\_additional\_labels) | 追加のリソースラベル | `map(string)` | `{}` | no |
-| <a name="input_authorized_networks"></a> [authorized\_networks](#input\_authorized\_networks) | パブリックIP接続時の許可ネットワーク | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_authorized_networks"></a> [authorized\_networks](#input\_authorized\_networks) | パブリックIP接続時の許可ネットワーク | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | `[]` | no |
 | <a name="input_availability_type"></a> [availability\_type](#input\_availability\_type) | 可用性タイプ（ZONAL or REGIONAL） | `string` | `"REGIONAL"` | no |
 | <a name="input_backup_start_time"></a> [backup\_start\_time](#input\_backup\_start\_time) | バックアップ開始時刻（HH:MM形式、UTC） | `string` | `"03:00"` | no |
-| <a name="input_database_flags"></a> [database\_flags](#input\_database\_flags) | データベースフラグ | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_database_flags"></a> [database\_flags](#input\_database\_flags) | データベースフラグ | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | `[]` | no |
 | <a name="input_database_name"></a> [database\_name](#input\_database\_name) | 作成するデータベース名 | `string` | n/a | yes |
 | <a name="input_database_version"></a> [database\_version](#input\_database\_version) | PostgreSQLバージョン | `string` | `"POSTGRES_15"` | no |
 | <a name="input_db_user_name"></a> [db\_user\_name](#input\_db\_user\_name) | データベースユーザー名 | `string` | n/a | yes |
@@ -66,7 +67,7 @@ No modules.
 | <a name="input_enable_query_insights"></a> [enable\_query\_insights](#input\_enable\_query\_insights) | Query Insightsを有効化するか | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | 環境名（dev/staging/prod） | `string` | n/a | yes |
 | <a name="input_instance_name"></a> [instance\_name](#input\_instance\_name) | Cloud SQLインスタンス名 | `string` | n/a | yes |
-| <a name="input_maintenance_window"></a> [maintenance\_window](#input\_maintenance\_window) | メンテナンスウィンドウ設定 | <pre>object({<br/>    day          = number<br/>    hour         = number<br/>    update_track = string<br/>  })</pre> | `null` | no |
+| <a name="input_maintenance_window"></a> [maintenance\_window](#input\_maintenance\_window) | メンテナンスウィンドウ設定 | <pre>object({<br>    day          = number<br>    hour         = number<br>    update_track = string<br>  })</pre> | `null` | no |
 | <a name="input_network_self_link"></a> [network\_self\_link](#input\_network\_self\_link) | VPC self link | `string` | n/a | yes |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | GCPプロジェクトID | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | リージョン | `string` | n/a | yes |
