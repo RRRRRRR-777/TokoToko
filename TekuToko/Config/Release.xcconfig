@@ -1,0 +1,7 @@
+// Release.xcconfig
+// GKE本番環境
+
+#include "Base.xcconfig"
+
+API_BASE_URL = https:/$()/api.tekutoko.app
+APP_ENV = release

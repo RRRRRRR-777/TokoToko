@@ -1,0 +1,7 @@
+// Development.xcconfig
+// GKE開発環境
+
+#include "Base.xcconfig"
+
+API_BASE_URL = https:/$()/api-dev.tekutoko.app
+APP_ENV = development
