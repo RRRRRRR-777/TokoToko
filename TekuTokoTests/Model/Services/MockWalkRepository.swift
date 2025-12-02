@@ -86,6 +86,15 @@ class MockWalkRepository: WalkRepositoryProtocol {
     description: String,
     completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
   ) {
+    createWalk(title: title, description: description, location: nil, completion: completion)
+  }
+
+  func createWalk(
+    title: String,
+    description: String,
+    location: CLLocationCoordinate2D?,
+    completion: @escaping (Result<Walk, WalkRepositoryError>) -> Void
+  ) {
     if shouldSimulateError {
       completion(.failure(simulatedError))
       return
@@ -96,7 +105,13 @@ class MockWalkRepository: WalkRepositoryProtocol {
       return
     }
 
-    let newWalk = Walk(title: title, description: description, userId: userId)
+    var newWalk = Walk(title: title, description: description, userId: userId)
+
+    // 位置情報がある場合は開始地点として追加
+    if let location = location {
+      let clLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+      newWalk.addLocation(clLocation)
+    }
 
     mockWalks.append(newWalk)
     completion(.success(newWalk))

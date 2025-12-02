@@ -11,13 +11,6 @@ import Foundation
   import FoundationModels
 #endif
 
-/// WalkRepositoryのプロトコル定義（テスタビリティのため）
-protocol WalkRepositoryProtocol {
-  func fetchWalks(completion: @escaping (Result<[Walk], WalkRepositoryError>) -> Void)
-}
-
-/// WalkRepositoryをプロトコルに準拠させる
-extension WalkRepository: WalkRepositoryProtocol {}
 
 /// Geocoderのプロトコル定義（テスタビリティのため）
 protocol GeocoderProtocol {
