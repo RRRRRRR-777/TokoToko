@@ -50,9 +50,8 @@ final class WalkRepositoryFactory {
   /// Firestoreリポジトリインスタンス（遅延初期化）
   private lazy var firestoreRepository: WalkRepositoryProtocol = WalkRepository.shared
 
-  /// Go Backendリポジトリインスタンス（将来実装）
-  /// 現在はnil、GoBackendWalkRepository実装後に設定
-  private var goBackendRepository: WalkRepositoryProtocol?
+  /// Go Backendリポジトリインスタンス（遅延初期化）
+  private lazy var goBackendRepository: WalkRepositoryProtocol = GoBackendWalkRepository()
 
   // MARK: - Initialization
 
@@ -70,21 +69,12 @@ final class WalkRepositoryFactory {
   /// 現在のリポジトリ実装を取得
   ///
   /// 現在のタイプに基づいて適切なリポジトリインスタンスを返します。
-  /// Go Backendが未実装の場合は、フォールバックとしてFirestoreを使用します。
   var repository: WalkRepositoryProtocol {
     switch currentType {
     case .firestore:
       return firestoreRepository
     case .goBackend:
-      // Go Backend未実装時はFirestoreにフォールバック
-      if let goRepo = goBackendRepository {
-        return goRepo
-      } else {
-        #if DEBUG
-          print("[WalkRepositoryFactory] GoBackendRepository未実装のため、Firestoreにフォールバック")
-        #endif
-        return firestoreRepository
-      }
+      return goBackendRepository
     }
   }
 
@@ -95,18 +85,6 @@ final class WalkRepositoryFactory {
     self.currentType = type
     #if DEBUG
       print("[WalkRepositoryFactory] リポジトリタイプを変更: \(type)")
-    #endif
-  }
-
-  /// Go Backendリポジトリを登録（将来使用）
-  ///
-  /// GoBackendWalkRepository実装後に呼び出して登録します。
-  ///
-  /// - Parameter repository: Go Backend実装のリポジトリ
-  func registerGoBackendRepository(_ repository: WalkRepositoryProtocol) {
-    self.goBackendRepository = repository
-    #if DEBUG
-      print("[WalkRepositoryFactory] GoBackendRepositoryを登録しました")
     #endif
   }
 

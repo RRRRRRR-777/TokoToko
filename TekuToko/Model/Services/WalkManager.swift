@@ -128,7 +128,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
   // 依存関係
   let locationManager = LocationManager.shared
-  let walkRepository = WalkRepository.shared
+  let walkRepository: WalkRepositoryProtocol = WalkRepositoryFactory.shared.repository
   let stepCountManager = StepCountManager.shared
   let logger = EnhancedVibeLogger.shared
 

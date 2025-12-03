@@ -91,7 +91,7 @@ class RouteSuggestionService {
   ///   - walkRepository: 散歩履歴を取得するリポジトリ（デフォルトは共有インスタンス）
   ///   - geocoderFactory: ジオコーダーを生成するファクトリ（デフォルトはCLGeocoder）
   init(
-    walkRepository: WalkRepositoryProtocol = WalkRepository.shared,
+    walkRepository: WalkRepositoryProtocol = WalkRepositoryFactory.shared.repository,
     geocoderFactory: @escaping () -> GeocoderProtocol = { CLGeocoder() }
   ) {
     self.walkRepository = walkRepository

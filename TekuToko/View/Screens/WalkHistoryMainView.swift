@@ -52,8 +52,9 @@ struct WalkHistoryMainView: View {
 
   /// 散歩データリポジトリ
   ///
-  /// 散歩データの取得・保存を担当するWalkRepositoryのシングルトンインスタンスです。
-  private let walkRepository = WalkRepository.shared
+  /// 散歩データの取得・保存を担当するWalkRepositoryです。
+  /// WalkRepositoryFactoryを通じて環境設定に基づいたリポジトリを取得します。
+  private let walkRepository: WalkRepositoryProtocol = WalkRepositoryFactory.shared.repository
 
   var body: some View {
     Group {
