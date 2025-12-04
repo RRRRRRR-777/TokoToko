@@ -136,7 +136,7 @@ struct StatsBarView: View {
   }
 
   private func performWalkDeletion() {
-    let walkRepository = WalkRepository.shared
+    let walkRepository = WalkRepositoryFactory.shared.repository
     walkRepository.deleteWalk(withID: walk.id) { result in
       DispatchQueue.main.async {
         handleDeletionResult(result)

@@ -9,6 +9,18 @@ options:
   indentWidth: 2
   tabWidth: 2
 
+configs:
+  Debug: debug
+  Development: debug
+  Staging: release
+  Release: release
+
+configFiles:
+  Debug: TekuToko/Config/Debug.xcconfig
+  Development: TekuToko/Config/Development.xcconfig
+  Staging: TekuToko/Config/Staging.xcconfig
+  Release: TekuToko/Config/Release.xcconfig
+
 fileGroups:
   - README.md
   - project.yml
@@ -113,6 +125,9 @@ targets:
         UIBackgroundModes:
           - location
         ITSAppUsesNonExemptEncryption: false
+        API_BASE_URL: $(API_BASE_URL)
+        APP_ENV: $(APP_ENV)
+        USE_GO_BACKEND: $(USE_GO_BACKEND)
     scheme:
       testTargets:
         - TekuTokoTests

@@ -55,6 +55,7 @@ class WalkSharingService {
   static let shared = WalkSharingService()
 
   let imageGenerator = WalkImageGenerator.shared
+  /// 共有画像保存用リポジトリ（Firebase Storage機能を使用するためFirestore専用）
   private let walkRepository = WalkRepository.shared
 
   private init() {}

@@ -113,7 +113,7 @@ enum WalkRepositoryError: Error, Equatable {
 ///
 /// ### Image Operations
 /// - ``saveSharedImage(_:for:completion:)``
-class WalkRepository {
+class WalkRepository: WalkRepositoryProtocol {
   /// WalkRepositoryのシングルトンインスタンス
   ///
   /// アプリ全体で単一のリポジトリインスタンスを使用し、

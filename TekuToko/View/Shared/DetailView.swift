@@ -16,7 +16,7 @@ struct DetailView: View {
   var presentationMode
 
   // リポジトリ
-  private let walkRepository = WalkRepository.shared
+  private let walkRepository: WalkRepositoryProtocol = WalkRepositoryFactory.shared.repository
 
   init(walk: Walk) {
     _walk = State(initialValue: walk)

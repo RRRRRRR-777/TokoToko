@@ -1,0 +1,5 @@
+// Base.xcconfig
+// 全環境共通の設定
+
+// Feature Flags
+USE_GO_BACKEND = NO
