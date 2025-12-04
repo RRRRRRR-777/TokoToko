@@ -151,6 +151,39 @@ func (r *WalkRepository) Update(ctx context.Context, w *walk.Walk) error {
 	return nil
 }
 
+// Upsert はWalkを作成または更新する（存在しなければ作成、存在すれば更新）
+func (r *WalkRepository) Upsert(ctx context.Context, w *walk.Walk) error {
+	query := `
+		INSERT INTO walks (
+			id, user_id, title, description, start_time, end_time,
+			total_distance, total_steps, polyline_data, thumbnail_image_url,
+			status, paused_at, total_paused_duration, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		ON CONFLICT (id) DO UPDATE SET
+			user_id = EXCLUDED.user_id,
+			title = EXCLUDED.title,
+			description = EXCLUDED.description,
+			start_time = EXCLUDED.start_time,
+			end_time = EXCLUDED.end_time,
+			total_distance = EXCLUDED.total_distance,
+			total_steps = EXCLUDED.total_steps,
+			polyline_data = EXCLUDED.polyline_data,
+			thumbnail_image_url = EXCLUDED.thumbnail_image_url,
+			status = EXCLUDED.status,
+			paused_at = EXCLUDED.paused_at,
+			total_paused_duration = EXCLUDED.total_paused_duration,
+			updated_at = EXCLUDED.updated_at
+	`
+
+	_, err := r.db.ExecContext(
+		ctx, query,
+		w.ID, w.UserID, w.Title, w.Description, w.StartTime, w.EndTime,
+		w.TotalDistance, w.TotalSteps, w.PolylineData, w.ThumbnailImageURL,
+		w.Status, w.PausedAt, w.TotalPausedDuration, w.CreatedAt, w.UpdatedAt,
+	)
+	return err
+}
+
 // Delete はWalkを削除する
 func (r *WalkRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM walks WHERE id = $1`

@@ -327,24 +327,30 @@ func TestWalkHandler_UpdateWalk_Success(t *testing.T) {
 	mockUsecase.AssertExpectations(t)
 }
 
-// 期待値: 散歩情報を正常に更新し、200 OKとともに更新後の散歩情報を返す
-func TestWalkHandler_UpdateWalk_NotFound(t *testing.T) {
+// 期待値: 存在しないIDでもupsertにより新規作成され、200 OKを返す
+func TestWalkHandler_UpdateWalk_Upsert(t *testing.T) {
 	handler, mockUsecase := setupTestHandler()
 
 	walkID := uuid.New()
-	newTitle := "Updated Title"
+	newTitle := "New Walk via Upsert"
 	reqBody := UpdateWalkRequest{
 		Title: &newTitle,
 	}
 
-	mockUsecase.On("UpdateWalk", mock.Anything, mock.Anything, "test-user").Return(nil, sql.ErrNoRows)
+	// upsertにより新規作成されたWalkを返す
+	createdWalk := walk.NewWalk("test-user", "New Walk via Upsert", "")
+	createdWalk.ID = walkID
+
+	mockUsecase.On("UpdateWalk", mock.Anything, mock.MatchedBy(func(input walkusecase.UpdateWalkInput) bool {
+		return input.ID == walkID && *input.Title == "New Walk via Upsert"
+	}), "test-user").Return(createdWalk, nil)
 
 	c, w := setupTestContext(http.MethodPut, "/v1/walks/"+walkID.String(), reqBody)
 	c.Params = gin.Params{{Key: "id", Value: walkID.String()}}
 
 	handler.UpdateWalk(c)
 
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	mockUsecase.AssertExpectations(t)
 }

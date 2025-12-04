@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
@@ -36,11 +37,19 @@ type CreateWalkRequest struct {
 }
 
 // UpdateWalkRequest はWalk更新のリクエスト
+// upsert対応: 存在しない場合は新規作成するため、作成に必要なフィールドも含む
 type UpdateWalkRequest struct {
-	Title       *string          `json:"title,omitempty"`
-	Description *string          `json:"description,omitempty"`
-	Status      *walk.WalkStatus `json:"status,omitempty"`
-	TotalSteps  *int             `json:"total_steps,omitempty"`
+	Title               *string          `json:"title,omitempty"`
+	Description         *string          `json:"description,omitempty"`
+	Status              *walk.WalkStatus `json:"status,omitempty"`
+	TotalSteps          *int             `json:"total_steps,omitempty"`
+	StartTime           *time.Time       `json:"start_time,omitempty"`
+	EndTime             *time.Time       `json:"end_time,omitempty"`
+	TotalDistance       *float64         `json:"total_distance,omitempty"`
+	PolylineData        *string          `json:"polyline_data,omitempty"`
+	ThumbnailImageURL   *string          `json:"thumbnail_image_url,omitempty"`
+	PausedAt            *time.Time       `json:"paused_at,omitempty"`
+	TotalPausedDuration *float64         `json:"total_paused_duration,omitempty"`
 }
 
 // ListWalks は散歩一覧を取得する
@@ -162,20 +171,24 @@ func (h *WalkHandler) UpdateWalk(c *gin.Context) {
 		return
 	}
 
-	// Usecase呼び出し
+	// Usecase呼び出し（upsert対応）
 	input := walkusecase.UpdateWalkInput{
-		ID:          id,
-		Title:       req.Title,
-		Description: req.Description,
-		Status:      req.Status,
-		TotalSteps:  req.TotalSteps,
+		ID:                  id,
+		Title:               req.Title,
+		Description:         req.Description,
+		Status:              req.Status,
+		TotalSteps:          req.TotalSteps,
+		StartTime:           req.StartTime,
+		EndTime:             req.EndTime,
+		TotalDistance:       req.TotalDistance,
+		PolylineData:        req.PolylineData,
+		ThumbnailImageURL:   req.ThumbnailImageURL,
+		PausedAt:            req.PausedAt,
+		TotalPausedDuration: req.TotalPausedDuration,
 	}
 	wlk, err := h.walkUsecase.UpdateWalk(ctx, input, userID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			h.respondError(c, errors.NewNotFoundError("Walk not found"))
-			return
-		}
+		fmt.Printf("[DEBUG] UpdateWalk error: %+v\n", err)
 		h.respondError(c, err)
 		return
 	}
