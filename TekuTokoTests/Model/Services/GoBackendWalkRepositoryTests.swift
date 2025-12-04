@@ -5,6 +5,7 @@
 //  Created by Claude Code on 2025/12/02.
 //
 
+import CoreLocation
 import XCTest
 
 @testable import TekuToko
@@ -38,8 +39,10 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
     // 期待値: APIから取得したWalkDTOがWalkに変換されて返される
     let walkDTO = createTestWalkDTO()
     let response = WalksListResponse(
-      data: [walkDTO],
-      meta: createMeta()
+      walks: [walkDTO],
+      totalCount: 1,
+      page: 1,
+      limit: 10
     )
     mockAPIClient.mockResult = response
 
@@ -110,11 +113,8 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
   func test_fetchWalk_正常系_散歩詳細を取得できる() {
     // 期待値: 指定IDの散歩を取得できる
     let walkDTO = createTestWalkDTO()
-    let response = WalkDetailResponse(
-      data: walkDTO,
-      meta: createMeta()
-    )
-    mockAPIClient.mockResult = response
+    // WalkDetailResponseはWalkDTOのtype alias
+    mockAPIClient.mockResult = walkDTO
 
     let expectation = expectation(description: "fetchWalk")
     let walkId = UUID(uuidString: walkDTO.id) ?? UUID()
@@ -161,11 +161,8 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
   func test_createWalk_正常系_散歩を作成できる() {
     // 期待値: 新しい散歩が作成される
     let walkDTO = createTestWalkDTO()
-    let response = WalkDetailResponse(
-      data: walkDTO,
-      meta: createMeta()
-    )
-    mockAPIClient.mockResult = response
+    // WalkDetailResponseはWalkDTOのtype alias
+    mockAPIClient.mockResult = walkDTO
 
     let expectation = expectation(description: "createWalk")
     var result: Result<Walk, WalkRepositoryError>?
@@ -184,16 +181,36 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
     XCTAssertEqual(walk.title, walkDTO.title)
   }
 
+  func test_createWalk_位置情報付き_リクエストに位置情報が含まれる() {
+    // 期待値: 位置情報がリクエストに含まれる
+    let walkDTO = createTestWalkDTO()
+    mockAPIClient.mockResult = walkDTO
+
+    let expectation = expectation(description: "createWalk with location")
+    let testLocation = CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671)
+
+    sut.createWalk(title: "テスト散歩", description: "テスト説明", location: testLocation) { _ in
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    // 検証: リクエストボディに位置情報が含まれている
+    if let body = mockAPIClient.lastBody as? WalkCreateRequest {
+      XCTAssertEqual(body.startLatitude, testLocation.latitude)
+      XCTAssertEqual(body.startLongitude, testLocation.longitude)
+    } else {
+      XCTFail("リクエストボディがWalkCreateRequestでない")
+    }
+  }
+
   // MARK: - updateWalk Tests
 
   func test_updateWalk_正常系_散歩を更新できる() {
     // 期待値: 散歩が更新される
     let walkDTO = createTestWalkDTO()
-    let response = WalkDetailResponse(
-      data: walkDTO,
-      meta: createMeta()
-    )
-    mockAPIClient.mockResult = response
+    // WalkDetailResponseはWalkDTOのtype alias
+    mockAPIClient.mockResult = walkDTO
 
     let expectation = expectation(description: "updateWalk")
     let walk = Walk(title: "更新前", description: "説明", id: UUID(uuidString: walkDTO.id) ?? UUID())
@@ -276,13 +293,6 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
       totalPausedDuration: 0.0,
       createdAt: Date(),
       updatedAt: Date()
-    )
-  }
-
-  private func createMeta() -> APIResponseMeta {
-    APIResponseMeta(
-      requestId: "test-request-id",
-      timestamp: Date()
     )
   }
 }
