@@ -50,6 +50,14 @@ struct WalkHistoryMainView: View {
   /// WalkRepositoryからのデータ取得に失敗した場合にtrueに設定されます。
   @State private var hasError = false
 
+  /// エラーメッセージ
+  ///
+  /// データ取得失敗時に表示するエラーメッセージ。
+  @State private var errorMessage: String = ""
+
+  /// エラーアラート表示フラグ
+  @State private var showErrorAlert = false
+
   /// 散歩データリポジトリ
   ///
   /// 散歩データの取得・保存を担当するWalkRepositoryです。
@@ -68,6 +76,13 @@ struct WalkHistoryMainView: View {
     }
     .onAppear {
       loadWalks()
+    }
+    .alert("エラー", isPresented: $showErrorAlert) {
+      Button("OK") {
+        showErrorAlert = false
+      }
+    } message: {
+      Text(errorMessage)
     }
   }
 
@@ -99,6 +114,8 @@ struct WalkHistoryMainView: View {
         case .failure(let error):
           print("❌ 散歩履歴の読み込みに失敗しました: \(error)")
           self.hasError = true
+          self.errorMessage = "散歩履歴の読み込みに失敗しました。\nサーバーに接続できません。"
+          self.showErrorAlert = true
         }
       }
     }

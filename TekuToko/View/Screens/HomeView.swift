@@ -66,6 +66,12 @@ struct HomeView: View {
   /// ルート提案エラー表示用のメッセージ
   @State private var routeSuggestionErrorMessage: String?
 
+  /// 散歩保存エラー表示用のメッセージ
+  @State private var walkSaveErrorMessage: String = ""
+
+  /// 散歩保存エラーアラート表示フラグ
+  @State private var showWalkSaveErrorAlert = false
+
   /// ルート提案入力画面の表示状態
   @State private var showRouteSuggestionInput = false
 
@@ -325,6 +331,20 @@ struct HomeView: View {
         Text(routeSuggestionErrorMessage ?? "")
       }
     )
+    .alert("エラー", isPresented: $showWalkSaveErrorAlert) {
+      Button("OK") {
+        showWalkSaveErrorAlert = false
+      }
+    } message: {
+      Text(walkSaveErrorMessage)
+    }
+    .onChange(of: walkManager.errorMessage) { newValue in
+      if let message = newValue {
+        walkSaveErrorMessage = message
+        showWalkSaveErrorAlert = true
+        walkManager.errorMessage = nil
+      }
+    }
     .overlay(
       // オンボーディングモーダルを背景透明でオーバーレイ表示
       Group {

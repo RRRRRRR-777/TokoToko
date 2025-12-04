@@ -103,6 +103,21 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   /// CoreMotionからの実際の歩数、または利用不可状態。
   @Published var currentStepCount: StepCountSource = .unavailable
 
+  /// エラーメッセージ
+  ///
+  /// 散歩保存時のエラーメッセージ。nilでない場合、UIにアラートを表示します。
+  @Published var errorMessage: String?
+
+  /// 散歩保存成功フラグ
+  ///
+  /// 散歩保存成功時にtrueに設定されます。UIで完了画面の表示判定に使用します。
+  @Published var didSaveWalkSuccessfully = false
+
+  /// 最後に保存が完了した散歩
+  ///
+  /// 散歩保存成功時に設定されます。UIで完了画面の表示判定に使用します。
+  var lastSavedWalk: Walk?
+
   /// 散歩セッションがアクティブかどうか
   ///
   /// 散歩が進行中または一時停止中の場合にtrue。散歩が未開始または終了している場合はfalse。
@@ -377,13 +392,18 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
 
     walkRepository.saveWalk(walk) { [weak self] result in
-      switch result {
-      case .success(let savedWalk):
-        self?.logger.info(
-          operation: "saveWalk", message: "散歩データを保存しました",
-          context: ["walkId": savedWalk.id.uuidString])
-      case .failure(let error):
-        self?.logger.logError(error, operation: "saveWalk")
+      DispatchQueue.main.async {
+        switch result {
+        case .success(let savedWalk):
+          self?.logger.info(
+            operation: "saveWalk", message: "散歩データを保存しました",
+            context: ["walkId": savedWalk.id.uuidString])
+          self?.lastSavedWalk = savedWalk
+          self?.didSaveWalkSuccessfully = true
+        case .failure(let error):
+          self?.logger.logError(error, operation: "saveWalk")
+          self?.errorMessage = "散歩の保存に失敗しました。\nサーバーに接続できません。"
+        }
       }
     }
   }

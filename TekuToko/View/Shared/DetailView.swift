@@ -12,6 +12,8 @@ struct DetailView: View {
   @State private var walk: Walk
   @State private var isLoading = false
   @State private var showingDeleteAlert = false
+  @State private var errorMessage: String = ""
+  @State private var showErrorAlert = false
   @Environment(\.presentationMode)
   var presentationMode
 
@@ -90,6 +92,13 @@ struct DetailView: View {
       Button("キャンセル", role: .cancel) {}
     } message: {
       Text("この散歩記録を削除しますか？この操作は取り消せません。")
+    }
+    .alert("エラー", isPresented: $showErrorAlert) {
+      Button("OK") {
+        showErrorAlert = false
+      }
+    } message: {
+      Text(errorMessage)
     }
     .onAppear {
       refreshWalkDetails()
@@ -267,6 +276,8 @@ struct DetailView: View {
           #if DEBUG
             print("Error refreshing walk details: \(error)")
           #endif
+          self.errorMessage = "散歩詳細の取得に失敗しました。\nサーバーに接続できません。"
+          self.showErrorAlert = true
         }
       }
     }
@@ -287,6 +298,8 @@ struct DetailView: View {
           #if DEBUG
             print("Error deleting walk: \(error)")
           #endif
+          self.errorMessage = "散歩の削除に失敗しました。\nサーバーに接続できません。"
+          self.showErrorAlert = true
         }
       }
     }

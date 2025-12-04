@@ -27,6 +27,14 @@ struct WalkListView: View {
   /// trueの場合、ローディングインジケーターが表示されます。
   @State private var isLoading = false
 
+  /// エラーメッセージ
+  ///
+  /// データ取得失敗時に表示するエラーメッセージ。nilでない場合、アラートが表示されます。
+  @State private var errorMessage: String = ""
+
+  /// エラーアラート表示フラグ
+  @State private var showErrorAlert = false
+
   /// 散歩データリポジトリ
   ///
   /// 散歩データの取得を担当するWalkRepositoryです。
@@ -46,6 +54,18 @@ struct WalkListView: View {
   }
 
   var body: some View {
+    contentView
+      .alert("エラー", isPresented: $showErrorAlert) {
+        Button("OK") {
+          showErrorAlert = false
+        }
+      } message: {
+        Text(errorMessage)
+      }
+  }
+
+  /// メインコンテンツビュー
+  private var contentView: some View {
     VStack(spacing: 0) {
       // セグメントコントロール
       Picker("履歴タブ", selection: $selectedTab) {
@@ -229,6 +249,8 @@ struct WalkListView: View {
         case .failure(let error):
           print("❌ 散歩履歴の読み込みに失敗しました: \(error)")
           self.walks = []
+          self.errorMessage = "散歩履歴の読み込みに失敗しました。\nサーバーに接続できません。"
+          self.showErrorAlert = true
         }
       }
     }
