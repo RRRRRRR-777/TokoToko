@@ -155,6 +155,15 @@ enum WalkStatusDTO: String, Codable {
 struct WalkCreateRequest: Encodable {
   let title: String
   let description: String?
+  let startLatitude: Double?
+  let startLongitude: Double?
+
+  enum CodingKeys: String, CodingKey {
+    case title
+    case description
+    case startLatitude = "start_latitude"
+    case startLongitude = "start_longitude"
+  }
 }
 
 /// 散歩更新リクエスト（upsert対応）
@@ -254,7 +263,12 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
   ) {
     Task {
       do {
-        let request = WalkCreateRequest(title: title, description: description)
+        let request = WalkCreateRequest(
+          title: title,
+          description: description,
+          startLatitude: location?.latitude,
+          startLongitude: location?.longitude
+        )
         let response: WalkDetailResponse = try await apiClient.post(path: "/v1/walks", body: request)
         let walk = response.toWalk()
         await MainActor.run {
