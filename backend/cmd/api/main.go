@@ -11,6 +11,7 @@ import (
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/router"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
@@ -21,6 +22,9 @@ const (
 )
 
 func main() {
+	// .envファイルを読み込み（存在しない場合はスキップ）
+	_ = godotenv.Load()
+
 	// DI Container初期化（Logger含む）
 	ctx := context.Background()
 	container, err := di.NewContainer(ctx)

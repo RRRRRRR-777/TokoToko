@@ -54,13 +54,25 @@ func hasGCPCredentials() bool {
 	return false
 }
 
+// shouldUseNoopTelemetry はNoopテレメトリーを使用すべきかを判定する
+func shouldUseNoopTelemetry() bool {
+	// 1. 環境変数で明示的にnoop指定されている場合
+	if os.Getenv("TELEMETRY_NOOP") == "true" {
+		return true
+	}
+
+	// 2. GCP認証情報がない場合
+	return !hasGCPCredentials()
+}
+
 // NewTelemetryProvider は新しいテレメトリープロバイダーを作成する
 func NewTelemetryProvider(ctx context.Context, projectID, serviceName, environment string, log logger.Logger) (*TelemetryProvider, error) {
-	// GCP認証情報がない場合はNoopプロバイダーを使用
-	if !hasGCPCredentials() {
-		log.Info("GCP credentials not found, using noop telemetry provider (local mode)",
+	// Noopモードを使用すべき場合
+	if shouldUseNoopTelemetry() {
+		log.Info("Using noop telemetry provider (local mode)",
 			zap.String("service_name", serviceName),
 			zap.String("environment", environment),
+			zap.Bool("telemetry_noop_env", os.Getenv("TELEMETRY_NOOP") == "true"),
 		)
 
 		noopMeter := metricnoop.NewMeterProvider()
