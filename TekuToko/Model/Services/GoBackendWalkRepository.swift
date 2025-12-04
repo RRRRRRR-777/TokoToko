@@ -10,28 +10,24 @@ import Foundation
 
 // MARK: - API Response Models
 
-/// APIレスポンスのメタ情報
-struct APIResponseMeta: Decodable {
-  let requestId: String
-  let timestamp: Date
+/// 散歩一覧APIレスポンス
+struct WalksListResponse: Decodable {
+  let walks: [WalkDTO]
+  let totalCount: Int
+  let page: Int
+  let limit: Int
 
   enum CodingKeys: String, CodingKey {
-    case requestId = "request_id"
-    case timestamp
+    case walks
+    case totalCount = "total_count"
+    case page
+    case limit
   }
 }
 
-/// 散歩一覧APIレスポンス
-struct WalksListResponse: Decodable {
-  let data: [WalkDTO]
-  let meta: APIResponseMeta
-}
-
 /// 散歩詳細APIレスポンス
-struct WalkDetailResponse: Decodable {
-  let data: WalkDTO
-  let meta: APIResponseMeta
-}
+/// サーバーはWalkDTOを直接返すため、WalkDTOのtype aliasとして定義
+typealias WalkDetailResponse = WalkDTO
 
 // MARK: - WalkDTO
 
@@ -161,18 +157,32 @@ struct WalkCreateRequest: Encodable {
   let description: String?
 }
 
-/// 散歩更新リクエスト
+/// 散歩更新リクエスト（upsert対応）
 struct WalkUpdateRequest: Encodable {
   let title: String?
   let description: String?
   let status: WalkStatusDTO?
   let totalSteps: Int?
+  let startTime: Date?
+  let endTime: Date?
+  let totalDistance: Double?
+  let polylineData: String?
+  let thumbnailImageUrl: String?
+  let pausedAt: Date?
+  let totalPausedDuration: Double?
 
   enum CodingKeys: String, CodingKey {
     case title
     case description
     case status
     case totalSteps = "total_steps"
+    case startTime = "start_time"
+    case endTime = "end_time"
+    case totalDistance = "total_distance"
+    case polylineData = "polyline_data"
+    case thumbnailImageUrl = "thumbnail_image_url"
+    case pausedAt = "paused_at"
+    case totalPausedDuration = "total_paused_duration"
   }
 }
 
@@ -205,7 +215,7 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
     Task {
       do {
         let response: WalksListResponse = try await apiClient.get(path: "/v1/walks")
-        let walks = response.data.map { $0.toWalk() }
+        let walks = response.walks.map { $0.toWalk() }
         await MainActor.run {
           completion(.success(walks))
         }
@@ -224,7 +234,7 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
     Task {
       do {
         let response: WalkDetailResponse = try await apiClient.get(path: "/v1/walks/\(id.uuidString)")
-        let walk = response.data.toWalk()
+        let walk = response.toWalk()
         await MainActor.run {
           completion(.success(walk))
         }
@@ -246,7 +256,7 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
       do {
         let request = WalkCreateRequest(title: title, description: description)
         let response: WalkDetailResponse = try await apiClient.post(path: "/v1/walks", body: request)
-        let walk = response.data.toWalk()
+        let walk = response.toWalk()
         await MainActor.run {
           completion(.success(walk))
         }
@@ -276,13 +286,20 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
           title: walk.title,
           description: walk.description,
           status: WalkStatusDTO.fromWalkStatus(walk.status),
-          totalSteps: walk.totalSteps
+          totalSteps: walk.totalSteps,
+          startTime: walk.startTime,
+          endTime: walk.endTime,
+          totalDistance: walk.totalDistance,
+          polylineData: walk.polylineData,
+          thumbnailImageUrl: walk.thumbnailImageUrl,
+          pausedAt: walk.pausedAt,
+          totalPausedDuration: walk.totalPausedDuration
         )
         let response: WalkDetailResponse = try await apiClient.put(
           path: "/v1/walks/\(walk.id.uuidString)",
           body: request
         )
-        let updatedWalk = response.data.toWalk()
+        let updatedWalk = response.toWalk()
         await MainActor.run {
           completion(.success(updatedWalk))
         }
