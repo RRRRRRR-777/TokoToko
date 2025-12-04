@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -84,4 +85,25 @@ func (c *Config) IsDevelopment() bool {
 // IsProduction は本番環境かどうかを返す
 func (c *Config) IsProduction() bool {
 	return c.Environment == "production"
+}
+
+// LoadFirebaseCredentials はFirebase認証情報を読み込む
+// 優先順位: CredentialsJSON > CredentialsPath
+func (c *Config) LoadFirebaseCredentials() (string, error) {
+	// 直接JSON文字列が設定されている場合はそれを使用
+	if c.Firebase.CredentialsJSON != "" {
+		return c.Firebase.CredentialsJSON, nil
+	}
+
+	// ファイルパスが設定されている場合はファイルから読み込む
+	if c.Firebase.CredentialsPath != "" {
+		data, err := os.ReadFile(c.Firebase.CredentialsPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read firebase credentials file: %w", err)
+		}
+		return string(data), nil
+	}
+
+	// どちらも設定されていない場合は空文字列を返す（開発環境用）
+	return "", nil
 }
