@@ -32,7 +32,7 @@ func setupTestRouter() *gin.Engine {
 
 	// テスト用認証ミドルウェア
 	mockAuth := &mockAuthClient{}
-	authMiddleware := middleware.NewAuthMiddlewareWithClient(mockAuth)
+	authMiddleware := middleware.NewAuthMiddlewareWithClient(mockAuth, nil)
 
 	container := &di.Container{
 		DB:             &database.PostgresDB{},

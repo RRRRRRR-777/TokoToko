@@ -57,15 +57,20 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		return nil, err
 	}
 
+	// Repository初期化
+	userRepo := postgres.NewUserRepository(db.DB)
+	walkRepo := postgres.NewWalkRepository(db.DB)
+
 	// AuthMiddleware初期化
-	// Firebase認証情報は環境変数から取得（開発環境では空文字列でも動作）
-	authMw, err := middleware.NewAuthMiddleware(ctx, cfg.Firebase.CredentialsJSON)
+	// Firebase認証情報はCredentialsJSON または CredentialsPath から取得
+	firebaseCredentials, err := cfg.LoadFirebaseCredentials()
 	if err != nil {
 		return nil, err
 	}
-
-	// Repository初期化
-	walkRepo := postgres.NewWalkRepository(db.DB)
+	authMw, err := middleware.NewAuthMiddleware(ctx, firebaseCredentials, userRepo)
+	if err != nil {
+		return nil, err
+	}
 
 	// Usecase初期化
 	walkUsecase := walkusecase.NewInteractor(walkRepo)
