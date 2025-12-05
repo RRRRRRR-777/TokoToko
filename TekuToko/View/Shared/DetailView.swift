@@ -276,7 +276,7 @@ struct DetailView: View {
           #if DEBUG
             print("Error refreshing walk details: \(error)")
           #endif
-          self.errorMessage = "散歩詳細の取得に失敗しました。\nサーバーに接続できません。"
+          self.errorMessage = error.localizedMessage(for: .fetch)
           self.showErrorAlert = true
         }
       }
@@ -298,7 +298,7 @@ struct DetailView: View {
           #if DEBUG
             print("Error deleting walk: \(error)")
           #endif
-          self.errorMessage = "散歩の削除に失敗しました。\nサーバーに接続できません。"
+          self.errorMessage = error.localizedMessage(for: .delete)
           self.showErrorAlert = true
         }
       }

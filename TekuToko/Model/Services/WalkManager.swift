@@ -402,14 +402,27 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
           self?.didSaveWalkSuccessfully = true
         case .failure(let error):
           self?.logger.logError(error, operation: "saveWalk")
-          // ネットワークエラー時はローカルに一時保存
-          if self?.saveWalkLocally(walk) == true {
-            self?.errorMessage = "サーバーに接続できないため、ローカルに一時保存しました。\n次回起動時に自動で送信します。"
-          } else {
-            self?.errorMessage = "散歩の保存に失敗しました。\nサーバーに接続できません。"
-          }
+          self?.handleSaveError(error, walk: walk)
         }
       }
+    }
+  }
+
+  /// 散歩保存エラーのハンドリング
+  private func handleSaveError(_ error: WalkRepositoryError, walk: Walk) {
+    switch error {
+    case .authenticationRequired:
+      // 認証エラーの場合はローカル保存せずにエラーメッセージを表示
+      errorMessage = error.localizedMessage(for: .save)
+    case .networkError, .firestoreError:
+      // ネットワークエラー時はローカルに一時保存
+      if saveWalkLocally(walk) {
+        errorMessage = "サーバーに接続できないため、ローカルに一時保存しました。\n次回起動時に自動で送信します。"
+      } else {
+        errorMessage = error.localizedMessage(for: .save)
+      }
+    default:
+      errorMessage = error.localizedMessage(for: .save)
     }
   }
 

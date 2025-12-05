@@ -168,20 +168,7 @@ struct StatsBarView: View {
   }
 
   private func localizedErrorMessage(for error: WalkRepositoryError) -> String {
-    switch error {
-    case .authenticationRequired:
-      return "ログインが必要です"
-    case .notFound:
-      return "散歩記録が見つかりません"
-    case .firestoreError(let underlyingError):
-      return "削除に失敗しました: \(underlyingError.localizedDescription)"
-    case .networkError:
-      return "ネットワークエラーが発生しました"
-    case .invalidData:
-      return "データが破損しています"
-    case .storageError(let underlyingError):
-      return "ストレージエラーが発生しました: \(underlyingError.localizedDescription)"
-    }
+    return error.localizedMessage(for: .delete)
   }
 }
 
