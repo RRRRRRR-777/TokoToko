@@ -271,6 +271,9 @@ struct HomeView: View {
       // Apple Intelligence利用可否チェック
       checkAppleIntelligenceAvailability()
 
+      // 未送信の散歩データを再送信
+      walkManager.retryPendingWalks()
+
       // UIテスト時のオンボーディング表示制御
       // testInitialStateWhenLoggedInのようなテストでは--show-onboardingが指定されていない
       if ProcessInfo.processInfo.arguments.contains("--show-onboarding") {

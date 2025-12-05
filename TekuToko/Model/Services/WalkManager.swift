@@ -402,7 +402,54 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
           self?.didSaveWalkSuccessfully = true
         case .failure(let error):
           self?.logger.logError(error, operation: "saveWalk")
-          self?.errorMessage = "散歩の保存に失敗しました。\nサーバーに接続できません。"
+          // ネットワークエラー時はローカルに一時保存
+          if self?.saveWalkLocally(walk) == true {
+            self?.errorMessage = "サーバーに接続できないため、ローカルに一時保存しました。\n次回起動時に自動で送信します。"
+          } else {
+            self?.errorMessage = "散歩の保存に失敗しました。\nサーバーに接続できません。"
+          }
+        }
+      }
+    }
+  }
+
+  // MARK: - Pending Walk Retry
+
+  /// 未送信の散歩データを再送信
+  ///
+  /// アプリ起動時に呼び出され、ローカルに一時保存された散歩データを
+  /// サーバーに送信します。成功した場合はローカルデータを削除します。
+  func retryPendingWalks() {
+    let pendingWalks = loadPendingWalks()
+
+    guard !pendingWalks.isEmpty else {
+      return
+    }
+
+    logger.info(
+      operation: "retryPendingWalks",
+      message: "未送信の散歩データを再送信します",
+      context: ["count": String(pendingWalks.count)]
+    )
+
+    for walk in pendingWalks {
+      walkRepository.saveWalk(walk) { [weak self] result in
+        DispatchQueue.main.async {
+          switch result {
+          case .success(let savedWalk):
+            self?.logger.info(
+              operation: "retryPendingWalk",
+              message: "未送信データの送信に成功しました",
+              context: ["walkId": savedWalk.id.uuidString]
+            )
+            self?.deletePendingWalk(for: walk.id)
+          case .failure(let error):
+            self?.logger.logError(
+              error,
+              operation: "retryPendingWalk",
+              humanNote: "未送信データの再送信に失敗: \(walk.id.uuidString)"
+            )
+          }
         }
       }
     }
