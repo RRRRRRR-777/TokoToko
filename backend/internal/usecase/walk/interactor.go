@@ -10,15 +10,17 @@ import (
 
 // interactor はWalk Usecaseの実装
 type interactor struct {
-	walkRepo walk.Repository
+	walkRepo         walk.Repository
+	locationRepo     walk.LocationRepository
 	// TODO: Phase2で追加
 	// logger   logger.Logger
 }
 
 // NewInteractor は新しいWalk Interactorを生成する
-func NewInteractor(walkRepo walk.Repository) Usecase {
+func NewInteractor(walkRepo walk.Repository, locationRepo walk.LocationRepository) Usecase {
 	return &interactor{
-		walkRepo: walkRepo,
+		walkRepo:     walkRepo,
+		locationRepo: locationRepo,
 	}
 }
 
@@ -50,6 +52,24 @@ func (i *interactor) GetWalk(ctx context.Context, id uuid.UUID, userID string) (
 	}
 
 	return w, nil
+}
+
+// GetWalkWithLocations はIDでWalkと位置情報を取得する
+func (i *interactor) GetWalkWithLocations(ctx context.Context, id uuid.UUID, userID string) (*WalkWithLocations, error) {
+	w, err := i.GetWalk(ctx, id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	locations, err := i.locationRepo.FindByWalkID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get walk locations: %w", err)
+	}
+
+	return &WalkWithLocations{
+		Walk:      w,
+		Locations: locations,
+	}, nil
 }
 
 // ListWalks はユーザーのWalk一覧を取得する
@@ -128,6 +148,13 @@ func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, user
 	// Upsertで永続化
 	if err := i.walkRepo.Upsert(ctx, w); err != nil {
 		return nil, fmt.Errorf("failed to upsert walk: %w", err)
+	}
+
+	// 位置情報を保存（存在する場合のみ）
+	if len(input.Locations) > 0 {
+		if err := i.locationRepo.BatchCreate(ctx, input.Locations); err != nil {
+			return nil, fmt.Errorf("failed to save walk locations: %w", err)
+		}
 	}
 
 	return w, nil

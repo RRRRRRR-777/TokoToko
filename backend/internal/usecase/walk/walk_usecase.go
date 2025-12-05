@@ -30,6 +30,13 @@ type UpdateWalkInput struct {
 	ThumbnailImageURL   *string
 	PausedAt            *time.Time
 	TotalPausedDuration *float64
+	Locations           []*walk.WalkLocation // 位置情報（オプション）
+}
+
+// WalkWithLocations はWalkと位置情報をまとめた構造体
+type WalkWithLocations struct {
+	Walk      *walk.Walk
+	Locations []*walk.WalkLocation
 }
 
 // Usecase はWalkのユースケースインターフェース
@@ -39,6 +46,9 @@ type Usecase interface {
 
 	// GetWalk はIDでWalkを取得する
 	GetWalk(ctx context.Context, id uuid.UUID, userID string) (*walk.Walk, error)
+
+	// GetWalkWithLocations はIDでWalkと位置情報を取得する
+	GetWalkWithLocations(ctx context.Context, id uuid.UUID, userID string) (*WalkWithLocations, error)
 
 	// ListWalks はユーザーのWalk一覧を取得する
 	ListWalks(ctx context.Context, userID string, limit, offset int) ([]*walk.Walk, int, error)

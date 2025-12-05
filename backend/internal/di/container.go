@@ -16,13 +16,14 @@ import (
 // Container は依存性注入コンテナ
 // アプリケーション全体で使用される依存関係を管理する
 type Container struct {
-	Config            *config.Config
-	DB                *database.PostgresDB
-	Logger            logger.Logger
-	TelemetryProvider *telemetry.TelemetryProvider
-	AuthMiddleware    *middleware.AuthMiddleware
-	WalkRepository    walk.Repository
-	WalkUsecase       walkusecase.Usecase
+	Config               *config.Config
+	DB                   *database.PostgresDB
+	Logger               logger.Logger
+	TelemetryProvider    *telemetry.TelemetryProvider
+	AuthMiddleware       *middleware.AuthMiddleware
+	WalkRepository       walk.Repository
+	WalkLocationRepository walk.LocationRepository
+	WalkUsecase          walkusecase.Usecase
 }
 
 // NewContainer は新しいコンテナを生成する
@@ -60,6 +61,7 @@ func NewContainer(ctx context.Context) (*Container, error) {
 	// Repository初期化
 	userRepo := postgres.NewUserRepository(db.DB)
 	walkRepo := postgres.NewWalkRepository(db.DB)
+	walkLocationRepo := postgres.NewWalkLocationRepository(db.DB)
 
 	// AuthMiddleware初期化
 	// Firebase認証情報はCredentialsJSON または CredentialsPath から取得
@@ -73,16 +75,17 @@ func NewContainer(ctx context.Context) (*Container, error) {
 	}
 
 	// Usecase初期化
-	walkUsecase := walkusecase.NewInteractor(walkRepo)
+	walkUsecase := walkusecase.NewInteractor(walkRepo, walkLocationRepo)
 
 	return &Container{
-		Config:            cfg,
-		DB:                db,
-		Logger:            log,
-		TelemetryProvider: telemetryProvider,
-		AuthMiddleware:    authMw,
-		WalkRepository:    walkRepo,
-		WalkUsecase:       walkUsecase,
+		Config:                 cfg,
+		DB:                     db,
+		Logger:                 log,
+		TelemetryProvider:      telemetryProvider,
+		AuthMiddleware:         authMw,
+		WalkRepository:         walkRepo,
+		WalkLocationRepository: walkLocationRepo,
+		WalkUsecase:            walkUsecase,
 	}, nil
 }
 
