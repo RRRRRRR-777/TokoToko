@@ -41,6 +41,14 @@ func (m *MockWalkUsecase) GetWalk(ctx context.Context, id uuid.UUID, userID stri
 	return args.Get(0).(*walk.Walk), args.Error(1)
 }
 
+func (m *MockWalkUsecase) GetWalkWithLocations(ctx context.Context, id uuid.UUID, userID string) (*walkusecase.WalkWithLocations, error) {
+	args := m.Called(ctx, id, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*walkusecase.WalkWithLocations), args.Error(1)
+}
+
 func (m *MockWalkUsecase) ListWalks(ctx context.Context, userID string, limit, offset int) ([]*walk.Walk, int, error) {
 	args := m.Called(ctx, userID, limit, offset)
 	if args.Get(0) == nil {
@@ -204,7 +212,12 @@ func TestWalkHandler_GetWalk_Success(t *testing.T) {
 	expectedWalk := walk.NewWalk("test-user", "Test Walk", "Description")
 	expectedWalk.ID = walkID
 
-	mockUsecase.On("GetWalk", mock.Anything, walkID, "test-user").Return(expectedWalk, nil)
+	expectedResult := &walkusecase.WalkWithLocations{
+		Walk:      expectedWalk,
+		Locations: []*walk.WalkLocation{},
+	}
+
+	mockUsecase.On("GetWalkWithLocations", mock.Anything, walkID, "test-user").Return(expectedResult, nil)
 
 	c, w := setupTestContext(http.MethodGet, "/v1/walks/"+walkID.String(), nil)
 	c.Params = gin.Params{{Key: "id", Value: walkID.String()}}
@@ -218,6 +231,8 @@ func TestWalkHandler_GetWalk_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, walkID.String(), response["id"])
+	// 期待値検証: locations配列が存在する
+	assert.NotNil(t, response["locations"])
 
 	mockUsecase.AssertExpectations(t)
 }
@@ -229,7 +244,7 @@ func TestWalkHandler_GetWalk_NotFound(t *testing.T) {
 
 	walkID := uuid.New()
 
-	mockUsecase.On("GetWalk", mock.Anything, walkID, "test-user").Return(nil, sql.ErrNoRows)
+	mockUsecase.On("GetWalkWithLocations", mock.Anything, walkID, "test-user").Return(nil, sql.ErrNoRows)
 
 	c, w := setupTestContext(http.MethodGet, "/v1/walks/"+walkID.String(), nil)
 	c.Params = gin.Params{{Key: "id", Value: walkID.String()}}

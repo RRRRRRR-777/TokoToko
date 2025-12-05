@@ -7,6 +7,19 @@ import (
 	"github.com/google/uuid"
 )
 
+// LocationResponse は位置情報のレスポンス
+type LocationResponse struct {
+	Latitude           float64    `json:"latitude"`
+	Longitude          float64    `json:"longitude"`
+	Altitude           *float64   `json:"altitude,omitempty"`
+	Timestamp          time.Time  `json:"timestamp"`
+	HorizontalAccuracy *float64   `json:"horizontal_accuracy,omitempty"`
+	VerticalAccuracy   *float64   `json:"vertical_accuracy,omitempty"`
+	Speed              *float64   `json:"speed,omitempty"`
+	Course             *float64   `json:"course,omitempty"`
+	SequenceNumber     int        `json:"sequence_number"`
+}
+
 // WalkResponse は散歩APIのレスポンス
 type WalkResponse struct {
 	ID                  uuid.UUID  `json:"id"`
@@ -23,6 +36,12 @@ type WalkResponse struct {
 	TotalPausedDuration float64    `json:"total_paused_duration"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`
+}
+
+// WalkDetailResponse は散歩詳細APIのレスポンス（位置情報を含む）
+type WalkDetailResponse struct {
+	WalkResponse
+	Locations []LocationResponse `json:"locations"`
 }
 
 // WalkListResponse は散歩一覧のレスポンス
@@ -65,5 +84,33 @@ func ToWalkListResponse(walks []*walk.Walk, totalCount, page, limit int) WalkLis
 		TotalCount: totalCount,
 		Page:       page,
 		Limit:      limit,
+	}
+}
+
+// ToLocationResponse は位置情報をレスポンスに変換する
+func ToLocationResponse(loc *walk.WalkLocation) LocationResponse {
+	return LocationResponse{
+		Latitude:           loc.Latitude,
+		Longitude:          loc.Longitude,
+		Altitude:           loc.Altitude,
+		Timestamp:          loc.Timestamp,
+		HorizontalAccuracy: loc.HorizontalAccuracy,
+		VerticalAccuracy:   loc.VerticalAccuracy,
+		Speed:              loc.Speed,
+		Course:             loc.Course,
+		SequenceNumber:     loc.SequenceNumber,
+	}
+}
+
+// ToWalkDetailResponse はWalkと位置情報をレスポンスに変換する
+func ToWalkDetailResponse(w *walk.Walk, locations []*walk.WalkLocation) WalkDetailResponse {
+	locationResponses := make([]LocationResponse, len(locations))
+	for i, loc := range locations {
+		locationResponses[i] = ToLocationResponse(loc)
+	}
+
+	return WalkDetailResponse{
+		WalkResponse: ToWalkResponse(w),
+		Locations:    locationResponses,
 	}
 }
