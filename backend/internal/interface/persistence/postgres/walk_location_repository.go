@@ -54,6 +54,7 @@ func (r *WalkLocationRepository) BatchCreate(ctx context.Context, locations []*w
 		)
 	}
 
+	// #nosec G201 -- valueStringsはプレースホルダー($1,$2...)のみで構成されており、ユーザー入力は含まれない
 	query := fmt.Sprintf(`
 		INSERT INTO walk_locations (
 			walk_id, latitude, longitude, altitude, timestamp,
