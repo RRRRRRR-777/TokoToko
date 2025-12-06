@@ -80,8 +80,14 @@ struct LocationDTO: Codable {
   }
 }
 
-/// 散歩詳細APIレスポンス（位置情報を含む）
-struct WalkDetailResponse: Codable {
+// MARK: - WalkDTO
+
+/// Go バックエンドとの通信用DTO
+///
+/// iOSの`Walk`モデルとGoバックエンドのJSONスキーマを変換するためのData Transfer Object。
+/// 一覧API（GET /v1/walks）ではlocationsはnilで返され、
+/// 詳細API（GET /v1/walks/:id）ではlocationsが含まれます。
+struct WalkDTO: Codable {
   let id: String
   let userId: String
   let title: String
@@ -97,7 +103,8 @@ struct WalkDetailResponse: Codable {
   let totalPausedDuration: Double
   let createdAt: Date
   let updatedAt: Date
-  let locations: [LocationDTO]
+  /// 位置情報（詳細APIでのみ取得可能、一覧APIではnil）
+  let locations: [LocationDTO]?
 
   enum CodingKeys: String, CodingKey {
     case id
@@ -118,69 +125,6 @@ struct WalkDetailResponse: Codable {
     case locations
   }
 
-  /// WalkDetailResponseをWalkモデルに変換
-  func toWalk() -> Walk {
-    Walk(
-      title: title,
-      description: description ?? "",
-      userId: userId,
-      id: UUID(uuidString: id) ?? UUID(),
-      startTime: startTime,
-      endTime: endTime,
-      totalDistance: totalDistance,
-      totalSteps: totalSteps,
-      polylineData: polylineData,
-      thumbnailImageUrl: thumbnailImageUrl,
-      status: status.toWalkStatus(),
-      pausedAt: pausedAt,
-      totalPausedDuration: totalPausedDuration,
-      locations: locations.map { $0.toCLLocation() },
-      createdAt: createdAt,
-      updatedAt: updatedAt
-    )
-  }
-}
-
-// MARK: - WalkDTO
-
-/// Go バックエンドとの通信用DTO
-///
-/// iOSの`Walk`モデルとGoバックエンドのJSONスキーマを変換するためのData Transfer Object
-struct WalkDTO: Codable {
-  let id: String
-  let userId: String
-  let title: String
-  let description: String?
-  let startTime: Date?
-  let endTime: Date?
-  let totalDistance: Double
-  let totalSteps: Int
-  let polylineData: String?
-  let thumbnailImageUrl: String?
-  let status: WalkStatusDTO
-  let pausedAt: Date?
-  let totalPausedDuration: Double
-  let createdAt: Date
-  let updatedAt: Date
-
-  enum CodingKeys: String, CodingKey {
-    case id
-    case userId = "user_id"
-    case title
-    case description
-    case startTime = "start_time"
-    case endTime = "end_time"
-    case totalDistance = "total_distance"
-    case totalSteps = "total_steps"
-    case polylineData = "polyline_data"
-    case thumbnailImageUrl = "thumbnail_image_url"
-    case status
-    case pausedAt = "paused_at"
-    case totalPausedDuration = "total_paused_duration"
-    case createdAt = "created_at"
-    case updatedAt = "updated_at"
-  }
-
   /// WalkDTOをWalkモデルに変換
   func toWalk() -> Walk {
     Walk(
@@ -197,7 +141,7 @@ struct WalkDTO: Codable {
       status: status.toWalkStatus(),
       pausedAt: pausedAt,
       totalPausedDuration: totalPausedDuration,
-      locations: [],
+      locations: locations?.map { $0.toCLLocation() } ?? [],
       createdAt: createdAt,
       updatedAt: updatedAt
     )
@@ -205,7 +149,13 @@ struct WalkDTO: Codable {
 
   /// WalkモデルからWalkDTOを作成
   static func fromWalk(_ walk: Walk) -> WalkDTO {
-    WalkDTO(
+    let locationDTOs: [LocationDTO]? = walk.locations.isEmpty ? nil : walk.locations.enumerated().map
+    {
+      index, location in
+      LocationDTO.fromCLLocation(location, sequenceNumber: index)
+    }
+
+    return WalkDTO(
       id: walk.id.uuidString,
       userId: walk.userId ?? "",
       title: walk.title,
@@ -220,7 +170,8 @@ struct WalkDTO: Codable {
       pausedAt: walk.pausedAt,
       totalPausedDuration: walk.totalPausedDuration,
       createdAt: walk.createdAt,
-      updatedAt: walk.updatedAt
+      updatedAt: walk.updatedAt,
+      locations: locationDTOs
     )
   }
 }
@@ -356,7 +307,8 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
   ) {
     Task {
       do {
-        let response: WalkDetailResponse = try await apiClient.get(path: "/v1/walks/\(id.uuidString)")
+        // 詳細APIはlocationsを含むWalkDTOを返す
+        let response: WalkDTO = try await apiClient.get(path: "/v1/walks/\(id.uuidString)")
         let walk = response.toWalk()
         await MainActor.run {
           completion(.success(walk))
