@@ -80,6 +80,11 @@ class WalkHistoryViewModel: ObservableObject {
   /// 散歩詳細情報（locations含む）の取得に使用するリポジトリです。
   private let walkRepository: WalkRepositoryProtocol
 
+  /// ロガー
+  ///
+  /// エラーログや操作ログの記録に使用します。
+  private let logger = EnhancedVibeLogger.shared
+
   // MARK: - Error Types
 
   /// WalkHistoryViewModel初期化時のバリデーションエラー
@@ -185,7 +190,7 @@ class WalkHistoryViewModel: ObservableObject {
     let walkId = currentWalk.id
 
     walkRepository.fetchWalk(withID: walkId) { [weak self] result in
-      DispatchQueue.main.async {
+      Task { @MainActor in
         guard let self = self else { return }
         self.isLoadingLocations = false
 
@@ -203,7 +208,11 @@ class WalkHistoryViewModel: ObservableObject {
           }
 
         case .failure(let error):
-          print("❌ 位置情報の取得に失敗: \(error)")
+          self.logger.logError(
+            error,
+            operation: "loadLocationsForCurrentWalk",
+            humanNote: "位置情報の取得に失敗"
+          )
           // エラー時はlocationsなしのまま表示を継続
         }
       }

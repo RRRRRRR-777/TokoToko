@@ -392,7 +392,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
 
     walkRepository.saveWalk(walk) { [weak self] result in
-      DispatchQueue.main.async {
+      Task { @MainActor in
         switch result {
         case .success(let savedWalk):
           self?.logger.info(
@@ -447,7 +447,7 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
 
     for walk in pendingWalks {
       walkRepository.saveWalk(walk) { [weak self] result in
-        DispatchQueue.main.async {
+        Task { @MainActor in
           switch result {
           case .success(let savedWalk):
             self?.logger.info(
