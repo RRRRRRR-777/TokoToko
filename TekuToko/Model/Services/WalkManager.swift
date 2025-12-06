@@ -103,6 +103,21 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
   /// CoreMotionからの実際の歩数、または利用不可状態。
   @Published var currentStepCount: StepCountSource = .unavailable
 
+  /// エラーメッセージ
+  ///
+  /// 散歩保存時のエラーメッセージ。nilでない場合、UIにアラートを表示します。
+  @Published var errorMessage: String?
+
+  /// 散歩保存成功フラグ
+  ///
+  /// 散歩保存成功時にtrueに設定されます。UIで完了画面の表示判定に使用します。
+  @Published var didSaveWalkSuccessfully = false
+
+  /// 最後に保存が完了した散歩
+  ///
+  /// 散歩保存成功時に設定されます。UIで完了画面の表示判定に使用します。
+  var lastSavedWalk: Walk?
+
   /// 散歩セッションがアクティブかどうか
   ///
   /// 散歩が進行中または一時停止中の場合にtrue。散歩が未開始または終了している場合はfalse。
@@ -377,13 +392,78 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
     }
 
     walkRepository.saveWalk(walk) { [weak self] result in
-      switch result {
-      case .success(let savedWalk):
-        self?.logger.info(
-          operation: "saveWalk", message: "散歩データを保存しました",
-          context: ["walkId": savedWalk.id.uuidString])
-      case .failure(let error):
-        self?.logger.logError(error, operation: "saveWalk")
+      Task { @MainActor in
+        switch result {
+        case .success(let savedWalk):
+          self?.logger.info(
+            operation: "saveWalk", message: "散歩データを保存しました",
+            context: ["walkId": savedWalk.id.uuidString])
+          self?.lastSavedWalk = savedWalk
+          self?.didSaveWalkSuccessfully = true
+        case .failure(let error):
+          self?.logger.logError(error, operation: "saveWalk")
+          self?.handleSaveError(error, walk: walk)
+        }
+      }
+    }
+  }
+
+  /// 散歩保存エラーのハンドリング
+  private func handleSaveError(_ error: WalkRepositoryError, walk: Walk) {
+    switch error {
+    case .authenticationRequired:
+      // 認証エラーの場合はローカル保存せずにエラーメッセージを表示
+      errorMessage = error.localizedMessage(for: .save)
+    case .networkError, .firestoreError:
+      // ネットワークエラー時はローカルに一時保存
+      if saveWalkLocally(walk) {
+        errorMessage = "サーバーに接続できないため、ローカルに一時保存しました。\n次回起動時に自動で送信します。"
+      } else {
+        errorMessage = error.localizedMessage(for: .save)
+      }
+    default:
+      errorMessage = error.localizedMessage(for: .save)
+    }
+  }
+
+  // MARK: - Pending Walk Retry
+
+  /// 未送信の散歩データを再送信
+  ///
+  /// アプリ起動時に呼び出され、ローカルに一時保存された散歩データを
+  /// サーバーに送信します。成功した場合はローカルデータを削除します。
+  func retryPendingWalks() {
+    let pendingWalks = loadPendingWalks()
+
+    guard !pendingWalks.isEmpty else {
+      return
+    }
+
+    logger.info(
+      operation: "retryPendingWalks",
+      message: "未送信の散歩データを再送信します",
+      context: ["count": String(pendingWalks.count)]
+    )
+
+    for walk in pendingWalks {
+      walkRepository.saveWalk(walk) { [weak self] result in
+        Task { @MainActor in
+          switch result {
+          case .success(let savedWalk):
+            self?.logger.info(
+              operation: "retryPendingWalk",
+              message: "未送信データの送信に成功しました",
+              context: ["walkId": savedWalk.id.uuidString]
+            )
+            self?.deletePendingWalk(for: walk.id)
+          case .failure(let error):
+            self?.logger.logError(
+              error,
+              operation: "retryPendingWalk",
+              humanNote: "未送信データの再送信に失敗: \(walk.id.uuidString)"
+            )
+          }
+        }
       }
     }
   }

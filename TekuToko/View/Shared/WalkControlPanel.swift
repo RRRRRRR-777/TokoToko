@@ -181,21 +181,20 @@ struct WalkControlPanel: View {
     }
     .alert("散歩を終了", isPresented: $showingStopAlert) {
       Button("終了", role: .destructive) {
-        if let currentWalk = walkManager.currentWalk {
-          walkToShare = currentWalk
-        }
         walkManager.stopWalk()
-
-        // 散歩完了後に共有シートを表示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-          if let walk = walkToShare {
-            showingShareSheet = true
-          }
-        }
       }
       Button("キャンセル", role: .cancel) {}
     } message: {
       Text("散歩を終了しますか？記録が保存されます。")
+    }
+    .onChange(of: walkManager.didSaveWalkSuccessfully) { didSave in
+      // 保存成功時のみ完了画面を表示
+      if didSave, let walk = walkManager.lastSavedWalk {
+        walkToShare = walk
+        showingShareSheet = true
+        walkManager.didSaveWalkSuccessfully = false
+        walkManager.lastSavedWalk = nil
+      }
     }
     .sheet(isPresented: $showingShareSheet) {
       if let walk = walkToShare {

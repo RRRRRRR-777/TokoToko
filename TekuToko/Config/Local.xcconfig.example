@@ -1,0 +1,13 @@
+// Local.xcconfig
+// ローカル専用設定（git管理外）
+//
+// 使用方法:
+// 1. このファイルを Local.xcconfig にコピー
+// 2. ngrok http 8080 で表示されたURLに置き換え
+// 3. Xcodeで再ビルド（⌘B）
+//
+// 注意:
+// - $()はxcconfigでの「/」エスケープです（URLのプロトコル区切りに必要）
+// - 例: https://xxxxx.ngrok-free.app → https:/$()/xxxxx.ngrok-free.app
+
+API_BASE_URL = https:/$()/xxxxx.ngrok-free.app

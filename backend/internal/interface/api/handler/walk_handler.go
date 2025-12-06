@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
@@ -35,12 +36,34 @@ type CreateWalkRequest struct {
 	Description string `json:"description"`
 }
 
+// LocationRequest は位置情報のリクエスト
+type LocationRequest struct {
+	Latitude           float64   `json:"latitude" binding:"required"`
+	Longitude          float64   `json:"longitude" binding:"required"`
+	Altitude           *float64  `json:"altitude,omitempty"`
+	Timestamp          time.Time `json:"timestamp" binding:"required"`
+	HorizontalAccuracy *float64  `json:"horizontal_accuracy,omitempty"`
+	VerticalAccuracy   *float64  `json:"vertical_accuracy,omitempty"`
+	Speed              *float64  `json:"speed,omitempty"`
+	Course             *float64  `json:"course,omitempty"`
+	SequenceNumber     int       `json:"sequence_number"`
+}
+
 // UpdateWalkRequest はWalk更新のリクエスト
+// upsert対応: 存在しない場合は新規作成するため、作成に必要なフィールドも含む
 type UpdateWalkRequest struct {
-	Title       *string          `json:"title,omitempty"`
-	Description *string          `json:"description,omitempty"`
-	Status      *walk.WalkStatus `json:"status,omitempty"`
-	TotalSteps  *int             `json:"total_steps,omitempty"`
+	Title               *string           `json:"title,omitempty"`
+	Description         *string           `json:"description,omitempty"`
+	Status              *walk.WalkStatus  `json:"status,omitempty"`
+	TotalSteps          *int              `json:"total_steps,omitempty"`
+	StartTime           *time.Time        `json:"start_time,omitempty"`
+	EndTime             *time.Time        `json:"end_time,omitempty"`
+	TotalDistance       *float64          `json:"total_distance,omitempty"`
+	PolylineData        *string           `json:"polyline_data,omitempty"`
+	ThumbnailImageURL   *string           `json:"thumbnail_image_url,omitempty"`
+	PausedAt            *time.Time        `json:"paused_at,omitempty"`
+	TotalPausedDuration *float64          `json:"total_paused_duration,omitempty"`
+	Locations           []LocationRequest `json:"locations,omitempty"`
 }
 
 // ListWalks は散歩一覧を取得する
@@ -78,7 +101,7 @@ func (h *WalkHandler) ListWalks(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetWalk は散歩詳細を取得する
+// GetWalk は散歩詳細を取得する（位置情報を含む）
 // GET /v1/walks/:id
 func (h *WalkHandler) GetWalk(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -93,8 +116,8 @@ func (h *WalkHandler) GetWalk(c *gin.Context) {
 		return
 	}
 
-	// Usecase呼び出し
-	wlk, err := h.walkUsecase.GetWalk(ctx, id, userID)
+	// Usecase呼び出し（位置情報を含む）
+	result, err := h.walkUsecase.GetWalkWithLocations(ctx, id, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			h.respondError(c, errors.NewNotFoundError("Walk not found"))
@@ -104,8 +127,8 @@ func (h *WalkHandler) GetWalk(c *gin.Context) {
 		return
 	}
 
-	// レスポンス返却
-	response := presenter.ToWalkResponse(wlk)
+	// レスポンス返却（位置情報を含む）
+	response := presenter.ToWalkDetailResponse(result.Walk, result.Locations)
 	c.JSON(http.StatusOK, response)
 }
 
@@ -162,20 +185,45 @@ func (h *WalkHandler) UpdateWalk(c *gin.Context) {
 		return
 	}
 
-	// Usecase呼び出し
+	// LocationRequestをドメインモデルに変換
+	var locations []*walk.WalkLocation
+	if len(req.Locations) > 0 {
+		locations = make([]*walk.WalkLocation, len(req.Locations))
+		for i, loc := range req.Locations {
+			locations[i] = walk.NewWalkLocationWithOptionals(
+				id,
+				loc.Latitude,
+				loc.Longitude,
+				loc.Altitude,
+				loc.Timestamp,
+				loc.HorizontalAccuracy,
+				loc.VerticalAccuracy,
+				loc.Speed,
+				loc.Course,
+				loc.SequenceNumber,
+			)
+		}
+	}
+
+	// Usecase呼び出し（upsert対応）
 	input := walkusecase.UpdateWalkInput{
-		ID:          id,
-		Title:       req.Title,
-		Description: req.Description,
-		Status:      req.Status,
-		TotalSteps:  req.TotalSteps,
+		ID:                  id,
+		Title:               req.Title,
+		Description:         req.Description,
+		Status:              req.Status,
+		TotalSteps:          req.TotalSteps,
+		StartTime:           req.StartTime,
+		EndTime:             req.EndTime,
+		TotalDistance:       req.TotalDistance,
+		PolylineData:        req.PolylineData,
+		ThumbnailImageURL:   req.ThumbnailImageURL,
+		PausedAt:            req.PausedAt,
+		TotalPausedDuration: req.TotalPausedDuration,
+		Locations:           locations,
 	}
 	wlk, err := h.walkUsecase.UpdateWalk(ctx, input, userID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			h.respondError(c, errors.NewNotFoundError("Walk not found"))
-			return
-		}
+		fmt.Printf("[DEBUG] UpdateWalk error: %+v\n", err)
 		h.respondError(c, err)
 		return
 	}

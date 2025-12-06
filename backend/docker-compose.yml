@@ -57,11 +57,14 @@ services:
       DB_SSLMODE: disable
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       LOG_FORMAT: ${LOG_FORMAT:-text}
+      FIREBASE_CREDENTIALS_PATH: /app/firebase-credentials.json
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-tekutoko-ios}
     ports:
       - "${PORT:-8080}:8080"
     volumes:
       - .:/app
       - go_modules:/go/pkg/mod
+      - ../firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
       postgres:
         condition: service_healthy

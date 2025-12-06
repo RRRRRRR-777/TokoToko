@@ -10,6 +10,7 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/user"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
 )
@@ -115,10 +116,11 @@ func (tc *TokenCache) Stop() {
 type AuthMiddleware struct {
 	authClient FirebaseAuthClient
 	cache      *TokenCache
+	userRepo   user.Repository
 }
 
 // NewAuthMiddleware は新しいAuthMiddlewareを作成する
-func NewAuthMiddleware(ctx context.Context, credentialsJSON string) (*AuthMiddleware, error) {
+func NewAuthMiddleware(ctx context.Context, credentialsJSON string, userRepo user.Repository) (*AuthMiddleware, error) {
 	var opts []option.ClientOption
 
 	// 認証情報が提供されている場合
@@ -139,14 +141,16 @@ func NewAuthMiddleware(ctx context.Context, credentialsJSON string) (*AuthMiddle
 	return &AuthMiddleware{
 		authClient: authClient,
 		cache:      NewTokenCache(),
+		userRepo:   userRepo,
 	}, nil
 }
 
 // NewAuthMiddlewareWithClient はテスト用にAuthClientを注入可能なコンストラクタ
-func NewAuthMiddlewareWithClient(authClient FirebaseAuthClient) *AuthMiddleware {
+func NewAuthMiddlewareWithClient(authClient FirebaseAuthClient, userRepo user.Repository) *AuthMiddleware {
 	return &AuthMiddleware{
 		authClient: authClient,
 		cache:      NewTokenCache(),
+		userRepo:   userRepo,
 	}
 }
 
@@ -192,6 +196,13 @@ func (am *AuthMiddleware) Handler() gin.HandlerFunc {
 
 		// ユーザーIDを取得
 		userID := idToken.UID
+
+		// ユーザーが存在しなければ自動作成（キャッシュミス時のみ）
+		if am.userRepo != nil {
+			newUser := user.NewUser(userID, "", "firebase")
+			// エラーは無視（ON CONFLICT DO NOTHINGなので問題なし）
+			_ = am.userRepo.CreateIfNotExists(c.Request.Context(), newUser)
+		}
 
 		// キャッシュに保存
 		am.cache.Set(token, userID)

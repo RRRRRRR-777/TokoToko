@@ -173,7 +173,7 @@ func TestAuthMiddleware_Handler_WithValidToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockClient := new(MockAuthClient)
-	middleware := NewAuthMiddlewareWithClient(mockClient)
+	middleware := NewAuthMiddlewareWithClient(mockClient, nil)
 
 	// モックの設定
 	expectedToken := &auth.Token{
@@ -205,7 +205,7 @@ func TestAuthMiddleware_Handler_WithInvalidToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockClient := new(MockAuthClient)
-	middleware := NewAuthMiddlewareWithClient(mockClient)
+	middleware := NewAuthMiddlewareWithClient(mockClient, nil)
 
 	// モックの設定: トークン検証失敗
 	mockClient.On("VerifyIDToken", mock.Anything, "invalid-token").Return(nil, errors.New("token verification failed"))
@@ -233,7 +233,7 @@ func TestAuthMiddleware_Handler_WithCachedToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockClient := new(MockAuthClient)
-	middleware := NewAuthMiddlewareWithClient(mockClient)
+	middleware := NewAuthMiddlewareWithClient(mockClient, nil)
 
 	// 1回目: Firebase検証を呼び出す
 	expectedToken := &auth.Token{
@@ -273,7 +273,7 @@ func TestAuthMiddleware_Handler_MissingAuthorizationHeader(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockClient := new(MockAuthClient)
-	middleware := NewAuthMiddlewareWithClient(mockClient)
+	middleware := NewAuthMiddlewareWithClient(mockClient, nil)
 
 	router := gin.New()
 	router.Use(middleware.Handler())
@@ -297,7 +297,7 @@ func TestAuthMiddleware_Handler_InvalidHeaderFormat(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockClient := new(MockAuthClient)
-	middleware := NewAuthMiddlewareWithClient(mockClient)
+	middleware := NewAuthMiddlewareWithClient(mockClient, nil)
 
 	router := gin.New()
 	router.Use(middleware.Handler())
@@ -320,7 +320,7 @@ func TestNewAuthMiddlewareWithClient(t *testing.T) {
 	// 期待値: テスト用コンストラクタが正しくミドルウェアを生成すること
 	mockClient := new(MockAuthClient)
 
-	middleware := NewAuthMiddlewareWithClient(mockClient)
+	middleware := NewAuthMiddlewareWithClient(mockClient, nil)
 
 	// 期待値検証: ミドルウェアが正しく初期化される
 	assert.NotNil(t, middleware)

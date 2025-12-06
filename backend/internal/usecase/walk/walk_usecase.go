@@ -2,6 +2,7 @@ package walk
 
 import (
 	"context"
+	"time"
 
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
 	"github.com/google/uuid"
@@ -15,12 +16,27 @@ type CreateWalkInput struct {
 }
 
 // UpdateWalkInput はWalk更新の入力
+// upsert対応: 存在しない場合は新規作成するため、作成に必要なフィールドも含む
 type UpdateWalkInput struct {
-	ID          uuid.UUID
-	Title       *string
-	Description *string
-	Status      *walk.WalkStatus
-	TotalSteps  *int
+	ID                  uuid.UUID
+	Title               *string
+	Description         *string
+	Status              *walk.WalkStatus
+	TotalSteps          *int
+	StartTime           *time.Time
+	EndTime             *time.Time
+	TotalDistance       *float64
+	PolylineData        *string
+	ThumbnailImageURL   *string
+	PausedAt            *time.Time
+	TotalPausedDuration *float64
+	Locations           []*walk.WalkLocation // 位置情報（オプション）
+}
+
+// WalkWithLocations はWalkと位置情報をまとめた構造体
+type WalkWithLocations struct {
+	Walk      *walk.Walk
+	Locations []*walk.WalkLocation
 }
 
 // Usecase はWalkのユースケースインターフェース
@@ -30,6 +46,9 @@ type Usecase interface {
 
 	// GetWalk はIDでWalkを取得する
 	GetWalk(ctx context.Context, id uuid.UUID, userID string) (*walk.Walk, error)
+
+	// GetWalkWithLocations はIDでWalkと位置情報を取得する
+	GetWalkWithLocations(ctx context.Context, id uuid.UUID, userID string) (*WalkWithLocations, error)
 
 	// ListWalks はユーザーのWalk一覧を取得する
 	ListWalks(ctx context.Context, userID string, limit, offset int) ([]*walk.Walk, int, error)

@@ -10,15 +10,17 @@ import (
 
 // interactor はWalk Usecaseの実装
 type interactor struct {
-	walkRepo walk.Repository
+	walkRepo     walk.Repository
+	locationRepo walk.LocationRepository
 	// TODO: Phase2で追加
 	// logger   logger.Logger
 }
 
 // NewInteractor は新しいWalk Interactorを生成する
-func NewInteractor(walkRepo walk.Repository) Usecase {
+func NewInteractor(walkRepo walk.Repository, locationRepo walk.LocationRepository) Usecase {
 	return &interactor{
-		walkRepo: walkRepo,
+		walkRepo:     walkRepo,
+		locationRepo: locationRepo,
 	}
 }
 
@@ -52,6 +54,24 @@ func (i *interactor) GetWalk(ctx context.Context, id uuid.UUID, userID string) (
 	return w, nil
 }
 
+// GetWalkWithLocations はIDでWalkと位置情報を取得する
+func (i *interactor) GetWalkWithLocations(ctx context.Context, id uuid.UUID, userID string) (*WalkWithLocations, error) {
+	w, err := i.GetWalk(ctx, id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	locations, err := i.locationRepo.FindByWalkID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get walk locations: %w", err)
+	}
+
+	return &WalkWithLocations{
+		Walk:      w,
+		Locations: locations,
+	}, nil
+}
+
 // ListWalks はユーザーのWalk一覧を取得する
 func (i *interactor) ListWalks(ctx context.Context, userID string, limit, offset int) ([]*walk.Walk, int, error) {
 	walks, err := i.walkRepo.FindByUserID(ctx, userID, limit, offset)
@@ -67,15 +87,8 @@ func (i *interactor) ListWalks(ctx context.Context, userID string, limit, offset
 	return walks, count, nil
 }
 
-// UpdateWalk はWalkを更新する
-func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, userID string) (*walk.Walk, error) {
-	// 既存のWalkを取得
-	w, err := i.GetWalk(ctx, input.ID, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 更新
+// applyWalkInputFields はUpdateWalkInputのフィールドをWalkエンティティに適用する
+func applyWalkInputFields(w *walk.Walk, input UpdateWalkInput) {
 	if input.Title != nil {
 		w.Title = *input.Title
 	}
@@ -88,10 +101,56 @@ func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, user
 	if input.TotalSteps != nil {
 		w.UpdateSteps(*input.TotalSteps)
 	}
+	if input.StartTime != nil {
+		w.StartTime = input.StartTime
+	}
+	if input.EndTime != nil {
+		w.EndTime = input.EndTime
+	}
+	if input.TotalDistance != nil {
+		w.TotalDistance = *input.TotalDistance
+	}
+	if input.PolylineData != nil {
+		w.PolylineData = input.PolylineData
+	}
+	if input.ThumbnailImageURL != nil {
+		w.ThumbnailImageURL = input.ThumbnailImageURL
+	}
+	if input.PausedAt != nil {
+		w.PausedAt = input.PausedAt
+	}
+	if input.TotalPausedDuration != nil {
+		w.TotalPausedDuration = *input.TotalPausedDuration
+	}
+}
 
-	// 永続化
-	if err := i.walkRepo.Update(ctx, w); err != nil {
-		return nil, fmt.Errorf("failed to update walk: %w", err)
+// UpdateWalk はWalkを更新または作成する（upsert）
+// 存在する場合は更新、存在しない場合は新規作成
+func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, userID string) (*walk.Walk, error) {
+	// 既存のWalkを取得（存在しない場合は新規作成）
+	w, err := i.walkRepo.FindByID(ctx, input.ID)
+	if err != nil {
+		// 存在しない場合は新規作成
+		w = walk.NewWalk(userID, "", "")
+		w.ID = input.ID
+	} else if w.UserID != userID {
+		// 権限チェック（既存レコードの場合のみ）
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	// フィールド更新
+	applyWalkInputFields(w, input)
+
+	// Upsertで永続化
+	if err := i.walkRepo.Upsert(ctx, w); err != nil {
+		return nil, fmt.Errorf("failed to upsert walk: %w", err)
+	}
+
+	// 位置情報を保存（存在する場合のみ）
+	if len(input.Locations) > 0 {
+		if err := i.locationRepo.BatchCreate(ctx, input.Locations); err != nil {
+			return nil, fmt.Errorf("failed to save walk locations: %w", err)
+		}
 	}
 
 	return w, nil

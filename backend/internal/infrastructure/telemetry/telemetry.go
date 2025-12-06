@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	mexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
@@ -10,23 +11,86 @@ import (
 	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
 // TelemetryProvider はメトリクスとトレースを統合管理するプロバイダー
 type TelemetryProvider struct {
-	meterProvider  *sdkmetric.MeterProvider
-	tracerProvider *sdktrace.TracerProvider
+	meterProvider  metric.MeterProvider
+	tracerProvider trace.TracerProvider
+	sdkMeter       *sdkmetric.MeterProvider // シャットダウン用（noopの場合はnil）
+	sdkTracer      *sdktrace.TracerProvider // シャットダウン用（noopの場合はnil）
 	logger         logger.Logger
+	isNoop         bool
+}
+
+// hasGCPCredentials はGCP認証情報が利用可能かどうかをチェックする
+func hasGCPCredentials() bool {
+	// 1. GOOGLE_APPLICATION_CREDENTIALS 環境変数をチェック
+	if creds := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); creds != "" {
+		if _, err := os.Stat(creds); err == nil {
+			return true
+		}
+	}
+
+	// 2. Application Default Credentials (ADC) のデフォルトパスをチェック
+	// Linux/macOS: ~/.config/gcloud/application_default_credentials.json
+	if home, err := os.UserHomeDir(); err == nil {
+		adcPath := fmt.Sprintf("%s/.config/gcloud/application_default_credentials.json", home)
+		if _, err := os.Stat(adcPath); err == nil {
+			return true
+		}
+	}
+
+	// 3. GCE/Cloud Run等のメタデータサーバーは実行時にしか確認できないため、
+	//    ローカル環境では上記のファイルベースのチェックで十分
+	return false
+}
+
+// shouldUseNoopTelemetry はNoopテレメトリーを使用すべきかを判定する
+func shouldUseNoopTelemetry() bool {
+	// 1. 環境変数で明示的にnoop指定されている場合
+	if os.Getenv("TELEMETRY_NOOP") == "true" {
+		return true
+	}
+
+	// 2. GCP認証情報がない場合
+	return !hasGCPCredentials()
 }
 
 // NewTelemetryProvider は新しいテレメトリープロバイダーを作成する
 func NewTelemetryProvider(ctx context.Context, projectID, serviceName, environment string, log logger.Logger) (*TelemetryProvider, error) {
+	// Noopモードを使用すべき場合
+	if shouldUseNoopTelemetry() {
+		log.Info("Using noop telemetry provider (local mode)",
+			zap.String("service_name", serviceName),
+			zap.String("environment", environment),
+			zap.Bool("telemetry_noop_env", os.Getenv("TELEMETRY_NOOP") == "true"),
+		)
+
+		noopMeter := metricnoop.NewMeterProvider()
+		noopTracer := tracenoop.NewTracerProvider()
+
+		otel.SetMeterProvider(noopMeter)
+		otel.SetTracerProvider(noopTracer)
+
+		return &TelemetryProvider{
+			meterProvider:  noopMeter,
+			tracerProvider: noopTracer,
+			sdkMeter:       nil,
+			sdkTracer:      nil,
+			logger:         log,
+			isNoop:         true,
+		}, nil
+	}
+
 	// Resource定義（サービス情報）
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
@@ -78,7 +142,7 @@ func NewTelemetryProvider(ctx context.Context, projectID, serviceName, environme
 	otel.SetMeterProvider(meterProvider)
 	otel.SetTracerProvider(tracerProvider)
 
-	log.Info("Telemetry provider initialized",
+	log.Info("Telemetry provider initialized with GCP exporters",
 		zap.String("project_id", projectID),
 		zap.String("service_name", serviceName),
 		zap.String("environment", environment),
@@ -87,7 +151,10 @@ func NewTelemetryProvider(ctx context.Context, projectID, serviceName, environme
 	return &TelemetryProvider{
 		meterProvider:  meterProvider,
 		tracerProvider: tracerProvider,
+		sdkMeter:       meterProvider,
+		sdkTracer:      tracerProvider,
 		logger:         log,
+		isNoop:         false,
 	}, nil
 }
 
@@ -108,17 +175,26 @@ func getSampler(environment string) sdktrace.Sampler {
 
 // Shutdown はテレメトリープロバイダーをシャットダウンする
 func (tp *TelemetryProvider) Shutdown(ctx context.Context) error {
-	tp.logger.Info("Shutting down telemetry provider")
+	tp.logger.Info("Shutting down telemetry provider", zap.Bool("is_noop", tp.isNoop))
+
+	// Noopモードの場合はシャットダウン不要
+	if tp.isNoop {
+		return nil
+	}
 
 	// Tracerのシャットダウン（未送信スパンをフラッシュ）
-	if err := tp.tracerProvider.Shutdown(ctx); err != nil {
-		tp.logger.Error("Failed to shutdown tracer provider", zap.Error(err))
+	if tp.sdkTracer != nil {
+		if err := tp.sdkTracer.Shutdown(ctx); err != nil {
+			tp.logger.Error("Failed to shutdown tracer provider", zap.Error(err))
+		}
 	}
 
 	// Metricsのシャットダウン（未送信メトリクスをフラッシュ）
-	if err := tp.meterProvider.Shutdown(ctx); err != nil {
-		tp.logger.Error("Failed to shutdown meter provider", zap.Error(err))
-		return err
+	if tp.sdkMeter != nil {
+		if err := tp.sdkMeter.Shutdown(ctx); err != nil {
+			tp.logger.Error("Failed to shutdown meter provider", zap.Error(err))
+			return err
+		}
 	}
 
 	return nil

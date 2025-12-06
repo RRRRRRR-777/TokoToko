@@ -33,9 +33,9 @@ run: ## APIサーバーを起動
 	go run ./cmd/api/main.go
 
 .PHONY: dev
-dev: ## ホットリロード付きでAPIサーバーを起動
+dev: ## ホットリロード付きでAPIサーバーを起動（ローカル用、Telemetry無効）
 	@echo "Starting API server with hot reload..."
-	air
+	TELEMETRY_NOOP=true air
 
 .PHONY: test
 test: ## テストを実行

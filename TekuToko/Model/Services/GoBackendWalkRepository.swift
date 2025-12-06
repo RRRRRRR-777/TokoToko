@@ -25,15 +25,68 @@ struct WalksListResponse: Decodable {
   }
 }
 
-/// 散歩詳細APIレスポンス
-/// サーバーはWalkDTOを直接返すため、WalkDTOのtype aliasとして定義
-typealias WalkDetailResponse = WalkDTO
+// MARK: - LocationDTO
+
+/// 位置情報DTO
+struct LocationDTO: Codable {
+  let latitude: Double
+  let longitude: Double
+  let altitude: Double?
+  let timestamp: Date
+  let horizontalAccuracy: Double?
+  let verticalAccuracy: Double?
+  let speed: Double?
+  let course: Double?
+  let sequenceNumber: Int
+
+  enum CodingKeys: String, CodingKey {
+    case latitude
+    case longitude
+    case altitude
+    case timestamp
+    case horizontalAccuracy = "horizontal_accuracy"
+    case verticalAccuracy = "vertical_accuracy"
+    case speed
+    case course
+    case sequenceNumber = "sequence_number"
+  }
+
+  /// CLLocationに変換
+  func toCLLocation() -> CLLocation {
+    CLLocation(
+      coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+      altitude: altitude ?? 0,
+      horizontalAccuracy: horizontalAccuracy ?? 0,
+      verticalAccuracy: verticalAccuracy ?? 0,
+      course: course ?? -1,
+      speed: speed ?? -1,
+      timestamp: timestamp
+    )
+  }
+
+  /// CLLocationからLocationDTOを作成
+  static func fromCLLocation(_ location: CLLocation, sequenceNumber: Int) -> LocationDTO {
+    LocationDTO(
+      latitude: location.coordinate.latitude,
+      longitude: location.coordinate.longitude,
+      altitude: location.altitude,
+      timestamp: location.timestamp,
+      horizontalAccuracy: location.horizontalAccuracy,
+      verticalAccuracy: location.verticalAccuracy,
+      speed: location.speed >= 0 ? location.speed : nil,
+      course: location.course >= 0 ? location.course : nil,
+      sequenceNumber: sequenceNumber
+    )
+  }
+}
 
 // MARK: - WalkDTO
 
 /// Go バックエンドとの通信用DTO
 ///
-/// iOSの`Walk`モデルとGoバックエンドのJSONスキーマを変換するためのData Transfer Object
+/// iOSの`Walk`モデルとGoバックエンドのJSONスキーマを変換するためのData Transfer Object。
+/// 一覧API（GET /v1/walks）ではlocationsはnilで返され、
+/// 詳細API（GET /v1/walks/:id）ではlocationsが含まれます。
 struct WalkDTO: Codable {
   let id: String
   let userId: String
@@ -50,6 +103,8 @@ struct WalkDTO: Codable {
   let totalPausedDuration: Double
   let createdAt: Date
   let updatedAt: Date
+  /// 位置情報（詳細APIでのみ取得可能、一覧APIではnil）
+  let locations: [LocationDTO]?
 
   enum CodingKeys: String, CodingKey {
     case id
@@ -67,6 +122,7 @@ struct WalkDTO: Codable {
     case totalPausedDuration = "total_paused_duration"
     case createdAt = "created_at"
     case updatedAt = "updated_at"
+    case locations
   }
 
   /// WalkDTOをWalkモデルに変換
@@ -85,7 +141,7 @@ struct WalkDTO: Codable {
       status: status.toWalkStatus(),
       pausedAt: pausedAt,
       totalPausedDuration: totalPausedDuration,
-      locations: [],
+      locations: locations?.map { $0.toCLLocation() } ?? [],
       createdAt: createdAt,
       updatedAt: updatedAt
     )
@@ -93,7 +149,13 @@ struct WalkDTO: Codable {
 
   /// WalkモデルからWalkDTOを作成
   static func fromWalk(_ walk: Walk) -> WalkDTO {
-    WalkDTO(
+    let locationDTOs: [LocationDTO]? = walk.locations.isEmpty ? nil : walk.locations.enumerated().map
+    {
+      index, location in
+      LocationDTO.fromCLLocation(location, sequenceNumber: index)
+    }
+
+    return WalkDTO(
       id: walk.id.uuidString,
       userId: walk.userId ?? "",
       title: walk.title,
@@ -108,7 +170,8 @@ struct WalkDTO: Codable {
       pausedAt: walk.pausedAt,
       totalPausedDuration: walk.totalPausedDuration,
       createdAt: walk.createdAt,
-      updatedAt: walk.updatedAt
+      updatedAt: walk.updatedAt,
+      locations: locationDTOs
     )
   }
 }
@@ -179,6 +242,7 @@ struct WalkUpdateRequest: Encodable {
   let thumbnailImageUrl: String?
   let pausedAt: Date?
   let totalPausedDuration: Double?
+  let locations: [LocationDTO]?
 
   enum CodingKeys: String, CodingKey {
     case title
@@ -192,6 +256,7 @@ struct WalkUpdateRequest: Encodable {
     case thumbnailImageUrl = "thumbnail_image_url"
     case pausedAt = "paused_at"
     case totalPausedDuration = "total_paused_duration"
+    case locations
   }
 }
 
@@ -242,7 +307,8 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
   ) {
     Task {
       do {
-        let response: WalkDetailResponse = try await apiClient.get(path: "/v1/walks/\(id.uuidString)")
+        // 詳細APIはlocationsを含むWalkDTOを返す
+        let response: WalkDTO = try await apiClient.get(path: "/v1/walks/\(id.uuidString)")
         let walk = response.toWalk()
         await MainActor.run {
           completion(.success(walk))
@@ -269,7 +335,8 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
           startLatitude: location?.latitude,
           startLongitude: location?.longitude
         )
-        let response: WalkDetailResponse = try await apiClient.post(path: "/v1/walks", body: request)
+        // POST /v1/walks はWalkDTO（locationsなし）を返すため、WalkDTOでデコード
+        let response: WalkDTO = try await apiClient.post(path: "/v1/walks", body: request)
         let walk = response.toWalk()
         await MainActor.run {
           completion(.success(walk))
@@ -296,6 +363,12 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
   ) {
     Task {
       do {
+        // locationsをLocationDTOに変換（sequence_number付与）
+        let locationDTOs: [LocationDTO]? = walk.locations.isEmpty ? nil : walk.locations.enumerated().map {
+          index, location in
+          LocationDTO.fromCLLocation(location, sequenceNumber: index)
+        }
+
         let request = WalkUpdateRequest(
           title: walk.title,
           description: walk.description,
@@ -307,9 +380,11 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
           polylineData: walk.polylineData,
           thumbnailImageUrl: walk.thumbnailImageUrl,
           pausedAt: walk.pausedAt,
-          totalPausedDuration: walk.totalPausedDuration
+          totalPausedDuration: walk.totalPausedDuration,
+          locations: locationDTOs
         )
-        let response: WalkDetailResponse = try await apiClient.put(
+        // PUT /v1/walks/:id はWalkDTO（locationsなし）を返すため、WalkDTOでデコード
+        let response: WalkDTO = try await apiClient.put(
           path: "/v1/walks/\(walk.id.uuidString)",
           body: request
         )

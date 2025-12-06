@@ -16,13 +16,14 @@ import (
 // Container は依存性注入コンテナ
 // アプリケーション全体で使用される依存関係を管理する
 type Container struct {
-	Config            *config.Config
-	DB                *database.PostgresDB
-	Logger            logger.Logger
-	TelemetryProvider *telemetry.TelemetryProvider
-	AuthMiddleware    *middleware.AuthMiddleware
-	WalkRepository    walk.Repository
-	WalkUsecase       walkusecase.Usecase
+	Config                 *config.Config
+	DB                     *database.PostgresDB
+	Logger                 logger.Logger
+	TelemetryProvider      *telemetry.TelemetryProvider
+	AuthMiddleware         *middleware.AuthMiddleware
+	WalkRepository         walk.Repository
+	WalkLocationRepository walk.LocationRepository
+	WalkUsecase            walkusecase.Usecase
 }
 
 // NewContainer は新しいコンテナを生成する
@@ -57,27 +58,34 @@ func NewContainer(ctx context.Context) (*Container, error) {
 		return nil, err
 	}
 
+	// Repository初期化
+	userRepo := postgres.NewUserRepository(db.DB)
+	walkRepo := postgres.NewWalkRepository(db.DB)
+	walkLocationRepo := postgres.NewWalkLocationRepository(db.DB)
+
 	// AuthMiddleware初期化
-	// Firebase認証情報は環境変数から取得（開発環境では空文字列でも動作）
-	authMw, err := middleware.NewAuthMiddleware(ctx, cfg.Firebase.CredentialsJSON)
+	// Firebase認証情報はCredentialsJSON または CredentialsPath から取得
+	firebaseCredentials, err := cfg.LoadFirebaseCredentials()
+	if err != nil {
+		return nil, err
+	}
+	authMw, err := middleware.NewAuthMiddleware(ctx, firebaseCredentials, userRepo)
 	if err != nil {
 		return nil, err
 	}
 
-	// Repository初期化
-	walkRepo := postgres.NewWalkRepository(db.DB)
-
 	// Usecase初期化
-	walkUsecase := walkusecase.NewInteractor(walkRepo)
+	walkUsecase := walkusecase.NewInteractor(walkRepo, walkLocationRepo)
 
 	return &Container{
-		Config:            cfg,
-		DB:                db,
-		Logger:            log,
-		TelemetryProvider: telemetryProvider,
-		AuthMiddleware:    authMw,
-		WalkRepository:    walkRepo,
-		WalkUsecase:       walkUsecase,
+		Config:                 cfg,
+		DB:                     db,
+		Logger:                 log,
+		TelemetryProvider:      telemetryProvider,
+		AuthMiddleware:         authMw,
+		WalkRepository:         walkRepo,
+		WalkLocationRepository: walkLocationRepo,
+		WalkUsecase:            walkUsecase,
 	}, nil
 }
 
