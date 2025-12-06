@@ -274,10 +274,149 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
     XCTAssertEqual(error, .notFound)
   }
 
+  // MARK: - LocationDTO Tests
+
+  func test_LocationDTO_toCLLocation_正常に変換できる() {
+    // 期待値: LocationDTOからCLLocationに正しく変換される
+    let locationDTO = LocationDTO(
+      latitude: 35.6812,
+      longitude: 139.7671,
+      altitude: 10.0,
+      timestamp: Date(),
+      horizontalAccuracy: 5.0,
+      verticalAccuracy: 3.0,
+      speed: 1.2,
+      course: 90.0,
+      sequenceNumber: 0
+    )
+
+    // When
+    let clLocation = locationDTO.toCLLocation()
+
+    // Then
+    XCTAssertEqual(clLocation.coordinate.latitude, 35.6812, accuracy: 0.0001)
+    XCTAssertEqual(clLocation.coordinate.longitude, 139.7671, accuracy: 0.0001)
+    XCTAssertEqual(clLocation.altitude, 10.0, accuracy: 0.1)
+    XCTAssertEqual(clLocation.horizontalAccuracy, 5.0, accuracy: 0.1)
+    XCTAssertEqual(clLocation.verticalAccuracy, 3.0, accuracy: 0.1)
+    XCTAssertEqual(clLocation.speed, 1.2, accuracy: 0.1)
+    XCTAssertEqual(clLocation.course, 90.0, accuracy: 0.1)
+  }
+
+  func test_LocationDTO_fromCLLocation_正常に変換できる() {
+    // 期待値: CLLocationからLocationDTOに正しく変換される
+    let clLocation = CLLocation(
+      coordinate: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+      altitude: 10.0,
+      horizontalAccuracy: 5.0,
+      verticalAccuracy: 3.0,
+      course: 90.0,
+      speed: 1.2,
+      timestamp: Date()
+    )
+
+    // When
+    let locationDTO = LocationDTO.fromCLLocation(clLocation, sequenceNumber: 5)
+
+    // Then
+    XCTAssertEqual(locationDTO.latitude, 35.6812, accuracy: 0.0001)
+    XCTAssertEqual(locationDTO.longitude, 139.7671, accuracy: 0.0001)
+    XCTAssertEqual(locationDTO.altitude!, 10.0, accuracy: 0.1)
+    XCTAssertEqual(locationDTO.horizontalAccuracy!, 5.0, accuracy: 0.1)
+    XCTAssertEqual(locationDTO.verticalAccuracy!, 3.0, accuracy: 0.1)
+    XCTAssertEqual(locationDTO.speed!, 1.2, accuracy: 0.1)
+    XCTAssertEqual(locationDTO.course!, 90.0, accuracy: 0.1)
+    XCTAssertEqual(locationDTO.sequenceNumber, 5)
+  }
+
+  func test_LocationDTO_負のspeedとcourse_nilに変換される() {
+    // 期待値: speed/courseが-1（無効値）の場合はnilになる
+    let clLocation = CLLocation(
+      coordinate: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+      altitude: 10.0,
+      horizontalAccuracy: 5.0,
+      verticalAccuracy: 3.0,
+      course: -1,
+      speed: -1,
+      timestamp: Date()
+    )
+
+    // When
+    let locationDTO = LocationDTO.fromCLLocation(clLocation, sequenceNumber: 0)
+
+    // Then
+    XCTAssertNil(locationDTO.speed)
+    XCTAssertNil(locationDTO.course)
+  }
+
+  func test_fetchWalk_詳細API_locationsを含む散歩を取得できる() {
+    // 期待値: 詳細APIからlocationsを含むWalkが取得される
+    let walkDTO = createTestWalkDTO(includeLocations: true)
+    mockAPIClient.mockResult = walkDTO
+
+    let expectation = expectation(description: "fetchWalk with locations")
+    let walkId = UUID(uuidString: walkDTO.id) ?? UUID()
+    var result: Result<Walk, WalkRepositoryError>?
+
+    sut.fetchWalk(withID: walkId) { fetchResult in
+      result = fetchResult
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    guard case .success(let walk) = result else {
+      XCTFail("期待される成功結果が返されなかった")
+      return
+    }
+
+    // 検証: locationsが2件取得される
+    XCTAssertEqual(walk.locations.count, 2)
+    XCTAssertEqual(walk.locations[0].coordinate.latitude, 35.6812, accuracy: 0.0001)
+    XCTAssertEqual(walk.locations[1].coordinate.latitude, 35.6815, accuracy: 0.0001)
+  }
+
+  func test_WalkDTO_locationsなし_空の配列に変換される() {
+    // 期待値: locationsがnilの場合、空の配列に変換される
+    let walkDTO = createTestWalkDTO(includeLocations: false)
+
+    // When
+    let walk = walkDTO.toWalk()
+
+    // Then
+    XCTAssertTrue(walk.locations.isEmpty)
+  }
+
   // MARK: - Helper Methods
 
-  private func createTestWalkDTO() -> WalkDTO {
-    WalkDTO(
+  private func createTestWalkDTO(includeLocations: Bool = false) -> WalkDTO {
+    let locations: [LocationDTO]? = includeLocations
+      ? [
+        LocationDTO(
+          latitude: 35.6812,
+          longitude: 139.7671,
+          altitude: 10.0,
+          timestamp: Date(),
+          horizontalAccuracy: 5.0,
+          verticalAccuracy: 3.0,
+          speed: 1.2,
+          course: 90.0,
+          sequenceNumber: 0
+        ),
+        LocationDTO(
+          latitude: 35.6815,
+          longitude: 139.7675,
+          altitude: 12.0,
+          timestamp: Date().addingTimeInterval(60),
+          horizontalAccuracy: 5.0,
+          verticalAccuracy: 3.0,
+          speed: 1.3,
+          course: 95.0,
+          sequenceNumber: 1
+        ),
+      ] : nil
+
+    return WalkDTO(
       id: "550e8400-e29b-41d4-a716-446655440000",
       userId: "test-user-id",
       title: "テスト散歩",
@@ -292,7 +431,8 @@ final class GoBackendWalkRepositoryTests: XCTestCase {
       pausedAt: nil,
       totalPausedDuration: 0.0,
       createdAt: Date(),
-      updatedAt: Date()
+      updatedAt: Date(),
+      locations: locations
     )
   }
 }

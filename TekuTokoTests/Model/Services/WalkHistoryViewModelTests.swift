@@ -14,15 +14,18 @@ final class WalkHistoryViewModelTests: XCTestCase {
 
   var viewModel: WalkHistoryViewModel!
   var mockWalks: [Walk]!
+  var mockRepository: MockWalkRepository!
 
   override func setUp() {
     super.setUp()
     mockWalks = createMockWalks()
+    mockRepository = MockWalkRepository()
   }
 
   override func tearDown() {
     viewModel = nil
     mockWalks = nil
+    mockRepository = nil
     super.tearDown()
   }
 
@@ -151,5 +154,105 @@ final class WalkHistoryViewModelTests: XCTestCase {
     XCTAssertTrue(hasRemainingWalks, "他の散歩が残っているはず")
     XCTAssertEqual(viewModel.currentWalk.title, "最新の散歩", "残った散歩に遷移するはず")
     XCTAssertEqual(viewModel.walkCount, 1, "散歩数が1つになるはず")
+  }
+
+  // MARK: - loadLocationsForCurrentWalk Tests
+
+  func testLoadLocationsForCurrentWalk_既にlocationsがある場合_スキップされる() throws {
+    // 期待値: 既にlocationsがある散歩はAPIを呼び出さない
+    // Given: locationsが既に存在する散歩
+    viewModel = try WalkHistoryViewModel(
+      walks: mockWalks,
+      initialIndex: 0,
+      walkRepository: mockRepository
+    )
+    let initialLocationsCount = viewModel.currentWalk.locations.count
+
+    // When: loadLocationsForCurrentWalkを呼び出し
+    viewModel.loadLocationsForCurrentWalk()
+
+    // Then: locationsは変更されない（API呼び出しスキップ）
+    XCTAssertEqual(viewModel.currentWalk.locations.count, initialLocationsCount)
+  }
+
+  func testLoadLocationsForCurrentWalk_locationsがない場合_APIから取得される() throws {
+    // 期待値: locationsがない散歩はAPIからlocationsを取得する
+    // Given: locationsがない散歩
+    let walksWithoutLocations = [
+      Walk(
+        title: "散歩1",
+        description: "説明1",
+        userId: "mock-user-id",
+        id: UUID(),
+        status: .completed,
+        locations: []  // locationsが空
+      )
+    ]
+
+    // MockRepositoryにlocations付きの散歩を登録
+    var walkWithLocations = walksWithoutLocations[0]
+    walkWithLocations.addLocation(CLLocation(latitude: 35.6812, longitude: 139.7671))
+    walkWithLocations.addLocation(CLLocation(latitude: 35.6815, longitude: 139.7675))
+    mockRepository.addMockWalk(walkWithLocations)
+
+    viewModel = try WalkHistoryViewModel(
+      walks: walksWithoutLocations,
+      initialIndex: 0,
+      walkRepository: mockRepository
+    )
+
+    let expectation = expectation(description: "loadLocations")
+
+    // When: loadLocationsForCurrentWalkを呼び出し
+    viewModel.loadLocationsForCurrentWalk()
+
+    // 非同期処理の完了を待つ
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    // Then: locationsが更新される
+    XCTAssertEqual(viewModel.currentWalk.locations.count, 2)
+  }
+
+  func testLoadLocationsForCurrentWalk_API失敗_locationsは空のまま() throws {
+    // 期待値: API失敗時はlocationsが空のままで表示を継続する
+    // Given: locationsがない散歩
+    let walksWithoutLocations = [
+      Walk(
+        title: "散歩1",
+        description: "説明1",
+        userId: "mock-user-id",
+        id: UUID(),
+        status: .completed,
+        locations: []
+      )
+    ]
+
+    // MockRepositoryにエラーを設定
+    mockRepository.simulateError(.networkError)
+
+    viewModel = try WalkHistoryViewModel(
+      walks: walksWithoutLocations,
+      initialIndex: 0,
+      walkRepository: mockRepository
+    )
+
+    let expectation = expectation(description: "loadLocations")
+
+    // When: loadLocationsForCurrentWalkを呼び出し
+    viewModel.loadLocationsForCurrentWalk()
+
+    // 非同期処理の完了を待つ
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    // Then: locationsは空のまま
+    XCTAssertTrue(viewModel.currentWalk.locations.isEmpty)
   }
 }
