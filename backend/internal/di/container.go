@@ -16,14 +16,14 @@ import (
 // Container は依存性注入コンテナ
 // アプリケーション全体で使用される依存関係を管理する
 type Container struct {
-	Config               *config.Config
-	DB                   *database.PostgresDB
-	Logger               logger.Logger
-	TelemetryProvider    *telemetry.TelemetryProvider
-	AuthMiddleware       *middleware.AuthMiddleware
-	WalkRepository       walk.Repository
+	Config                 *config.Config
+	DB                     *database.PostgresDB
+	Logger                 logger.Logger
+	TelemetryProvider      *telemetry.TelemetryProvider
+	AuthMiddleware         *middleware.AuthMiddleware
+	WalkRepository         walk.Repository
 	WalkLocationRepository walk.LocationRepository
-	WalkUsecase          walkusecase.Usecase
+	WalkUsecase            walkusecase.Usecase
 }
 
 // NewContainer は新しいコンテナを生成する

@@ -9,15 +9,15 @@ import (
 
 // LocationResponse は位置情報のレスポンス
 type LocationResponse struct {
-	Latitude           float64    `json:"latitude"`
-	Longitude          float64    `json:"longitude"`
-	Altitude           *float64   `json:"altitude,omitempty"`
-	Timestamp          time.Time  `json:"timestamp"`
-	HorizontalAccuracy *float64   `json:"horizontal_accuracy,omitempty"`
-	VerticalAccuracy   *float64   `json:"vertical_accuracy,omitempty"`
-	Speed              *float64   `json:"speed,omitempty"`
-	Course             *float64   `json:"course,omitempty"`
-	SequenceNumber     int        `json:"sequence_number"`
+	Latitude           float64   `json:"latitude"`
+	Longitude          float64   `json:"longitude"`
+	Altitude           *float64  `json:"altitude,omitempty"`
+	Timestamp          time.Time `json:"timestamp"`
+	HorizontalAccuracy *float64  `json:"horizontal_accuracy,omitempty"`
+	VerticalAccuracy   *float64  `json:"vertical_accuracy,omitempty"`
+	Speed              *float64  `json:"speed,omitempty"`
+	Course             *float64  `json:"course,omitempty"`
+	SequenceNumber     int       `json:"sequence_number"`
 }
 
 // WalkResponse は散歩APIのレスポンス

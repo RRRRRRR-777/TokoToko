@@ -38,15 +38,15 @@ type CreateWalkRequest struct {
 
 // LocationRequest は位置情報のリクエスト
 type LocationRequest struct {
-	Latitude           float64    `json:"latitude" binding:"required"`
-	Longitude          float64    `json:"longitude" binding:"required"`
-	Altitude           *float64   `json:"altitude,omitempty"`
-	Timestamp          time.Time  `json:"timestamp" binding:"required"`
-	HorizontalAccuracy *float64   `json:"horizontal_accuracy,omitempty"`
-	VerticalAccuracy   *float64   `json:"vertical_accuracy,omitempty"`
-	Speed              *float64   `json:"speed,omitempty"`
-	Course             *float64   `json:"course,omitempty"`
-	SequenceNumber     int        `json:"sequence_number"`
+	Latitude           float64   `json:"latitude" binding:"required"`
+	Longitude          float64   `json:"longitude" binding:"required"`
+	Altitude           *float64  `json:"altitude,omitempty"`
+	Timestamp          time.Time `json:"timestamp" binding:"required"`
+	HorizontalAccuracy *float64  `json:"horizontal_accuracy,omitempty"`
+	VerticalAccuracy   *float64  `json:"vertical_accuracy,omitempty"`
+	Speed              *float64  `json:"speed,omitempty"`
+	Course             *float64  `json:"course,omitempty"`
+	SequenceNumber     int       `json:"sequence_number"`
 }
 
 // UpdateWalkRequest はWalk更新のリクエスト

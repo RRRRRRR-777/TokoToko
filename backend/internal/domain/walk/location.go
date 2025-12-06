@@ -9,17 +9,17 @@ import (
 
 // WalkLocation は散歩中の位置情報を表すドメインエンティティ
 type WalkLocation struct {
-	ID                 int64      `json:"id"`
-	WalkID             uuid.UUID  `json:"walk_id"`
-	Latitude           float64    `json:"latitude"`
-	Longitude          float64    `json:"longitude"`
-	Altitude           *float64   `json:"altitude,omitempty"`
-	Timestamp          time.Time  `json:"timestamp"`
-	HorizontalAccuracy *float64   `json:"horizontal_accuracy,omitempty"`
-	VerticalAccuracy   *float64   `json:"vertical_accuracy,omitempty"`
-	Speed              *float64   `json:"speed,omitempty"`
-	Course             *float64   `json:"course,omitempty"`
-	SequenceNumber     int        `json:"sequence_number"`
+	ID                 int64     `json:"id"`
+	WalkID             uuid.UUID `json:"walk_id"`
+	Latitude           float64   `json:"latitude"`
+	Longitude          float64   `json:"longitude"`
+	Altitude           *float64  `json:"altitude,omitempty"`
+	Timestamp          time.Time `json:"timestamp"`
+	HorizontalAccuracy *float64  `json:"horizontal_accuracy,omitempty"`
+	VerticalAccuracy   *float64  `json:"vertical_accuracy,omitempty"`
+	Speed              *float64  `json:"speed,omitempty"`
+	Course             *float64  `json:"course,omitempty"`
+	SequenceNumber     int       `json:"sequence_number"`
 }
 
 // NewWalkLocation は新しいWalkLocationエンティティを生成する
