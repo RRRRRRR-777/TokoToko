@@ -10,8 +10,8 @@ import (
 
 // interactor はWalk Usecaseの実装
 type interactor struct {
-	walkRepo         walk.Repository
-	locationRepo     walk.LocationRepository
+	walkRepo     walk.Repository
+	locationRepo walk.LocationRepository
 	// TODO: Phase2で追加
 	// logger   logger.Logger
 }
@@ -87,25 +87,8 @@ func (i *interactor) ListWalks(ctx context.Context, userID string, limit, offset
 	return walks, count, nil
 }
 
-// UpdateWalk はWalkを更新または作成する（upsert）
-// 存在する場合は更新、存在しない場合は新規作成
-func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, userID string) (*walk.Walk, error) {
-	// 既存のWalkを取得（存在しない場合は新規作成）
-	w, err := i.walkRepo.FindByID(ctx, input.ID)
-	isNew := false
-	if err != nil {
-		// 存在しない場合は新規作成
-		w = walk.NewWalk(userID, "", "")
-		w.ID = input.ID
-		isNew = true
-	} else {
-		// 権限チェック（既存レコードの場合のみ）
-		if w.UserID != userID {
-			return nil, fmt.Errorf("unauthorized")
-		}
-	}
-
-	// フィールド更新
+// applyWalkInputFields はUpdateWalkInputのフィールドをWalkエンティティに適用する
+func applyWalkInputFields(w *walk.Walk, input UpdateWalkInput) {
 	if input.Title != nil {
 		w.Title = *input.Title
 	}
@@ -139,11 +122,24 @@ func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, user
 	if input.TotalPausedDuration != nil {
 		w.TotalPausedDuration = *input.TotalPausedDuration
 	}
+}
 
-	// 新規作成の場合はUserIDを設定
-	if isNew {
-		w.UserID = userID
+// UpdateWalk はWalkを更新または作成する（upsert）
+// 存在する場合は更新、存在しない場合は新規作成
+func (i *interactor) UpdateWalk(ctx context.Context, input UpdateWalkInput, userID string) (*walk.Walk, error) {
+	// 既存のWalkを取得（存在しない場合は新規作成）
+	w, err := i.walkRepo.FindByID(ctx, input.ID)
+	if err != nil {
+		// 存在しない場合は新規作成
+		w = walk.NewWalk(userID, "", "")
+		w.ID = input.ID
+	} else if w.UserID != userID {
+		// 権限チェック（既存レコードの場合のみ）
+		return nil, fmt.Errorf("unauthorized")
 	}
+
+	// フィールド更新
+	applyWalkInputFields(w, input)
 
 	// Upsertで永続化
 	if err := i.walkRepo.Upsert(ctx, w); err != nil {
