@@ -383,7 +383,8 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
           startLatitude: location?.latitude,
           startLongitude: location?.longitude
         )
-        let response: WalkDetailResponse = try await apiClient.post(path: "/v1/walks", body: request)
+        // POST /v1/walks はWalkDTO（locationsなし）を返すため、WalkDTOでデコード
+        let response: WalkDTO = try await apiClient.post(path: "/v1/walks", body: request)
         let walk = response.toWalk()
         await MainActor.run {
           completion(.success(walk))
@@ -430,7 +431,8 @@ final class GoBackendWalkRepository: WalkRepositoryProtocol {
           totalPausedDuration: walk.totalPausedDuration,
           locations: locationDTOs
         )
-        let response: WalkDetailResponse = try await apiClient.put(
+        // PUT /v1/walks/:id はWalkDTO（locationsなし）を返すため、WalkDTOでデコード
+        let response: WalkDTO = try await apiClient.put(
           path: "/v1/walks/\(walk.id.uuidString)",
           body: request
         )

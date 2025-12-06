@@ -144,6 +144,10 @@ struct WalkHistoryView: View {
     .navigationBarHidden(true)
     .animation(.easeInOut(duration: 0.3), value: viewModel.isStatsBarVisible)
     .shareWalk(viewModel.currentWalk, isPresented: $showingShareSheet)
+    .onAppear {
+      // 初回表示時に位置情報を取得
+      viewModel.loadLocationsForCurrentWalk()
+    }
   }
 
   // MARK: - View Components
@@ -156,12 +160,12 @@ struct WalkHistoryView: View {
   /// ## Implementation Note
   /// .id()修飾子を使用してViewの再作成を強制しています。
   /// これはMapKitの内部状態が正しくリセットされることを保証するためです。
+  /// idにlocations.countを含めることで、詳細API取得後にViewが再レンダリングされます。
   /// パフォーマンスへの影響は実測により許容範囲内であることを確認済みです。
-  /// 将来的により効率的な方法が見つかった場合は改善を検討します。
   private var backgroundMapView: some View {
     FullScreenMapView(walk: viewModel.currentWalk)
-      .id(viewModel.currentWalk.id)  // 散歩が変更されたら確実にViewを再作成
-      .animation(.easeInOut(duration: 0.2), value: viewModel.currentWalk.id)  // スムーズな遷移を追加
+      .id("\(viewModel.currentWalk.id)-\(viewModel.currentWalk.locations.count)")
+      .animation(.easeInOut(duration: 0.2), value: viewModel.currentWalk.id)
   }
 
   /// ストーリー形式のナビゲーションオーバーレイ

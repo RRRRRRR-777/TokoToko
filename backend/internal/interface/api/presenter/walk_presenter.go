@@ -33,6 +33,7 @@ type WalkResponse struct {
 	PolylineData        *string    `json:"polyline_data,omitempty"`
 	ThumbnailImageURL   *string    `json:"thumbnail_image_url,omitempty"`
 	Status              string     `json:"status"`
+	PausedAt            *time.Time `json:"paused_at"`
 	TotalPausedDuration float64    `json:"total_paused_duration"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`
@@ -66,6 +67,7 @@ func ToWalkResponse(w *walk.Walk) WalkResponse {
 		PolylineData:        w.PolylineData,
 		ThumbnailImageURL:   w.ThumbnailImageURL,
 		Status:              string(w.Status),
+		PausedAt:            w.PausedAt,
 		TotalPausedDuration: w.TotalPausedDuration,
 		CreatedAt:           w.CreatedAt,
 		UpdatedAt:           w.UpdatedAt,

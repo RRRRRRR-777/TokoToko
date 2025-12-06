@@ -741,7 +741,6 @@ struct HomeView: View {
     guard let currentWalk = walkManager.currentWalk, !currentWalk.locations.isEmpty else {
       return []
     }
-
     return currentWalk.locations.map { $0.coordinate }
   }
 

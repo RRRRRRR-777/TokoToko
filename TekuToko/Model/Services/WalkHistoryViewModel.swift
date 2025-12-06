@@ -55,6 +55,12 @@ class WalkHistoryViewModel: ObservableObject {
   /// ユーザーの操作でトグル可能で、デフォルトではtrue（表示）です。
   @Published var isStatsBarVisible: Bool = true
 
+  /// 位置情報読み込み中フラグ
+  ///
+  /// 散歩の詳細情報（locations）をAPIから読み込み中かどうかを示します。
+  /// UIでローディングインジケーター表示の制御に使用します。
+  @Published var isLoadingLocations: Bool = false
+
   // MARK: - Private Properties
 
   /// 散歩データの配列
@@ -68,6 +74,11 @@ class WalkHistoryViewModel: ObservableObject {
   /// walks配列内でのcurrentWalkの位置を示すインデックス値です。
   /// ナビゲーション操作時に更新されます。
   private var currentIndex: Int
+
+  /// 散歩データの永続化層
+  ///
+  /// 散歩詳細情報（locations含む）の取得に使用するリポジトリです。
+  private let walkRepository: WalkRepositoryProtocol
 
   // MARK: - Error Types
 
@@ -106,11 +117,21 @@ class WalkHistoryViewModel: ObservableObject {
   /// - walks配列が空でないことを確認
   /// - initialIndexがwalk配列の有効な範囲内であることを確認
   ///
+  /// ## Note
+  /// 初期散歩の位置情報取得は、ViewのonAppearで`loadLocationsForCurrentWalk()`を
+  /// 呼び出す必要があります。initで呼び出すとViewがまだObserveを開始しておらず、
+  /// @Publishedの変更がUIに反映されません。
+  ///
   /// - Parameters:
   ///   - walks: 表示する散歩データの配列（空でないこと）
   ///   - initialIndex: 初期表示する散歩のインデックス（0以上かつwalks.count未満）
+  ///   - walkRepository: 散歩詳細取得用のリポジトリ（デフォルト: WalkRepositoryFactory.shared.repository）
   /// - Throws: バリデーションエラー（ValidationError）
-  init(walks: [Walk], initialIndex: Int) throws {
+  init(
+    walks: [Walk],
+    initialIndex: Int,
+    walkRepository: WalkRepositoryProtocol = WalkRepositoryFactory.shared.repository
+  ) throws {
     guard !walks.isEmpty else {
       throw ValidationError.emptyWalksArray
     }
@@ -122,6 +143,7 @@ class WalkHistoryViewModel: ObservableObject {
     self.walks = walks
     self.currentIndex = initialIndex
     self.currentWalk = walks[initialIndex]
+    self.walkRepository = walkRepository
   }
 
   // MARK: - Public Methods
@@ -130,18 +152,62 @@ class WalkHistoryViewModel: ObservableObject {
   ///
   /// 現在表示中の散歩の1つ後の散歩へ遷移します。
   /// 最後の散歩の場合は最初の散歩に戻ります（サイクリックナビゲーション）。
+  /// 遷移後、新しい散歩の位置情報を非同期で取得します。
   func selectNextWalk() {
     currentIndex = (currentIndex + 1) % walks.count
     currentWalk = walks[currentIndex]
+    loadLocationsForCurrentWalk()
   }
 
   /// 前の散歩へ遷移
   ///
   /// 現在表示中の散歩の1つ前の散歩へ遷移します。
   /// 最初の散歩の場合は最後の散歩に移動します（サイクリックナビゲーション）。
+  /// 遷移後、新しい散歩の位置情報を非同期で取得します。
   func selectPreviousWalk() {
     currentIndex = (currentIndex - 1 + walks.count) % walks.count
     currentWalk = walks[currentIndex]
+    loadLocationsForCurrentWalk()
+  }
+
+  /// 現在の散歩の位置情報を取得
+  ///
+  /// 詳細APIを呼び出して現在表示中の散歩の位置情報（locations）を取得し、
+  /// currentWalkとwalks配列を更新します。
+  /// 既に位置情報が読み込まれている場合はAPI呼び出しをスキップします。
+  func loadLocationsForCurrentWalk() {
+    // 既にlocationsが存在する場合はスキップ
+    guard currentWalk.locations.isEmpty else {
+      return
+    }
+
+    isLoadingLocations = true
+    let walkId = currentWalk.id
+
+    walkRepository.fetchWalk(withID: walkId) { [weak self] result in
+      DispatchQueue.main.async {
+        guard let self = self else { return }
+        self.isLoadingLocations = false
+
+        switch result {
+        case .success(let detailedWalk):
+          // currentWalkのIDが変わっていないことを確認（ユーザーが素早く切り替えた場合の対策）
+          guard self.currentWalk.id == walkId else { return }
+
+          // locationsを持つ散歩で更新
+          self.currentWalk = detailedWalk
+
+          // walks配列も更新（キャッシュ効果）
+          if let index = self.walks.firstIndex(where: { $0.id == walkId }) {
+            self.walks[index] = detailedWalk
+          }
+
+        case .failure(let error):
+          print("❌ 位置情報の取得に失敗: \(error)")
+          // エラー時はlocationsなしのまま表示を継続
+        }
+      }
+    }
   }
 
   /// 統計バーの表示/非表示をトグル
@@ -182,6 +248,9 @@ class WalkHistoryViewModel: ObservableObject {
     let nextIndex = determineNextIndex(deletedIndex: walkIndex)
     currentIndex = nextIndex
     currentWalk = walks[nextIndex]
+
+    // 次の散歩の位置情報を取得
+    loadLocationsForCurrentWalk()
 
     return true  // 削除成功、他の散歩が存在
   }
