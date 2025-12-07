@@ -5,7 +5,11 @@ FROM golang:${GO_VERSION}-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache git ca-certificates tzdata curl
+
+# Download golang-migrate CLI
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz \
+    && mv migrate /usr/local/bin/migrate
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -32,6 +36,12 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy binary
 COPY --from=builder /app/bin/api /api
+
+# Copy migrate CLI
+COPY --from=builder /usr/local/bin/migrate /migrate
+
+# Copy migrations
+COPY --from=builder /app/migrations /app/migrations
 
 # Run as non-root user (already set by distroless:nonroot)
 USER nonroot:nonroot

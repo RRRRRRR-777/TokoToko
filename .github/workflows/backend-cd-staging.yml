@@ -100,42 +100,22 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
-      - name: Get database password from Secret Manager
-        id: secrets
+      - name: Create or update app-secret
         run: |
           DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password-staging --project=${{ env.GCP_PROJECT_ID }})
-          echo "::add-mask::$DB_PASSWORD"
-          echo "db_password=$DB_PASSWORD" >> $GITHUB_OUTPUT
-
-      - name: Install Cloud SQL Proxy
-        run: |
-          curl -o /tmp/cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.linux.amd64
-          chmod +x /tmp/cloud-sql-proxy
-
-      - name: Install golang-migrate
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
+          kubectl create secret generic app-secret \
+            --from-literal=db_password="$DB_PASSWORD" \
+            --namespace=tekutoko-staging \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Run database migration
         run: |
-          # Cloud SQL Proxyを起動（プライベートIP使用）
-          /tmp/cloud-sql-proxy ${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:tekutoko-staging-db --private-ip --port 5432 &
-          PROXY_PID=$!
-          echo "Cloud SQL Proxy started with PID: $PROXY_PID"
-          sleep 10
-
-          # マイグレーション実行
-          DATABASE_URL="postgres://tekutoko:${{ steps.secrets.outputs.db_password }}@localhost:5432/tekutoko_staging?sslmode=disable"
-          echo "Current migration version:"
-          migrate -path migrations -database "$DATABASE_URL" version || echo "No migrations applied yet"
-          echo "Applying migrations..."
-          migrate -path migrations -database "$DATABASE_URL" up
-          echo "Migration completed. New version:"
-          migrate -path migrations -database "$DATABASE_URL" version
-
-          # Cloud SQL Proxyを停止
-          kill $PROXY_PID || true
+          kubectl delete job db-migration -n tekutoko-staging --ignore-not-found=true
+          kubectl apply -f deploy/kubernetes/overlays/staging/migration-job.yaml
+          kubectl wait --for=condition=complete --timeout=5m job/db-migration -n tekutoko-staging || {
+            echo "Migration failed"; kubectl logs -l app=tekutoko-migration -n tekutoko-staging -c migration --tail=100; exit 1
+          }
+          kubectl logs -l app=tekutoko-migration -n tekutoko-staging -c migration --tail=50
 
       - name: Update Kustomize image tag
         run: |

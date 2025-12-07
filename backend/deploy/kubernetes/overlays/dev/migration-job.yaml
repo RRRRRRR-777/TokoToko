@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  namespace: tekutoko-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: tekutoko-migration
+    spec:
+      restartPolicy: Never
+      serviceAccountName: tekutoko-api
+      containers:
+      - name: migration
+        image: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api:dev-latest
+        command: ["/migrate"]
+        args: ["-path", "/app/migrations", "-database", "$(DATABASE_URL)", "up"]
+        env:
+        - name: DATABASE_URL
+          value: "postgres://tekutoko:$(DB_PASSWORD)@127.0.0.1:5432/tekutoko_dev?sslmode=disable"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: db_password
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3
+        args: ["--structured-logs", "--private-ip", "tokotoko-ea308:asia-northeast1:tekutoko-dev-db"]
+        securityContext:
+          runAsNonRoot: true
