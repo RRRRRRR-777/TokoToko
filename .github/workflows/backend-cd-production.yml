@@ -75,8 +75,8 @@ jobs:
 
       - name: Install Cloud SQL Proxy
         run: |
-          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.linux.amd64
-          chmod +x cloud-sql-proxy
+          curl -o /tmp/cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.linux.amd64
+          chmod +x /tmp/cloud-sql-proxy
 
       - name: Install golang-migrate
         run: |
@@ -86,8 +86,10 @@ jobs:
       - name: Run database migration
         run: |
           # Cloud SQL Proxyを起動
-          ../cloud-sql-proxy ${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:tekutoko-prod-db --port 5432 &
-          sleep 5
+          /tmp/cloud-sql-proxy ${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:tekutoko-prod-db --port 5432 &
+          PROXY_PID=$!
+          echo "Cloud SQL Proxy started with PID: $PROXY_PID"
+          sleep 10
 
           # マイグレーション実行
           DATABASE_URL="postgres://tekutoko:${{ steps.secrets.outputs.db_password }}@localhost:5432/tekutoko_prod?sslmode=disable"
@@ -97,6 +99,9 @@ jobs:
           migrate -path migrations -database "$DATABASE_URL" up
           echo "Migration completed. New version:"
           migrate -path migrations -database "$DATABASE_URL" version
+
+          # Cloud SQL Proxyを停止
+          kill $PROXY_PID || true
 
       - name: Update Kustomize image tag
         run: |
