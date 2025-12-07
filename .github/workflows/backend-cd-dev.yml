@@ -117,6 +117,8 @@ jobs:
 
       - name: Run database migration
         run: |
+          # 現在のブランチ名でGIT_BRANCHを置換
+          sed -i 's/value: "main"/value: "${{ github.ref_name }}"/' deploy/kubernetes/overlays/dev/migration-job.yaml
           kubectl delete job db-migration -n tekutoko-dev --ignore-not-found=true
           kubectl apply -f deploy/kubernetes/overlays/dev/migration-job.yaml
           kubectl wait --for=condition=complete --timeout=5m job/db-migration -n tekutoko-dev || {
