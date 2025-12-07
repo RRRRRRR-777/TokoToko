@@ -1,0 +1,8 @@
+# Development環境用Service設定
+# 静的外部IPを指定（Terraformで管理: tekutoko-api-dev-ip）
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekutoko-api
+spec:
+  loadBalancerIP: 34.180.120.96

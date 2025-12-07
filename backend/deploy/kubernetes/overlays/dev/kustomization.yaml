@@ -35,8 +35,9 @@ replicas:
 - name: tekutoko-api
   count: 1  # 開発環境は1レプリカで十分
 
-# HPA設定の調整
+# 環境固有のパッチ
 patchesStrategicMerge:
 - hpa-patch.yaml
 - ingress-patch.yaml
 - deployment-patch.yaml
+- service-patch.yaml
