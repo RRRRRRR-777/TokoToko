@@ -130,8 +130,8 @@ jobs:
 
       - name: Run database migration
         run: |
-          # Cloud SQL Proxyを起動
-          /tmp/cloud-sql-proxy ${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:tekutoko-dev-db --port 5432 &
+          # Cloud SQL Proxyを起動（プライベートIP使用）
+          /tmp/cloud-sql-proxy ${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:tekutoko-dev-db --private-ip --port 5432 &
           PROXY_PID=$!
           echo "Cloud SQL Proxy started with PID: $PROXY_PID"
           sleep 10
