@@ -12,22 +12,49 @@ spec:
         app: tekutoko-migration
     spec:
       restartPolicy: Never
-      serviceAccountName: tekutoko-api
+      serviceAccountName: tekutoko-api-sa
       containers:
       - name: migration
-        image: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api:staging-latest
-        command: ["/migrate"]
-        args: ["-path", "/app/migrations", "-database", "$(DATABASE_URL)", "up"]
+        image: alpine:3.19
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          apk add --no-cache curl
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          mv migrate /usr/local/bin/
+          echo "Waiting for Cloud SQL Proxy..."
+          while ! nc -z 127.0.0.1 5432; do sleep 1; done
+          echo "Proxy is ready. Running migration..."
+          migrate -path /migrations -database "$DATABASE_URL" up
+          echo "Migration completed. Shutting down proxy..."
+          curl -X POST http://localhost:9091/quitquitquit || true
         env:
-        - name: DATABASE_URL
-          value: "postgres://tekutoko:$(DB_PASSWORD)@127.0.0.1:5432/tekutoko_staging?sslmode=disable"
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: app-secret
               key: db_password
+        - name: DATABASE_URL
+          value: "postgres://tekutoko:$(DB_PASSWORD)@127.0.0.1:5432/tekutoko_staging?sslmode=disable"
+        volumeMounts:
+        - name: migrations
+          mountPath: /migrations
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3
-        args: ["--structured-logs", "--private-ip", "tokotoko-ea308:asia-northeast1:tekutoko-staging-db"]
+        args: ["--structured-logs", "--private-ip", "--http-port=9091", "--quitquitquit", "tokotoko-ea308:asia-northeast1:tekutoko-staging-db"]
         securityContext:
           runAsNonRoot: true
+      initContainers:
+      - name: git-clone
+        image: alpine/git:2.43.0
+        command: ['sh', '-c']
+        args:
+        - |
+          git clone --depth 1 --single-branch --branch main https://github.com/RRRRRRR-777/TokoToko.git /tmp/repo
+          cp -r /tmp/repo/backend/migrations/* /migrations/
+        volumeMounts:
+        - name: migrations
+          mountPath: /migrations
+      volumes:
+      - name: migrations
+        emptyDir: {}
