@@ -3,5 +3,5 @@
 
 #include "Base.xcconfig"
 
-API_BASE_URL = https:/$()/api-dev.tekutoko.app
+API_BASE_URL = https:/$()/tekutoko-dev.rrrrrrr777.com
 APP_ENV = development
