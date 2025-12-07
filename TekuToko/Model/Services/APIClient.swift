@@ -231,8 +231,8 @@ final class URLSessionAPIClient: APIClientProtocol {
   private func executeRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
     #if DEBUG
       let method = request.httpMethod ?? "?"
-      let path = request.url?.path ?? ""
-      print("[APIClient] Request: \(method) \(path)")
+      let urlString = request.url?.absoluteString ?? ""
+      print("[APIClient] Request: \(method) \(urlString)")
     #endif
 
     do {
