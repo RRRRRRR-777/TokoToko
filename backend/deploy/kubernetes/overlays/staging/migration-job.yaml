@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  namespace: tekutoko-staging
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: tekutoko-migration
+    spec:
+      restartPolicy: Never
+      serviceAccountName: tekutoko-api-sa
+      initContainers:
+      - name: git-clone
+        image: alpine/git:2.43.0
+        command: ['sh', '-c']
+        args:
+        - |
+          git clone --depth 1 --single-branch --branch ${GIT_BRANCH:-main} https://github.com/RRRRRRR-777/TokoToko.git /tmp/repo
+          cp -r /tmp/repo/backend/migrations/* /shared/
+        env:
+        - name: GIT_BRANCH
+          value: "main"
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+      containers:
+      - name: migration
+        image: alpine:3.19
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          apk add --no-cache curl
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          mv migrate /usr/local/bin/
+          echo "Waiting for Cloud SQL Proxy..."
+          while ! nc -z 127.0.0.1 5432; do sleep 1; done
+          echo "Proxy is ready. Running migration..."
+          migrate -path /shared -database "$DATABASE_URL" up
+          echo "Migration completed. Shutting down proxy..."
+          wget -q --post-data='' http://localhost:9091/quitquitquit -O - || true
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: db_password
+        - name: DATABASE_URL
+          value: "postgres://tekutoko:$(DB_PASSWORD)@127.0.0.1:5432/tekutoko_staging?sslmode=disable"
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3
+        args: ["--structured-logs", "--private-ip", "--http-port=9091", "--quitquitquit", "tokotoko-ea308:asia-northeast1:tekutoko-staging-db"]
+        securityContext:
+          runAsNonRoot: true
+      volumes:
+      - name: shared
+        emptyDir: {}

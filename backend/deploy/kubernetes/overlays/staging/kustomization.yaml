@@ -40,3 +40,4 @@ patchesStrategicMerge:
 - hpa-patch.yaml
 - ingress-patch.yaml
 - deployment-patch.yaml
+- service-patch.yaml

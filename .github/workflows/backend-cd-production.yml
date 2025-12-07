@@ -66,6 +66,23 @@ jobs:
         run: |
           kubectl get deployment tekutoko-api -n tekutoko-prod -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
 
+      - name: Create or update app-secret
+        run: |
+          DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password-prod --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic app-secret \
+            --from-literal=db_password="$DB_PASSWORD" \
+            --namespace=tekutoko-prod \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Run database migration
+        run: |
+          kubectl delete job db-migration -n tekutoko-prod --ignore-not-found=true
+          kubectl apply -f deploy/kubernetes/overlays/prod/migration-job.yaml
+          kubectl wait --for=condition=complete --timeout=5m job/db-migration -n tekutoko-prod || {
+            echo "Migration failed"; kubectl logs -l app=tekutoko-migration -n tekutoko-prod -c migration --tail=100; exit 1
+          }
+          kubectl logs -l app=tekutoko-migration -n tekutoko-prod -c migration --tail=50
+
       - name: Update Kustomize image tag
         run: |
           cd deploy/kubernetes/overlays/prod

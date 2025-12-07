@@ -69,6 +69,15 @@ module "firewall" {
   enable_deny_all = true
 }
 
+# API用静的外部IP
+resource "google_compute_address" "tekutoko_api" {
+  name         = "tekutoko-api-${local.environment}-ip"
+  project      = var.project_id
+  region       = local.region
+  address_type = "EXTERNAL"
+  description  = "TekuToko API ${local.environment}環境用の静的外部IP"
+}
+
 # 出力値
 output "vpc_name" {
   description = "VPC名"
@@ -88,4 +97,9 @@ output "pods_range_name" {
 output "services_range_name" {
   description = "Services Secondary Range名"
   value       = module.vpc.services_range_name
+}
+
+output "api_static_ip" {
+  description = "TekuToko API用の静的外部IP"
+  value       = google_compute_address.tekutoko_api.address
 }

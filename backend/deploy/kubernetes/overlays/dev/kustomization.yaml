@@ -29,14 +29,20 @@ configMapGenerator:
   - FIREBASE_PROJECT_ID=tokotoko-ea308
   - DB_HOST=localhost
   - DB_SSLMODE=disable
+# 環境固有のインフラ設定（Terraformで管理されるリソースのID）
+- name: infra-config
+  literals:
+  # 静的外部IP（Terraform: google_compute_address.tekutoko_api）
+  - EXTERNAL_IP=34.180.120.96
 
 # レプリカ数の調整（開発環境は小規模）
 replicas:
 - name: tekutoko-api
   count: 1  # 開発環境は1レプリカで十分
 
-# HPA設定の調整
+# 環境固有のパッチ
 patchesStrategicMerge:
 - hpa-patch.yaml
 - ingress-patch.yaml
 - deployment-patch.yaml
+- service-patch.yaml

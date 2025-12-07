@@ -42,3 +42,4 @@ patchesStrategicMerge:
 - ingress-patch.yaml
 - deployment-patch.yaml
 - poddisruptionbudget-patch.yaml
+- service-patch.yaml

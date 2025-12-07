@@ -3,5 +3,5 @@
 
 #include "Base.xcconfig"
 
-API_BASE_URL = https:/$()/api-staging.tekutoko.app
+API_BASE_URL = https:/$()/tekutoko-staging.rrrrrrr777.com
 APP_ENV = staging

@@ -229,8 +229,22 @@ final class URLSessionAPIClient: APIClientProtocol {
   }
 
   private func executeRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
+    #if DEBUG
+      let method = request.httpMethod ?? "?"
+      let urlString = request.url?.absoluteString ?? ""
+      print("[APIClient] Request: \(method) \(urlString)")
+    #endif
+
     do {
-      return try await session.data(for: request)
+      let (data, response) = try await session.data(for: request)
+
+      #if DEBUG
+        if let httpResponse = response as? HTTPURLResponse {
+          print("[APIClient] Response: \(httpResponse.statusCode)")
+        }
+      #endif
+
+      return (data, response)
     } catch {
       #if DEBUG
         print("[APIClient] ネットワークエラー: \(error)")
