@@ -19,11 +19,18 @@ spec:
         command: ['sh', '-c']
         args:
         - |
+          # GitHub認証を設定（Privateリポジトリ用）
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           git clone --depth 1 --single-branch --branch ${GIT_BRANCH:-main} https://github.com/RRRRRRR-777/TokoToko.git /tmp/repo
           cp -r /tmp/repo/backend/migrations/* /shared/
         env:
         - name: GIT_BRANCH
           value: "main"
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: token
         volumeMounts:
         - name: shared
           mountPath: /shared
@@ -33,7 +40,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
-          apk add --no-cache curl
+          apk add --no-cache curl netcat-openbsd
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
           mv migrate /usr/local/bin/
           echo "Waiting for Cloud SQL Proxy..."
