@@ -108,6 +108,10 @@ jobs:
             --namespace=tekutoko-staging \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Apply ServiceAccount before migration
+        run: |
+          kubectl apply -f deploy/kubernetes/base/serviceaccount.yaml -n tekutoko-staging
+
       - name: Run database migration
         run: |
           kubectl delete job db-migration -n tekutoko-staging --ignore-not-found=true
