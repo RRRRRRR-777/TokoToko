@@ -46,6 +46,7 @@ spec:
           echo "Waiting for Cloud SQL Proxy..."
           while ! nc -z 127.0.0.1 5432; do sleep 1; done
           echo "Proxy is ready. Running migration..."
+          DATABASE_URL="postgres://tekutoko:${DB_PASSWORD}@127.0.0.1:5432/tekutoko_dev?sslmode=disable"
           migrate -path /shared -database "$DATABASE_URL" up
           echo "Migration completed. Shutting down proxy..."
           wget -q --post-data='' http://localhost:9091/quitquitquit -O - || true
@@ -55,8 +56,6 @@ spec:
             secretKeyRef:
               name: app-secret
               key: db_password
-        - name: DATABASE_URL
-          value: "postgres://tekutoko:$(DB_PASSWORD)@127.0.0.1:5432/tekutoko_dev?sslmode=disable"
         volumeMounts:
         - name: shared
           mountPath: /shared
