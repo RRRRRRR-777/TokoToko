@@ -27,8 +27,13 @@ configMapGenerator:
   - DB_NAME=tekutoko_staging
   - LOG_LEVEL=info
   - FIREBASE_PROJECT_ID=tokotoko-ea308
-  - DB_HOST=__STAGING_PRIVATE_IP__   # 後でPrivate IPに置換
-  - DB_SSLMODE=require               # Proxy撤去後に適用する前提
+  - DB_HOST=localhost
+  - DB_SSLMODE=disable
+# 環境固有のインフラ設定（Terraformで管理されるリソースのID）
+- name: infra-config
+  literals:
+  # 静的外部IP（gcloud compute addresses: tekutoko-api-staging-ip）
+  - EXTERNAL_IP=136.110.112.42
 
 # レプリカ数の調整（Stagingは本番に近い設定）
 replicas:

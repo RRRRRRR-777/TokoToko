@@ -100,13 +100,32 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
-      - name: Create or update app-secret
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace tekutoko-staging --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update app-secret from Secret Manager
         run: |
           DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password-staging --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
           kubectl create secret generic app-secret \
             --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
             --namespace=tekutoko-staging \
             --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update github-secret for migration
+        run: |
+          GITHUB_PAT=$(gcloud secrets versions access latest --secret=github-pat --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic github-secret \
+            --from-literal=token="$GITHUB_PAT" \
+            --namespace=tekutoko-staging \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
 
       - name: Apply ServiceAccount before migration
         run: |
@@ -114,6 +133,9 @@ jobs:
 
       - name: Run database migration
         run: |
+          # yqを使用してブランチ名を安全に置換（特殊文字を含むブランチ名にも対応）
+          yq -i '.spec.template.spec.initContainers[0].env[0].value = "${{ github.ref_name }}"' \
+            deploy/kubernetes/overlays/staging/migration-job.yaml
           kubectl delete job db-migration -n tekutoko-staging --ignore-not-found=true
           kubectl apply -f deploy/kubernetes/overlays/staging/migration-job.yaml
           kubectl wait --for=condition=complete --timeout=5m job/db-migration -n tekutoko-staging || {
