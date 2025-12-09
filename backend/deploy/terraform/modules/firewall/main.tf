@@ -111,6 +111,31 @@ resource "google_compute_firewall" "allow_iap_ssh" {
   description = "Allow SSH via Identity-Aware Proxy"
 }
 
+# Cloud SQL Private IP接続許可（EGRESS）
+resource "google_compute_firewall" "allow_cloudsql_egress" {
+  count = var.cloud_sql_cidr != "" ? 1 : 0
+
+  name    = "${var.environment}-allow-cloudsql-egress"
+  network = var.network_name
+  project = var.project_id
+
+  priority  = 1000
+  direction = "EGRESS"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3307", "5432"]
+  }
+
+  destination_ranges = [var.cloud_sql_cidr]
+
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+
+  description = "Allow GKE pods to connect to Cloud SQL via private IP"
+}
+
 # 明示的なDeny All（最低優先度）
 resource "google_compute_firewall" "deny_all" {
   count = var.enable_deny_all ? 1 : 0
