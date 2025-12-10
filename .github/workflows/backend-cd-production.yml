@@ -11,7 +11,7 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-northeast1
-  GKE_CLUSTER: tekutoko-production
+  GKE_CLUSTER: gke-tekutoko-prod
   IMAGE_NAME: tekutoko-api
 
 jobs:
