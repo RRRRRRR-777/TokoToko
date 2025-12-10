@@ -19,11 +19,18 @@ spec:
         command: ['sh', '-c']
         args:
         - |
+          # GitHub認証を設定（Privateリポジトリ用）
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           git clone --depth 1 --single-branch --branch ${GIT_BRANCH:-main} https://github.com/RRRRRRR-777/TokoToko.git /tmp/repo
           cp -r /tmp/repo/backend/migrations/* /shared/
         env:
         - name: GIT_BRANCH
           value: "main"
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: token
         volumeMounts:
         - name: shared
           mountPath: /shared
