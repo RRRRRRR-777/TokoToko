@@ -12,4 +12,4 @@ metadata:
 spec:
   # NOTE: KustomizeのreplacementまたはCI/CDパイプラインで動的に設定することを推奨
   # 現在はkustomization.yamlのinfra-configと同期して手動管理
-  loadBalancerIP: 136.110.112.42
+  loadBalancerIP: 34.8.31.26
