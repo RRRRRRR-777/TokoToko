@@ -1,9 +1,14 @@
 # Production環境用Service設定
 # 静的外部IPを指定（Terraformで管理: tekutoko-api-prod-ip）
-# TODO: terraform applyで静的IPを作成後、IPアドレスを設定
+# TODO: gcloud compute addresses createで静的IPを作成後、IPアドレスを設定
 apiVersion: v1
 kind: Service
 metadata:
   name: tekutoko-api
+  annotations:
+    # Terraformリソース参照: terraform/envs/prod/networking.tf
+    infra.tekutoko.dev/static-ip-resource: "google_compute_address.tekutoko_api"
 spec:
+  # NOTE: KustomizeのreplacementまたはCI/CDパイプラインで動的に設定することを推奨
+  # 現在はkustomization.yamlのinfra-configと同期して手動管理
   loadBalancerIP: __PROD_STATIC_IP__
