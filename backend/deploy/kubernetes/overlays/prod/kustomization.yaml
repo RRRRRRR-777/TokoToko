@@ -28,13 +28,13 @@ configMapGenerator:
   - LOG_LEVEL=info
   - LOG_FORMAT=json
   - FIREBASE_PROJECT_ID=tokotoko-ea308
-  - DB_HOST=__PROD_PRIVATE_IP__      # 後でPrivate IPに置換
-  - DB_SSLMODE=require               # Proxy撤去後に適用する前提
+  - DB_HOST=localhost
+  - DB_SSLMODE=disable
 # 環境固有のインフラ設定（Terraformで管理されるリソースのID）
 - name: infra-config
   literals:
   # 静的外部IP（gcloud compute addresses: tekutoko-api-prod-ip）
-  - EXTERNAL_IP=__PROD_STATIC_IP__
+  - EXTERNAL_IP=34.85.75.30
 
 # レプリカ数の調整（本番環境は冗長性確保）
 replicas:
@@ -48,3 +48,4 @@ patchesStrategicMerge:
 - deployment-patch.yaml
 - poddisruptionbudget-patch.yaml
 - service-patch.yaml
+- network-policy-patch.yaml
