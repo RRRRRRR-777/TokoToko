@@ -33,7 +33,7 @@ configMapGenerator:
 - name: infra-config
   literals:
   # 静的外部IP（gcloud compute addresses: tekutoko-api-staging-ip）
-  - EXTERNAL_IP=136.110.112.42
+  - EXTERNAL_IP=34.8.31.26
 
 # レプリカ数の調整（Stagingは本番に近い設定）
 replicas:
