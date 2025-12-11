@@ -18,13 +18,11 @@ jobs:
   approve-deployment:
     name: Approve Production Deployment
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://api.tekutoko.app
+    environment: production
     steps:
       - name: Manual approval required
         run: |
-          echo "🚀 Production deployment requested for image: ${{ github.event.inputs.image_tag }}"
+          echo "Production deployment requested for image: ${{ github.event.inputs.image_tag }}"
           echo "This step requires manual approval in GitHub Actions UI"
 
   deploy-to-gke:
@@ -151,18 +149,28 @@ jobs:
     needs: [approve-deployment, deploy-to-gke]
     if: always()
     steps:
+      - name: Write job summary
+        run: |
+          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.deploy-to-gke.result == 'success' && 'Success' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | \`${{ github.event.inputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Workflow Run | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+
       - name: Notify success
         if: needs.deploy-to-gke.result == 'success'
         run: |
-          echo "✅ Production deployment successful"
-          echo "Image: ${{ github.event.inputs.image_tag }}"
-          echo "Deployed by: ${{ github.actor }}"
+          echo "Production deployment successful"
           # TODO: Slack通知を追加
 
       - name: Notify failure
         if: needs.deploy-to-gke.result == 'failure'
         run: |
-          echo "❌ Production deployment failed"
-          echo "Image: ${{ github.event.inputs.image_tag }}"
+          echo "Production deployment failed"
           echo "See deployment backup artifact for rollback"
           # TODO: Slack通知を追加
