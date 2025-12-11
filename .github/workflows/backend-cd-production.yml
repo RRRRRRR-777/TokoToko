@@ -63,7 +63,12 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace tekutoko-prod --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Create backup of current deployment
+        continue-on-error: true
         run: |
           kubectl get deployment tekutoko-api -n tekutoko-prod -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
 
