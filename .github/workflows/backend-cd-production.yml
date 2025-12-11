@@ -122,15 +122,20 @@ jobs:
         run: |
           kubectl get pods -n tekutoko-prod -l app=tekutoko-api
           kubectl get services -n tekutoko-prod tekutoko-api
+          kubectl get ingress -n tekutoko-prod tekutoko-api-ingress
 
       - name: Run smoke tests
         run: |
-          EXTERNAL_IP=$(kubectl get service tekutoko-api -n tekutoko-prod -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          echo "Testing health endpoint at http://$EXTERNAL_IP/health"
-          curl -f http://$EXTERNAL_IP/health || exit 1
+          # IngressのグローバルIPを取得（Cloudflare経由のHTTPS接続）
+          INGRESS_IP=$(kubectl get ingress tekutoko-api-ingress -n tekutoko-prod -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Ingress IP: $INGRESS_IP"
 
-          echo "Testing ready endpoint at http://$EXTERNAL_IP/ready"
-          curl -f http://$EXTERNAL_IP/ready || exit 1
+          # Cloudflare経由のドメインでテスト（HTTPS）
+          echo "Testing health endpoint at https://tekutoko.rrrrrrr777.com/health"
+          curl -f --retry 3 --retry-delay 5 https://tekutoko.rrrrrrr777.com/health || exit 1
+
+          echo "Testing ready endpoint at https://tekutoko.rrrrrrr777.com/ready"
+          curl -f --retry 3 --retry-delay 5 https://tekutoko.rrrrrrr777.com/ready || exit 1
 
       - name: Upload deployment backup
         uses: actions/upload-artifact@v4

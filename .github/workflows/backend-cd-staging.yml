@@ -162,12 +162,17 @@ jobs:
         run: |
           kubectl get pods -n tekutoko-staging -l app=tekutoko-api
           kubectl get services -n tekutoko-staging tekutoko-api
+          kubectl get ingress -n tekutoko-staging tekutoko-api-ingress
 
       - name: Run smoke tests
         run: |
-          EXTERNAL_IP=$(kubectl get service tekutoko-api -n tekutoko-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          echo "Testing health endpoint at http://$EXTERNAL_IP/health"
-          curl -f http://$EXTERNAL_IP/health || exit 1
+          # IngressのグローバルIPを取得（Cloudflare経由のHTTPS接続）
+          INGRESS_IP=$(kubectl get ingress tekutoko-api-ingress -n tekutoko-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Ingress IP: $INGRESS_IP"
+
+          # Cloudflare経由のドメインでテスト（HTTPS）
+          echo "Testing health endpoint at https://tekutoko-staging.rrrrrrr777.com/health"
+          curl -f --retry 3 --retry-delay 5 https://tekutoko-staging.rrrrrrr777.com/health || exit 1
 
   notify:
     name: Notify Deployment Status
