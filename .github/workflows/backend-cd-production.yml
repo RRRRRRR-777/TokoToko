@@ -75,8 +75,10 @@ jobs:
       - name: Create or update app-secret
         run: |
           DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password-prod --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
           kubectl create secret generic app-secret \
             --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
             --namespace=tekutoko-prod \
             --dry-run=client -o yaml | kubectl apply -f -
 
