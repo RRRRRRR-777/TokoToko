@@ -75,6 +75,14 @@ jobs:
             --namespace=tekutoko-prod \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Create or update github-secret for migration
+        run: |
+          GITHUB_PAT=$(gcloud secrets versions access latest --secret=github-pat --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic github-secret \
+            --from-literal=token="$GITHUB_PAT" \
+            --namespace=tekutoko-prod \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Apply ServiceAccount before migration
         run: |
           kubectl apply -f deploy/kubernetes/base/serviceaccount.yaml -n tekutoko-prod
