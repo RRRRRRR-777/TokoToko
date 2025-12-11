@@ -5,8 +5,8 @@ kind: Ingress
 metadata:
   name: tekutoko-api-ingress
   annotations:
-    # 本番環境用静的IP
-    kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-prod-ip"
+    # 本番環境用グローバル静的IP
+    kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-prod-global-ip"
     # Full SSL構成: HTTPSのみ受付
     kubernetes.io/ingress.allow-http: "false"
     # Cloud Armor有効化（本番環境のみ）

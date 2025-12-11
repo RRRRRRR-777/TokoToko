@@ -33,8 +33,8 @@ configMapGenerator:
 # 環境固有のインフラ設定（Terraformで管理されるリソースのID）
 - name: infra-config
   literals:
-  # 静的外部IP（gcloud compute addresses: tekutoko-api-prod-ip）
-  - EXTERNAL_IP=34.85.75.30
+  # グローバル静的外部IP（gcloud compute addresses: tekutoko-api-prod-global-ip）
+  - EXTERNAL_IP=34.144.240.182
 
 # レプリカ数の調整（本番環境は冗長性確保）
 replicas:
