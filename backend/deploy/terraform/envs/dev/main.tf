@@ -33,5 +33,12 @@ provider "google" {
   }
 }
 
+# Secret Managerからdb_passwordを取得
+data "google_secret_manager_secret_version" "db_password" {
+  project = var.project_id
+  secret  = "db-password"
+  version = "latest"
+}
+
 # 将来的にここにGKE, Cloud SQL等のリソースを定義
 # 現在はプロジェクト基盤のみ

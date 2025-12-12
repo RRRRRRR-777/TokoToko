@@ -46,3 +46,4 @@ patchesStrategicMerge:
 - ingress-patch.yaml
 - deployment-patch.yaml
 - service-patch.yaml
+- network-policy-patch.yaml

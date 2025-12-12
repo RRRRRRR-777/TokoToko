@@ -17,12 +17,6 @@ variable "zone" {
   default     = "asia-northeast1-a"
 }
 
-variable "db_password" {
-  description = "Cloud SQLデータベースパスワード"
-  type        = string
-  sensitive   = true
-}
-
 variable "terraform_state_bucket" {
   description = "Terraform状態ファイルを保存するGCSバケット名"
   type        = string

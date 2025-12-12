@@ -66,7 +66,7 @@ module "cloud_sql" {
   database_version = "POSTGRES_15"
   database_name    = local.database_name
   db_user_name     = local.db_user_name
-  db_user_password = var.db_password # Secret Managerから取得推奨
+  db_user_password = data.google_secret_manager_secret_version.db_password.secret_data
 
   # インスタンス設定（ステージング環境は本番に近いスペック）
   tier              = "db-custom-2-7680" # 2 vCPU, 7.5GB RAM

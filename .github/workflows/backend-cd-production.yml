@@ -11,27 +11,26 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-northeast1
-  GKE_CLUSTER: tekutoko-production
+  GKE_CLUSTER: gke-tekutoko-prod
   IMAGE_NAME: tekutoko-api
 
 jobs:
   approve-deployment:
     name: Approve Production Deployment
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://api.tekutoko.app
+    environment: production
     steps:
       - name: Manual approval required
         run: |
-          echo "🚀 Production deployment requested for image: ${{ github.event.inputs.image_tag }}"
+          echo "Production deployment requested for image: ${{ github.event.inputs.image_tag }}"
           echo "This step requires manual approval in GitHub Actions UI"
 
   deploy-to-gke:
     name: Deploy to GKE Production
     runs-on: ubuntu-latest
     needs: approve-deployment
-    if: github.ref == 'refs/heads/main'
+    # TODO: 本番運用時はmainブランチ限定に戻す
+    # if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       id-token: write
@@ -62,17 +61,91 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace tekutoko-prod --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Configure Cloud Armor security policy
+        run: |
+          POLICY_NAME="tekutoko-prod-security-policy"
+
+          # ポリシーが存在しない場合は作成
+          if ! gcloud compute security-policies describe $POLICY_NAME --quiet 2>/dev/null; then
+            echo "Creating Cloud Armor security policy..."
+            gcloud compute security-policies create $POLICY_NAME \
+              --description="Production security policy for TekuToko API"
+
+            # SQLインジェクション防御
+            gcloud compute security-policies rules create 900 \
+              --security-policy=$POLICY_NAME \
+              --expression="evaluatePreconfiguredExpr('sqli-v33-stable')" \
+              --action=deny-403 \
+              --description="Block SQL injection attacks"
+
+            # XSS防御
+            gcloud compute security-policies rules create 901 \
+              --security-policy=$POLICY_NAME \
+              --expression="evaluatePreconfiguredExpr('xss-v33-stable')" \
+              --action=deny-403 \
+              --description="Block cross-site scripting attacks"
+
+            # スキャナー/ボットブロック
+            gcloud compute security-policies rules create 902 \
+              --security-policy=$POLICY_NAME \
+              --expression="evaluatePreconfiguredExpr('scannerdetection-v33-stable')" \
+              --action=deny-403 \
+              --description="Block malicious scanners and bots"
+
+            # プロトコル攻撃防御
+            gcloud compute security-policies rules create 903 \
+              --security-policy=$POLICY_NAME \
+              --expression="evaluatePreconfiguredExpr('protocolattack-v33-stable')" \
+              --action=deny-403 \
+              --description="Block protocol attacks"
+
+            # レート制限（1分あたり1000リクエスト/IP）
+            gcloud compute security-policies rules create 1000 \
+              --security-policy=$POLICY_NAME \
+              --expression="true" \
+              --action=throttle \
+              --rate-limit-threshold-count=1000 \
+              --rate-limit-threshold-interval-sec=60 \
+              --conform-action=allow \
+              --exceed-action=deny-429 \
+              --enforce-on-key=IP \
+              --description="Rate limiting: 1000 requests per minute per IP"
+
+            echo "Cloud Armor security policy created successfully"
+          else
+            echo "Cloud Armor security policy already exists"
+          fi
+
       - name: Create backup of current deployment
+        continue-on-error: true
         run: |
           kubectl get deployment tekutoko-api -n tekutoko-prod -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
 
       - name: Create or update app-secret
         run: |
           DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password-prod --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
           kubectl create secret generic app-secret \
             --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
             --namespace=tekutoko-prod \
             --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update github-secret for migration
+        run: |
+          GITHUB_PAT=$(gcloud secrets versions access latest --secret=github-pat --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic github-secret \
+            --from-literal=token="$GITHUB_PAT" \
+            --namespace=tekutoko-prod \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply ServiceAccount before migration
+        run: |
+          kubectl apply -f deploy/kubernetes/base/serviceaccount.yaml -n tekutoko-prod
 
       - name: Run database migration
         run: |
@@ -102,15 +175,20 @@ jobs:
         run: |
           kubectl get pods -n tekutoko-prod -l app=tekutoko-api
           kubectl get services -n tekutoko-prod tekutoko-api
+          kubectl get ingress -n tekutoko-prod tekutoko-api-ingress
 
       - name: Run smoke tests
         run: |
-          EXTERNAL_IP=$(kubectl get service tekutoko-api -n tekutoko-prod -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          echo "Testing health endpoint at http://$EXTERNAL_IP/health"
-          curl -f http://$EXTERNAL_IP/health || exit 1
+          # IngressのグローバルIPを取得（Cloudflare経由のHTTPS接続）
+          INGRESS_IP=$(kubectl get ingress tekutoko-api-ingress -n tekutoko-prod -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Ingress IP: $INGRESS_IP"
 
-          echo "Testing ready endpoint at http://$EXTERNAL_IP/ready"
-          curl -f http://$EXTERNAL_IP/ready || exit 1
+          # Cloudflare経由のドメインでテスト（HTTPS）
+          echo "Testing health endpoint at https://tekutoko.rrrrrrr777.com/health"
+          curl -f --retry 3 --retry-delay 5 https://tekutoko.rrrrrrr777.com/health || exit 1
+
+          echo "Testing ready endpoint at https://tekutoko.rrrrrrr777.com/ready"
+          curl -f --retry 3 --retry-delay 5 https://tekutoko.rrrrrrr777.com/ready || exit 1
 
       - name: Upload deployment backup
         uses: actions/upload-artifact@v4
@@ -126,18 +204,28 @@ jobs:
     needs: [approve-deployment, deploy-to-gke]
     if: always()
     steps:
+      - name: Write job summary
+        run: |
+          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.deploy-to-gke.result == 'success' && 'Success' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | \`${{ github.event.inputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Workflow Run | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+
       - name: Notify success
         if: needs.deploy-to-gke.result == 'success'
         run: |
-          echo "✅ Production deployment successful"
-          echo "Image: ${{ github.event.inputs.image_tag }}"
-          echo "Deployed by: ${{ github.actor }}"
+          echo "Production deployment successful"
           # TODO: Slack通知を追加
 
       - name: Notify failure
         if: needs.deploy-to-gke.result == 'failure'
         run: |
-          echo "❌ Production deployment failed"
-          echo "Image: ${{ github.event.inputs.image_tag }}"
+          echo "Production deployment failed"
           echo "See deployment backup artifact for rollback"
           # TODO: Slack通知を追加

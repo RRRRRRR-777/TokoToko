@@ -92,7 +92,6 @@ jobs:
           project_id  = "${{ secrets.GCP_PROJECT_ID }}"
           region      = "asia-northeast1"
           zone        = "asia-northeast1-a"
-          db_password = "dummy_password_for_validation"
           EOF
 
       - name: Terraform Init
@@ -154,7 +153,6 @@ jobs:
           project_id  = "${{ secrets.GCP_PROJECT_ID }}"
           region      = "asia-northeast1"
           zone        = "asia-northeast1-a"
-          db_password = "dummy_password_for_plan"
           EOF
 
       - name: Terraform Init

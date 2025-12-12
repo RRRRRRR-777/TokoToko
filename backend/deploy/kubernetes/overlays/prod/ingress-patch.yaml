@@ -1,17 +1,24 @@
 # Production環境用Ingress調整
+# Cloudflare Origin CertificateによるFull SSL構成
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: tekutoko-api-ingress
   annotations:
-    # 本番環境用静的IP
-    kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-prod-ip"
+    # 本番環境用グローバル静的IP
+    kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-prod-global-ip"
+    # Full SSL構成: HTTPSのみ受付
+    kubernetes.io/ingress.allow-http: "false"
     # Cloud Armor有効化（本番環境のみ）
     cloud.google.com/armor-config: '{"tekutoko-api": "tekutoko-prod-security-policy"}'
 spec:
+  tls:
+  - hosts:
+    - tekutoko.rrrrrrr777.com
+    secretName: cloudflare-origin-cert
   rules:
-  # 本番ドメインのみ
-  - host: api.tekutoko.app
+  # 本番ドメイン（Cloudflare経由）
+  - host: tekutoko.rrrrrrr777.com
     http:
       paths:
       - path: /
@@ -23,22 +30,15 @@ spec:
               number: 80
 
 ---
-# Production環境用マネージド証明書
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
-  name: tekutoko-api-cert
-spec:
-  domains:
-  - api.tekutoko.app
-
----
 # Production環境用BackendConfig調整
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
   name: tekutoko-api-backend-config
 spec:
+  # Cloud Armorセキュリティポリシー
+  securityPolicy:
+    name: tekutoko-prod-security-policy
   logging:
     enable: true
     sampleRate: 0.1  # 本番環境は10%サンプリング（コスト削減）

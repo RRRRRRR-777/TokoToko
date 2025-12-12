@@ -32,3 +32,10 @@ provider "google" {
     project     = "tekutoko"
   }
 }
+
+# Secret Managerからdb_passwordを取得
+data "google_secret_manager_secret_version" "db_password" {
+  project = var.project_id
+  secret  = "db-password-staging"
+  version = "latest"
+}

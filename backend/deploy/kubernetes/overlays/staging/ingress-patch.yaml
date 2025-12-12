@@ -1,14 +1,21 @@
 # Staging環境用Ingress調整
+# Cloudflare Origin CertificateによるFull SSL構成
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: tekutoko-api-ingress
   annotations:
     kubernetes.io/ingress.global-static-ip-name: "tekutoko-api-staging-ip"
+    # Full SSL構成: HTTPSのみ受付
+    kubernetes.io/ingress.allow-http: "false"
 spec:
+  tls:
+  - hosts:
+    - tekutoko-staging.rrrrrrr777.com
+    secretName: cloudflare-origin-cert
   rules:
-  # Staging環境用ドメイン
-  - host: api-staging.tekutoko.app
+  # Staging環境用ドメイン（Cloudflare経由）
+  - host: tekutoko-staging.rrrrrrr777.com
     http:
       paths:
       - path: /
@@ -18,13 +25,3 @@ spec:
             name: tekutoko-api
             port:
               number: 80
-
----
-# Staging環境用マネージド証明書
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
-  name: tekutoko-api-cert
-spec:
-  domains:
-  - api-staging.tekutoko.app

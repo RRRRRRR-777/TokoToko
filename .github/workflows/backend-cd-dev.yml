@@ -128,6 +128,10 @@ jobs:
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
 
+      - name: Apply ServiceAccount before migration
+        run: |
+          kubectl apply -f deploy/kubernetes/base/serviceaccount.yaml -n tekutoko-dev
+
       - name: Run database migration
         run: |
           # yqを使用してブランチ名を安全に置換（特殊文字を含むブランチ名にも対応）
