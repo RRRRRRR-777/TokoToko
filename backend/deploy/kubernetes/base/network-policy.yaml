@@ -13,10 +13,10 @@ spec:
   - Ingress
   - Egress
 
-  # Ingressルール: LoadBalancerからのトラフィックのみ許可
+  # Ingressルール: LoadBalancer/ヘルスチェックからのトラフィックのみ許可
   ingress:
+  # GKE Ingress/LoadBalancerからのトラフィック（kube-system）
   - from:
-    # GKE Ingress/LoadBalancerからのトラフィック
     - namespaceSelector:
         matchLabels:
           name: kube-system
@@ -24,8 +24,12 @@ spec:
     - protocol: TCP
       port: 8080
 
-  # すべてのPodからのヘルスチェックを許可
-  - from: []
+  # GCPロードバランサーのヘルスチェック用IPレンジ
+  - from:
+    - ipBlock:
+        cidr: 35.191.0.0/16
+    - ipBlock:
+        cidr: 130.211.0.0/22
     ports:
     - protocol: TCP
       port: 8080
