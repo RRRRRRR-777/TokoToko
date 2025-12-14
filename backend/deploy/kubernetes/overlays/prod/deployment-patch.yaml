@@ -23,4 +23,4 @@ spec:
           - "--port=5432"
           - "--private-ip"
           - "--auto-iam-authn"
-          - "__PROD_CONNECTION_NAME__"  # 後で置換
+          - "tokotoko-ea308:asia-northeast1:tekutoko-prod-db"

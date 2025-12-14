@@ -12,7 +12,7 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-northeast1
-  GKE_CLUSTER: tekutoko-staging
+  GKE_CLUSTER: gke-tekutoko-staging
   IMAGE_NAME: tekutoko-api
   GO_VERSION: '1.24'
 
@@ -35,7 +35,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_STAGING }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -85,7 +85,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_STAGING }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -100,16 +100,42 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
-      - name: Create or update app-secret
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace tekutoko-staging --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update app-secret from Secret Manager
         run: |
           DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password-staging --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
           kubectl create secret generic app-secret \
             --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
             --namespace=tekutoko-staging \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Create or update github-secret for migration
+        run: |
+          GITHUB_PAT=$(gcloud secrets versions access latest --secret=github-pat --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic github-secret \
+            --from-literal=token="$GITHUB_PAT" \
+            --namespace=tekutoko-staging \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Apply ServiceAccount before migration
+        run: |
+          kubectl apply -f deploy/kubernetes/base/serviceaccount.yaml -n tekutoko-staging
+
       - name: Run database migration
         run: |
+          # yqを使用してブランチ名を安全に置換（特殊文字を含むブランチ名にも対応）
+          yq -i '.spec.template.spec.initContainers[0].env[0].value = "${{ github.ref_name }}"' \
+            deploy/kubernetes/overlays/staging/migration-job.yaml
           kubectl delete job db-migration -n tekutoko-staging --ignore-not-found=true
           kubectl apply -f deploy/kubernetes/overlays/staging/migration-job.yaml
           kubectl wait --for=condition=complete --timeout=5m job/db-migration -n tekutoko-staging || {
@@ -136,12 +162,17 @@ jobs:
         run: |
           kubectl get pods -n tekutoko-staging -l app=tekutoko-api
           kubectl get services -n tekutoko-staging tekutoko-api
+          kubectl get ingress -n tekutoko-staging tekutoko-api-ingress
 
       - name: Run smoke tests
         run: |
-          EXTERNAL_IP=$(kubectl get service tekutoko-api -n tekutoko-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          echo "Testing health endpoint at http://$EXTERNAL_IP/health"
-          curl -f http://$EXTERNAL_IP/health || exit 1
+          # IngressのグローバルIPを取得（Cloudflare経由のHTTPS接続）
+          INGRESS_IP=$(kubectl get ingress tekutoko-api-ingress -n tekutoko-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Ingress IP: $INGRESS_IP"
+
+          # Cloudflare経由のドメインでテスト（HTTPS）
+          echo "Testing health endpoint at https://tekutoko-staging.rrrrrrr777.com/health"
+          curl -f --retry 3 --retry-delay 5 https://tekutoko-staging.rrrrrrr777.com/health || exit 1
 
   notify:
     name: Notify Deployment Status

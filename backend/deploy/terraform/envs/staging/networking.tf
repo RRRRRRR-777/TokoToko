@@ -65,6 +65,9 @@ module "firewall" {
   # GKE Master CIDR（compute.tfのlocalと同じ値）
   gke_master_cidr = "172.17.0.0/28"
 
+  # Cloud SQL Private IP CIDR（Private Service Connection用）
+  cloud_sql_cidr = "10.219.0.0/24"
+
   # ステージング環境では本番同様にdeny allを有効化
   enable_deny_all = true
 }

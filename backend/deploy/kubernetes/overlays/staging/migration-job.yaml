@@ -19,11 +19,18 @@ spec:
         command: ['sh', '-c']
         args:
         - |
+          # GitHub認証を設定（Privateリポジトリ用）
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           git clone --depth 1 --single-branch --branch ${GIT_BRANCH:-main} https://github.com/RRRRRRR-777/TokoToko.git /tmp/repo
           cp -r /tmp/repo/backend/migrations/* /shared/
         env:
         - name: GIT_BRANCH
           value: "main"
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: token
         volumeMounts:
         - name: shared
           mountPath: /shared
@@ -33,12 +40,18 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
-          apk add --no-cache curl
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          apk add --no-cache curl netcat-openbsd tar
+          cd /tmp
+          curl -fsSL -o migrate.tar.gz https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz
+          tar xzf migrate.tar.gz
           mv migrate /usr/local/bin/
           echo "Waiting for Cloud SQL Proxy..."
           while ! nc -z 127.0.0.1 5432; do sleep 1; done
           echo "Proxy is ready. Running migration..."
+          # パスワードをURLエンコード（特殊文字対応）
+          # %は最初にエンコード（後続の%XXがダブルエンコードされるのを防ぐ）
+          ENCODED_PASSWORD=$(printf '%s' "$DB_PASSWORD" | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/!/%21/g' | sed "s/'/%27/g" | sed 's/\$/%24/g' | sed 's/+/%2B/g' | sed 's/\//%2F/g' | sed 's/=/%3D/g' | sed 's/@/%40/g' | sed 's/:/%3A/g' | sed 's/?/%3F/g' | sed 's/#/%23/g' | sed 's/&/%26/g')
+          DATABASE_URL="postgres://tekutoko:${ENCODED_PASSWORD}@127.0.0.1:5432/tekutoko_staging?sslmode=disable"
           migrate -path /shared -database "$DATABASE_URL" up
           echo "Migration completed. Shutting down proxy..."
           wget -q --post-data='' http://localhost:9091/quitquitquit -O - || true
@@ -48,8 +61,6 @@ spec:
             secretKeyRef:
               name: app-secret
               key: db_password
-        - name: DATABASE_URL
-          value: "postgres://tekutoko:$(DB_PASSWORD)@127.0.0.1:5432/tekutoko_staging?sslmode=disable"
         volumeMounts:
         - name: shared
           mountPath: /shared
