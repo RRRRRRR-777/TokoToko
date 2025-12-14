@@ -49,7 +49,8 @@ spec:
           while ! nc -z 127.0.0.1 5432; do sleep 1; done
           echo "Proxy is ready. Running migration..."
           # パスワードをURLエンコード（特殊文字対応）
-          ENCODED_PASSWORD=$(printf '%s' "$DB_PASSWORD" | sed 's/+/%2B/g' | sed 's/\//%2F/g' | sed 's/=/%3D/g' | sed 's/@/%40/g' | sed 's/:/%3A/g' | sed 's/?/%3F/g' | sed 's/#/%23/g' | sed 's/&/%26/g')
+          # %は最初にエンコード（後続の%XXがダブルエンコードされるのを防ぐ）
+          ENCODED_PASSWORD=$(printf '%s' "$DB_PASSWORD" | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/!/%21/g' | sed "s/'/%27/g" | sed 's/\$/%24/g' | sed 's/+/%2B/g' | sed 's/\//%2F/g' | sed 's/=/%3D/g' | sed 's/@/%40/g' | sed 's/:/%3A/g' | sed 's/?/%3F/g' | sed 's/#/%23/g' | sed 's/&/%26/g')
           DATABASE_URL="postgres://tekutoko:${ENCODED_PASSWORD}@127.0.0.1:5432/tekutoko_dev?sslmode=disable"
           migrate -path /shared -database "$DATABASE_URL" up
           echo "Migration completed. Shutting down proxy..."
