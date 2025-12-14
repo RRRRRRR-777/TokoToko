@@ -30,6 +30,7 @@ configMapGenerator:
   - FIREBASE_PROJECT_ID=tokotoko-ea308
   - DB_HOST=localhost
   - DB_SSLMODE=disable
+  - CORS_ALLOWED_ORIGINS=https://tekutoko.rrrrrrr777.com  # iOSアプリ専用（Webクライアント追加時は拡張）
 # 環境固有のインフラ設定（Terraformで管理されるリソースのID）
 - name: infra-config
   literals:
