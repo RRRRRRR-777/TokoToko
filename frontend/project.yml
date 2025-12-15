@@ -27,10 +27,11 @@ fileGroups:
   - .swiftlint.yml
   - ../CLAUDE.md
   - ../.gitignore
-  - ../firebase.json
-  - ../firestore.indexes.json
-  - ../firestore.rules
-  - ../storage.rules
+  - firebase.json
+  - firestore.indexes.json
+  - firestore.rules
+  - storage.rules
+  - .firebaserc
   - ci_scripts
 
 targetTemplates:
