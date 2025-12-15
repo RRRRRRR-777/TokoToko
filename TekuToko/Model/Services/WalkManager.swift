@@ -398,7 +398,11 @@ class WalkManager: NSObject, ObservableObject, StepCountDelegate {
           self?.logger.info(
             operation: "saveWalk", message: "散歩データを保存しました",
             context: ["walkId": savedWalk.id.uuidString])
-          self?.lastSavedWalk = savedWalk
+          // Goバックエンド応答にはlocationsが含まれないため、
+          // オリジナルのlocationsを保持したwalkを使用する
+          var walkWithLocations = walk
+          walkWithLocations.updatedAt = savedWalk.updatedAt
+          self?.lastSavedWalk = walkWithLocations
           self?.didSaveWalkSuccessfully = true
         case .failure(let error):
           self?.logger.logError(error, operation: "saveWalk")

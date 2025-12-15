@@ -231,7 +231,6 @@ private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerD
       do {
         onProgressUpdate("共有画面を準備中...")
         let image = try await generateImage()
-        try await saveToDatabase(image: image)
         let shareText = generateShareText()
         try await presentShareSheet(image: image, text: shareText)
       } catch {
@@ -244,10 +243,6 @@ private class SharingProcessManager: NSObject, UIAdaptivePresentationControllerD
   private func generateImage() async throws -> UIImage {
     onProgressUpdate("共有画面を準備中...")
     return try await WalkImageGenerator.shared.generateWalkImage(from: walk)
-  }
-
-  private func saveToDatabase(image: UIImage) async throws {
-    try await WalkSharingService.shared.saveImageToDatabase(image, for: walk)
   }
 
   private func generateShareText() -> String {
