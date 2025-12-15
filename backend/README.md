@@ -8,6 +8,61 @@
 
 **アーキテクチャドキュメント**: [backend/docs/go-project-structure.md](./docs/go-project-structure.md)
 
+## 背景
+
+従来はiOSクライアントが直接Firebase（Firestore/Auth/Storage）へアクセスしていましたが、Go言語によるバックエンドサーバーを新たに構築し、サーバー経由でのデータ管理も可能にしました。
+
+これにより以下のメリットが得られます:
+
+- **クライアント負荷の軽減**: 重い処理をサーバー側へオフロード可能
+- **柔軟なデータ管理**: PostgreSQLによるリレーショナルデータ管理
+- **運用性の向上**: スケールアウト、ヘルスチェック、監視基盤の整備
+
+詳細は [#148 Go言語でのバックエンド実装](https://github.com/RRRRRRR-777/TokoToko/issues/148) を参照してください。
+
+## 全体アーキテクチャ
+
+```mermaid
+flowchart LR
+    subgraph Client[iOSクライアント]
+        UI
+        WalkRepo
+        Logger
+        ImageModule
+    end
+
+    subgraph GoBFF[Go Backend / BFF]
+        API[(REST/gRPC Gateway)]
+        AuthSvc[Auth & Session]
+        WalkSvc[Walk CRUD Service]
+        MediaSvc[Media Worker API]
+        ConfigSvc[Policy/Config API]
+        Queue[(Job Queue)]
+    end
+
+    subgraph Infra
+        DB[(PostgreSQL / Firestore Admin)]
+        Storage[(Object Storage)]
+        Metrics[(Prometheus / OTEL)]
+    end
+
+    subgraph Workers
+        MediaWorker[Image Generator]
+        LogWorker[Log Aggregator]
+    end
+
+    UI -->|HTTPS| API
+    WalkRepo -->|CRUD API| WalkSvc
+    Logger -->|Log Event| LogWorker
+    ImageModule -->|Create Job| MediaSvc --> Queue --> MediaWorker --> Storage
+    AuthSvc --> DB
+    WalkSvc --> DB
+    ConfigSvc --> DB
+    MediaSvc --> Storage
+    LogWorker --> Metrics
+    GoBFF --> Metrics
+```
+
 ## アーキテクチャ
 
 - **パターン**: Clean Architecture + DDD (Domain-Driven Design)
