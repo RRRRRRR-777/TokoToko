@@ -28,6 +28,7 @@ brew install xcodegen
 
 ### `xcodeproj`ファイルを生成する
 ```sh
+cd frontend
 xcodegen generate
 ```
 

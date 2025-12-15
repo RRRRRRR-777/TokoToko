@@ -7,8 +7,8 @@ set -x
 
 echo "🚀 Starting XcodeCloud Pre-action script..."
 
-# Change to the project root directory
-cd /Volumes/workspace/repository
+# Change to the frontend directory (iOS code location)
+cd /Volumes/workspace/repository/frontend
 
 # Generate GoogleService-Info.plist from environment variable
 echo "🔧 Generating GoogleService-Info.plist from environment variable..."
