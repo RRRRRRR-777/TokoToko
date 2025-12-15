@@ -27,8 +27,6 @@ servers:
 tags:
   - name: Walks
     description: 散歩管理エンドポイント
-  - name: Locations
-    description: 位置情報管理
 
 security:
   - bearerAuth: []
@@ -40,6 +38,14 @@ paths:
       description: 認証ユーザーの散歩一覧をページネーション付きで取得
       tags: [Walks]
       parameters:
+        - name: page
+          in: query
+          description: "ページ番号（デフォルト: 1）"
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
         - name: limit
           in: query
           description: "取得件数（デフォルト: 20、最大: 100）"
@@ -48,35 +54,13 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
-        - name: cursor
-          in: query
-          description: ページネーションカーソル（前回レスポンスのnext_cursorを使用）
-          schema:
-            type: string
-        - name: status
-          in: query
-          description: ステータスフィルター
-          schema:
-            $ref: '#/components/schemas/WalkStatus'
       responses:
         '200':
           description: 成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/WalkSummary'
-                  meta:
-                    allOf:
-                      - $ref: '#/components/schemas/Meta'
-                      - type: object
-                        properties:
-                          page:
-                            $ref: '#/components/schemas/PageInfo'
+                $ref: '#/components/schemas/WalkListResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -98,12 +82,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Walk'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
+                $ref: '#/components/schemas/Walk'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -123,7 +102,7 @@ paths:
 
     get:
       summary: 散歩詳細取得
-      description: 指定された散歩の詳細情報を取得
+      description: 指定された散歩の詳細情報を位置情報を含めて取得
       tags: [Walks]
       responses:
         '200':
@@ -131,12 +110,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Walk'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
+                $ref: '#/components/schemas/WalkDetail'
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -144,9 +118,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-    patch:
+    put:
       summary: 散歩更新
-      description: 散歩のステータスや情報を更新
+      description: |
+        散歩のステータスや情報を更新。
+        存在しない場合は新規作成（upsert対応）。
+        位置情報も同時に更新可能。
       tags: [Walks]
       requestBody:
         required: true
@@ -160,16 +137,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Walk'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
+                $ref: '#/components/schemas/Walk'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -189,60 +159,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /walks/{walkId}/locations:
-    parameters:
-      - name: walkId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-
-    post:
-      summary: 位置情報一括追加
-      description: 散歩に位置情報をバッチ追加（最大500件）
-      tags: [Locations]
-      parameters:
-        - name: X-Idempotency-Key
-          in: header
-          description: バッチIDによる冪等性保証
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LocationBatch'
-      responses:
-        '201':
-          description: 追加成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      added_count:
-                        type: integer
-                        description: 追加された位置情報の件数
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '413':
-          description: バッチサイズ超過
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
 components:
   securitySchemes:
     bearerAuth:
@@ -252,53 +168,11 @@ components:
       description: Firebase ID Token
 
   schemas:
-    # ===== Common =====
-    Meta:
-      type: object
-      required:
-        - request_id
-        - timestamp
-      properties:
-        request_id:
-          type: string
-          format: uuid
-          description: リクエストID（トレーシング用）
-        timestamp:
-          type: string
-          format: date-time
-          description: レスポンス生成時刻
-
-    PageInfo:
-      type: object
-      required:
-        - limit
-        - has_next
-      properties:
-        limit:
-          type: integer
-          description: 取得件数
-        cursor:
-          type: string
-          description: 現在のカーソル
-        next_cursor:
-          anyOf:
-            - type: string
-            - type: "null"
-          description: 次ページのカーソル（次ページがない場合はnull）
-        prev_cursor:
-          anyOf:
-            - type: string
-            - type: "null"
-          description: 前ページのカーソル（前ページがない場合はnull）
-        has_next:
-          type: boolean
-          description: 次ページの有無
-
+    # ===== Error =====
     Error:
       type: object
       required:
         - error
-        - meta
       properties:
         error:
           type: object
@@ -319,18 +193,6 @@ components:
             message:
               type: string
               description: エラーメッセージ
-            status:
-              type: integer
-              description: HTTPステータスコード
-            target:
-              type: string
-              description: エラー対象フィールド
-            details:
-              type: object
-              additionalProperties: true
-              description: 詳細情報
-        meta:
-          $ref: '#/components/schemas/Meta'
 
     # ===== Walk =====
     WalkStatus:
@@ -348,7 +210,11 @@ components:
         - id
         - user_id
         - title
+        - description
+        - total_distance
+        - total_steps
         - status
+        - total_paused_duration
         - created_at
         - updated_at
       properties:
@@ -406,39 +272,42 @@ components:
           type: string
           format: date-time
 
-    WalkSummary:
+    WalkDetail:
       type: object
-      description: 一覧表示用の散歩サマリー
+      description: 散歩詳細（位置情報を含む）
+      allOf:
+        - $ref: '#/components/schemas/Walk'
+        - type: object
+          required:
+            - locations
+          properties:
+            locations:
+              type: array
+              items:
+                $ref: '#/components/schemas/WalkLocation'
+              description: 位置情報の配列
+
+    WalkListResponse:
+      type: object
       required:
-        - id
-        - title
-        - status
-        - start_time
+        - walks
+        - total_count
+        - page
+        - limit
       properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        status:
-          $ref: '#/components/schemas/WalkStatus'
-        start_time:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: "null"
-        end_time:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: "null"
-        total_distance:
-          type: number
-          format: double
-        thumbnail_image_url:
-          anyOf:
-            - type: string
-            - type: "null"
+        walks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Walk'
+        total_count:
+          type: integer
+          description: 総件数
+        page:
+          type: integer
+          description: 現在のページ番号
+        limit:
+          type: integer
+          description: 1ページあたりの件数
 
     WalkCreate:
       type: object
@@ -455,6 +324,9 @@ components:
 
     WalkUpdate:
       type: object
+      description: |
+        散歩更新リクエスト。全フィールドはオプション。
+        upsert対応のため、作成に必要なフィールドも含む。
       properties:
         title:
           type: string
@@ -468,6 +340,36 @@ components:
         total_steps:
           type: integer
           minimum: 0
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        total_distance:
+          type: number
+          format: double
+          minimum: 0
+          description: 総距離（メートル）
+        polyline_data:
+          type: string
+          description: Google Maps エンコード済みポリライン
+        thumbnail_image_url:
+          type: string
+          description: サムネイル画像URL
+        paused_at:
+          type: string
+          format: date-time
+        total_paused_duration:
+          type: number
+          format: double
+          minimum: 0
+          description: 累積一時停止時間（秒）
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalkLocationInput'
+          description: 位置情報の配列（同時に更新可能）
 
     # ===== Location =====
     WalkLocation:
@@ -476,6 +378,7 @@ components:
         - latitude
         - longitude
         - timestamp
+        - sequence_number
       properties:
         latitude:
           type: number
@@ -516,19 +419,50 @@ components:
             - type: number
               format: double
             - type: "null"
+        sequence_number:
+          type: integer
+          description: シーケンス番号
 
-    LocationBatch:
+    WalkLocationInput:
       type: object
+      description: 位置情報入力（リクエスト用）
       required:
-        - positions
+        - latitude
+        - longitude
+        - timestamp
       properties:
-        positions:
-          type: array
-          items:
-            $ref: '#/components/schemas/WalkLocation'
-          minItems: 1
-          maxItems: 500
-          description: 位置情報配列（最大500件）
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        altitude:
+          type: number
+          format: double
+        timestamp:
+          type: string
+          format: date-time
+          description: 位置情報の記録日時
+        horizontal_accuracy:
+          type: number
+          format: double
+        vertical_accuracy:
+          type: number
+          format: double
+        speed:
+          type: number
+          format: double
+        course:
+          type: number
+          format: double
+        sequence_number:
+          type: integer
+          description: シーケンス番号
 
   responses:
     BadRequest:
