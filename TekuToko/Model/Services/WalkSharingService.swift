@@ -55,8 +55,6 @@ class WalkSharingService {
   static let shared = WalkSharingService()
 
   let imageGenerator = WalkImageGenerator.shared
-  /// 共有画像保存用リポジトリ（Firebase Storage機能を使用するためFirestore専用）
-  private let walkRepository = WalkRepository.shared
 
   private init() {}
 
@@ -68,7 +66,6 @@ class WalkSharingService {
   /// - Throws: WalkSharingError
   func shareWalk(_ walk: Walk, presentingViewController: UIViewController?) async throws {
     let image = try await generateImageForSharing(from: walk)
-    try await persistSharedImage(image, for: walk)
     let shareText = generateShareText(from: walk)
     try await presentShareSheet(
       image: image, text: shareText, presentingViewController: presentingViewController)
@@ -88,16 +85,6 @@ class WalkSharingService {
     )
 
     return buildShareText(from: components)
-  }
-
-  /// 共有画像をデータベースに保存します
-  ///
-  /// - Parameters:
-  ///   - image: 保存する画像
-  ///   - walk: 関連する散歩データ
-  /// - Throws: WalkSharingError
-  func saveImageToDatabase(_ image: UIImage, for walk: Walk) async throws {
-    try await persistSharedImage(image, for: walk)
   }
 
   /// 共有シートを表示します
@@ -129,20 +116,6 @@ class WalkSharingService {
   @available(*, deprecated, message: "Issue #65: 散歩リスト画像表示機能は廃止されました")
   private func generateThumbnailImage(from walk: Walk) async throws -> UIImage {
     throw WalkSharingError.imageGenerationNotSupported
-  }
-
-  /// 共有画像をデータベースに保存します
-  private func persistSharedImage(_ image: UIImage, for walk: Walk) async throws {
-    try await withCheckedThrowingContinuation { continuation in
-      walkRepository.saveSharedImage(image, for: walk) { result in
-        switch result {
-        case .success:
-          continuation.resume()
-        case .failure:
-          continuation.resume(throwing: WalkSharingError.imageGenerationFailed)
-        }
-      }
-    }
   }
 
   /// 共有シートを表示します

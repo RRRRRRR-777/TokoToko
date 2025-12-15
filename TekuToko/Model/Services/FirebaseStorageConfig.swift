@@ -28,9 +28,6 @@ enum FirebaseStorageConfig {
   /// サムネイル画像の最大ファイルサイズ（バイト）
   static let thumbnailMaxFileSize: Int = 5 * 1024 * 1024  // 5MB
 
-  /// 共有画像の最大ファイルサイズ（バイト）
-  static let sharedImageMaxFileSize: Int = 5 * 1024 * 1024  // 5MB
-
   /// プロフィール画像の最大ファイルサイズ（バイト）
   static let profileImageMaxFileSize: Int = 2 * 1024 * 1024  // 2MB
 
@@ -47,11 +44,6 @@ enum FirebaseStorageConfig {
   /// サムネイル画像のStorage パス
   static func thumbnailPath(userId: String, walkId: String) -> String {
     "walk_thumbnails/\(userId)/\(walkId).jpg"
-  }
-
-  /// 共有画像のStorage パス
-  static func sharedImagePath(userId: String, walkId: String) -> String {
-    "shared_images/\(userId)/\(walkId)/share_image.jpg"
   }
 
   /// プロフィール画像のStorage パス

@@ -110,9 +110,6 @@ enum WalkRepositoryError: Error, Equatable {
 /// - ``getWalks(limit:)``
 /// - ``getWalk(id:)``
 /// - ``deleteWalk(id:)``
-///
-/// ### Image Operations
-/// - ``saveSharedImage(_:for:completion:)``
 class WalkRepository: WalkRepositoryProtocol {
   /// WalkRepositoryのシングルトンインスタンス
   ///
@@ -132,7 +129,7 @@ class WalkRepository: WalkRepositoryProtocol {
 
   /// Firebase Storageの参照
   ///
-  /// 共有画像の保存に使用するFirebase Storageインスタンスです。
+  /// 画像データの保存に使用するFirebase Storageインスタンスです。
   internal var storage: Storage!
 
   /// Firestoreコレクション名
