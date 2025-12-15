@@ -9,6 +9,10 @@ on:
       - '.github/workflows/backend-cd-dev.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-dev-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-northeast1
