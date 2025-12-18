@@ -31,14 +31,6 @@ module "gke" {
   enable_private_endpoint = false # Cloud Shell/踏み台からアクセス可能にする
   master_global_access    = true
 
-  # Master Authorized Networks（必要に応じて設定）
-  master_authorized_networks = [
-    # {
-    #   cidr_block   = "YOUR_OFFICE_IP/32"
-    #   display_name = "Office Network"
-    # }
-  ]
-
   # リリースチャネル
   release_channel = "STABLE"
 
