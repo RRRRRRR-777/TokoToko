@@ -31,14 +31,6 @@ module "gke" {
   enable_private_endpoint = false # ステージング環境はパブリックエンドポイント有効
   master_global_access    = true
 
-  # Master Authorized Networks（必要に応じて設定）
-  master_authorized_networks = [
-    # {
-    #   cidr_block   = "YOUR_IP/32"
-    #   display_name = "Developer Workstation"
-    # }
-  ]
-
   # リリースチャネル
   release_channel = "REGULAR"
 

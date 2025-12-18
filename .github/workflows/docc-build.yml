@@ -9,9 +9,9 @@ on:
       - 'dev-*'  # 開発ブランチ
       - 'main'   # メインブランチ
     paths:
-      - 'TekuToko/**/*.swift'
+      - 'frontend/TekuToko/**/*.swift'
       - '.github/workflows/docc-build.yml'
-      - 'project.yml'
+      - 'frontend/project.yml'
 
 permissions:
   contents: read
@@ -60,8 +60,8 @@ jobs:
       - name: Cache Xcode build
         uses: actions/cache@v4
         with:
-          path: DerivedData
-          key: ${{ runner.os }}-xcode-${{ hashFiles('project.yml', 'TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          path: frontend/DerivedData
+          key: ${{ runner.os }}-xcode-${{ hashFiles('frontend/project.yml', 'frontend/TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-xcode-
 
@@ -76,6 +76,7 @@ jobs:
           echo "Contents: $(ls -la)"
 
           echo "=== Generating Xcode project ==="
+          cd frontend
           xcodegen generate
 
           echo "=== Verifying project generation ==="
@@ -86,12 +87,13 @@ jobs:
             echo "❌ TekuToko.xcodeproj generation failed"
             exit 1
           fi
+          cd ..
 
       - name: Clean Package.resolved if incompatible
         run: |
           set -ex
           echo "=== Checking Package.resolved compatibility ==="
-          PACKAGE_RESOLVED="TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+          PACKAGE_RESOLVED="frontend/TekuToko.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
           if [ -f "$PACKAGE_RESOLVED" ]; then
             echo "Package.resolved found, checking version compatibility..."
             if grep -q '"version" : 3' "$PACKAGE_RESOLVED" 2>/dev/null; then
@@ -107,7 +109,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
-          key: ${{ runner.os }}-swiftpm-${{ hashFiles('project.yml') }}
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('frontend/project.yml') }}
           restore-keys: |
             ${{ runner.os }}-swiftpm-
 
@@ -115,6 +117,7 @@ jobs:
         run: |
           set -ex
           echo "=== Resolving SwiftPM dependencies ==="
+          cd frontend
           xcodebuild -resolvePackageDependencies -scheme TekuToko
 
           echo "=== Package resolution completed ==="
@@ -123,11 +126,13 @@ jobs:
           else
             echo "⚠️  Package.resolved not found, continuing..."
           fi
+          cd ..
 
       - name: Build DocC
         run: |
           set -ex
           echo "=== Building DocC documentation ==="
+          cd frontend
           xcodebuild docbuild -scheme TekuToko \
             -sdk iphonesimulator \
             -derivedDataPath ./DerivedData
@@ -143,12 +148,13 @@ jobs:
             find ./DerivedData -name "*.doccarchive" -type d || echo "No .doccarchive found"
             exit 1
           fi
+          cd ..
 
       - name: Convert to static site
         run: |
           set -ex
           echo "=== Converting DocC archive to static site ==="
-          DOCC_ARCHIVE="./DerivedData/Build/Products/Debug-iphonesimulator/TekuToko.doccarchive"
+          DOCC_ARCHIVE="./frontend/DerivedData/Build/Products/Debug-iphonesimulator/TekuToko.doccarchive"
           xcrun docc process-archive transform-for-static-hosting \
             "$DOCC_ARCHIVE" \
             --output-path ./docs \

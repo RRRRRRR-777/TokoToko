@@ -22,16 +22,16 @@ configFiles:
   Release: TekuToko/Config/Release.xcconfig
 
 fileGroups:
-  - README.md
+  - ../README.md
   - project.yml
   - .swiftlint.yml
-  - CLAUDE.md
-  - .gitignore
-  - buildServer.json
+  - ../CLAUDE.md
+  - ../.gitignore
   - firebase.json
   - firestore.indexes.json
   - firestore.rules
   - storage.rules
+  - .firebaserc
   - ci_scripts
 
 targetTemplates:
@@ -68,7 +68,6 @@ targets:
       - path: TekuToko/Preview Content
       - path: TekuToko/Assets.xcassets
       - path: TekuToko/GoogleService-Info.plist
-      - path: Documentation.docc
       - path: TekuToko/Resources
     entitlements:
       path: TekuToko/TekuToko.entitlements

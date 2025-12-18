@@ -94,7 +94,7 @@ iOSInjectionProject/
 project.local.yml
 
 # Local xcconfig（ngrok URL等のローカル設定）
-TekuToko/Config/Local.xcconfig
+frontend/TekuToko/Config/Local.xcconfig
 Pods/*
 GoogleService-Info.plist
 .env

@@ -47,8 +47,8 @@ jobs:
             BASE_BRANCH="main"
           fi
           git fetch origin $BASE_BRANCH
-          # 変更されたファイルをスペース区切りで設定
-          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- '*.swift' | tr '\n' ' ')
+          # 変更されたファイルをスペース区切りで設定（frontend配下のSwiftファイルのみ）
+          FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD -- 'frontend/**/*.swift' | tr '\n' ' ')
           echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
 
       - name: Run Swift Format (Lint Mode) with reviewdog
@@ -62,7 +62,7 @@ jobs:
               if [ -n "$file" ] && [ -f "$file" ]; then
                 echo "Running Swift Format on $file"
                 # Swift Formatの結果を直接reviewdogに渡す
-                $SWIFT_FORMAT_PATH lint --configuration .swift-format "$file" 2>&1 | \
+                $SWIFT_FORMAT_PATH lint --configuration frontend/.swift-format "$file" 2>&1 | \
                   reviewdog -f=diff -name="swift-format-$file" -reporter=github-pr-check -filter-mode=added || true
               fi
             done
@@ -82,7 +82,7 @@ jobs:
               if [ -n "$file" ] && [ -f "$file" ]; then
                 echo "Running SwiftLint on $file"
                 # SwiftLintの結果を直接reviewdogに渡す（JSON形式）
-                swiftlint lint "$file" --config .swiftlint.yml --reporter json 2>/dev/null | \
+                swiftlint lint "$file" --config frontend/.swiftlint.yml --reporter json 2>/dev/null | \
                   jq -r '.[] | "\(.file):\(.line):\(.column): \(.severity): \(.reason) (\(.rule_id))"' 2>/dev/null | \
                   reviewdog -f=diff -name="swiftlint-$file" -reporter=github-pr-check -filter-mode=added || true
               fi
