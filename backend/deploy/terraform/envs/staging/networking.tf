@@ -86,9 +86,9 @@ module "cloud_armor" {
 
   # ステージング環境ではレートリミットを有効化（テスト用）
   enable_rate_limiting          = true
-  rate_limit_threshold_count    = 1000  # 1000リクエスト
-  rate_limit_threshold_interval = 60    # 60秒間
-  rate_limit_ban_duration       = 300   # 5分間BAN
+  rate_limit_threshold_count    = 1000 # 1000リクエスト
+  rate_limit_threshold_interval = 60   # 60秒間
+  rate_limit_ban_duration       = 300  # 5分間BAN
 
   # Adaptive Protection（L7 DDoS防御）を有効化
   enable_adaptive_protection          = true

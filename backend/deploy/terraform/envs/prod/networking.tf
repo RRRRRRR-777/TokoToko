@@ -83,9 +83,9 @@ module "cloud_armor" {
 
   # 本番環境ではレートリミットを有効化
   enable_rate_limiting          = true
-  rate_limit_threshold_count    = 500   # 500リクエスト（本番はより厳格に）
-  rate_limit_threshold_interval = 60    # 60秒間
-  rate_limit_ban_duration       = 600   # 10分間BAN
+  rate_limit_threshold_count    = 500 # 500リクエスト（本番はより厳格に）
+  rate_limit_threshold_interval = 60  # 60秒間
+  rate_limit_ban_duration       = 600 # 10分間BAN
 
   # Adaptive Protection（L7 DDoS防御）を有効化
   enable_adaptive_protection          = true
