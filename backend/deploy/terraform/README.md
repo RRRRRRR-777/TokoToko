@@ -15,6 +15,7 @@ terraform/
 │   ├── vpc/            # VPCネットワーク
 │   ├── cloud_nat/      # Cloud NAT
 │   ├── firewall/       # Firewallルール
+│   ├── cloud_armor/    # Cloud Armor (WAF/DDoS)
 │   ├── gke/            # GKE Autopilot
 │   ├── cloud_sql/      # Cloud SQL PostgreSQL
 │   └── secret_manager/ # Secret Manager
@@ -177,6 +178,20 @@ terraform state show <resource_name>
   - GKE Masterアクセス制御
   - デフォルト拒否ルール（オプション）
 
+### Cloud Armor（modules/cloud_armor）
+- **機能**: Cloud Armorセキュリティポリシー（WAF/DDoS防御）
+- **特徴**:
+  - OWASP ModSecurity Core Rule Set対応
+    - SQLインジェクション対策
+    - XSS対策
+    - LFI/RFI対策
+    - RCE対策
+    - プロトコル攻撃対策
+    - スキャナー検出
+  - レートリミット（DDoS防御）
+  - Adaptive Protection（L7 DDoS自動防御）
+  - カスタムルール対応
+
 ### GKE Autopilot（modules/gke）
 - **機能**: マネージドKubernetesクラスタ
 - **特徴**:
@@ -306,39 +321,3 @@ terraform force-unlock <LOCK_ID>
 - [Google Cloud Provider](https://registry.terraform.io/providers/hashicorp/google/latest/docs)
 - [TekuToko Phase2設計書](../../docs/phase2_design.md)
 
-## ⚠️ 注意事項
-
-1. **本番環境での作業**
-   - 必ず `terraform plan` で変更内容を確認
-   - `--auto-approve` は使用しない
-   - 複数人でのレビュー体制を構築
-
-2. **機密情報管理**
-   - `terraform.tfvars` は **絶対にGitにコミットしない**
-   - `.gitignore` で除外済み
-
-3. **破壊的変更**
-   - データベース削除等の破壊的変更は慎重に
-   - 必要に応じて `prevent_destroy` を設定
-
-## ✅ 実装済み機能
-
-- ✅ Terraform State管理（GCSバケット）
-- ✅ モジュール実装
-  - VPC/Subnet（セカンダリIP範囲含む）
-  - Cloud NAT（アウトバウンド通信）
-  - Firewall Rules（Pod間通信、GKE Master等）
-  - GKE Autopilot（Private Cluster、Workload Identity）
-  - Cloud SQL PostgreSQL（REGIONAL HA、PITR、Private IP）
-  - Secret Manager
-- ✅ 3環境構成（dev/staging/prod）
-  - 環境別CIDR設計
-  - 環境別スペック調整（Cloud SQL: f1-micro → custom-4-15360）
-  - 環境別セキュリティレベル（削除保護、Binary Authorization等）
-
-## 🔄 次のステップ
-
-- [ ] Terraform実行・検証（各環境でapply）
-- [ ] CI/CD統合（GitHub Actions）
-- [ ] ドキュメント追加（各モジュール詳細説明）
-- [ ] セキュリティ強化（Cloud Armor、WAF等）
