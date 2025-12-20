@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/di"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/router"
+	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 const (
@@ -18,9 +22,25 @@ const (
 )
 
 func main() {
-	// ログ初期化
-	logger := log.New(os.Stdout, "[TekuToko API] ", log.LstdFlags|log.Lshortfile)
-	logger.Println("Starting TekuToko API server...")
+	// .envファイルを読み込み（存在しない場合はスキップ）
+	_ = godotenv.Load()
+
+	// DI Container初期化（Logger含む）
+	ctx := context.Background()
+	container, err := di.NewContainer(ctx)
+	if err != nil {
+		// Containerの初期化に失敗した場合は標準出力にエラーを出力
+		fmt.Fprintf(os.Stderr, "Failed to initialize container: %v\n", err)
+		os.Exit(1)
+	}
+	defer container.Close()
+
+	// 構造化ロガー取得
+	logger := container.Logger
+
+	logger.Info("Starting TekuToko API server",
+		zap.String("environment", container.Config.Environment),
+	)
 
 	// 環境変数からポート取得
 	port := os.Getenv("PORT")
@@ -28,51 +48,13 @@ func main() {
 		port = defaultPort
 	}
 
-	// TODO: Phase2で実装
-	// - Config読み込み (internal/infrastructure/config)
-	// - Database接続 (internal/infrastructure/database)
-	// - Firebase Admin SDK初期化 (internal/infrastructure/auth)
-	// - Logger初期化 (internal/infrastructure/logger)
-	// - Router初期化 (internal/interface/api/router)
-	// - Middleware設定 (internal/interface/api/middleware)
-	// - Handler登録 (internal/interface/api/handler)
-
-	// 簡易ルーター設定（Phase2で本格実装予定）
-	mux := http.NewServeMux()
-
-	// ヘルスチェックエンドポイント（Liveness Probe用）
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","message":"TekuToko API is running"}`)
-	})
-
-	// レディネスチェックエンドポイント（Readiness Probe用）
-	// TODO: Phase2でデータベース接続チェック等を追加
-	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
-		// Phase2以降: DB接続確認、外部サービス接続確認等
-		// if !db.Ping() {
-		//     w.WriteHeader(http.StatusServiceUnavailable)
-		//     fmt.Fprintf(w, `{"status":"not_ready","message":"Database not ready"}`)
-		//     return
-		// }
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ready","message":"TekuToko API is ready"}`)
-	})
-
-	// ルートエンドポイント
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"message":"Welcome to TekuToko API","version":"0.1.0","status":"Phase 2 in progress"}`)
-	})
+	// Router初期化（Gin）
+	r := router.NewRouter(container)
 
 	// HTTPサーバー設定
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%s", port),
-		Handler:           mux,
+		Handler:           r,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
@@ -82,27 +64,35 @@ func main() {
 
 	// サーバー起動（ゴルーチン）
 	go func() {
-		logger.Printf("Server started on http://localhost:%s", port)
-		logger.Println("Available endpoints:")
-		logger.Println("  GET /        - API情報")
-		logger.Println("  GET /health  - ヘルスチェック（Liveness Probe）")
-		logger.Println("  GET /ready   - レディネスチェック（Readiness Probe）")
+		logger.Info("Server started",
+			zap.String("port", port),
+			zap.String("address", fmt.Sprintf("http://localhost:%s", port)),
+		)
+		logger.Info("Available endpoints",
+			zap.Strings("endpoints", []string{
+				"GET /          - API情報",
+				"GET /health    - ヘルスチェック（Liveness Probe）",
+				"GET /ready     - レディネスチェック（Readiness Probe）",
+				"GET /v1/walks  - 散歩一覧取得",
+				"POST /v1/walks - 散歩作成",
+			}),
+		)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("Server failed to start: %v", err)
+			logger.Fatal("Server failed to start", zap.Error(err))
 		}
 	}()
 
 	// シャットダウンシグナル待機
 	<-ctx.Done()
-	logger.Println("Shutdown signal received, starting graceful shutdown...")
+	logger.Info("Shutdown signal received, starting graceful shutdown")
 
 	// Graceful Shutdown
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		logger.Printf("Server forced to shutdown: %v", err)
+		logger.Error("Server forced to shutdown", zap.Error(err))
 	}
 
-	logger.Println("Server exited")
+	logger.Info("Server exited")
 }

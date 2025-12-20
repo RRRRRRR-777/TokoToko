@@ -28,9 +28,9 @@ type Walk struct {
 	Description         string     `json:"description"`
 	StartTime           *time.Time `json:"start_time"`
 	EndTime             *time.Time `json:"end_time"`
-	TotalDistance       float64    `json:"total_distance"`        // メートル
-	TotalSteps          int        `json:"total_steps"`           // 歩数
-	PolylineData        *string    `json:"polyline_data"`         // エンコード済みポリライン
+	TotalDistance       float64    `json:"total_distance"` // メートル
+	TotalSteps          int        `json:"total_steps"`    // 歩数
+	PolylineData        *string    `json:"polyline_data"`  // エンコード済みポリライン
 	ThumbnailImageURL   *string    `json:"thumbnail_image_url"`
 	Status              WalkStatus `json:"status"`
 	PausedAt            *time.Time `json:"paused_at"`

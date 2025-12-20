@@ -31,14 +31,6 @@ module "gke" {
   enable_private_endpoint = false # ステージング環境はパブリックエンドポイント有効
   master_global_access    = true
 
-  # Master Authorized Networks（必要に応じて設定）
-  master_authorized_networks = [
-    # {
-    #   cidr_block   = "YOUR_IP/32"
-    #   display_name = "Developer Workstation"
-    # }
-  ]
-
   # リリースチャネル
   release_channel = "REGULAR"
 
@@ -66,7 +58,7 @@ module "cloud_sql" {
   database_version = "POSTGRES_15"
   database_name    = local.database_name
   db_user_name     = local.db_user_name
-  db_user_password = var.db_password # Secret Managerから取得推奨
+  db_user_password = data.google_secret_manager_secret_version.db_password.secret_data
 
   # インスタンス設定（ステージング環境は本番に近いスペック）
   tier              = "db-custom-2-7680" # 2 vCPU, 7.5GB RAM

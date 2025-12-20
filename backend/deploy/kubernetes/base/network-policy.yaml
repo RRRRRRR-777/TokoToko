@@ -13,10 +13,10 @@ spec:
   - Ingress
   - Egress
 
-  # Ingressルール: LoadBalancerからのトラフィックのみ許可
+  # Ingressルール: LoadBalancer/ヘルスチェックからのトラフィックのみ許可
   ingress:
+  # GKE Ingress/LoadBalancerからのトラフィック（kube-system）
   - from:
-    # GKE Ingress/LoadBalancerからのトラフィック
     - namespaceSelector:
         matchLabels:
           name: kube-system
@@ -24,51 +24,13 @@ spec:
     - protocol: TCP
       port: 8080
 
-  # すべてのPodからのヘルスチェックを許可
-  - from: []
+  # GCPロードバランサーのヘルスチェック用IPレンジ
+  - from:
+    - ipBlock:
+        cidr: 35.191.0.0/16
+    - ipBlock:
+        cidr: 130.211.0.0/22
     ports:
     - protocol: TCP
       port: 8080
 
-  # Egressルール: 必要な外部通信のみ許可
-  egress:
-  # DNS解決を許可
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: kube-system
-    ports:
-    - protocol: UDP
-      port: 53
-    - protocol: TCP
-      port: 53
-
-  # Cloud SQL Proxy経由のDB接続を許可
-  - to:
-    - podSelector:
-        matchLabels:
-          app: tekutoko-api
-    ports:
-    - protocol: TCP
-      port: 5432
-
-  # HTTPS通信を許可（外部API、GCP API等）
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 443
-
-  # HTTP通信を許可（メタデータサーバー等）
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 80
-
-  # GKE Metadata Serverへのアクセスを許可
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 988

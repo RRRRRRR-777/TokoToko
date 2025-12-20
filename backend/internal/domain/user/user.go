@@ -4,7 +4,7 @@ import "time"
 
 // User はユーザーのドメインエンティティ
 type User struct {
-	ID           string    `json:"id"`            // Firebase Auth UID
+	ID           string    `json:"id"` // Firebase Auth UID
 	DisplayName  string    `json:"display_name"`
 	AuthProvider string    `json:"auth_provider"` // email, google, apple
 	CreatedAt    time.Time `json:"created_at"`

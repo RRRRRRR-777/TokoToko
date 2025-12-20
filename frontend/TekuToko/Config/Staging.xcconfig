@@ -1,0 +1,7 @@
+// Staging.xcconfig
+// GKEステージング環境
+
+#include "Base.xcconfig"
+
+API_BASE_URL = https:/$()/tekutoko-staging.rrrrrrr777.com
+APP_ENV = staging

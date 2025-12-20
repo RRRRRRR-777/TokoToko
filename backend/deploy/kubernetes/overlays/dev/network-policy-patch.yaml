@@ -1,0 +1,63 @@
+# Development環境用Network Policy調整
+# Cloud SQL Private IPをdev環境用に追加
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tekutoko-api-network-policy
+spec:
+  egress:
+  # DNS解決を許可（NodeLocal DNS: 169.254.20.10）
+  - to:
+    - ipBlock:
+        cidr: 169.254.20.10/32
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+  # Cloud SQL (Private IP) への接続を許可 - Dev環境
+  - to:
+    - ipBlock:
+        cidr: 10.71.0.8/32  # tekutoko-dev-db private IP
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 3307
+
+  # Google APIs（Private Google Access経由）
+  # restricted.googleapis.com / private.googleapis.com
+  - to:
+    - ipBlock:
+        cidr: 199.36.153.4/30
+    - ipBlock:
+        cidr: 199.36.153.8/30
+    ports:
+    - protocol: TCP
+      port: 443
+
+  # GitHub API（migration用git clone）
+  # https://api.github.com/meta の "hooks" 等から取得可能
+  - to:
+    - ipBlock:
+        cidr: 140.82.112.0/20
+    - ipBlock:
+        cidr: 192.30.252.0/22
+    - ipBlock:
+        cidr: 185.199.108.0/22
+    - ipBlock:
+        cidr: 143.55.64.0/20
+    ports:
+    - protocol: TCP
+      port: 443
+
+  # GKE Metadata Serverへのアクセスを許可（WI用）
+  - to:
+    - ipBlock:
+        cidr: 169.254.169.254/32
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 988

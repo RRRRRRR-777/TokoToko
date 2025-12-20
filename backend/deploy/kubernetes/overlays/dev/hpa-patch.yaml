@@ -1,0 +1,8 @@
+# Development環境用HPA調整
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tekutoko-api-hpa
+spec:
+  minReplicas: 1  # 開発環境は最小1レプリカ
+  maxReplicas: 3  # 最大3レプリカ

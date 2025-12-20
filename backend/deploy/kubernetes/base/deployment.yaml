@@ -138,11 +138,14 @@ spec:
 
       # Cloud SQL Proxyサイドカー
       - name: cloud-sql-proxy
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.2
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
         args:
           - "--structured-logs"
           - "--port=5432"
-          - "tokotoko-ea308:asia-northeast1:tekutoko-dev-db"
+          - "--private-ip"
+          - "--auto-iam-authn"
+          # インスタンス接続名は各環境の overlay で上書きする
+          - "__CONNECTION_NAME_PLACEHOLDER__"
 
         resources:
           requests:

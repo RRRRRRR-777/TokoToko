@@ -33,9 +33,9 @@ run: ## APIサーバーを起動
 	go run ./cmd/api/main.go
 
 .PHONY: dev
-dev: ## ホットリロード付きでAPIサーバーを起動
+dev: ## ホットリロード付きでAPIサーバーを起動（ローカル用、Telemetry無効）
 	@echo "Starting API server with hot reload..."
-	air
+	TELEMETRY_NOOP=true air
 
 .PHONY: test
 test: ## テストを実行
@@ -100,33 +100,59 @@ db-down: ## ローカルDBを停止
 .PHONY: migrate-up
 migrate-up: ## マイグレーションを適用
 	@echo "Running migrations..."
-	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" up
+	$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" up
 	@echo "Migrations applied successfully!"
 
 .PHONY: migrate-down
 migrate-down: ## マイグレーションをロールバック
 	@echo "Rolling back last migration..."
-	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" down 1
+	$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" down 1
 	@echo "Migration rolled back!"
 
 .PHONY: migrate-force
 migrate-force: ## マイグレーションバージョンを強制設定 (使用例: make migrate-force version=1)
 	@if [ -z "$(version)" ]; then echo "Error: version is required. Usage: make migrate-force version=N"; exit 1; fi
 	@echo "Forcing migration version to $(version)..."
-	$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" force $(version)
+	$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" force $(version)
 
 .PHONY: migrate-version
 migrate-version: ## 現在のマイグレーションバージョンを表示
 	@echo "Current migration version:"
-	@$(MIGRATE) -path ../migrations -database "$(DATABASE_URL)" version || echo "No migrations applied yet"
+	@$(MIGRATE) -path ./migrations -database "$(DATABASE_URL)" version || echo "No migrations applied yet"
 
 .PHONY: migrate-create
 migrate-create: ## マイグレーションファイルを作成 (使用例: make migrate-create name=create_walks_table)
 	@if [ -z "$(name)" ]; then echo "Error: name is required. Usage: make migrate-create name=your_migration_name"; exit 1; fi
 	@echo "Creating migration files..."
-	$(MIGRATE) create -ext sql -dir ../migrations -seq $(name)
+	$(MIGRATE) create -ext sql -dir ./migrations -seq $(name)
 	@echo "Migration files created!"
 
 .PHONY: seed
 seed: ## シードデータを投入
-	@echo "TODO: go run scripts/seed/main.go"
+	@echo "Running seed script..."
+	go run ./cmd/seed/main.go
+	@echo "Seed data inserted successfully!"
+
+.PHONY: seed-build
+seed-build: ## シードスクリプトをビルド
+	@echo "Building seed script..."
+	go build -o bin/seed ./cmd/seed
+	@echo "Build complete: bin/seed"
+
+.PHONY: migrate-firestore-dry
+migrate-firestore-dry: ## Firestore移行のドライラン（データ数確認のみ）
+	@echo "Running Firestore migration dry-run..."
+	go run ./cmd/migrate-firestore/main.go -dry-run
+	@echo "Dry-run complete!"
+
+.PHONY: migrate-firestore
+migrate-firestore: ## Firestore→PostgreSQL移行を実行
+	@echo "Running Firestore to PostgreSQL migration..."
+	go run ./cmd/migrate-firestore/main.go
+	@echo "Migration complete!"
+
+.PHONY: migrate-firestore-build
+migrate-firestore-build: ## Firestore移行スクリプトをビルド
+	@echo "Building migration script..."
+	go build -o bin/migrate-firestore ./cmd/migrate-firestore/main.go
+	@echo "Build complete: bin/migrate-firestore"

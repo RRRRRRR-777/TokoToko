@@ -1,0 +1,50 @@
+# Staging環境用Kustomize設定
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Baseリソースを参照
+resources:
+- ../../base
+
+# Namespace
+namespace: tekutoko-staging
+
+# 環境固有のラベル
+commonLabels:
+  environment: staging
+
+# イメージタグをstaging用に上書き
+images:
+- name: asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api
+  newTag: staging-latest
+
+# ConfigMapの上書き（Staging環境固有の設定）
+configMapGenerator:
+- name: app-config
+  behavior: merge
+  literals:
+  - ENVIRONMENT=staging
+  - DB_NAME=tekutoko_staging
+  - LOG_LEVEL=info
+  - FIREBASE_PROJECT_ID=tokotoko-ea308
+  - DB_HOST=localhost
+  - DB_SSLMODE=disable
+  - CORS_ALLOWED_ORIGINS=https://tekutoko-staging.rrrrrrr777.com  # iOSアプリ専用（Webクライアント追加時は拡張）
+# 環境固有のインフラ設定（Terraformで管理されるリソースのID）
+- name: infra-config
+  literals:
+  # 静的外部IP（gcloud compute addresses: tekutoko-api-staging-ip）
+  - EXTERNAL_IP=34.8.31.26
+
+# レプリカ数の調整（Stagingは本番に近い設定）
+replicas:
+- name: tekutoko-api
+  count: 2  # Staging環境は2レプリカ
+
+# Staging環境固有のパッチ
+patchesStrategicMerge:
+- hpa-patch.yaml
+- ingress-patch.yaml
+- deployment-patch.yaml
+- service-patch.yaml
+- network-policy-patch.yaml

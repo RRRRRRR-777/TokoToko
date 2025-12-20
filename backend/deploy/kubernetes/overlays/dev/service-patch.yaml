@@ -1,0 +1,15 @@
+# Development環境用Service設定
+# 静的外部IPを指定（Terraformで管理: google_compute_address.tekutoko_api）
+# IPアドレスの値はkustomization.yamlのinfra-config ConfigMapで一元管理
+# 変更時はkustomization.yamlのEXTERNAL_IP値を更新してください
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekutoko-api
+  annotations:
+    # Terraformリソース参照: terraform/environments/dev/main.tf
+    infra.tekutoko.dev/static-ip-resource: "google_compute_address.tekutoko_api"
+spec:
+  # NOTE: KustomizeのreplacementまたはCI/CDパイプラインで動的に設定することを推奨
+  # 現在はkustomization.yamlのinfra-configと同期して手動管理
+  loadBalancerIP: 34.180.120.96

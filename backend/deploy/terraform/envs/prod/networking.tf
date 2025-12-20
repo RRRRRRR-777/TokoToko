@@ -69,6 +69,38 @@ module "firewall" {
   enable_deny_all = true
 }
 
+# Cloud Armor Security Policy作成
+module "cloud_armor" {
+  source = "../../modules/cloud_armor"
+
+  project_id  = var.project_id
+  policy_name = "tekutoko-prod-security-policy"
+  description = "Cloud Armor security policy for TekuToko API (Production)"
+
+  # OWASP WAFルールを有効化
+  enable_owasp_rules = true
+  owasp_rule_action  = "deny(403)"
+
+  # 本番環境ではレートリミットを有効化
+  enable_rate_limiting          = true
+  rate_limit_threshold_count    = 500 # 500リクエスト（本番はより厳格に）
+  rate_limit_threshold_interval = 60  # 60秒間
+  rate_limit_ban_duration       = 600 # 10分間BAN
+
+  # Adaptive Protection（L7 DDoS防御）を有効化
+  enable_adaptive_protection          = true
+  adaptive_protection_rule_visibility = "STANDARD"
+}
+
+# API用静的外部IP
+resource "google_compute_address" "tekutoko_api" {
+  name         = "tekutoko-api-${local.environment}-ip"
+  project      = var.project_id
+  region       = local.region
+  address_type = "EXTERNAL"
+  description  = "TekuToko API ${local.environment}環境用の静的外部IP"
+}
+
 # 出力値
 output "vpc_name" {
   description = "VPC名"
@@ -88,4 +120,14 @@ output "pods_range_name" {
 output "services_range_name" {
   description = "Services Secondary Range名"
   value       = module.vpc.services_range_name
+}
+
+output "api_static_ip" {
+  description = "TekuToko API用の静的外部IP"
+  value       = google_compute_address.tekutoko_api.address
+}
+
+output "cloud_armor_policy_name" {
+  description = "Cloud Armorセキュリティポリシー名"
+  value       = module.cloud_armor.policy_name
 }

@@ -9,12 +9,16 @@ on:
       - '.github/workflows/backend-cd-dev.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-dev-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-northeast1
   GKE_CLUSTER: gke-tekutoko-dev
   IMAGE_NAME: tekutoko-api
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.24'
 
 jobs:
   build-and-push:
@@ -101,26 +105,72 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --project=${{ env.GCP_PROJECT_ID }}
 
-      - name: Update deployment image
+      - name: Ensure namespace exists
         run: |
+          kubectl create namespace tekutoko-dev --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update app-secret from Secret Manager
+        run: |
+          DB_PASSWORD=$(gcloud secrets versions access latest --secret=db-password --project=${{ env.GCP_PROJECT_ID }})
+          FIREBASE_JSON=$(gcloud secrets versions access latest --secret=firebase-service-account --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic app-secret \
+            --from-literal=db_password="$DB_PASSWORD" \
+            --from-literal=firebase_service_account_json="$FIREBASE_JSON" \
+            --namespace=tekutoko-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update github-secret for migration
+        run: |
+          GITHUB_PAT=$(gcloud secrets versions access latest --secret=github-pat --project=${{ env.GCP_PROJECT_ID }})
+          kubectl create secret generic github-secret \
+            --from-literal=token="$GITHUB_PAT" \
+            --namespace=tekutoko-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Apply ServiceAccount before migration
+        run: |
+          kubectl apply -f deploy/kubernetes/base/serviceaccount.yaml -n tekutoko-dev
+
+      - name: Run database migration
+        run: |
+          # yqを使用してブランチ名を安全に置換（特殊文字を含むブランチ名にも対応）
+          yq -i '.spec.template.spec.initContainers[0].env[0].value = "${{ github.ref_name }}"' \
+            deploy/kubernetes/overlays/dev/migration-job.yaml
+          kubectl delete job db-migration -n tekutoko-dev --ignore-not-found=true
+          kubectl apply -f deploy/kubernetes/overlays/dev/migration-job.yaml
+          kubectl wait --for=condition=complete --timeout=5m job/db-migration -n tekutoko-dev || {
+            echo "Migration failed"; kubectl logs -l app=tekutoko-migration -n tekutoko-dev -c migration --tail=100; exit 1
+          }
+          kubectl logs -l app=tekutoko-migration -n tekutoko-dev -c migration --tail=50
+
+      - name: Update Kustomize image tag
+        run: |
+          cd deploy/kubernetes/overlays/dev
           IMAGE_TAG="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/tekutoko/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          echo "Updating deployment with image: ${IMAGE_TAG}"
-          kubectl set image deployment/tekutoko-api \
-            api=${IMAGE_TAG} \
-            -n default
+          echo "Updating Kustomize image to: ${IMAGE_TAG}"
+          kustomize edit set image asia-northeast1-docker.pkg.dev/tokotoko-ea308/tekutoko/tekutoko-api=${IMAGE_TAG}
+
+      - name: Deploy with Kustomize
+        run: |
+          kubectl apply -k deploy/kubernetes/overlays/dev
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/tekutoko-api -n default --timeout=5m
+          kubectl rollout status deployment/tekutoko-api -n tekutoko-dev --timeout=5m
 
       - name: Verify deployment
         run: |
-          kubectl get pods -n default -l app=tekutoko-api
-          kubectl get services -n default tekutoko-api
+          kubectl get pods -n tekutoko-dev -l app=tekutoko-api
+          kubectl get services -n tekutoko-dev tekutoko-api
 
       - name: Run smoke tests
         run: |
-          EXTERNAL_IP=$(kubectl get service tekutoko-api -n default -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          EXTERNAL_IP=$(kubectl get service tekutoko-api -n tekutoko-dev -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           echo "Testing health endpoint at http://$EXTERNAL_IP/health"
           curl -f http://$EXTERNAL_IP/health || exit 1
 

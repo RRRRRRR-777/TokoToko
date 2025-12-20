@@ -1,0 +1,11 @@
+// Debug.xcconfig
+// ローカル開発環境（localhost）
+
+#include "Base.xcconfig"
+
+// デフォルト値
+API_BASE_URL = http:/$()/localhost:8080
+APP_ENV = debug
+
+// ローカル設定で上書き（ファイルがあれば）
+#include? "Local.xcconfig"

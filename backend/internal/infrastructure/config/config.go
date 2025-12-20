@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -27,6 +28,7 @@ type DatabaseConfig struct {
 // FirebaseConfig はFirebase設定
 type FirebaseConfig struct {
 	CredentialsPath string
+	CredentialsJSON string
 	ProjectID       string
 }
 
@@ -38,7 +40,10 @@ type LogConfig struct {
 
 // Load は環境変数から設定を読み込む
 func Load() (*Config, error) {
-	dbPort, _ := strconv.Atoi(getEnv("DB_PORT", "5432"))
+	dbPort, err := strconv.Atoi(getEnv("DB_PORT", "5432"))
+	if err != nil {
+		dbPort = 5432 // デフォルト値を使用
+	}
 
 	return &Config{
 		Environment: getEnv("ENVIRONMENT", "development"),
@@ -53,6 +58,7 @@ func Load() (*Config, error) {
 		},
 		Firebase: FirebaseConfig{
 			CredentialsPath: getEnv("FIREBASE_CREDENTIALS_PATH", ""),
+			CredentialsJSON: getEnv("FIREBASE_CREDENTIALS_JSON", ""),
 			ProjectID:       getEnv("FIREBASE_PROJECT_ID", ""),
 		},
 		Log: LogConfig{
@@ -79,4 +85,25 @@ func (c *Config) IsDevelopment() bool {
 // IsProduction は本番環境かどうかを返す
 func (c *Config) IsProduction() bool {
 	return c.Environment == "production"
+}
+
+// LoadFirebaseCredentials はFirebase認証情報を読み込む
+// 優先順位: CredentialsJSON > CredentialsPath
+func (c *Config) LoadFirebaseCredentials() (string, error) {
+	// 直接JSON文字列が設定されている場合はそれを使用
+	if c.Firebase.CredentialsJSON != "" {
+		return c.Firebase.CredentialsJSON, nil
+	}
+
+	// ファイルパスが設定されている場合はファイルから読み込む
+	if c.Firebase.CredentialsPath != "" {
+		data, err := os.ReadFile(c.Firebase.CredentialsPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read firebase credentials file: %w", err)
+		}
+		return string(data), nil
+	}
+
+	// どちらも設定されていない場合は空文字列を返す（開発環境用）
+	return "", nil
 }

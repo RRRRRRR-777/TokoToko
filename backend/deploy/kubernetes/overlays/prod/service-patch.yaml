@@ -1,0 +1,13 @@
+# Production環境用Service設定
+# Ingress経由でトラフィックを受けるため、ClusterIPを使用
+# グローバル静的IP（tekutoko-api-prod-global-ip: 34.144.240.182）はIngressに割り当て
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekutoko-api
+  annotations:
+    # NEG（Network Endpoint Groups）を有効化してIngressと連携
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  # IngressがトラフィックをルーティングするためClusterIPで十分
+  type: ClusterIP

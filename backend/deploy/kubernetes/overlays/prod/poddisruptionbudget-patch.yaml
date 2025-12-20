@@ -1,0 +1,10 @@
+# Production環境用PodDisruptionBudget調整
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tekutoko-api-pdb
+spec:
+  minAvailable: 2  # 本番環境は最低2Podを常時稼働
+  selector:
+    matchLabels:
+      app: tekutoko-api

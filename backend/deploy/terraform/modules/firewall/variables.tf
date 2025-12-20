@@ -31,3 +31,9 @@ variable "enable_deny_all" {
   type        = bool
   default     = false
 }
+
+variable "cloud_sql_cidr" {
+  description = "Cloud SQL Private IP CIDR（Private Service Connection用）"
+  type        = string
+  default     = ""
+}

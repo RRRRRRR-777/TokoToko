@@ -21,6 +21,9 @@ type Repository interface {
 	// Update はWalkを更新する
 	Update(ctx context.Context, walk *Walk) error
 
+	// Upsert はWalkを作成または更新する（存在しなければ作成、存在すれば更新）
+	Upsert(ctx context.Context, walk *Walk) error
+
 	// Delete はWalkを削除する
 	Delete(ctx context.Context, id uuid.UUID) error
 

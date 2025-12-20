@@ -31,14 +31,6 @@ module "gke" {
   enable_private_endpoint = false # Cloud Shell/踏み台からアクセス可能にする
   master_global_access    = true
 
-  # Master Authorized Networks（必要に応じて設定）
-  master_authorized_networks = [
-    # {
-    #   cidr_block   = "YOUR_OFFICE_IP/32"
-    #   display_name = "Office Network"
-    # }
-  ]
-
   # リリースチャネル
   release_channel = "STABLE"
 
@@ -66,7 +58,7 @@ module "cloud_sql" {
   database_version = "POSTGRES_15"
   database_name    = local.database_name
   db_user_name     = local.db_user_name
-  db_user_password = var.db_password # Secret Managerから取得必須
+  db_user_password = data.google_secret_manager_secret_version.db_password.secret_data
 
   # インスタンス設定（本番環境は高スペック）
   tier              = "db-custom-4-15360" # 4 vCPU, 15GB RAM

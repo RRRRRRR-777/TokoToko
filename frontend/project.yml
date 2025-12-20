@@ -1,0 +1,174 @@
+name: TekuToko
+options:
+  bundleIdPrefix: com.RRRRRRR777
+  deploymentTarget:
+    iOS: 15.0
+  xcodeVersion: "16.1"
+  createIntermediateGroups: true
+  usesTabs: false
+  indentWidth: 2
+  tabWidth: 2
+
+configs:
+  Debug: debug
+  Development: debug
+  Staging: release
+  Release: release
+
+configFiles:
+  Debug: TekuToko/Config/Debug.xcconfig
+  Development: TekuToko/Config/Development.xcconfig
+  Staging: TekuToko/Config/Staging.xcconfig
+  Release: TekuToko/Config/Release.xcconfig
+
+fileGroups:
+  - ../README.md
+  - project.yml
+  - .swiftlint.yml
+  - ../CLAUDE.md
+  - ../.gitignore
+  - firebase.json
+  - firestore.indexes.json
+  - firestore.rules
+  - storage.rules
+  - .firebaserc
+  - ci_scripts
+
+targetTemplates:
+  CommonSettings:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
+
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk.git
+    from: 11.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
+  ViewInspector:
+    url: https://github.com/nalexn/ViewInspector.git
+    from: 0.10.2
+  Yams:
+    url: https://github.com/jpsim/Yams.git
+    from: 5.1.0
+targets:
+  TekuToko:
+    type: application
+    platform: iOS
+    deploymentTarget:
+      iOS: 15.0
+    supportedDestinations: [iOS]
+    sources:
+      - path: TekuToko
+        excludes:
+          - "Preview Content"
+    resources:
+      - path: TekuToko/Preview Content
+      - path: TekuToko/Assets.xcassets
+      - path: TekuToko/GoogleService-Info.plist
+      - path: TekuToko/Resources
+    entitlements:
+      path: TekuToko/TekuToko.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
+    templates: [CommonSettings]
+    dependencies:
+      - package: Firebase
+        product: FirebaseAnalytics
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseStorage
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: Yams
+        product: Yams
+    settings:
+      base:
+        PRODUCT_MODULE_NAME: TekuToko
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuToko
+        INFOPLIST_KEY_CFBundleDisplayName: "てくとこ"
+        INFOPLIST_KEY_CFBundleName: "てくとこ - お散歩SNS"
+        OTHER_LDFLAGS: $(inherited) -weak_framework FoundationModels
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "このアプリはあなたの現在地を表示するために位置情報を使用します。"
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "このアプリはバックグラウンドでも位置情報を追跡するために位置情報を使用します。"
+        INFOPLIST_KEY_NSLocationAlwaysUsageDescription: "このアプリはバックグラウンドでも位置情報を追跡するために位置情報を使用します。"
+        INFOPLIST_KEY_NSMotionUsageDescription: "このアプリは散歩中の歩数を正確に記録するためにモーションセンサーを使用します。"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
+        MARKETING_VERSION: 1.0.1
+        CURRENT_PROJECT_VERSION: 32
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1"
+        DOCC_CATALOG_IDENTIFIER: com.RRRRRRR777.TekuToko
+        DOCC_EXTRACT_OBJC_INFO_FOR_SWIFT_SYMBOLS: YES
+        DOCC_HOSTING_BASE_PATH: TekuToko
+    info:
+      path: Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - com.googleusercontent.apps.730739320416-46gaaeff63k5fu0bctd7d0c0p46a4drn
+        UIBackgroundModes:
+          - location
+        ITSAppUsesNonExemptEncryption: false
+        API_BASE_URL: $(API_BASE_URL)
+        APP_ENV: $(APP_ENV)
+        USE_GO_BACKEND: $(USE_GO_BACKEND)
+    scheme:
+      testTargets:
+        - TekuTokoTests
+        - TekuTokoUITests
+
+  TekuTokoTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget:
+      iOS: 15.0
+    supportedDestinations: [iOS]
+    sources:
+      - path: TekuTokoTests
+    resources:
+      - path: project.yml
+        optional: false
+    templates: [CommonSettings]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: TekuToko
+      - package: ViewInspector
+        product: ViewInspector
+
+  TekuTokoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget:
+      iOS: 15.0
+    supportedDestinations: [iOS]
+    sources:
+      - path: TekuTokoUITests
+    templates: [CommonSettings]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.RRRRRRR777.TekuTokoUITests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: TekuToko

@@ -1,0 +1,106 @@
+package di
+
+import (
+	"context"
+
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/domain/walk"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/config"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/database"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/logger"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/infrastructure/telemetry"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/api/middleware"
+	"github.com/RRRRRRR-777/TekuToko/backend/internal/interface/persistence/postgres"
+	walkusecase "github.com/RRRRRRR-777/TekuToko/backend/internal/usecase/walk"
+)
+
+// Container は依存性注入コンテナ
+// アプリケーション全体で使用される依存関係を管理する
+type Container struct {
+	Config                 *config.Config
+	DB                     *database.PostgresDB
+	Logger                 logger.Logger
+	TelemetryProvider      *telemetry.TelemetryProvider
+	AuthMiddleware         *middleware.AuthMiddleware
+	WalkRepository         walk.Repository
+	WalkLocationRepository walk.LocationRepository
+	WalkUsecase            walkusecase.Usecase
+}
+
+// NewContainer は新しいコンテナを生成する
+func NewContainer(ctx context.Context) (*Container, error) {
+	// 設定読み込み
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+	}
+
+	// Logger初期化
+	log, err := logger.NewLogger(cfg.Log.Level, cfg.Log.Format)
+	if err != nil {
+		return nil, err
+	}
+
+	// テレメトリープロバイダー初期化（メトリクス＋トレース）
+	telemetryProvider, err := telemetry.NewTelemetryProvider(
+		ctx,
+		cfg.Firebase.ProjectID, // GCPプロジェクトID
+		"tekutoko-api",         // サービス名
+		cfg.Environment,        // 環境
+		log,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Database接続
+	db, err := database.NewPostgresDB(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Repository初期化
+	userRepo := postgres.NewUserRepository(db.DB)
+	walkRepo := postgres.NewWalkRepository(db.DB)
+	walkLocationRepo := postgres.NewWalkLocationRepository(db.DB)
+
+	// AuthMiddleware初期化
+	// Firebase認証情報はCredentialsJSON または CredentialsPath から取得
+	firebaseCredentials, err := cfg.LoadFirebaseCredentials()
+	if err != nil {
+		return nil, err
+	}
+	authMw, err := middleware.NewAuthMiddleware(ctx, firebaseCredentials, userRepo)
+	if err != nil {
+		return nil, err
+	}
+
+	// Usecase初期化
+	walkUsecase := walkusecase.NewInteractor(walkRepo, walkLocationRepo)
+
+	return &Container{
+		Config:                 cfg,
+		DB:                     db,
+		Logger:                 log,
+		TelemetryProvider:      telemetryProvider,
+		AuthMiddleware:         authMw,
+		WalkRepository:         walkRepo,
+		WalkLocationRepository: walkLocationRepo,
+		WalkUsecase:            walkUsecase,
+	}, nil
+}
+
+// Close はコンテナが保持するリソースを解放する
+func (c *Container) Close() error {
+	// テレメトリープロバイダーのシャットダウン
+	if c.TelemetryProvider != nil {
+		if err := c.TelemetryProvider.Shutdown(context.Background()); err != nil {
+			c.Logger.Error("Failed to shutdown telemetry provider")
+		}
+	}
+
+	// DBクローズ
+	if c.DB != nil {
+		return c.DB.Close()
+	}
+	return nil
+}
