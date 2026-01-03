@@ -52,24 +52,3 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80  # メモリ使用率80%でスケールアップ
-
-  # Phase4で追加予定: カスタムメトリクス
-  # - type: External
-  #   external:
-  #     metric:
-  #       name: custom.googleapis.com|request_latency_p95
-  #       selector:
-  #         matchLabels:
-  #           resource.type: k8s_pod
-  #           resource.labels.app: tekutoko-api
-  #     target:
-  #       type: Value
-  #       value: "500"  # 500ms（P95レイテンシ）
-  #
-  # - type: External
-  #   external:
-  #     metric:
-  #       name: custom.googleapis.com|request_rate
-  #     target:
-  #       type: AverageValue
-  #       averageValue: "10"  # 10 req/sec/pod
