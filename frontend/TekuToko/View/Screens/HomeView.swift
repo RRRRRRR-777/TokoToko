@@ -657,15 +657,15 @@ struct HomeView: View {
   //    }
   //  }
 
-  // MARK: - [検証3] 構造化出力
-  /// 検証3を実行: 構造化出力 - Struct / JSON 安定性
+  // MARK: - [検証4] オンデバイス挙動
+  /// 検証4を実行: オンデバイス挙動
   @available(iOS 26.0, *)
   private func runVerification() {
     Task {
       isLoading = true
       do {
         let service = RouteSuggestionService()
-        let result = try await service.verifyStructuredOutput()
+        let result = try await service.verifyOnDeviceBehavior()
 
         let message = """
         \(result.title)

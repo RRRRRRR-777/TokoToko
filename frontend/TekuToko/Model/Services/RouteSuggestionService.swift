@@ -640,19 +640,6 @@ struct RouteSuggestion: Codable {
     let landmark: String
   }
 
-  /// 検証3用: 構造化出力検証用の簡易的な散歩ルート
-  @available(iOS 26.0, *)
-  @Generable
-  private struct GeneratedSimpleRoute: Sendable {
-    /// ルート名
-    let title: String
-
-    /// 推定距離（km）
-    let estimatedDistance: Double
-
-    /// 推定時間（時間）
-    let estimatedDuration: Double
-  }
 #endif
 
 // MARK: - Verification Models
@@ -672,8 +659,8 @@ struct VerificationResult: Codable, Identifiable {
   }
 }
 
-/// 検証3: 構造化出力の結果
-struct StructuredOutputVerificationResult: Codable, Identifiable {
+/// 検証4: オンデバイス挙動の結果
+struct OnDeviceVerificationResult: Codable, Identifiable {
   let id = UUID()
   let title: String
   let prompt: String
@@ -870,12 +857,13 @@ extension RouteSuggestionService {
     )
   }
 
-  /// 検証3: 構造化出力 - Struct / JSON 安定性
+  /// 検証4: オンデバイス挙動
   ///
-  /// 目的: 構造化出力の安定性と、指示追従性能を確認する
-  /// - @Generable型で正しく型が生成されるか
-  /// - フィールドの欠損・型崩れがないか
-  func verifyStructuredOutput() async throws -> StructuredOutputVerificationResult {
+  /// 目的: 機内モードでも動作するか、レイテンシ・回答傾向を確認する
+  /// - 機内モードで動作するか（エラーなく実行完了するか）
+  /// - レイテンシの変化（機内モードで速くなるか、変わらないか）
+  /// - 回答内容の傾向（オンライン時とオフライン時で異なるか）
+  func verifyOnDeviceBehavior() async throws -> OnDeviceVerificationResult {
     guard SystemLanguageModel.default.isAvailable else {
       throw RouteSuggestionServiceError.foundationModelUnavailable(
         "SystemLanguageModel.defaultがこのデバイスで利用できません"
@@ -884,52 +872,27 @@ extension RouteSuggestionService {
 
     let startTime = Date()
 
-    // 構造化出力プロンプト
-    let prompt = """
-    東京・渋谷周辺の散歩ルートを1つ提案してください。
+    // シンプルなプロンプト（値が出力されることが責務）
+    let prompt = "東京でおすすめの散歩スポットを1つ教えてください。"
 
-    以下の形式で出力してください：
-    - title: ルート名
-    - estimatedDistance: 推定距離（km）
-    - estimatedDuration: 推定時間（時間）
-    """
-
-    let instructions = """
-    あなたは散歩ルート提案AIです。
-    指定された形式で構造化データを生成してください。
-    """
+    let instructions = "あなたは散歩ルート提案AIです。簡潔に答えてください。"
 
     let session = LanguageModelSession(instructions: instructions)
-    let response = try await session.respond(
-      to: prompt,
-      generating: GeneratedSimpleRoute.self
-    )
+    let response = try await session.respond(to: prompt)
 
     let endTime = Date()
     let latency = endTime.timeIntervalSince(startTime)
 
-    // 結果を整形
-    let route = response.content
-    let responseText = """
-    {
-      "title": "\(route.title)",
-      "estimatedDistance": \(route.estimatedDistance),
-      "estimatedDuration": \(route.estimatedDuration)
-    }
-    """
-
     #if DEBUG
-      print("[verifyStructuredOutput] レスポンス取得成功")
-      print("[verifyStructuredOutput] - title: \(route.title)")
-      print("[verifyStructuredOutput] - estimatedDistance: \(route.estimatedDistance)")
-      print("[verifyStructuredOutput] - estimatedDuration: \(route.estimatedDuration)")
-      print("[verifyStructuredOutput] レイテンシ: \(String(format: "%.2f", latency))秒")
+      print("[verifyOnDeviceBehavior] レスポンス取得成功")
+      print("[verifyOnDeviceBehavior] レスポンス: \(response.content)")
+      print("[verifyOnDeviceBehavior] レイテンシ: \(String(format: "%.2f", latency))秒")
     #endif
 
-    return StructuredOutputVerificationResult(
-      title: "検証3: 構造化出力",
+    return OnDeviceVerificationResult(
+      title: "検証4: オンデバイス挙動",
       prompt: prompt,
-      response: responseText,
+      response: response.content,
       latencySeconds: latency,
       timestamp: startTime
     )
