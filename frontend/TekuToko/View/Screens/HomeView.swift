@@ -75,6 +75,10 @@ struct HomeView: View {
   /// ルート提案入力画面の表示状態
   @State private var showRouteSuggestionInput = false
 
+  /// 検証結果表示フラグ（一時的）
+  @State private var showVerificationResult = false
+  @State private var verificationResultMessage: String = ""
+
   /// Apple Intelligence利用可否フラグ
   ///
   /// 端末がApple Intelligence（Foundation Models）をサポートしているかを示します。
@@ -365,6 +369,14 @@ struct HomeView: View {
     .fullScreenCover(isPresented: $showRouteSuggestionInput) {
       RouteSuggestionInputView()
     }
+    .alert("検証結果", isPresented: $showVerificationResult) {
+      Button("コピー") {
+        UIPasteboard.general.string = verificationResultMessage
+      }
+      Button("閉じる", role: .cancel) {}
+    } message: {
+      Text(verificationResultMessage)
+    }
   }
 
   // 散歩提案ボタン
@@ -599,11 +611,102 @@ struct HomeView: View {
     .accessibilityLabel("位置情報の許可状態が不明です")
   }
 
-  /// 散歩提案ボタンがタップされた時の処理
-  ///
-  /// ルート提案入力画面を表示します。
+  /// 散歩提案ボタンがタップされた時の処理（一時的に検証モード）
   private func handleSuggestionButtonTapped() {
-    showRouteSuggestionInput = true
+    if #available(iOS 26.0, *) {
+      runVerification()
+    }
+  }
+
+  // MARK: - [検証1] 指示追従性能
+  //  /// 検証1を実行: 指示追従性能 - 制約を守るか
+  //  @available(iOS 26.0, *)
+  //  private func runVerification() {
+  //    Task {
+  //      isLoading = true
+  //      do {
+  //        let service = RouteSuggestionService()
+  //        let result = try await service.verifyInstructionFollowing()
+  //
+  //        let message = """
+  //        \(result.title)
+  //
+  //        レスポンス時間: \(result.formattedLatency)
+  //
+  //        観測結果:
+  //        \(result.observations.joined(separator: "\n"))
+  //
+  //        プロンプト:
+  //        \(result.prompt)
+  //
+  //        レスポンス:
+  //        \(result.response)
+  //        """
+  //
+  //        await MainActor.run {
+  //          verificationResultMessage = message
+  //          showVerificationResult = true
+  //          isLoading = false
+  //        }
+  //      } catch {
+  //        await MainActor.run {
+  //          routeSuggestionErrorMessage = "検証エラー: \(error.localizedDescription)"
+  //          isLoading = false
+  //        }
+  //      }
+  //    }
+  //  }
+
+  // MARK: - [検証2] 再現性
+  /// 検証2を実行: 再現性 - 出力が安定しているか
+  @available(iOS 26.0, *)
+  private func runVerification() {
+    Task {
+      isLoading = true
+      do {
+        let service = RouteSuggestionService()
+        let result = try await service.verifyReproducibility()
+
+        // 結果を整形
+        var message = """
+        \(result.title)
+
+        \(result.formattedSummary)
+
+        観測結果:
+        \(result.observations.joined(separator: "\n"))
+
+        プロンプト:
+        \(result.prompt)
+
+        """
+
+        // 各試行の詳細を追加
+        for attempt in result.attempts {
+          message += "\n--- 試行\(attempt.attemptNumber) (レスポンス: \(String(format: "%.2f", attempt.latencySeconds))秒) ---\n"
+          for (index, suggestion) in attempt.suggestions.enumerated() {
+            message += """
+            【\(index + 1)】\(suggestion.title)
+            - 距離: \(suggestion.estimatedDistance)km
+            - 時間: \(suggestion.estimatedDuration)時間
+            - 住所: \(suggestion.address)
+
+            """
+          }
+        }
+
+        await MainActor.run {
+          verificationResultMessage = message
+          showVerificationResult = true
+          isLoading = false
+        }
+      } catch {
+        await MainActor.run {
+          routeSuggestionErrorMessage = "検証エラー: \(error.localizedDescription)"
+          isLoading = false
+        }
+      }
+    }
   }
 
   // 位置情報マネージャーの設定

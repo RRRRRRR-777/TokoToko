@@ -640,3 +640,417 @@ struct RouteSuggestion: Codable {
     let landmark: String
   }
 #endif
+
+// MARK: - Verification Models
+
+/// 検証結果を保持する構造体（検証1用）
+struct VerificationResult: Codable, Identifiable {
+  let id = UUID()
+  let title: String
+  let prompt: String
+  let response: String
+  let latencySeconds: Double
+  let timestamp: Date
+  let observations: [String]
+
+  var formattedLatency: String {
+    String(format: "%.2f秒", latencySeconds)
+  }
+}
+
+/// 検証2: 再現性検証の結果
+struct ReproducibilityVerificationResult: Codable, Identifiable {
+  let id = UUID()
+  let title: String
+  let prompt: String
+  let attempts: [AttemptResult]
+  let observations: [String]
+  let timestamp: Date
+
+  struct AttemptResult: Codable {
+    let attemptNumber: Int
+    let suggestions: [RouteSuggestion]
+    let latencySeconds: Double
+  }
+
+  var formattedSummary: String {
+    let avgLatency = attempts.map { $0.latencySeconds }.reduce(0, +) / Double(attempts.count)
+    return String(format: "平均レスポンス時間: %.2f秒", avgLatency)
+  }
+}
+
+// MARK: - Verification Methods
+
+#if canImport(FoundationModels)
+@available(iOS 26.0, *)
+extension RouteSuggestionService {
+
+  /// 検証1: 最小利用検証
+  ///
+  /// 目的: Foundation Modelsが基本的に動作するか確認する
+  /// - 最もシンプルなプロンプトを送信
+  /// - レスポンスが返ってくるか確認
+  /// - 初期化のレイテンシを計測
+  func verifyBasicUsage() async throws -> VerificationResult {
+    // 既存実装と同じくavailabilityチェック
+    guard SystemLanguageModel.default.isAvailable else {
+      throw RouteSuggestionServiceError.foundationModelUnavailable(
+        "SystemLanguageModel.defaultがこのデバイスで利用できません"
+      )
+    }
+
+    let startTime = Date()
+    let prompt = "散歩に良い場所を1つ教えてください。場所の名前だけを答えてください。"
+
+    // 既存実装と同じくinstructionsを渡す
+    let instructions = "あなたは散歩ルート提案AIです。簡潔に答えてください。"
+    let session = LanguageModelSession(instructions: instructions)
+    let response = try await session.respond(to: prompt)
+
+    let endTime = Date()
+    let latency = endTime.timeIntervalSince(startTime)
+
+    let observations = [
+      "✅ レスポンス取得成功",
+      "📏 応答長: \(response.content.count)文字",
+      latency < 5.0 ? "⚡ レイテンシ良好（5秒以内）" : "⚠️ レイテンシやや遅い（5秒超）"
+    ]
+
+    return VerificationResult(
+      title: "最小利用検証",
+      prompt: prompt,
+      response: response.content,
+      latencySeconds: latency,
+      timestamp: startTime,
+      observations: observations
+    )
+  }
+
+  /// 検証1: 指示追従性能 - 制約を守るか
+  ///
+  /// 目的: 「必ず3件」「距離5km以内」などの条件を付けて、守られるか確認する
+  /// - 件数制約: 必ず3件生成すること
+  /// - 距離制約: 5km以内のルート
+  /// - 時間制約: 1時間以内
+  func verifyInstructionFollowing() async throws -> VerificationResult {
+    guard SystemLanguageModel.default.isAvailable else {
+      throw RouteSuggestionServiceError.foundationModelUnavailable(
+        "SystemLanguageModel.defaultがこのデバイスで利用できません"
+      )
+    }
+
+    let startTime = Date()
+
+    // 制約付きプロンプト
+    let prompt = """
+    【必須制約】以下の条件を全て守って散歩ルートを提案してください:
+    1. 件数: 必ず3件（3件未満・3件超過は不可）
+    2. 距離: 5km以内のルート（5.0km以下）
+    3. 時間: 1時間以内のルート（60分以内）
+    4. エリア: 東京周辺
+
+    以下のJSON配列形式で出力してください:
+    [
+      {
+        "title": "ルート名",
+        "description": "説明",
+        "estimatedDistance": 距離(km),
+        "estimatedDuration": 時間(時間),
+        "recommendationReason": "推奨理由",
+        "address": "住所",
+        "postalCode": "郵便番号",
+        "landmark": "ランドマーク"
+      }
+    ]
+    """
+
+    let instructions = """
+    あなたは散歩ルート提案AIです。
+    ユーザーが指定した制約条件を必ず守ってください。
+    制約を1つでも破った場合は失格となります。
+    """
+
+    let session = LanguageModelSession(instructions: instructions)
+    let response = try await session.respond(
+      to: prompt,
+      generating: [GeneratedRouteSuggestion].self
+    )
+
+    let endTime = Date()
+    let latency = endTime.timeIntervalSince(startTime)
+
+    // 制約チェック
+    let suggestions = response.content
+
+    #if DEBUG
+      print("[verifyInstructionFollowing] LLMから\(suggestions.count)件の提案を受信")
+      if suggestions.isEmpty {
+        print("[verifyInstructionFollowing] 警告: 提案が0件です。LLMが空配列を返した可能性があります")
+      }
+      for (index, suggestion) in suggestions.enumerated() {
+        print("[verifyInstructionFollowing] [\(index + 1)] \(suggestion.title)")
+        print("  - distance: \(suggestion.estimatedDistance)km, duration: \(suggestion.estimatedDuration)h")
+        print("  - address: '\(suggestion.address)', postalCode: '\(suggestion.postalCode)', landmark: '\(suggestion.landmark)'")
+      }
+    #endif
+
+    var observations: [String] = []
+
+    // 件数チェック
+    if suggestions.count == 3 {
+      observations.append("✅ 件数制約: 3件生成（正しい）")
+    } else {
+      observations.append("❌ 件数制約: \(suggestions.count)件生成（期待: 3件）")
+    }
+
+    // 距離制約チェック
+    let distanceViolations = suggestions.filter { $0.estimatedDistance > 5.0 }
+    if distanceViolations.isEmpty {
+      observations.append("✅ 距離制約: 全て5km以内（正しい）")
+    } else {
+      observations.append("❌ 距離制約: \(distanceViolations.count)件が5km超過")
+      distanceViolations.forEach {
+        observations.append("  - \($0.title): \($0.estimatedDistance)km")
+      }
+    }
+
+    // 時間制約チェック
+    let durationViolations = suggestions.filter { $0.estimatedDuration > 1.0 }
+    if durationViolations.isEmpty {
+      observations.append("✅ 時間制約: 全て1時間以内（正しい）")
+    } else {
+      observations.append("❌ 時間制約: \(durationViolations.count)件が1時間超過")
+      durationViolations.forEach {
+        observations.append("  - \($0.title): \($0.estimatedDuration)時間")
+      }
+    }
+
+    // 必須フィールドチェック
+    let missingFieldCount = suggestions.filter {
+      $0.address.isEmpty || $0.postalCode.isEmpty || $0.landmark.isEmpty
+    }.count
+    if missingFieldCount == 0 {
+      observations.append("✅ 必須フィールド: 全て入力あり")
+    } else {
+      observations.append("❌ 必須フィールド: \(missingFieldCount)件に欠損")
+    }
+
+    // レイテンシ
+    observations.append(
+      latency < 5.0 ? "⚡ レイテンシ良好（5秒以内）" : "⚠️ レイテンシやや遅い（5秒超）"
+    )
+
+    // 結果の整形
+    let responseText = suggestions.enumerated().map { index, suggestion in
+      """
+      【\(index + 1)】\(suggestion.title)
+      - 距離: \(suggestion.estimatedDistance)km
+      - 時間: \(suggestion.estimatedDuration)時間
+      - 住所: \(suggestion.address)
+      - 郵便番号: \(suggestion.postalCode)
+      - ランドマーク: \(suggestion.landmark)
+      - 理由: \(suggestion.recommendationReason)
+      """
+    }.joined(separator: "\n\n")
+
+    return VerificationResult(
+      title: "検証1: 指示追従性能",
+      prompt: prompt,
+      response: responseText,
+      latencySeconds: latency,
+      timestamp: startTime,
+      observations: observations
+    )
+  }
+
+  /// 検証2: 再現性 - 出力が安定しているか
+  ///
+  /// 目的: 同一プロンプトを3回実行して出力の揺れを比較する
+  /// - 同じプロンプトで3回連続実行
+  /// - タイトル、距離、時間の揺れを分析
+  /// - レイテンシの安定性を確認
+  func verifyReproducibility() async throws -> ReproducibilityVerificationResult {
+    guard SystemLanguageModel.default.isAvailable else {
+      throw RouteSuggestionServiceError.foundationModelUnavailable(
+        "SystemLanguageModel.defaultがこのデバイスで利用できません"
+      )
+    }
+
+    let startTime = Date()
+
+    // 固定プロンプト（検証1と同じ形式を使用）
+    let prompt = """
+    【必須制約】以下の条件を全て守って散歩ルートを提案してください:
+    1. 件数: 必ず3件（3件未満・3件超過は不可）
+    2. 距離: 3km程度のルート
+    3. 時間: 1時間程度のルート
+    4. エリア: 東京・渋谷周辺
+
+    以下のJSON配列形式で出力してください:
+    [
+      {
+        "title": "ルート名",
+        "description": "説明",
+        "estimatedDistance": 距離(km),
+        "estimatedDuration": 時間(時間),
+        "recommendationReason": "推奨理由",
+        "address": "住所",
+        "postalCode": "郵便番号",
+        "landmark": "ランドマーク"
+      }
+    ]
+    """
+
+    let instructions = """
+    あなたは散歩ルート提案AIです。
+    ユーザーが指定した制約条件を必ず守ってください。
+    制約を1つでも破った場合は失格となります。
+    """
+
+    var attempts: [ReproducibilityVerificationResult.AttemptResult] = []
+
+    // 3回実行（各試行ごとに新しいセッションを作成）
+    for attemptNum in 1...3 {
+      #if DEBUG
+        print("[verifyReproducibility] 試行\(attemptNum)/3を開始")
+      #endif
+
+      var suggestions: [RouteSuggestion] = []
+      var attemptLatency: Double = 0.0
+      let maxRetries = 3  // 0件の場合のリトライ回数
+
+      // リトライロジック: 3件生成されるまで最大3回リトライ
+      for retryCount in 0..<maxRetries {
+        let attemptStartTime = Date()
+
+        do {
+          // IMPORTANT: 各試行ごとに新しいセッションを作成
+          // 理由: iOS 26.0 Betaでは同じセッションで複数回respondを呼ぶと
+          //       "Unsupported language" エラーが発生する
+          let session = LanguageModelSession(instructions: instructions)
+          let response = try await session.respond(
+            to: prompt,
+            generating: [GeneratedRouteSuggestion].self
+          )
+          let attemptEndTime = Date()
+          attemptLatency = attemptEndTime.timeIntervalSince(attemptStartTime)
+
+          #if DEBUG
+            if retryCount > 0 {
+              print("[verifyReproducibility] リトライ\(retryCount)回目: LLMから\(response.content.count)件受信")
+            } else {
+              print("[verifyReproducibility] LLMから\(response.content.count)件受信")
+            }
+            for (index, item) in response.content.enumerated() {
+              print("  [\(index + 1)] \(item.title)")
+              print("    - address: '\(item.address)' (empty: \(item.address.isEmpty))")
+              print("    - postalCode: '\(item.postalCode)' (empty: \(item.postalCode.isEmpty))")
+              print("    - landmark: '\(item.landmark)' (empty: \(item.landmark.isEmpty))")
+            }
+          #endif
+
+          suggestions = mapToRouteSuggestions(from: response.content)
+
+          #if DEBUG
+            print("[verifyReproducibility] 試行\(attemptNum): フィルタ後\(suggestions.count)件、\(String(format: "%.2f", attemptLatency))秒")
+          #endif
+
+          // 3件生成された場合は成功
+          if suggestions.count == 3 {
+            break
+          }
+
+          // 0件または不足の場合、リトライ
+          if retryCount < maxRetries - 1 {
+            #if DEBUG
+              print("[verifyReproducibility] \(suggestions.count)件しか生成されなかったため、リトライします")
+            #endif
+            try? await Task.sleep(nanoseconds: 500_000_000)
+          }
+
+        } catch {
+          #if DEBUG
+            print("[verifyReproducibility] 試行\(attemptNum)でエラー: \(error)")
+          #endif
+          throw RouteSuggestionServiceError.generationFailed(
+            "試行\(attemptNum)で失敗: \(error.localizedDescription)"
+          )
+        }
+      }
+
+      attempts.append(
+        ReproducibilityVerificationResult.AttemptResult(
+          attemptNumber: attemptNum,
+          suggestions: suggestions,
+          latencySeconds: attemptLatency
+        )
+      )
+
+      // レート制限回避のため0.5秒待機
+      try? await Task.sleep(nanoseconds: 500_000_000)
+    }
+
+    // 分析
+    var observations: [String] = []
+
+    // 件数の揺れ
+    let counts = attempts.map { $0.suggestions.count }
+    let countSet = Set(counts)
+    if countSet.count == 1 {
+      observations.append("✅ 件数の一貫性: 全て\(counts[0])件（揺れなし）")
+    } else {
+      observations.append("❌ 件数の揺れあり: \(counts.map { "\($0)件" }.joined(separator: ", "))")
+    }
+
+    // タイトルの重複分析
+    let allTitles = attempts.flatMap { $0.suggestions.map { $0.title } }
+    let uniqueTitles = Set(allTitles)
+    let duplicateRate = Double(allTitles.count - uniqueTitles.count) / Double(allTitles.count) * 100
+    if duplicateRate > 50 {
+      observations.append("⚠️ タイトル重複率: \(String(format: "%.1f", duplicateRate))%（高い）")
+    } else if duplicateRate > 0 {
+      observations.append("✅ タイトル重複率: \(String(format: "%.1f", duplicateRate))%（適度）")
+    } else {
+      observations.append("✅ タイトル重複: なし（完全に異なる提案）")
+    }
+
+    // 距離の揺れ分析
+    let allDistances = attempts.flatMap { $0.suggestions.map { $0.estimatedDistance } }
+    let avgDistance = allDistances.reduce(0, +) / Double(allDistances.count)
+    let distanceStdDev = sqrt(
+      allDistances.map { pow($0 - avgDistance, 2) }.reduce(0, +) / Double(allDistances.count)
+    )
+    observations.append(
+      String(format: "📏 距離の揺れ: 平均%.1fkm、標準偏差%.2fkm", avgDistance, distanceStdDev)
+    )
+
+    // 時間の揺れ分析
+    let allDurations = attempts.flatMap { $0.suggestions.map { $0.estimatedDuration } }
+    let avgDuration = allDurations.reduce(0, +) / Double(allDurations.count)
+    let durationStdDev = sqrt(
+      allDurations.map { pow($0 - avgDuration, 2) }.reduce(0, +) / Double(allDurations.count)
+    )
+    observations.append(
+      String(format: "⏱️ 時間の揺れ: 平均%.2f時間、標準偏差%.2f時間", avgDuration, durationStdDev)
+    )
+
+    // レイテンシの安定性
+    let latencies = attempts.map { $0.latencySeconds }
+    let avgLatency = latencies.reduce(0, +) / Double(latencies.count)
+    let latencyStdDev = sqrt(
+      latencies.map { pow($0 - avgLatency, 2) }.reduce(0, +) / Double(latencies.count)
+    )
+    observations.append(
+      String(format: "⚡ レイテンシ: 平均%.2f秒、標準偏差%.2f秒", avgLatency, latencyStdDev)
+    )
+
+    return ReproducibilityVerificationResult(
+      title: "検証2: 再現性",
+      prompt: prompt,
+      attempts: attempts,
+      observations: observations,
+      timestamp: startTime
+    )
+  }
+}
+#endif
