@@ -657,26 +657,30 @@ struct HomeView: View {
   //    }
   //  }
 
-  // MARK: - [検証4] オンデバイス挙動
-  /// 検証4を実行: オンデバイス挙動
+  // MARK: - [検証5] 状態管理・コンテキスト理解
+  /// 検証5を実行: 状態管理・コンテキスト理解
   @available(iOS 26.0, *)
   private func runVerification() {
     Task {
       isLoading = true
       do {
         let service = RouteSuggestionService()
-        let result = try await service.verifyOnDeviceBehavior()
+        let result = try await service.verifyContextMemory()
 
         let message = """
         \(result.title)
 
-        レスポンス時間: \(result.formattedLatency)
+        【プロンプト1】
+        \(result.prompt1)
 
-        プロンプト:
-        \(result.prompt)
+        【レスポンス1】(\(result.formattedLatency1))
+        \(result.response1)
 
-        レスポンス:
-        \(result.response)
+        【プロンプト2】
+        \(result.prompt2)
+
+        【レスポンス2】(\(result.formattedLatency2))
+        \(result.response2)
         """
 
         await MainActor.run {

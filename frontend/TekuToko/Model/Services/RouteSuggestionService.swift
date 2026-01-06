@@ -659,17 +659,24 @@ struct VerificationResult: Codable, Identifiable {
   }
 }
 
-/// 検証4: オンデバイス挙動の結果
-struct OnDeviceVerificationResult: Codable, Identifiable {
+/// 検証5: 状態管理・コンテキスト理解の結果
+struct ContextMemoryVerificationResult: Codable, Identifiable {
   let id = UUID()
   let title: String
-  let prompt: String
-  let response: String
-  let latencySeconds: Double
+  let prompt1: String
+  let response1: String
+  let latency1Seconds: Double
+  let prompt2: String
+  let response2: String
+  let latency2Seconds: Double
   let timestamp: Date
 
-  var formattedLatency: String {
-    String(format: "%.2f秒", latencySeconds)
+  var formattedLatency1: String {
+    String(format: "%.2f秒", latency1Seconds)
+  }
+
+  var formattedLatency2: String {
+    String(format: "%.2f秒", latency2Seconds)
   }
 }
 
@@ -857,44 +864,89 @@ extension RouteSuggestionService {
     )
   }
 
-  /// 検証4: オンデバイス挙動
+  /// 検証5: 状態管理・コンテキスト理解
   ///
-  /// 目的: 機内モードでも動作するか、レイテンシ・回答傾向を確認する
-  /// - 機内モードで動作するか（エラーなく実行完了するか）
-  /// - レイテンシの変化（機内モードで速くなるか、変わらないか）
-  /// - 回答内容の傾向（オンライン時とオフライン時で異なるか）
-  func verifyOnDeviceBehavior() async throws -> OnDeviceVerificationResult {
+  /// 目的: 会話文脈の保持能力と、状態依存の理解度を確認する
+  /// - 散歩履歴データを記憶させ、後続の質問で正しく参照できるか検証
+  func verifyContextMemory() async throws -> ContextMemoryVerificationResult {
     guard SystemLanguageModel.default.isAvailable else {
       throw RouteSuggestionServiceError.foundationModelUnavailable(
         "SystemLanguageModel.defaultがこのデバイスで利用できません"
       )
     }
 
-    let startTime = Date()
+    let overallStartTime = Date()
 
-    // シンプルなプロンプト（値が出力されることが責務）
-    let prompt = "東京でおすすめの散歩スポットを1つ教えてください。"
+    // プロンプト1: 散歩履歴データの記憶
+    let prompt1 = """
+    以下の散歩履歴データを記憶してください。
 
-    let instructions = "あなたは散歩ルート提案AIです。簡潔に答えてください。"
+    【散歩1】
+    - 日時: 2026年1月5日 14:30-15:45
+    - 場所: 代々木公園周辺
+    - 距離: 3.2km
+    - 歩数: 4200歩
+
+    【散歩2】
+    - 日時: 2026年1月6日 09:15-10:30
+    - 場所: 井の頭公園周辺
+    - 距離: 2.8km
+    - 歩数: 3600歩
+
+    【散歩3】
+    - 日時: 2026年1月7日 16:00-17:15
+    - 場所: 代々木公園周辺
+    - 距離: 3.5km
+    - 歩数: 4500歩
+
+    理解したら「了解」とだけ返してください。
+    """
+
+    let instructions = "あなたは散歩ルート提案AIです。ユーザーの指示に従ってください。"
 
     let session = LanguageModelSession(instructions: instructions)
-    let response = try await session.respond(to: prompt)
 
-    let endTime = Date()
-    let latency = endTime.timeIntervalSince(startTime)
+    // プロンプト1の実行
+    let start1 = Date()
+    let response1 = try await session.respond(to: prompt1)
+    let end1 = Date()
+    let latency1 = end1.timeIntervalSince(start1)
 
     #if DEBUG
-      print("[verifyOnDeviceBehavior] レスポンス取得成功")
-      print("[verifyOnDeviceBehavior] レスポンス: \(response.content)")
-      print("[verifyOnDeviceBehavior] レイテンシ: \(String(format: "%.2f", latency))秒")
+      print("[verifyContextMemory] プロンプト1実行完了")
+      print("[verifyContextMemory] レスポンス1: \(response1.content)")
+      print("[verifyContextMemory] レイテンシ1: \(String(format: "%.2f", latency1))秒")
     #endif
 
-    return OnDeviceVerificationResult(
-      title: "検証4: オンデバイス挙動",
-      prompt: prompt,
-      response: response.content,
-      latencySeconds: latency,
-      timestamp: startTime
+    // プロンプト2: 記憶した内容の活用
+    let prompt2 = """
+    先ほど記憶した散歩履歴データをもとに、以下を3行以内で分析してください：
+    1. よく訪れているエリアはどこですか？
+    2. 平均的な散歩距離と歩数は？
+    3. 次におすすめの散歩エリアは？
+    """
+
+    // プロンプト2の実行（同じセッション内）
+    let start2 = Date()
+    let response2 = try await session.respond(to: prompt2)
+    let end2 = Date()
+    let latency2 = end2.timeIntervalSince(start2)
+
+    #if DEBUG
+      print("[verifyContextMemory] プロンプト2実行完了")
+      print("[verifyContextMemory] レスポンス2: \(response2.content)")
+      print("[verifyContextMemory] レイテンシ2: \(String(format: "%.2f", latency2))秒")
+    #endif
+
+    return ContextMemoryVerificationResult(
+      title: "検証5: 状態管理・コンテキスト理解",
+      prompt1: prompt1,
+      response1: response1.content,
+      latency1Seconds: latency1,
+      prompt2: prompt2,
+      response2: response2.content,
+      latency2Seconds: latency2,
+      timestamp: overallStartTime
     )
   }
 }
