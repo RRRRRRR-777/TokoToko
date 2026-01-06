@@ -639,6 +639,20 @@ struct RouteSuggestion: Codable {
     /// ランドマーク（駅、公園、商店街、寺社、大学など）
     let landmark: String
   }
+
+  /// 検証3用: 構造化出力検証用の簡易的な散歩ルート
+  @available(iOS 26.0, *)
+  @Generable
+  private struct GeneratedSimpleRoute: Sendable {
+    /// ルート名
+    let title: String
+
+    /// 推定距離（km）
+    let estimatedDistance: Double
+
+    /// 推定時間（時間）
+    let estimatedDuration: Double
+  }
 #endif
 
 // MARK: - Verification Models
@@ -658,24 +672,17 @@ struct VerificationResult: Codable, Identifiable {
   }
 }
 
-/// 検証2: 再現性検証の結果
-struct ReproducibilityVerificationResult: Codable, Identifiable {
+/// 検証3: 構造化出力の結果
+struct StructuredOutputVerificationResult: Codable, Identifiable {
   let id = UUID()
   let title: String
   let prompt: String
-  let attempts: [AttemptResult]
-  let observations: [String]
+  let response: String
+  let latencySeconds: Double
   let timestamp: Date
 
-  struct AttemptResult: Codable {
-    let attemptNumber: Int
-    let suggestions: [RouteSuggestion]
-    let latencySeconds: Double
-  }
-
-  var formattedSummary: String {
-    let avgLatency = attempts.map { $0.latencySeconds }.reduce(0, +) / Double(attempts.count)
-    return String(format: "平均レスポンス時間: %.2f秒", avgLatency)
+  var formattedLatency: String {
+    String(format: "%.2f秒", latencySeconds)
   }
 }
 
@@ -863,13 +870,12 @@ extension RouteSuggestionService {
     )
   }
 
-  /// 検証2: 再現性 - 出力が安定しているか
+  /// 検証3: 構造化出力 - Struct / JSON 安定性
   ///
-  /// 目的: 同一プロンプトを3回実行して出力の揺れを比較する
-  /// - 同じプロンプトで3回連続実行
-  /// - タイトル、距離、時間の揺れを分析
-  /// - レイテンシの安定性を確認
-  func verifyReproducibility() async throws -> ReproducibilityVerificationResult {
+  /// 目的: 構造化出力の安定性と、指示追従性能を確認する
+  /// - @Generable型で正しく型が生成されるか
+  /// - フィールドの欠損・型崩れがないか
+  func verifyStructuredOutput() async throws -> StructuredOutputVerificationResult {
     guard SystemLanguageModel.default.isAvailable else {
       throw RouteSuggestionServiceError.foundationModelUnavailable(
         "SystemLanguageModel.defaultがこのデバイスで利用できません"
@@ -878,177 +884,53 @@ extension RouteSuggestionService {
 
     let startTime = Date()
 
-    // 固定プロンプト（検証1と同じ形式を使用）
+    // 構造化出力プロンプト
     let prompt = """
-    【必須制約】以下の条件を全て守って散歩ルートを提案してください:
-    1. 件数: 必ず3件（3件未満・3件超過は不可）
-    2. 距離: 3km程度のルート
-    3. 時間: 1時間程度のルート
-    4. エリア: 東京・渋谷周辺
+    東京・渋谷周辺の散歩ルートを1つ提案してください。
 
-    以下のJSON配列形式で出力してください:
-    [
-      {
-        "title": "ルート名",
-        "description": "説明",
-        "estimatedDistance": 距離(km),
-        "estimatedDuration": 時間(時間),
-        "recommendationReason": "推奨理由",
-        "address": "住所",
-        "postalCode": "郵便番号",
-        "landmark": "ランドマーク"
-      }
-    ]
+    以下の形式で出力してください：
+    - title: ルート名
+    - estimatedDistance: 推定距離（km）
+    - estimatedDuration: 推定時間（時間）
     """
 
     let instructions = """
     あなたは散歩ルート提案AIです。
-    ユーザーが指定した制約条件を必ず守ってください。
-    制約を1つでも破った場合は失格となります。
+    指定された形式で構造化データを生成してください。
     """
 
-    var attempts: [ReproducibilityVerificationResult.AttemptResult] = []
+    let session = LanguageModelSession(instructions: instructions)
+    let response = try await session.respond(
+      to: prompt,
+      generating: GeneratedSimpleRoute.self
+    )
 
-    // 3回実行（各試行ごとに新しいセッションを作成）
-    for attemptNum in 1...3 {
-      #if DEBUG
-        print("[verifyReproducibility] 試行\(attemptNum)/3を開始")
-      #endif
+    let endTime = Date()
+    let latency = endTime.timeIntervalSince(startTime)
 
-      var suggestions: [RouteSuggestion] = []
-      var attemptLatency: Double = 0.0
-      let maxRetries = 3  // 0件の場合のリトライ回数
-
-      // リトライロジック: 3件生成されるまで最大3回リトライ
-      for retryCount in 0..<maxRetries {
-        let attemptStartTime = Date()
-
-        do {
-          // IMPORTANT: 各試行ごとに新しいセッションを作成
-          // 理由: iOS 26.0 Betaでは同じセッションで複数回respondを呼ぶと
-          //       "Unsupported language" エラーが発生する
-          let session = LanguageModelSession(instructions: instructions)
-          let response = try await session.respond(
-            to: prompt,
-            generating: [GeneratedRouteSuggestion].self
-          )
-          let attemptEndTime = Date()
-          attemptLatency = attemptEndTime.timeIntervalSince(attemptStartTime)
-
-          #if DEBUG
-            if retryCount > 0 {
-              print("[verifyReproducibility] リトライ\(retryCount)回目: LLMから\(response.content.count)件受信")
-            } else {
-              print("[verifyReproducibility] LLMから\(response.content.count)件受信")
-            }
-            for (index, item) in response.content.enumerated() {
-              print("  [\(index + 1)] \(item.title)")
-              print("    - address: '\(item.address)' (empty: \(item.address.isEmpty))")
-              print("    - postalCode: '\(item.postalCode)' (empty: \(item.postalCode.isEmpty))")
-              print("    - landmark: '\(item.landmark)' (empty: \(item.landmark.isEmpty))")
-            }
-          #endif
-
-          suggestions = mapToRouteSuggestions(from: response.content)
-
-          #if DEBUG
-            print("[verifyReproducibility] 試行\(attemptNum): フィルタ後\(suggestions.count)件、\(String(format: "%.2f", attemptLatency))秒")
-          #endif
-
-          // 3件生成された場合は成功
-          if suggestions.count == 3 {
-            break
-          }
-
-          // 0件または不足の場合、リトライ
-          if retryCount < maxRetries - 1 {
-            #if DEBUG
-              print("[verifyReproducibility] \(suggestions.count)件しか生成されなかったため、リトライします")
-            #endif
-            try? await Task.sleep(nanoseconds: 500_000_000)
-          }
-
-        } catch {
-          #if DEBUG
-            print("[verifyReproducibility] 試行\(attemptNum)でエラー: \(error)")
-          #endif
-          throw RouteSuggestionServiceError.generationFailed(
-            "試行\(attemptNum)で失敗: \(error.localizedDescription)"
-          )
-        }
-      }
-
-      attempts.append(
-        ReproducibilityVerificationResult.AttemptResult(
-          attemptNumber: attemptNum,
-          suggestions: suggestions,
-          latencySeconds: attemptLatency
-        )
-      )
-
-      // レート制限回避のため0.5秒待機
-      try? await Task.sleep(nanoseconds: 500_000_000)
+    // 結果を整形
+    let route = response.content
+    let responseText = """
+    {
+      "title": "\(route.title)",
+      "estimatedDistance": \(route.estimatedDistance),
+      "estimatedDuration": \(route.estimatedDuration)
     }
+    """
 
-    // 分析
-    var observations: [String] = []
+    #if DEBUG
+      print("[verifyStructuredOutput] レスポンス取得成功")
+      print("[verifyStructuredOutput] - title: \(route.title)")
+      print("[verifyStructuredOutput] - estimatedDistance: \(route.estimatedDistance)")
+      print("[verifyStructuredOutput] - estimatedDuration: \(route.estimatedDuration)")
+      print("[verifyStructuredOutput] レイテンシ: \(String(format: "%.2f", latency))秒")
+    #endif
 
-    // 件数の揺れ
-    let counts = attempts.map { $0.suggestions.count }
-    let countSet = Set(counts)
-    if countSet.count == 1 {
-      observations.append("✅ 件数の一貫性: 全て\(counts[0])件（揺れなし）")
-    } else {
-      observations.append("❌ 件数の揺れあり: \(counts.map { "\($0)件" }.joined(separator: ", "))")
-    }
-
-    // タイトルの重複分析
-    let allTitles = attempts.flatMap { $0.suggestions.map { $0.title } }
-    let uniqueTitles = Set(allTitles)
-    let duplicateRate = Double(allTitles.count - uniqueTitles.count) / Double(allTitles.count) * 100
-    if duplicateRate > 50 {
-      observations.append("⚠️ タイトル重複率: \(String(format: "%.1f", duplicateRate))%（高い）")
-    } else if duplicateRate > 0 {
-      observations.append("✅ タイトル重複率: \(String(format: "%.1f", duplicateRate))%（適度）")
-    } else {
-      observations.append("✅ タイトル重複: なし（完全に異なる提案）")
-    }
-
-    // 距離の揺れ分析
-    let allDistances = attempts.flatMap { $0.suggestions.map { $0.estimatedDistance } }
-    let avgDistance = allDistances.reduce(0, +) / Double(allDistances.count)
-    let distanceStdDev = sqrt(
-      allDistances.map { pow($0 - avgDistance, 2) }.reduce(0, +) / Double(allDistances.count)
-    )
-    observations.append(
-      String(format: "📏 距離の揺れ: 平均%.1fkm、標準偏差%.2fkm", avgDistance, distanceStdDev)
-    )
-
-    // 時間の揺れ分析
-    let allDurations = attempts.flatMap { $0.suggestions.map { $0.estimatedDuration } }
-    let avgDuration = allDurations.reduce(0, +) / Double(allDurations.count)
-    let durationStdDev = sqrt(
-      allDurations.map { pow($0 - avgDuration, 2) }.reduce(0, +) / Double(allDurations.count)
-    )
-    observations.append(
-      String(format: "⏱️ 時間の揺れ: 平均%.2f時間、標準偏差%.2f時間", avgDuration, durationStdDev)
-    )
-
-    // レイテンシの安定性
-    let latencies = attempts.map { $0.latencySeconds }
-    let avgLatency = latencies.reduce(0, +) / Double(latencies.count)
-    let latencyStdDev = sqrt(
-      latencies.map { pow($0 - avgLatency, 2) }.reduce(0, +) / Double(latencies.count)
-    )
-    observations.append(
-      String(format: "⚡ レイテンシ: 平均%.2f秒、標準偏差%.2f秒", avgLatency, latencyStdDev)
-    )
-
-    return ReproducibilityVerificationResult(
-      title: "検証2: 再現性",
+    return StructuredOutputVerificationResult(
+      title: "検証3: 構造化出力",
       prompt: prompt,
-      attempts: attempts,
-      observations: observations,
+      response: responseText,
+      latencySeconds: latency,
       timestamp: startTime
     )
   }

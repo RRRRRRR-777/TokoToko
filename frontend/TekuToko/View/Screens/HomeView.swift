@@ -657,43 +657,27 @@ struct HomeView: View {
   //    }
   //  }
 
-  // MARK: - [検証2] 再現性
-  /// 検証2を実行: 再現性 - 出力が安定しているか
+  // MARK: - [検証3] 構造化出力
+  /// 検証3を実行: 構造化出力 - Struct / JSON 安定性
   @available(iOS 26.0, *)
   private func runVerification() {
     Task {
       isLoading = true
       do {
         let service = RouteSuggestionService()
-        let result = try await service.verifyReproducibility()
+        let result = try await service.verifyStructuredOutput()
 
-        // 結果を整形
-        var message = """
+        let message = """
         \(result.title)
 
-        \(result.formattedSummary)
-
-        観測結果:
-        \(result.observations.joined(separator: "\n"))
+        レスポンス時間: \(result.formattedLatency)
 
         プロンプト:
         \(result.prompt)
 
+        レスポンス:
+        \(result.response)
         """
-
-        // 各試行の詳細を追加
-        for attempt in result.attempts {
-          message += "\n--- 試行\(attempt.attemptNumber) (レスポンス: \(String(format: "%.2f", attempt.latencySeconds))秒) ---\n"
-          for (index, suggestion) in attempt.suggestions.enumerated() {
-            message += """
-            【\(index + 1)】\(suggestion.title)
-            - 距離: \(suggestion.estimatedDistance)km
-            - 時間: \(suggestion.estimatedDuration)時間
-            - 住所: \(suggestion.address)
-
-            """
-          }
-        }
 
         await MainActor.run {
           verificationResultMessage = message
