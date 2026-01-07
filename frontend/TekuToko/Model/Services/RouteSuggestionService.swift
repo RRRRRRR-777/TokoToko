@@ -659,24 +659,18 @@ struct VerificationResult: Codable, Identifiable {
   }
 }
 
-/// 検証5: 状態管理・コンテキスト理解の結果
-struct ContextMemoryVerificationResult: Codable, Identifiable {
+/// 検証6: 指示追従性能（制約付き生成）の結果
+struct ConstraintFollowingVerificationResult: Codable, Identifiable {
   let id = UUID()
   let title: String
-  let prompt1: String
-  let response1: String
-  let latency1Seconds: Double
-  let prompt2: String
-  let response2: String
-  let latency2Seconds: Double
+  let prompt: String
+  let response: String
+  let latencySeconds: Double
   let timestamp: Date
+  let observations: [String]
 
-  var formattedLatency1: String {
-    String(format: "%.2f秒", latency1Seconds)
-  }
-
-  var formattedLatency2: String {
-    String(format: "%.2f秒", latency2Seconds)
+  var formattedLatency: String {
+    String(format: "%.2f秒", latencySeconds)
   }
 }
 
@@ -864,89 +858,116 @@ extension RouteSuggestionService {
     )
   }
 
-  /// 検証5: 状態管理・コンテキスト理解
+  /// 検証6: 指示追従性能（制約付き生成）
   ///
-  /// 目的: 会話文脈の保持能力と、状態依存の理解度を確認する
-  /// - 散歩履歴データを記憶させ、後続の質問で正しく参照できるか検証
-  func verifyContextMemory() async throws -> ContextMemoryVerificationResult {
+  /// 目的: 厳密な指示にどこまで忠実かを確認する
+  /// - 出力形式制約: 箇条書きのみ
+  /// - 文字数制約: 各行は20文字以内
+  /// - 単語制約: 「散歩」「歩く」「運動」を使わない、「道」を使う
+  /// - 行数制約: 最大3行まで
+  func verifyConstraintFollowing() async throws -> ConstraintFollowingVerificationResult {
     guard SystemLanguageModel.default.isAvailable else {
       throw RouteSuggestionServiceError.foundationModelUnavailable(
         "SystemLanguageModel.defaultがこのデバイスで利用できません"
       )
     }
 
-    let overallStartTime = Date()
+    let startTime = Date()
 
-    // プロンプト1: 散歩履歴データの記憶
-    let prompt1 = """
-    以下の散歩履歴データを記憶してください。
+    // 制約付きプロンプト
+    let prompt = """
+    以下の制約をすべて守ってください。
 
-    【散歩1】
-    - 日時: 2026年1月5日 14:30-15:45
-    - 場所: 代々木公園周辺
-    - 距離: 3.2km
-    - 歩数: 4200歩
+    - 出力は箇条書きのみ
+    - 各行は20文字以内
+    - 「散歩」、「歩く」、「運動」という単語を使わない
+    - 「道」という単語を使う
+    - 最大3行まで
 
-    【散歩2】
-    - 日時: 2026年1月6日 09:15-10:30
-    - 場所: 井の頭公園周辺
-    - 距離: 2.8km
-    - 歩数: 3600歩
-
-    【散歩3】
-    - 日時: 2026年1月7日 16:00-17:15
-    - 場所: 代々木公園周辺
-    - 距離: 3.5km
-    - 歩数: 4500歩
-
-    理解したら「了解」とだけ返してください。
+    テーマ：
+    東京都でおすすめの散歩ルートを提案してください
     """
 
-    let instructions = "あなたは散歩ルート提案AIです。ユーザーの指示に従ってください。"
+    let instructions = "あなたは散歩ルート提案AIです。ユーザーが指定した制約条件を必ず守ってください。"
 
     let session = LanguageModelSession(instructions: instructions)
+    let response = try await session.respond(to: prompt)
 
-    // プロンプト1の実行
-    let start1 = Date()
-    let response1 = try await session.respond(to: prompt1)
-    let end1 = Date()
-    let latency1 = end1.timeIntervalSince(start1)
+    let endTime = Date()
+    let latency = endTime.timeIntervalSince(startTime)
 
     #if DEBUG
-      print("[verifyContextMemory] プロンプト1実行完了")
-      print("[verifyContextMemory] レスポンス1: \(response1.content)")
-      print("[verifyContextMemory] レイテンシ1: \(String(format: "%.2f", latency1))秒")
+      print("[verifyConstraintFollowing] 実行完了")
+      print("[verifyConstraintFollowing] レスポンス: \(response.content)")
+      print("[verifyConstraintFollowing] レイテンシ: \(String(format: "%.2f", latency))秒")
     #endif
 
-    // プロンプト2: 記憶した内容の活用
-    let prompt2 = """
-    先ほど記憶した散歩履歴データをもとに、以下を3行以内で分析してください：
-    1. よく訪れているエリアはどこですか？
-    2. 平均的な散歩距離と歩数は？
-    3. 次におすすめの散歩エリアは？
-    """
+    // 制約チェック
+    let lines = response.content.split(separator: "\n").map { String($0) }
+    var observations: [String] = []
 
-    // プロンプト2の実行（同じセッション内）
-    let start2 = Date()
-    let response2 = try await session.respond(to: prompt2)
-    let end2 = Date()
-    let latency2 = end2.timeIntervalSince(start2)
+    // 行数制約チェック
+    if lines.count <= 3 {
+      observations.append("✅ 行数制約: \(lines.count)行（最大3行）")
+    } else {
+      observations.append("❌ 行数制約: \(lines.count)行（期待: 最大3行）")
+    }
 
-    #if DEBUG
-      print("[verifyContextMemory] プロンプト2実行完了")
-      print("[verifyContextMemory] レスポンス2: \(response2.content)")
-      print("[verifyContextMemory] レイテンシ2: \(String(format: "%.2f", latency2))秒")
-    #endif
+    // 文字数制約チェック
+    let violatingLines = lines.filter { $0.count > 20 }
+    if violatingLines.isEmpty {
+      observations.append("✅ 文字数制約: 全行20文字以内")
+    } else {
+      observations.append("❌ 文字数制約: \(violatingLines.count)行が20文字超過")
+      violatingLines.forEach {
+        observations.append("  - \($0.count)文字: \($0)")
+      }
+    }
 
-    return ContextMemoryVerificationResult(
-      title: "検証5: 状態管理・コンテキスト理解",
-      prompt1: prompt1,
-      response1: response1.content,
-      latency1Seconds: latency1,
-      prompt2: prompt2,
-      response2: response2.content,
-      latency2Seconds: latency2,
-      timestamp: overallStartTime
+    // 禁止単語チェック
+    let forbiddenWords = ["散歩", "歩く", "運動"]
+    var foundForbiddenWords: [String] = []
+    for word in forbiddenWords {
+      if response.content.contains(word) {
+        foundForbiddenWords.append(word)
+      }
+    }
+    if foundForbiddenWords.isEmpty {
+      observations.append("✅ 禁止単語: なし")
+    } else {
+      observations.append("❌ 禁止単語: \(foundForbiddenWords.joined(separator: "、"))")
+    }
+
+    // 必須単語チェック
+    if response.content.contains("道") {
+      observations.append("✅ 必須単語「道」: あり")
+    } else {
+      observations.append("❌ 必須単語「道」: なし")
+    }
+
+    // 箇条書き形式チェック
+    let hasBulletPoints = lines.allSatisfy { line in
+      let trimmed = line.trimmingCharacters(in: .whitespaces)
+      return trimmed.hasPrefix("-") || trimmed.hasPrefix("•") || trimmed.hasPrefix("・")
+    }
+    if hasBulletPoints {
+      observations.append("✅ 箇条書き形式: 正しい")
+    } else {
+      observations.append("❌ 箇条書き形式: 不正")
+    }
+
+    // レイテンシ
+    observations.append(
+      latency < 5.0 ? "⚡ レイテンシ良好（5秒以内）" : "⚠️ レイテンシやや遅い（5秒超）"
+    )
+
+    return ConstraintFollowingVerificationResult(
+      title: "検証6: 指示追従性能（制約付き生成）",
+      prompt: prompt,
+      response: response.content,
+      latencySeconds: latency,
+      timestamp: startTime,
+      observations: observations
     )
   }
 }

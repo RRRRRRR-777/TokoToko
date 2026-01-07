@@ -657,30 +657,29 @@ struct HomeView: View {
   //    }
   //  }
 
-  // MARK: - [検証5] 状態管理・コンテキスト理解
-  /// 検証5を実行: 状態管理・コンテキスト理解
+  // MARK: - [検証6] 指示追従性能（制約付き生成）
+  /// 検証6を実行: 指示追従性能（制約付き生成）
   @available(iOS 26.0, *)
   private func runVerification() {
     Task {
       isLoading = true
       do {
         let service = RouteSuggestionService()
-        let result = try await service.verifyContextMemory()
+        let result = try await service.verifyConstraintFollowing()
 
         let message = """
         \(result.title)
 
-        【プロンプト1】
-        \(result.prompt1)
+        レスポンス時間: \(result.formattedLatency)
 
-        【レスポンス1】(\(result.formattedLatency1))
-        \(result.response1)
+        観測結果:
+        \(result.observations.joined(separator: "\n"))
 
-        【プロンプト2】
-        \(result.prompt2)
+        プロンプト:
+        \(result.prompt)
 
-        【レスポンス2】(\(result.formattedLatency2))
-        \(result.response2)
+        レスポンス:
+        \(result.response)
         """
 
         await MainActor.run {
