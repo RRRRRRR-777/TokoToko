@@ -657,15 +657,15 @@ struct HomeView: View {
   //    }
   //  }
 
-  // MARK: - [検証6] 指示追従性能（制約付き生成）
-  /// 検証6を実行: 指示追従性能（制約付き生成）
+  // MARK: - [検証7] 理解・要約能力
+  /// 検証7を実行: 理解・要約能力
   @available(iOS 26.0, *)
   private func runVerification() {
     Task {
       isLoading = true
       do {
         let service = RouteSuggestionService()
-        let result = try await service.verifyConstraintFollowing()
+        let result = try await service.verifySummarization()
 
         let message = """
         \(result.title)

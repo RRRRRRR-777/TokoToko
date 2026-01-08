@@ -659,8 +659,8 @@ struct VerificationResult: Codable, Identifiable {
   }
 }
 
-/// 検証6: 指示追従性能（制約付き生成）の結果
-struct ConstraintFollowingVerificationResult: Codable, Identifiable {
+/// 検証7: 理解・要約能力の結果
+struct SummarizationVerificationResult: Codable, Identifiable {
   let id = UUID()
   let title: String
   let prompt: String
@@ -858,14 +858,11 @@ extension RouteSuggestionService {
     )
   }
 
-  /// 検証6: 指示追従性能（制約付き生成）
+  /// 検証7: 理解・要約能力
   ///
-  /// 目的: 厳密な指示にどこまで忠実かを確認する
-  /// - 出力形式制約: 箇条書きのみ
-  /// - 文字数制約: 各行は20文字以内
-  /// - 単語制約: 「散歩」「歩く」「運動」を使わない、「道」を使う
-  /// - 行数制約: 最大3行まで
-  func verifyConstraintFollowing() async throws -> ConstraintFollowingVerificationResult {
+  /// 目的: 構造理解・要約能力とハルシネーション耐性を確認する
+  /// - 文章を提示し、複数の制約を設けたうえ要約させて出力を確認する
+  func verifySummarization() async throws -> SummarizationVerificationResult {
     guard SystemLanguageModel.default.isAvailable else {
       throw RouteSuggestionServiceError.foundationModelUnavailable(
         "SystemLanguageModel.defaultがこのデバイスで利用できません"
@@ -874,18 +871,29 @@ extension RouteSuggestionService {
 
     let startTime = Date()
 
+    // 要約対象の文章（散歩関連）
+    let sourceText = """
+    散歩は心身の健康に多くの利益をもたらす活動である。
+    定期的な散歩は、心肺機能を向上させ、筋力を維持し、骨密度を高める効果がある。
+    また、自然の中を歩くことでストレスが軽減され、気分が改善されることが研究で示されている。
+    さらに、散歩中に季節の変化や地域の景色を観察することで、
+    観察力や創造性が高まるという報告もある。
+    近年では、スマートフォンアプリで散歩ルートや歩数を記録し、
+    健康管理に活用する人が増えている。
+    """
+
     // 制約付きプロンプト
     let prompt = """
-    以下の制約をすべて守ってください。
+    以下の文章を要約してください。
 
-    - 出力は箇条書きのみ
-    - 各行は20文字以内
-    - 「散歩」、「歩く」、「運動」という単語を使わない
-    - 「道」という単語を使う
-    - 最大3行まで
+    制約：
+    - 見出し＋本文の2部構成
+    - 見出しは15文字以内
+    - 本文は4行以内
+    - 原文にない情報は追加しない
 
-    テーマ：
-    東京都でおすすめの散歩ルートを提案してください
+    文章：
+    \(sourceText)
     """
 
     let instructions = "あなたは散歩ルート提案AIです。ユーザーが指定した制約条件を必ず守ってください。"
@@ -897,63 +905,63 @@ extension RouteSuggestionService {
     let latency = endTime.timeIntervalSince(startTime)
 
     #if DEBUG
-      print("[verifyConstraintFollowing] 実行完了")
-      print("[verifyConstraintFollowing] レスポンス: \(response.content)")
-      print("[verifyConstraintFollowing] レイテンシ: \(String(format: "%.2f", latency))秒")
+      print("[verifySummarization] 実行完了")
+      print("[verifySummarization] レスポンス: \(response.content)")
+      print("[verifySummarization] レイテンシ: \(String(format: "%.2f", latency))秒")
     #endif
 
     // 制約チェック
-    let lines = response.content.split(separator: "\n").map { String($0) }
+    let lines = response.content.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.map { String($0) }
     var observations: [String] = []
 
-    // 行数制約チェック
-    if lines.count <= 3 {
-      observations.append("✅ 行数制約: \(lines.count)行（最大3行）")
+    // 構成チェック（見出し＋本文）
+    if lines.count >= 2 {
+      observations.append("✅ 構成: 見出し＋本文の2部構成")
     } else {
-      observations.append("❌ 行数制約: \(lines.count)行（期待: 最大3行）")
+      observations.append("❌ 構成: \(lines.count)部構成（期待: 2部構成）")
     }
 
-    // 文字数制約チェック
-    let violatingLines = lines.filter { $0.count > 20 }
-    if violatingLines.isEmpty {
-      observations.append("✅ 文字数制約: 全行20文字以内")
-    } else {
-      observations.append("❌ 文字数制約: \(violatingLines.count)行が20文字超過")
-      violatingLines.forEach {
-        observations.append("  - \($0.count)文字: \($0)")
+    // 見出し文字数チェック（1行目を見出しと仮定）
+    if !lines.isEmpty {
+      let headingLength = lines[0].count
+      if headingLength <= 15 {
+        observations.append("✅ 見出し文字数: \(headingLength)文字（15文字以内）")
+      } else {
+        observations.append("❌ 見出し文字数: \(headingLength)文字（期待: 15文字以内）")
       }
     }
 
-    // 禁止単語チェック
-    let forbiddenWords = ["散歩", "歩く", "運動"]
-    var foundForbiddenWords: [String] = []
-    for word in forbiddenWords {
-      if response.content.contains(word) {
-        foundForbiddenWords.append(word)
+    // 本文行数チェック（2行目以降を本文と仮定）
+    let bodyLines = lines.dropFirst()
+    if bodyLines.count <= 4 {
+      observations.append("✅ 本文行数: \(bodyLines.count)行（4行以内）")
+    } else {
+      observations.append("❌ 本文行数: \(bodyLines.count)行（期待: 4行以内）")
+    }
+
+    // ハルシネーションチェック（原文に存在するキーワード）
+    let sourceKeywords = ["散歩", "健康", "心肺機能", "ストレス", "自然", "観察", "スマートフォン", "アプリ", "記録"]
+    let responseText = response.content
+    var foundKeywords: [String] = []
+    for keyword in sourceKeywords {
+      if responseText.contains(keyword) {
+        foundKeywords.append(keyword)
       }
     }
-    if foundForbiddenWords.isEmpty {
-      observations.append("✅ 禁止単語: なし")
-    } else {
-      observations.append("❌ 禁止単語: \(foundForbiddenWords.joined(separator: "、"))")
-    }
+    observations.append("✅ 原文キーワード: \(foundKeywords.count)/\(sourceKeywords.count)個含む（\(foundKeywords.joined(separator: "、"))）")
 
-    // 必須単語チェック
-    if response.content.contains("道") {
-      observations.append("✅ 必須単語「道」: あり")
-    } else {
-      observations.append("❌ 必須単語「道」: なし")
+    // 明らかな追加情報のチェック（ネガティブチェック）
+    let hallucinations = ["AI", "ロボット", "未来", "宇宙", "量子"]
+    var foundHallucinations: [String] = []
+    for word in hallucinations {
+      if responseText.contains(word) {
+        foundHallucinations.append(word)
+      }
     }
-
-    // 箇条書き形式チェック
-    let hasBulletPoints = lines.allSatisfy { line in
-      let trimmed = line.trimmingCharacters(in: .whitespaces)
-      return trimmed.hasPrefix("-") || trimmed.hasPrefix("•") || trimmed.hasPrefix("・")
-    }
-    if hasBulletPoints {
-      observations.append("✅ 箇条書き形式: 正しい")
+    if foundHallucinations.isEmpty {
+      observations.append("✅ ハルシネーション: 検出なし")
     } else {
-      observations.append("❌ 箇条書き形式: 不正")
+      observations.append("❌ ハルシネーション: \(foundHallucinations.joined(separator: "、"))")
     }
 
     // レイテンシ
@@ -961,8 +969,8 @@ extension RouteSuggestionService {
       latency < 5.0 ? "⚡ レイテンシ良好（5秒以内）" : "⚠️ レイテンシやや遅い（5秒超）"
     )
 
-    return ConstraintFollowingVerificationResult(
-      title: "検証6: 指示追従性能（制約付き生成）",
+    return SummarizationVerificationResult(
+      title: "検証7: 理解・要約能力",
       prompt: prompt,
       response: response.content,
       latencySeconds: latency,
