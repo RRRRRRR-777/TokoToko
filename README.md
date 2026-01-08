@@ -60,14 +60,14 @@ TekuToko/
 
 ## ドキュメント
 
-### 📚 [APIドキュメント（iOS）](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/)
+### 📚 [APIドキュメント（iOS）](https://rrrrrrr-777.github.io/TokoToko/documentation/tekutoko/)
 
 > 全SwiftファイルのAPI仕様書をWebサイト形式で確認できます（Apple公式DocC）
 
 **詳細情報**:
 * 全Swiftファイルの日本語DocCコメントを自動生成
 * GitHub Actionsで自動更新（Swift 6 + Xcode 16対応）
-* 主要コンポーネント: [Walk](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/walk/), [WalkManager](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/walkmanager/), [LocationManager](https://rrrrrrr-777.github.io/TekuToko/documentation/tekutoko/locationmanager/)
+* 主要コンポーネント: [Walk](https://rrrrrrr-777.github.io/TokoToko/documentation/tekutoko/walk/), [WalkManager](https://rrrrrrr-777.github.io/TokoToko/documentation/tekutoko/walkmanager/), [LocationManager](https://rrrrrrr-777.github.io/TokoToko/documentation/tekutoko/locationmanager/)
 
 ### 📖 その他ドキュメント
 

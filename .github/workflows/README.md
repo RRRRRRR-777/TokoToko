@@ -1,8 +1,19 @@
 # CI/CD Workflows
 
-TekuToko Backend の CI/CD パイプライン設定です。
+TekuToko の CI/CD パイプライン設定です。
 
-## ワークフロー概要
+## iOSアプリ CD（Xcode Cloud）
+
+iOSアプリのリリース自動化には **Xcode Cloud** を採用しています。
+
+> **ADR（意思決定記録）**: [Issue #47 - XcodeCloudとTestFlight配布の自動化設定](https://github.com/RRRRRRR-777/TokoToko/issues/47#issuecomment-3682230004)
+
+### 関連ファイル
+- `frontend/ci_scripts/ci_post_clone.sh` - XcodeCloud用ビルドスクリプト（XcodeGen実行）
+
+---
+
+## バックエンド ワークフロー概要
 
 ```mermaid
 graph LR
